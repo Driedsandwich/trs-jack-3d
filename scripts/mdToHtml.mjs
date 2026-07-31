@@ -90,6 +90,7 @@ const TARGETS = [
   { md: 'docs/REPORT.md', html: 'docs/REPORT.html', title: '3.5 mm TRS 接合機構ビューア — 納品報告' },
   { md: 'docs/VERIFICATION_PLAN.md', html: 'docs/VERIFICATION_PLAN.html', title: '実物照合の手順' },
   { md: 'docs/TEST_RESULTS.md', html: 'docs/TEST_RESULTS.html', title: '検証結果' },
+  { md: 'docs/SENSITIVITY.md', html: 'docs/SENSITIVITY.html', title: '感度解析 — どの結論が揺れないか' },
   { md: 'docs/PUBLISH_AUDIT_20260731.md', html: 'docs/PUBLISH_AUDIT_20260731.html', title: '公開前監査 2026-07-31' },
 ]
 

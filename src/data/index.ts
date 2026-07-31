@@ -132,6 +132,26 @@ function buildBundle(id: VariantId): ModelBundle {
   }
 }
 
+/**
+ * 寸法を差し替えたモデルを組む。感度解析 (scripts/sensitivity.ts) 用。
+ *
+ * 既定のモデルはキャッシュされるが、こちらは毎回新しく組む。呼び出し側が
+ * 何千通りも試すので、キャッシュに載せると際限なく太るため。
+ */
+export function buildModelWithOverrides(
+  id: VariantId,
+  overrides: Record<string, number>,
+): TrsModel {
+  const base = buildBundle(id)
+  const entries: typeof base.dimensions = { ...base.dimensions }
+  for (const [key, value] of Object.entries(overrides)) {
+    const cur = entries[key]
+    if (!cur) throw new Error(`未知の寸法キー: ${key}`)
+    entries[key] = { ...cur, value }
+  }
+  return new TrsModel({ ...base, dimensions: entries })
+}
+
 const cache = new Map<VariantId, TrsModel>()
 
 export function getModel(id: VariantId = 'TRS|JACK-TRS'): TrsModel {

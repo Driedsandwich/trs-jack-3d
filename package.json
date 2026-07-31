@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "artifacts": "vite-node scripts/generateArtifacts.ts",
+    "sensitivity": "vite-node scripts/sensitivity.ts",
     "inspect": "vite-node scripts/inspect.ts",
     "typecheck": "tsc -b",
     "screenshots": "node scripts/screenshots.mjs",

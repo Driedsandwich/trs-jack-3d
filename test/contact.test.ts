@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { getModel } from '../src/data'
+import { buildModelWithOverrides, getModel } from '../src/data'
 import { DEFAULT_FAULTS, deterministicNoise, evaluateContact } from '../src/model/contact'
 import { sweep, extractEvents } from '../src/model/sweep'
 import { computeForceCurve } from '../src/model/force'
@@ -395,6 +395,63 @@ describe('故障モード (仕様 §12)', () => {
     // ピークは段の通過ではなく完全挿入位置のデテントで決まる
     expect(peaks[0]).toBeGreaterThan(3)
     expect(peaks[0]).toBeLessThan(20) // Lumberg 1503 09 の公称 3〜20N
+  })
+
+  it('Tip 橋絡のしきい値は「Tip と Ring の半径差」で決まり、パッド幅にも接点位置にも依存しない', () => {
+    // docs/SENSITIVITY.md §2-1 の中心的な主張。
+    // 接点は Ring (1.750) に押し上げられ、そこから compliance だけ低い面までしか
+    // 届かない。Tip (1.600) に届く条件は compliance >= 0.150 で、これは
+    // パッド幅にも接点の軸位置にも依存しない。
+    const stepHeight = model.plug.bodyRadiusMm - 1.6
+    expect(stepHeight).toBeCloseTo(0.15, 6)
+
+    const hasTipBridge = (over: Record<string, number>) => {
+      const m = buildModelWithOverrides('TRS|JACK-TRS', over)
+      return sweep(m, { stepMm: 0.02 }).some((r) =>
+        r.contacts.some((c) => c.connectedNets.includes('TIP') && c.connectedNets.length > 1),
+      )
+    }
+
+    // 段差より下では、パッド幅と接点位置をどう振っても Tip 橋絡は出ない
+    for (const pad of [0.5, 0.9, 1.5, 2.5]) {
+      for (const axial of [1.0, 3.2, 4.5]) {
+        expect(
+          hasTipBridge({
+            'model.contact.complianceMm': 0.14,
+            'jack.contact.sleeve.padWidth': pad,
+            'jack.contact.sleeve.axialCenter': axial,
+          }),
+          `pad=${pad} axial=${axial}`,
+        ).toBe(false)
+      }
+    }
+    // 段差を十分に超えれば出る (= 判定が効いていることの確認)
+    expect(hasTipBridge({ 'model.contact.complianceMm': 0.2 })).toBe(true)
+  })
+
+  it('橋絡の深さを動かすのは帰線接点だけで、Tip / Ring 接点は動かさない', () => {
+    const firstBridge = (over: Record<string, number>) => {
+      const m = buildModelWithOverrides('TRS|JACK-TRS', over)
+      const row = sweep(m, { stepMm: 0.01 }).find((r) =>
+        r.contacts.some((c) => c.connectedNets.length > 1),
+      )
+      return row?.depthMm ?? null
+    }
+    const base = firstBridge({})
+    expect(base).not.toBeNull()
+    // Tip / Ring 接点を成立範囲の端まで動かしても、橋絡の深さは変わらない
+    for (const over of [
+      { 'jack.contact.tip.axialCenter': 9.5 },
+      { 'jack.contact.tip.axialCenter': 13.2 },
+      { 'jack.contact.ring.axialCenter': 6.0 },
+      { 'jack.contact.ring.axialCenter': 8.2 },
+      { 'jack.contact.tip.padWidth': 2.0 },
+      { 'jack.contact.ring.padWidth': 2.0 },
+    ]) {
+      expect(firstBridge(over), JSON.stringify(over)).toBeCloseTo(base!, 6)
+    }
+    // 帰線接点を動かすと、橋絡の深さは 1:1 でずれる
+    expect(firstBridge({ 'jack.contact.sleeve.axialCenter': 4.2 })).toBeCloseTo(base! + 1.0, 6)
   })
 
   it('全プリセットが例外なく評価できる', () => {

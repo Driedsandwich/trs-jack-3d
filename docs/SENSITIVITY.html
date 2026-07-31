@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>感度解析 — どの結論が揺れないか</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">1. 何を振ったか</a></li>
+    <li><a href="#s1">2. 揺れない結論</a></li>
+    <li><a href="#s2">3. 揺れる数字</a></li>
+    <li><a href="#s3">4. 読み方</a></li>
+    <li><a href="#s4">5. この解析の限界</a></li>
+  </ol>
+</nav>
+<h1>感度解析 — どの結論が揺れないか</h1>
+<div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
+<p>作成 2026-08-01 ／ 再現コマンド <code>npm run sensitivity</code> ／ 生データ <code>artifacts/sensitivity.json</code></p>
+<p>このプロジェクトは<strong>実物と突き合わせていません</strong>（<a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a>）。 その状態で「11.77 mm で橋絡する」と単一の数字を出すのは、意味が強すぎます。</p>
+<p>そこで、仮定として置いた 7 個のパラメータを<strong>成立範囲いっぱいに振り</strong>、 何が不変で何が動くかを機械的に測りました。 <strong>結論は「仕組みは揺れない、深さの数字は揺れる」です。</strong></p>
+<hr>
+<h2 id="s0">1. 何を振ったか</h2>
+<div class="tw"><table><thead><tr><th>パラメータ</th><th class="num">現在値</th><th>振った範囲</th><th>範囲の根拠</th></tr></thead><tbody><tr><td><code>jack.contact.tip.axialCenter</code></td><td class="num">11.4</td><td>9.475〜13.400</td><td>完全挿入でパッド全幅が Tip 導体（0〜4.8）に収まり、かつ端子3（13.4）より前</td></tr><tr><td><code>jack.contact.ring.axialCenter</code></td><td class="num">7.1</td><td>5.975〜8.225</td><td>同上、Ring 導体（5.5〜8.3）と端子2（8.9）</td></tr><tr><td><code>jack.contact.sleeve.axialCenter</code></td><td class="num">3.2</td><td>0.450〜4.550</td><td>同上、Sleeve 導体（9.0〜14.0）と端子1（5.6）</td></tr><tr><td><code>jack.contact.tip.padWidth</code></td><td class="num">0.55</td><td>0.010〜4.800</td><td>下限＝導通とみなす最小重なり、上限＝Tip 導体の幅</td></tr><tr><td><code>jack.contact.ring.padWidth</code></td><td class="num">0.55</td><td>0.010〜2.800</td><td>同上、Ring 導体の幅</td></tr><tr><td><code>jack.contact.sleeve.padWidth</code></td><td class="num">0.90</td><td>0.010〜5.000</td><td>同上、Sleeve 導体の幅</td></tr><tr><td><code>model.contact.complianceMm</code></td><td class="num">0.05</td><td>0.000〜0.300</td><td><strong>あえて壊れるまで振った</strong>（下記）</td></tr></tbody></table></div>
+<p><strong>範囲は勝手に決めていません。</strong> すべて図面の FACT 値（導体境界・端子位置・嵌合長 14.0）と、 「完全挿入で正しく結線されねばならない」という条件から導いています。 導出は <a href="../scripts/sensitivity.ts"><code>scripts/sensitivity.ts</code></a> の <code>deriveRanges</code> にあります。</p>
+<div class="note"><p><strong>compliance だけは扱いを変えました。</strong> この値の上限を「Tip と Ring の半径差 0.15 mm」に</p><p>すると、「Tip 導体を含む橋絡は起きない」という結論がその上限の<strong>言い換え</strong>になり、</p><p>検証になりません（循環します）。そこで段差の 2 倍まで振って、</p><p><strong>どこで壊れるかを実測</strong>しました。</p></div>
+<p>やり方は 2 通りです。</p>
+<ul><li><strong>一つずつ振る（OAT）</strong> … 各パラメータを 41 段階、他は既定値。7 × 41 = 287 通り</li><li><strong>同時に振る</strong> … 7 個すべてを 3 水準で総当たり。3⁷ = <strong>2,187 通り</strong></li></ul>
+<p>同時振りをやるのは、OAT だと「一つずつなら平気だが、組み合わせると壊れる」を見逃すためです。 乱数は使っていないので、何度実行しても同じ結果になります。</p>
+<hr>
+<h2 id="s1">2. 揺れない結論</h2>
+<h3>2-1. Tip 導体を含む橋絡は起きない</h3>
+<p><strong>これがこのプロジェクトの中心的な主張で、感度解析でも揺れませんでした。</strong></p>
+<div class="tw"><table><thead><tr><th>確認</th><th>結果</th></tr></thead><tbody><tr><td>OAT（compliance 以外の 6 パラメータ、246 通り）</td><td>Tip 橋絡 <strong>0 件</strong></td></tr><tr><td>同時振りのうち compliance &lt; 0.15 mm（<strong>729 通り</strong>）</td><td>Tip 橋絡 <strong>0 件</strong></td></tr><tr><td>Tip 橋絡が始まる compliance</td><td><strong>0.15375 mm</strong></td></tr></tbody></table></div>
+<p>そして 0.15375 という値には意味があります。<strong>Tip 導体の最大半径 1.600 と Ring / Sleeve の 1.750 の差、ちょうど 0.150 mm の直上</strong>です。</p>
+<p>これは偶然ではなく、計算式からそのまま出ます。接点はパッド内で一番高い面 （Ring の 1.750）に押し上げられ、そこから <code>compliance</code> だけ低い面までしか届きません。 Tip 面（1.600）に届く条件は <code>1.600 ≥ 1.750 − compliance</code>、つまり <code>compliance ≥ 0.150</code>。 <strong>パッド幅にも接点位置にも一切依存しません。</strong></p>
+<div class="note"><p>つまり「第1絶縁帯で橋絡しない」は、**仮定を選んだ結果ではなく、</p><p>図面記載の φ3.20 と φ3.50 という 2 つの FACT から出る幾何的な帰結**です。</p><p>採用している compliance 0.05 は、しきい値 0.154 の <strong>1/3</strong> です。</p></div>
+<h3>2-2. 橋絡するのは Ring↔Sleeve だけ</h3>
+<p>完全挿入が成立する全構成で、観測された橋絡は <strong><code>RING+SLEEVE</code> のみ</strong>でした （compliance を 0.15 以上に上げた構成を除く）。</p>
+<h3>2-3. Tip 接点・Ring 接点は橋絡に関与しない</h3>
+<p><code>tip.axialCenter</code> / <code>ring.axialCenter</code> / <code>tip.padWidth</code> / <code>ring.padWidth</code> の <strong>4 つをどう振っても、橋絡の深さは 11.77 mm から動きません</strong>（幅 0.00）。</p>
+<p>橋絡を起こしているのは帰線（Sleeve）接点だけなので、当然ではありますが、 <strong>「橋絡の数字は帰線接点の仮定だけに依存する」</strong>と言い切れることには意味があります。 不確かさの発生源が 2 つに絞れます。</p>
+<hr>
+<h2 id="s2">3. 揺れる数字</h2>
+<p><strong>橋絡の深さを動かすのは、帰線接点の 2 つのパラメータだけです。</strong></p>
+<div class="tw"><table><thead><tr><th>パラメータ</th><th>最初の橋絡</th><th>帰線接点が Tip に触れる</th><th>全部が正常につながる</th></tr></thead><tbody><tr><td><code>sleeve.axialCenter</code> 0.45〜4.55</td><td><strong>9.02〜13.12</strong>（幅 4.10）</td><td>1.18〜5.28（幅 4.10）</td><td>12.34〜13.30</td></tr><tr><td><code>sleeve.padWidth</code> 0.01〜5.00</td><td><strong>9.71〜11.84</strong>（幅 2.13）</td><td>1.88〜4.32（幅 2.44）</td><td>12.34〜14.00</td></tr><tr><td><code>ring.axialCenter</code> 5.98〜8.23</td><td>11.77（不変）</td><td>3.93（不変）</td><td>11.96〜13.46</td></tr><tr><td><code>tip.axialCenter</code> 9.48〜13.40</td><td>11.77（不変）</td><td>3.93（不変）</td><td>12.34〜13.76</td></tr><tr><td><code>ring.padWidth</code> 0.01〜2.80</td><td>11.77（不変）</td><td>3.93（不変）</td><td>11.96〜12.58</td></tr><tr><td><code>tip.padWidth</code> 0.01〜4.80</td><td>11.77（不変）</td><td>3.93（不変）</td><td>12.34（不変）</td></tr><tr><td><code>compliance</code> 0.00〜0.30</td><td>8.27〜11.77 ※</td><td>3.93〜4.05</td><td>12.34〜12.43</td></tr></tbody></table></div>
+<p>※ compliance の 8.27 は、0.15 を超えて<strong>偽の Tip 橋絡</strong>が復活した構成の値です。 0.15 未満に限れば 11.77 で不変。</p>
+<h3>Ring 側ブレーク接点が開く深さ</h3>
+<p><code>ring.axialCenter</code> で <strong>6.93〜9.18</strong>（幅 2.25）、<code>ring.padWidth</code> で 6.93〜8.29（幅 1.36）動きます。 既定値では 8.06 mm ですが、<strong>この数字は仮定依存です。</strong></p>
+<hr>
+<h2 id="s3">4. 読み方</h2>
+<p>README や REPORT に載せている深さの数字は、<strong>帰線接点の位置とパッド幅を 現在の仮定値に固定したときの値</strong>です。それらは一次資料に無い仮定なので、 数字は次の幅を持つと読んでください。</p>
+<div class="tw"><table><thead><tr><th>事象</th><th class="num">既定値</th><th>現実的な幅</th></tr></thead><tbody><tr><td>帰線接点がプラグ Tip に触れ始める</td><td class="num">3.93 mm</td><td><strong>1.2〜5.3 mm</strong></td></tr><tr><td>Ring 側ブレーク接点が開く</td><td class="num">8.06 mm</td><td><strong>6.9〜9.2 mm</strong></td></tr><tr><td>Ring↔Sleeve 橋絡が始まる</td><td class="num">11.77 mm</td><td><strong>9.0〜13.1 mm</strong></td></tr><tr><td>全接点が正しくつながる</td><td class="num">12.34 mm</td><td><strong>11.96〜14.00 mm</strong></td></tr></tbody></table></div>
+<p>一方で、<strong>次のことは幅を持ちません。</strong></p>
+<ul><li>挿入の途中で、帰線接点がプラグの Tip 導体・Ring 導体の上を順に通過する</li><li>その過程で、Ring↔Sleeve の橋絡（短絡）が必ず 1 回起きる</li><li><strong>Tip↔Ring の橋絡は起きない</strong></li><li>ブレーク接点が開くのは、正しい結線が完成するより前である</li></ul>
+<p><strong>「何が起きるか」は決まっていて、「何 mm で起きるか」が決まっていない</strong>、という状態です。</p>
+<hr>
+<h2 id="s4">5. この解析の限界</h2>
+<ul><li><strong>3極（TRS）× 3極ジャックだけ</strong>を対象にしました。4極側は接点位置が全面的に仮定なので、 同じことをやっても「仮定を振ったら仮定の分だけ動いた」以上のことは言えません。</li><li>同時振りは各パラメータ <strong>3 水準</strong>です。範囲の端と中央しか見ていないので、 範囲の内側に狭い異常領域があれば見逃します。OAT は 41 段階なので、 単独パラメータについてはもっと細かく見ています。</li><li>同時振りの走査刻みは 0.02 mm です。<strong>これより狭い橋絡窓は取りこぼします</strong> （既定構成の橋絡窓は 0.17 mm なので、8 点以上に当たります）。</li><li>2,187 通りのうち完全挿入が成立したのは <strong>308 通り</strong>でした。 パッド幅を導体幅いっぱいまで広げるなど、端の組み合わせでは結線が壊れるためです。 上の「揺れる幅」は、<strong>結線が成立する構成だけ</strong>を対象に集計しています。</li><li><strong>これは実物の検証ではありません。</strong> モデルの内部で、仮定をどう選び直しても 結論が変わらないことを確かめただけです。実物との照合は依然として <a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a> の手順が必要です。</li></ul>
+</div>
+</body>
+</html>
