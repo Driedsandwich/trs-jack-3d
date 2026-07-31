@@ -138,7 +138,9 @@
 <pre><code>   LED + ボタン電池 + 抵抗（直列）
         ├── プラグ Tip 線
         └── プラグ Ring 線     ← この 2 本の間が短絡したら光る</code></pre>
-<p><strong>テスターの導通ブザーは勧めません。</strong> 短絡する窓が 0.18 mm しかないので、 ブザーの応答が間に合わず見逃します。LED の直列回路なら瞬時に光ります。</p>
+<p><strong>LED の直列回路を勧めます。</strong> ただし理由は「速すぎるから」ではありません。 窓 0.18 mm を 0.2〜0.5 mm/s で通すと、短絡している時間は <strong>0.36〜0.90 秒</strong>あります。 導通ブザー（応答は数 ms）でも十分に捉えられる長さです。</p>
+<p>LED を勧めるのは次の 2 点です。</p>
+<ul><li><strong>接触が不安定なときにそれが見える。</strong> ブザーは鳴る／鳴らないの二値ですが、 LED はちらつきや薄明かりとして中間状態が出ます。判定表の「光らない」を 「接触していない」と読んでよいかの確認になります。</li><li><strong>ノギスの目盛りと同時に見られる。</strong> 音だと、鳴った瞬間のすき間を読むのに 目を離す必要があります。</li></ul>
 <ol><li>プラグに Tip / Ring / Sleeve の 3 本の線を出す</li><li>LED 回路を Tip 線と Ring 線につなぐ</li><li>すき間 6.0 mm から 5.3 mm までを <strong>0.2〜0.5 mm/s</strong> でゆっくり通す</li><li><strong>一瞬でも光るか</strong>を見る。<strong>3 回以上繰り返す</strong></li></ol>
 <h3>判定は 2×2 で決まる</h3>
 <p>対照実験を同時にやります。<strong>プラグの Ring 線と Sleeve 線</strong>の間も同じ回路で見てください （すき間 2.5 mm → 1.8 mm を同じ速度で通す）。こちらは<strong>修正前も修正後も光る</strong>予測です。</p>
@@ -171,10 +173,22 @@
 <p>プラグは指で押すと傾きます。まっすぐ入るよう、指先で軸を支えてください。</p>
 <hr>
 <h2 id="s3">3. 必要なもの</h2>
-<div class="tw"><table><thead><tr><th>品目</th><th>型番・目安</th><th>概算</th><th>備考</th></tr></thead><tbody><tr><td>ジャック</td><td>Lumberg <strong>1503 09</strong></td><td>€1.4〜2.0</td><td>Bürklin 733個在庫 / Rapid 40個在庫。単品購入可</td></tr><tr><td>プラグ</td><td>Lumberg <strong>1532 10</strong></td><td>€3〜4</td><td>同じ販路。まず1個ずつで足りる</td></tr><tr><td>デジタルノギス</td><td>0.01 mm 表示</td><td>¥2,000〜4,000</td><td>すき間の測定に必須</td></tr><tr><td>テスター</td><td>導通ブザー付き</td><td>¥1,500〜3,000</td><td>クリップ付きテストリードがあると格段に楽</td></tr><tr><td>送料</td><td>欧州発</td><td>€15〜25</td><td>ここが一番高い。2〜4週間</td></tr></tbody></table></div>
-<p><strong>合計おおよそ ¥6,000〜10,000、納期 2〜4週間。</strong> ノギスとテスターを既にお持ちなら部品と送料だけです。</p>
+<h3>本体（欧州から取り寄せ）</h3>
+<div class="tw"><table><thead><tr><th>品目</th><th>型番</th><th class="num">数</th><th>在庫（2026-08-01 メーカーサイト調べ）</th></tr></thead><tbody><tr><td>ジャック</td><td>Lumberg <strong>1503 09</strong></td><td class="num">2</td><td>Farnell GB 1,873 ／ Arrow DE 1,000 ／ Bürklin DE 529 ／ TME PL 431</td></tr><tr><td>プラグ</td><td>Lumberg <strong>1532 10</strong></td><td class="num">1</td><td>Lumberg DE 1,200 ／ Bürklin DE 501 ／ Arrow DE 38</td></tr></tbody></table></div>
+<div class="note"><p><strong>プラグの方が探しにくい。</strong> 1532 10 は TME / Farnell / RS の検索に出てきません</p><p>（同じ 1532 系でも 02 / 04 / 05 / 06 しか並びません）。</p><p>メーカー自身のページには在庫が出ているので、**Bürklin か Arrow、あるいは</p><p>Lumberg への直接問い合わせ**が確実です。</p></div>
+<h3>測定4（決着実験）の LED 回路</h3>
+<div class="tw"><table><thead><tr><th>品目</th><th>目安</th><th>備考</th></tr></thead><tbody><tr><td>赤色 LED</td><td>Vf 約 1.8〜2.1 V</td><td>秋月電子などで数十円。低電流で光るものが見やすい</td></tr><tr><td>抵抗</td><td>100〜330 Ω</td><td>CR2032 3 V − Vf 2 V で 3〜10 mA 程度になる値</td></tr><tr><td>CR2032 + ホルダー</td><td>電池 ¥200/5個・ホルダー ¥75〜100</td><td>秋月 通販コード 105694（電池）/ 101443・100706（ホルダー）</td></tr><tr><td>配線</td><td>みの虫クリップ付きリード</td><td>プラグの Tip / Ring / Sleeve から線を出すため</td></tr></tbody></table></div>
+<div class="note"><p>CR2032 は内部抵抗が大きい電池ですが、<strong>この用途では問題になりません</strong>。</p><p>見るのは 0.36〜0.90 秒の点灯で、必要な電流も数 mA だからです。</p><p>手持ちの単3×2 本（3 V）でも同じことができます。</p></div>
+<h3>測定器</h3>
+<div class="tw"><table><thead><tr><th>品目</th><th>目安</th><th>概算</th><th>備考</th></tr></thead><tbody><tr><td>デジタルノギス</td><td>0.01 mm 表示</td><td>¥2,000〜4,000</td><td>すき間の測定に必須</td></tr><tr><td>テスター</td><td>導通ブザー付き</td><td>¥1,500〜3,000</td><td>§1・§2 用。クリップ付きリードがあると格段に楽</td></tr></tbody></table></div>
+<h3>費用と納期</h3>
+<div class="tw"><table><thead><tr><th></th><th>概算</th></tr></thead><tbody><tr><td>部品（ジャック2・プラグ1）</td><td>€6〜10</td></tr><tr><td>送料（欧州発）</td><td>€15〜25</td></tr><tr><td>LED 回路一式</td><td>¥500 以下</td></tr><tr><td>ノギス・テスター（未所持なら）</td><td>¥3,500〜7,000</td></tr></tbody></table></div>
+<p><strong>部品と送料だけなら ¥4,000〜6,000、納期 2〜4 週間。</strong> 一番高いのは送料なので、他に欲しい部品があればまとめて頼むほうが得です。</p>
 <h3>買える所</h3>
-<ul><li><a href="https://www.buerklin.com/en/p/lumberg/phono-connectors/1503-09/41P1263/">Bürklin Elektronik</a>（ドイツ、在庫733個、€1.37〜2.02）</li><li><a href="https://www.rapidonline.com/lumberg-1503-09-jack-socket-3-5mm-angled-chassis-pcb-mount-3-pole-stereo-54-4736">Rapid Electronics</a>（英国、在庫40個）</li><li><a href="https://www.tme.com/us/en-us/details/1503-09/jack-connectors/lumberg/1503-09/">TME</a>（ポーランド、日本向け発送あり）</li><li><a href="https://octopart.com/1503+09-lumberg-5404534">Octopart</a> で在庫と価格を横断比較できます</li></ul>
+<p><strong>両方を 1 か所で買えるのは Bürklin と Arrow です。</strong>（ジャックだけなら選択肢はもっと広い）</p>
+<div class="tw"><table><thead><tr><th>販路</th><th>ジャック 1503 09</th><th>プラグ 1532 10</th></tr></thead><tbody><tr><td><a href="https://www.buerklin.com/en/p/lumberg/phono-connectors/1503-09/41P1263/">Bürklin</a>（独）</td><td>○ 529</td><td>○ 501</td></tr><tr><td>Arrow（独）</td><td>○ 1,000</td><td>○ 38</td></tr><tr><td>Lumberg 直（独）</td><td>—</td><td>○ 1,200</td></tr><tr><td><a href="https://uk.farnell.com/lumberg/1503-09/connector-rca-jack-3-5mm-3way/dp/1243244">Farnell</a>（英）</td><td>○ 1,873</td><td>✗ 掲載なし</td></tr><tr><td><a href="https://www.tme.com/us/en-us/details/1503-09/jack-connectors/lumberg/1503-09/">TME</a>（波）</td><td>○ 431</td><td>✗ 掲載なし</td></tr><tr><td><a href="https://www.rapidonline.com/lumberg-1503-09-jack-socket-3-5mm-angled-chassis-pcb-mount-3-pole-stereo-54-4736">Rapid</a>（英）</td><td>○</td><td>✗ 掲載なし</td></tr></tbody></table></div>
+<p>在庫数は 2026-08-01 に<a href="https://www.lumberg.com/en/products/product/1532+10">メーカー製品ページ</a>で確認した値です。 横断比較には <a href="https://octopart.com/1503+09-lumberg-5404534">Octopart</a> も使えます。</p>
+<div class="note"><p><strong>日本向けの送料と最低注文額は未確認です。</strong> Bürklin / Farnell の該当ページが</p><p>自動取得を拒否したため、金額を裏取りできていません。<strong>発注前にご自身で確認してください。</strong></p><p>Farnell は日本法人（jp.farnell.com）があるので、ジャックだけならそちらが早い可能性があります。</p></div>
 <div class="note"><p>データシートの PU（包装単位）は 500 個ですが、これはメーカー出荷の単位です。</p><p>上記の流通各社はバラ売りしています。</p></div>
 <h3>予備を買うか</h3>
 <p>ジャックは<strong>2個</strong>買うことを勧めます。1個は測定用、1個は必要になったとき切断して 内部を直接見るためです。単価が安いので、選択肢を残しておく価値があります。</p>
