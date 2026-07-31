@@ -12,6 +12,16 @@
 > 一番の狙いは、**プラグを途中まで挿したときに内部で何が起きているか**を、
 > 見た目の色替えではなく実際の幾何計算で見せることです。
 
+| 完全挿入 | 半挿し（帰線接点が Tip 導体に触れている） |
+|---|---|
+| ![完全挿入](docs/screenshots/01_full_insertion.png) | ![半挿し](docs/screenshots/02_half_inserted.png) |
+
+| 橋絡（Ring と Sleeve が同時に短絡する深さ） | 断面 |
+|---|---|
+| ![橋絡](docs/screenshots/03_bridged.png) | ![断面](docs/screenshots/04_section.png) |
+
+<sub>いずれも `npm run screenshots` が実ブラウザを操作して生成したものです（加工していません）。</sub>
+
 ---
 
 ## 何が見えるのか
@@ -195,7 +205,7 @@ src/
 - 未確認事項・資料の矛盾 → [UNKNOWNS.md](UNKNOWNS.md)
 - 第三者資料（図面・CAD）の扱い → [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 - 検証結果 → [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md)
-- **実物との突き合わせ計画 → [docs/VERIFICATION_PLAN.md](docs/VERIFICATION_PLAN.md)**（部品の手配待ち・[HTML版](docs/VERIFICATION_PLAN.html)）
+- **実物との突き合わせ計画 → [docs/VERIFICATION_PLAN.md](docs/VERIFICATION_PLAN.md)**（部品の手配待ち）
 
 **重要**: 外形寸法はメーカー公開図面に基づきますが、**ジャック内部の接点ばねの寸法は
 どのデータシートにも CAD にも含まれていません**。内部接点はデータシートの回路記号、
