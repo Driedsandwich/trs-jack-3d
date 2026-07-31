@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>実物照合の手順</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">1. 何を測ると何が分かるか</a></li>
+    <li><a href="#s1">1-2. 決着実験 — 橋絡がどこで起きるか</a></li>
+    <li><a href="#s2">2. 深さをどう決めるか</a></li>
+    <li><a href="#s3">3. 必要なもの</a></li>
+    <li><a href="#s4">4. 合否の基準</a></li>
+    <li><a href="#s5">5. 測った後どうするか</a></li>
+    <li><a href="#s6">6. この実験で分からないこと</a></li>
+    <li><a href="#s7">7. 進め方</a></li>
+  </ol>
+</nav>
+<h1>実物との突き合わせ計画</h1>
+<div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
+<p>作成 2026-07-31 ／ 状態: <strong>部品の手配待ち</strong></p>
+<p>このモデルの一番弱いところは、<strong>ジャック内部の接点ばねの寸法をすべて仮定で置いている</strong>ことです （<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §3、<a href="../ASSUMPTIONS.md">ASSUMPTIONS.md</a> A）。 データシートにもメーカー CAD にも書かれていないので、図面からは埋められません。</p>
+<p>ただし幸運なことに、<strong>その仮定は電気的に測れます。</strong> テスターで端子間の導通を見ながらプラグをゆっくり挿していけば、 接点が切り替わる深さが分かります。モデルはその深さを予測しているので、当たり外れが判定できます。</p>
+<p>この文書は、その測定をどうやるかを決めたものです。</p>
+<hr>
+<h2 id="s0">1. 何を測ると何が分かるか</h2>
+<p>内部で起きていること（接点の状態）はテスターでは見えません。見えるのは端子間の導通だけです。 そこで、モデルの出力を「テスターで見える形」に変換しました（<code>npm run predict:probe</code> で再生成できます）。</p>
+<h3>一番おいしい観測点 — ブレーク接点</h3>
+<p><strong>ジャックだけあれば測れて、しかも内部接点の位置がそのまま出ます。</strong> プラグに配線する必要すらありません。テスターの棒を2本のピンに当てるだけです。</p>
+<h4>Ring 側ブレーク接点（ピン2 ↔ ピン4）</h4>
+<div class="tw"><table><thead><tr><th class="num">深さ</th><th class="num">すき間</th><th>変化</th></tr></thead><tbody><tr><td class="num">8.06 mm</td><td class="num">5.94 mm</td><td>閉 → <strong>開</strong></td></tr><tr><td class="num">9.43 mm</td><td class="num">4.57 mm</td><td>開 → <strong>閉</strong> ← ここが山場</td></tr><tr><td class="num">11.23 mm</td><td class="num">2.77 mm</td><td>閉 → <strong>開</strong></td></tr></tbody></table></div>
+<p><strong>「いったん開いて、また閉じて、また開く」</strong> という予測が出ています。 これは意図して作った挙動ではなく、プラグ先端の逆テーパ（先端の円錐の後ろで径が φ3.02 → φ2.59 へ細くなる）を接点ばねが下ることで、押付が一時的にしきい値を割るためです。</p>
+<p>（表の値は走査刻み 0.01mm での出力。刻みを 0.005mm にすると 8.05mm と出るなど、末尾 0.01mm は揺れる。 合否は ±0.3mm で見るので実用上は問題にならない。）</p>
+<p><strong>この「再閉」が起きるかどうかが、この実験の核心です。</strong> 起きれば、プラグ外形の実測と Ring 接点の位置が同時に裏付けられます。 起きなければ、どこかの仮定が間違っているとはっきり分かります。</p>
+<h4>Tip 側ブレーク接点（ピン3 ↔ ピン5）</h4>
+<div class="tw"><table><thead><tr><th class="num">深さ</th><th class="num">すき間</th><th>変化</th></tr></thead><tbody><tr><td class="num">12.01 mm</td><td class="num">1.99 mm</td><td>閉 → <strong>開</strong></td></tr></tbody></table></div>
+<p>こちらは1回だけ。素直な観測点です。</p>
+<h3>余力があれば — プラグ導体との導通</h3>
+<p>プラグの端子に線を出せば、こちらも測れます。半挿しの誤接触がそのまま見えます。</p>
+<div class="tw"><table><thead><tr><th>ピン</th><th class="num">深さ</th><th class="num">すき間</th><th>つながる先</th></tr></thead><tbody><tr><td>ピン1（Sleeve 接点）</td><td class="num">3.93 mm</td><td class="num">10.07 mm</td><td>→ <strong>プラグ Tip</strong>（帰線が左信号に触れる）</td></tr><tr><td>〃</td><td class="num">6.32 mm</td><td class="num">7.68 mm</td><td>→ 切れる（絶縁帯を通過）</td></tr><tr><td>〃</td><td class="num">7.03 mm</td><td class="num">6.97 mm</td><td>→ プラグ Tip</td></tr><tr><td>〃</td><td class="num">8.26 mm</td><td class="num">5.74 mm</td><td>→ 切れる（第1絶縁帯を通過）</td></tr><tr><td>〃</td><td class="num">8.27 mm</td><td class="num">5.73 mm</td><td>→ プラグ Ring</td></tr><tr><td>〃</td><td class="num">11.77 mm</td><td class="num">2.23 mm</td><td>→ <strong>Ring と Sleeve の両方</strong>（橋絡）</td></tr><tr><td>〃</td><td class="num">11.95 mm</td><td class="num">2.05 mm</td><td>→ <strong>プラグ Sleeve</strong>（ようやく正常）</td></tr><tr><td>ピン2（Ring 接点）</td><td class="num">8.01 mm</td><td class="num">5.99 mm</td><td>→ プラグ Tip</td></tr><tr><td>〃</td><td class="num">10.04 mm</td><td class="num">3.96 mm</td><td>→ 切れる</td></tr><tr><td>〃</td><td class="num">11.11 mm</td><td class="num">2.89 mm</td><td>→ プラグ Tip</td></tr><tr><td>〃</td><td class="num">12.17 mm</td><td class="num">1.83 mm</td><td>→ 切れる</td></tr><tr><td>〃</td><td class="num">12.34 mm</td><td class="num">1.66 mm</td><td>→ <strong>プラグ Ring</strong>（正常）</td></tr><tr><td>ピン3（Tip 接点）</td><td class="num">11.96 mm</td><td class="num">2.04 mm</td><td>→ <strong>プラグ Tip</strong>（正常）</td></tr></tbody></table></div>
+<hr>
+<h2 id="s1">1-2. 決着実験 — 橋絡がどこで起きるか</h2>
+<p><strong>この 1 つの測定だけで、モデルの修正が正しかったかどうかが決まります。</strong></p>
+<h3>何が争点か</h3>
+<p>2026-07-31 の公開前監査で、接触判定に誤りが見つかりました。 接点が届いているかを「たわむ<strong>前</strong>の自由半径」で判定していて、 プラグに押し開かれたあとの位置で見直していなかったのです。</p>
+<p>その結果、修正前と修正後で<strong>予測が正面から食い違います</strong>。</p>
+<div class="tw"><table><thead><tr><th></th><th>第1絶縁帯（Tip↔Ring）</th><th>第2絶縁帯（Ring↔Sleeve）</th></tr></thead><tbody><tr><td><strong>修正前</strong></td><td>深さ 8.27〜8.44 mm で<strong>橋絡する</strong></td><td>11.77〜11.94 mm で橋絡する</td></tr><tr><td><strong>修正後（現在）</strong></td><td><strong>一度も橋絡しない</strong></td><td>11.77〜11.94 mm で橋絡する</td></tr></tbody></table></div>
+<p>修正の根拠は、プラグ導体の<strong>高さの差</strong>です。Tip は最大 φ3.20（半径 1.600）、 Ring / Sleeve は φ3.50（半径 1.750）。<strong>Tip だけ 0.15 mm 低い。</strong> 接点は Ring に押し上げられた位置にいるので、0.15 mm 下の Tip 面には届かない ―― という理屈です。</p>
+<h3>先に 30 秒でできる事前確認</h3>
+<p><strong>部品が届いたら、まずノギスでプラグの直径を 2 箇所測ってください。</strong></p>
+<div class="tw"><table><thead><tr><th>測る場所</th><th>予測</th></tr></thead><tbody><tr><td>Tip 導体の後端（先端から約 4.5 mm）</td><td><strong>φ3.20</strong></td></tr><tr><td>Ring 導体（先端から約 6.5 mm）</td><td><strong>φ3.50</strong></td></tr><tr><td>その差</td><td><strong>0.30 mm</strong></td></tr></tbody></table></div>
+<p><strong>差が 0.24 mm を下回ったら、この実験の前提そのものが崩れます。</strong> 修正の根拠は「Tip が Ring より 0.15 mm 低い（半径で）」なので、 実物にその段差が無ければ、下の導通試験をするまでもなく修正が間違っていたことになります。</p>
+<h3>測り方 — プラグの Tip 線と Ring 線の間を見る</h3>
+<p>橋絡が起きると、ジャックの帰線接点が 2 つのプラグ導体を橋渡しします。 つまり<strong>プラグ側の 2 本の線どうしが短絡します</strong>。だからプラグ側だけを見れば分かります。</p>
+<pre><code>   LED + ボタン電池 + 抵抗（直列）
+        ├── プラグ Tip 線
+        └── プラグ Ring 線     ← この 2 本の間が短絡したら光る</code></pre>
+<p><strong>テスターの導通ブザーは勧めません。</strong> 短絡する窓が 0.18 mm しかないので、 ブザーの応答が間に合わず見逃します。LED の直列回路なら瞬時に光ります。</p>
+<ol><li>プラグに Tip / Ring / Sleeve の 3 本の線を出す</li><li>LED 回路を Tip 線と Ring 線につなぐ</li><li>すき間 6.0 mm から 5.3 mm までを <strong>0.2〜0.5 mm/s</strong> でゆっくり通す</li><li><strong>一瞬でも光るか</strong>を見る。<strong>3 回以上繰り返す</strong></li></ol>
+<h3>判定は 2×2 で決まる</h3>
+<p>対照実験を同時にやります。<strong>プラグの Ring 線と Sleeve 線</strong>の間も同じ回路で見てください （すき間 2.5 mm → 1.8 mm を同じ速度で通す）。こちらは<strong>修正前も修正後も光る</strong>予測です。</p>
+<div class="tw"><table><thead><tr><th>Ring↔Sleeve（対照）</th><th>Tip↔Ring（本命）</th><th>判定</th></tr></thead><tbody><tr><td><strong>光る</strong></td><td><strong>光らない</strong></td><td><strong>修正後のモデルが正しい。</strong> 高さの段差の解釈が裏付けられた</td></tr><tr><td><strong>光る</strong></td><td><strong>光る</strong></td><td><strong>修正前が正しく、修正が誤り。</strong> 接点は 0.154 mm 以上下の面まで追従している</td></tr><tr><td>光らない</td><td>—</td><td><strong>測定が成立していない。</strong> 配線・速度・LED 回路を見直す。またはパッド幅が 0.72 mm 以下（本命の陰性は無意味）</td></tr><tr><td>光らない</td><td>光る</td><td>ありえない。配線ミスを疑う</td></tr></tbody></table></div>
+<p>対照が光ることが、<strong>「0.18 mm の一瞬の短絡を検出できる装置になっている」ことの証明</strong>です。 これが無いと「Tip↔Ring が光らなかった」に意味がありません。</p>
+<h3>なぜこの測り方が強いか</h3>
+<p><strong>深さを測る必要がありません。</strong> 見るのは光るか光らないかだけです。</p>
+<p>深さで判別しようとすると失敗します。修正前後で予測が食い違う深さの最大差は <strong>0.180 mm</strong> しかなく、 合否基準の ±0.3 mm を下回るからです。<strong>この論点は深さの測定では決着しません。</strong></p>
+<p>もうひとつ、この実験には非対称性があります。 <strong>修正後のモデルは、パッド幅をどれだけ広げても Tip↔Ring 短絡を起こせません。</strong> だから一度でも光れば、パラメータ調整では逃げられず、修正が無条件に反証されます。</p>
+<h3>おまけ — 対照の窓幅からパッド幅が逆算できる</h3>
+<p>Ring↔Sleeve が光っている間のすき間の幅を測ると、帰線接点のパッド幅が出ます。</p>
+<pre><code>パッド幅 ≒ 光っている窓の幅 + 0.72</code></pre>
+<p>いま 0.9 mm と仮定している <code>jack.contact.sleeve.padWidth</code> を、ASSUMPTION から上げられます （予測: 窓幅 0.18 mm）。これは余談ではなく、<strong>本命の陰性結果を解釈するために要ります。</strong> 窓が見えなければパッド幅は 0.72 mm 以下で、そもそも Tip↔Ring 試験が成立しません。</p>
+<h3>ブレーク接点では決着しません</h3>
+<p>§1 の「一番おいしい観測点」（ピン2↔ピン4、ピン3↔ピン5）は、この論点に対して<strong>判別力がゼロ</strong>です。 開閉する深さは修正前後でまったく同じ（8.06 / 9.43 / 11.23 / 12.01 mm）でした。</p>
+<p>あちらはプラグ外形と接点の軸位置を試す実験で、橋絡の真偽は試せません。 <strong>この決着実験にはプラグ側への配線が必須</strong>です。プラグ 1532 10 ははんだ付け端子を持つので、 3 本のリード線をはんだ付けするか、市販の 3.5 mm ステレオケーブルを切って各線を確認してください。</p>
+<hr>
+<h2 id="s2">2. 深さをどう決めるか</h2>
+<p><strong>深さそのものを測るのは難しいので、「すき間」を測ります。</strong></p>
+<pre><code>   プラグ肩            ジャック前面
+      │                    │
+      │◀──  すき間  ──▶│
+      └────────────────────┴──── 奥
+                              深さ = 14.00 − すき間</code></pre>
+<p>完全に挿し込むとプラグの肩がジャック前面に当たって止まります。この位置が深さ 14.00 mm です （プラグ肩の外径 φ10（図面記載）がボア φ3.6 より大きいため物理的にそこで止まる）。 つまり<strong>すき間ゼロ＝深さ 14.00 mm</strong> で、自動的に基準が決まります。</p>
+<p>すき間は 1.6〜10 mm の範囲なので、ノギスの外側ジョーやデプスバーで素直に測れます。</p>
+<h3>測り方（1チャンネルずつ）</h3>
+<p>目標の深さに合わせにいくのではなく、<strong>変化した所で止めて測る</strong>ほうが簡単で正確です。</p>
+<ol><li>ジャックを動かないように固定する（万力・両面テープ・ブレッドボードなど）</li><li>テスターを導通ブザーにして、ピン2とピン4に当てる（クリップ付きが楽）</li><li>プラグをごくゆっくり押し込む</li><li>ブザーが切れた（または鳴った）瞬間に手を止める</li><li>その状態でプラグ肩とジャック前面のすき間をノギスで測る</li><li>深さ = 14.00 − すき間 を記録する</li><li>一度完全に抜いて、<strong>3回繰り返す</strong>（ばらつきを見るため）</li><li>ピン3とピン5でも同じことをする</li></ol>
+<p>プラグは指で押すと傾きます。まっすぐ入るよう、指先で軸を支えてください。</p>
+<hr>
+<h2 id="s3">3. 必要なもの</h2>
+<div class="tw"><table><thead><tr><th>品目</th><th>型番・目安</th><th>概算</th><th>備考</th></tr></thead><tbody><tr><td>ジャック</td><td>Lumberg <strong>1503 09</strong></td><td>€1.4〜2.0</td><td>Bürklin 733個在庫 / Rapid 40個在庫。単品購入可</td></tr><tr><td>プラグ</td><td>Lumberg <strong>1532 10</strong></td><td>€3〜4</td><td>同じ販路。まず1個ずつで足りる</td></tr><tr><td>デジタルノギス</td><td>0.01 mm 表示</td><td>¥2,000〜4,000</td><td>すき間の測定に必須</td></tr><tr><td>テスター</td><td>導通ブザー付き</td><td>¥1,500〜3,000</td><td>クリップ付きテストリードがあると格段に楽</td></tr><tr><td>送料</td><td>欧州発</td><td>€15〜25</td><td>ここが一番高い。2〜4週間</td></tr></tbody></table></div>
+<p><strong>合計おおよそ ¥6,000〜10,000、納期 2〜4週間。</strong> ノギスとテスターを既にお持ちなら部品と送料だけです。</p>
+<h3>買える所</h3>
+<ul><li><a href="https://www.buerklin.com/en/p/lumberg/phono-connectors/1503-09/41P1263/">Bürklin Elektronik</a>（ドイツ、在庫733個、€1.37〜2.02）</li><li><a href="https://www.rapidonline.com/lumberg-1503-09-jack-socket-3-5mm-angled-chassis-pcb-mount-3-pole-stereo-54-4736">Rapid Electronics</a>（英国、在庫40個）</li><li><a href="https://www.tme.com/us/en-us/details/1503-09/jack-connectors/lumberg/1503-09/">TME</a>（ポーランド、日本向け発送あり）</li><li><a href="https://octopart.com/1503+09-lumberg-5404534">Octopart</a> で在庫と価格を横断比較できます</li></ul>
+<div class="note"><p>データシートの PU（包装単位）は 500 個ですが、これはメーカー出荷の単位です。</p><p>上記の流通各社はバラ売りしています。</p></div>
+<h3>予備を買うか</h3>
+<p>ジャックは<strong>2個</strong>買うことを勧めます。1個は測定用、1個は必要になったとき切断して 内部を直接見るためです。単価が安いので、選択肢を残しておく価値があります。</p>
+<hr>
+<h2 id="s4">4. 合否の基準</h2>
+<p>「だいたい合っていた」で終わらせないために、先に線を引いておきます。</p>
+<div class="tw"><table><thead><tr><th>予測とのずれ</th><th>判定</th><th>やること</th></tr></thead><tbody><tr><td><strong>0.3 mm 以内</strong></td><td>モデルは実測と整合</td><td><code>dimensions.json</code> の note に実測日と実測値を追記。grade は DERIVED のまま（実測で裏付いたと明記）</td></tr><tr><td><strong>0.3〜1.0 mm</strong></td><td>位置がずれている</td><td>逆算した軸位置へ更新し、grade を ASSUMPTION → DERIVED に上げる</td></tr><tr><td><strong>1.0 mm 超</strong>、または再閉が起きない</td><td>構造の仮定が違う</td><td>軸位置だけの問題ではない。パッド幅・自由半径・プラグ外形のどれが効いているか切り分ける</td></tr></tbody></table></div>
+<p>0.3 mm という線は、<strong>測定側の誤差の見積り</strong>から決めています。 ノギスの読み ±0.02 mm、切り替わり位置の判断 ±0.1 mm、プラグの傾きによる影響 ±0.1 mm 程度を 足し合わせると 0.2 mm 強になるので、その外側に置きました。</p>
+<h3>定性的な合否（数字より重い）</h3>
+<ul><li><strong>Ring ブレーク接点の「再閉」が起きるか</strong> — 起きなければ、プラグ先端の逆テーパの解釈か Ring 接点の自由半径が違います。数値のずれより重大です</li><li><strong>開閉の回数</strong> — 予測は「開・閉・開」の3回。回数が違えば構造の理解が違います</li><li><strong>ピン1が最初に触れる相手がプラグ Tip か</strong> — 帰線用の接点が左信号に触れるという予測。 ここが違うと接点の並び順の理解が違います</li><li><strong>第1絶縁帯で Tip↔Ring が短絡しないか</strong> — §1-2 の決着実験。鳴ってしまったら、 接触判定の修正そのものが間違っていたことになります。<strong>深さの一致より重い判定です</strong></li></ul>
+<hr>
+<h2 id="s5">5. 測った後どうするか</h2>
+<p>逆算の道具を用意してあります。<strong>測った深さを渡すと、その深さになる接点位置を計算します。</strong></p>
+<pre><code>npm run fit:contacts -- 8.4 12.3 4.1</code></pre>
+<p>引数の順は「Ring ブレーク開放 / Tip ブレーク開放 / Sleeve 接点が Tip に触れ始める」の深さ（mm）です。</p>
+<p>出力されるもの:</p>
+<ul><li>逆算した軸位置と、現モデルからのずれ</li><li><strong>合わせていない残りの切り替わり</strong>が、その軸位置ならどうなるか</li></ul>
+<p>最後のが大事です。合わせるのは各接点につき1点だけにしてあります。 全部を合わせにいくと「合って当然」になり、検証したことになりません。 1点で合わせて、残りが当たるかどうかを見る。それがモデルを試すということです。</p>
+<p>引数なしで実行すると自己検査になります（モデル自身の予測を入れて元の軸位置を復元できるか）。 <strong>現状の復元誤差は 0.0000 mm</strong> です。道具そのものは正しく動いています。</p>
+<pre><code>npm run fit:contacts</code></pre>
+<h3>反映の手順</h3>
+<ol><li>実測値を <code>docs/measurements/2026-XX-XX.md</code> として記録（生データ・3回分・気温も）</li><li><code>npm run fit:contacts -- ...</code> で逆算</li><li>判定表に従って <code>src/data/dimensions.json</code> を更新</li><li><code>npm run test</code> と <code>npm run artifacts</code> を回し、予測がどう変わったか差分で確認</li><li><a href="../UNKNOWNS.md">UNKNOWNS.md</a> §3 の該当項目を「解決済み」に移し、実測日と方法を書く</li><li><a href="TEST_RESULTS.md">TEST_RESULTS.md</a> に実測の節を足す</li></ol>
+<hr>
+<h2 id="s6">6. この実験で分からないこと</h2>
+<p>正直に書いておきます。</p>
+<ul><li><strong>接点ばねの形そのもの</strong>（板厚・梁の長さ・曲げ方）は分かりません。分かるのは 「どの深さで切り替わるか」から逆算した<strong>接触点の軸位置</strong>だけです。 形を知るには切断するしかありません（だから予備を買う）</li><li><strong>押付力（N）</strong> は測れません。ばね定数は依然として仮定のままです</li><li><strong>接触抵抗の絶対値</strong> は、この方法では意味のある精度で出ません。 導通ブザーが鳴るかどうかしか見ていないためです</li><li><strong>4極（TRRS）側の仮定</strong> は、この実験では一切検証されません。別部品が必要です</li><li><strong>接触ドームの追従量そのもの</strong>（0.05 mm と仮定）は測れません。決着実験で分かるのは 「0.118 mm より小さいかどうか」だけで、その中のどこかは決まりません</li></ul>
+<p>つまりこの実験で ASSUMPTION から降ろせるのは「接点の軸位置3つ」と、 間接的に「プラグ外形の解釈」です。37件の仮定のうち片付くのは数件で、 残りは残ります。それでも、<strong>一番効く数件</strong>です。</p>
+<hr>
+<h2 id="s7">7. 進め方</h2>
+<div class="tw"><table><thead><tr><th>段階</th><th>内容</th><th>誰が</th></tr></thead><tbody><tr><td>1</td><td>部品を発注する（ジャック2個・プラグ1個）</td><td>メンテナ</td></tr><tr><td>2</td><td>ノギスとテスターを用意する（既にあれば不要）</td><td>メンテナ</td></tr><tr><td>3</td><td>部品到着まで待つ（2〜4週間）</td><td>—</td></tr><tr><td>4</td><td>測定（§2 の手順、1〜2時間）</td><td>メンテナ（手順は本書のとおり）</td></tr><tr><td>5</td><td>逆算・モデル更新・文書反映</td><td>Claude Code</td></tr></tbody></table></div>
+<p>部品の到着を待つ間にできることは、このモデルの外側にあります（ライセンス整備・公開前監査など）。 測定そのものは部品が届くまで始められません。</p>
+</div>
+</body>
+</html>

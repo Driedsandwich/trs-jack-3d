@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "id": "ds-1532-10",
+      "title": "Data Sheet 1532 10 — Jack plug acc. to JIS C 6560 JC35P3, 3.5 mm, 3 poles/stereo, straight version",
+      "publisher": "Lumberg (Lumberg Holding GmbH & Co. KG)",
+      "partNumber": "1532 10",
+      "docDate": "07/2025",
+      "url": "https://downloads.lumberg.com/datenblaetter/en/1532_10.pdf",
+      "accessed": "2026-07-30",
+      "reliability": "manufacturer",
+      "fetchStatus": "full-text-read",
+      "usageTerms": "Lumberg Legal Notes §2/§5 により、書面同意なく複製・頒布・改変・再送信は不可。本プロジェクトは図面を再配布せず、公開寸法から独自にモデルを作成している。",
+      "usedFor": "プラグの全寸法・材料・電気/機械仕様。図面の外形プロファイル実測の元データ。"
+    },
+    {
+      "id": "ds-1503-09",
+      "title": "Data Sheet 1503 09 — Jack chassis socket acc. to JIS C 6560 JC35J3B, 3.5 mm, 3 poles/stereo, angular version, with 2 break contacts",
+      "publisher": "Lumberg (Lumberg Holding GmbH & Co. KG)",
+      "partNumber": "1503 09",
+      "docDate": "07/2025",
+      "url": "https://downloads.lumberg.com/datenblaetter/en/1503_09.pdf",
+      "accessed": "2026-07-30",
+      "reliability": "manufacturer",
+      "fetchStatus": "full-text-read",
+      "usageTerms": "同上。再配布しない。",
+      "usedFor": "ジャックの外形寸法・基板レイアウト・端子番号・回路記号・材料・電気/機械仕様。"
+    },
+    {
+      "id": "lumberg-1503-09-page",
+      "title": "製品ページ 1503 09 (対応プラグとして 1532 10 を明記)",
+      "publisher": "Lumberg",
+      "partNumber": "1503 09",
+      "url": "https://www.lumberg.com/en/products/product/1503+09",
+      "accessed": "2026-07-30",
+      "reliability": "manufacturer",
+      "fetchStatus": "full-text-read",
+      "usedFor": "1532 10 と 1503 09 が対応する組み合わせであることの確認 (Counterparts 欄)。"
+    },
+    {
+      "id": "lumberg-legal",
+      "title": "Legal Notes (著作権・ライセンス条項)",
+      "publisher": "Lumberg",
+      "url": "https://www.lumberg.com/en/legal-notes",
+      "accessed": "2026-07-30",
+      "reliability": "manufacturer",
+      "fetchStatus": "full-text-read",
+      "usageTerms": "§5「Lumberg Group の書面同意なく複製・頒布・再生産・再送信その他の利用は禁止」。§5 は「本ウェブサイトは Lumberg の知的財産の使用許諾を一切与えない」とも明記。",
+      "usedFor": "メーカー CAD / 図面を成果物に同梱しない判断の根拠。"
+    },
+    {
+      "id": "measure-drawing",
+      "title": "本プロジェクトによるデータシート図面の実測 (1200dpi ラスタ化 + 輪郭検出)",
+      "publisher": "本プロジェクト (自作)",
+      "docDate": "2026-07-30",
+      "accessed": "2026-07-30",
+      "reliability": "secondary",
+      "fetchStatus": "full-text-read",
+      "usageTerms": "自作の測定結果。制約なし。",
+      "usedFor": "図面に数値記載の無い外形プロファイル (先端円錐角、逆テーパ、絶縁帯の縮径量、段位置)。記載寸法 14mm で軸方向を校正。独立にベクタ抽出でも測り、0.05mm 以内で一致。"
+    },
+    {
+      "id": "te-contact-force",
+      "title": "TE Connectivity 製品仕様書 108-19423 (接点押付力の規定値)",
+      "publisher": "TE Connectivity",
+      "url": "https://www.te.com/commerce/DocumentDelivery/DDEController?Action=srchrtrv&DocNm=108-19423&DocType=SS&DocLang=EN",
+      "accessed": "2026-07-30",
+      "reliability": "manufacturer-tech",
+      "fetchStatus": "full-text-read",
+      "usedFor": "接点 1 本あたりの押付力 0.8〜1.3 N/terminal (完全嵌合・初期値)。Lumberg 1503 09 の値ではないため、ばね定数を置く際の妥当性の目安としてのみ使用。"
+    },
+    {
+      "id": "samesky-jack-switch",
+      "title": "Understanding Audio Jack Switches and Schematics",
+      "publisher": "Same Sky (旧 CUI Devices)",
+      "url": "https://www.sameskydevices.com/blog/understanding-audio-jack-switches-and-schematics",
+      "accessed": "2026-07-30",
+      "reliability": "manufacturer-tech",
+      "fetchStatus": "full-text-read",
+      "usedFor": "ブレーク接点 (ノーマルクローズ) の動作機構: プラグの tip が信号ばねを押し広げ、ノーマル接点から離れて開路する、という一般構造の根拠。"
+    },
+    {
+      "id": "patent-us6364717",
+      "title": "US 6,364,717 B1 — 接点ばねの片持ち梁構造と湾曲接触部",
+      "publisher": "US Patent and Trademark Office",
+      "url": "https://patents.google.com/patent/US6364717B1/en",
+      "accessed": "2026-07-30",
+      "reliability": "secondary",
+      "fetchStatus": "full-text-read",
+      "usedFor": "接点ばねを『固定部から斜めに伸びる片持ち梁 + 先端の湾曲接触部』としてモデル化する根拠。寸法の記載は無い。"
+    },
+    {
+      "id": "xref-trrs-dims",
+      "title": "3.5mm プラグ規格図の相互参照 (絶縁帯幅 0.7±0.1 / 軸径 Ø3.5±0.05 / 軸方向基準 5.5±0.2 / 嵌合長 14±0.3 / 先端 Ø3.2・Ø3・Ø2.5・Ø1)",
+      "publisher": "複数メーカー図面および JEITA RC-5325A 参照の二次まとめ",
+      "accessed": "2026-07-30",
+      "reliability": "secondary",
+      "fetchStatus": "partial",
+      "usedFor": "Lumberg 図面から実測した値 (絶縁帯 0.7 / 縮径 φ3.2 / 先端 φ3.0) の独立クロスチェック。数値そのものはこの資料から採っていない。"
+    },
+    {
+      "id": "samesky-sp3544",
+      "title": "SP-3544 mechanical drawing — 3.5mm 4-pole (TRRS) plug",
+      "publisher": "Same Sky (旧 CUI Devices)",
+      "partNumber": "SP-3544",
+      "docDate": "09/12/2024",
+      "url": "https://www.sameskydevices.com/product/resource/sp-3544.pdf",
+      "accessed": "2026-07-31",
+      "reliability": "manufacturer",
+      "fetchStatus": "full-text-read",
+      "usedFor": "4極プラグの導体境界。寸法チェーンが肩基準であること、および Sleeve 露出長 2.5±0.1 の記載。2026-07-31 の 4極訂正の一次根拠。"
+    },
+    {
+      "id": "cliff-fc68124",
+      "title": "FC68124 drawing — 3.5mm 4-pole (TRRS) plug",
+      "publisher": "Cliff Electronic Components Ltd",
+      "partNumber": "FC68124",
+      "accessed": "2026-07-31",
+      "reliability": "manufacturer",
+      "fetchStatus": "full-text-read",
+      "usedFor": "上記の独立クロスチェック。Sleeve 長を直接は書かず、肩から第3絶縁帯前端までを 3.2 と記載する。3.2 − 0.7 = 2.5 で SP-3544 と一致し、別の書き方で同じ配置に収束する。"
+    },
+    {
+      "id": "omtp-spec",
+      "title": "OMTP Local Connectivity: Wired Analogue Audio, Version 1.0 (2007-04-27)",
+      "publisher": "OMTP",
+      "docDate": "2007-04-27",
+      "accessed": "2026-07-30",
+      "reliability": "standard",
+      "fetchStatus": "full-text-read",
+      "url": "http://www.omtp.org/OMTP_Local_Connectivity_Wired_Analogue_Audio_v1_0.pdf",
+      "urlStatus": "dead",
+      "urlNote": "発行時の URL。OMTP は 2010 年に解散し、omtp.org は現在別事業者のドメイン (2026-07-31 確認)。第三者はこの URL から原文に当たれない。",
+      "usedFor": "OMTP 配列 (Tip=L, Ring1=R, Ring2=Mic, Sleeve=GND) と、機械寸法は EIAJ(JEITA) RC-5325A に従うという規定。"
+    },
+    {
+      "id": "android-headset-spec",
+      "title": "Wired audio headset specification (CTIA/AHJ 配列)",
+      "publisher": "Android Open Source Project",
+      "url": "https://source.android.com/docs/core/audio/accessories/headset/plug-headset-spec",
+      "accessed": "2026-07-30",
+      "reliability": "manufacturer-tech",
+      "fetchStatus": "full-text-read",
+      "usedFor": "CTIA 配列 (Tip=L, Ring1=R, Ring2=GND, Sleeve=Mic) の根拠。"
+    },
+    {
+      "id": "jis-c6560",
+      "title": "JIS C 6560 (Concentric plugs and jacks) — 規格本文",
+      "publisher": "日本規格協会 (JSA)",
+      "accessed": "2026-07-30",
+      "reliability": "standard",
+      "fetchStatus": "not-attempted",
+      "usageTerms": "有償規格。本文は入手していない。",
+      "usedFor": "使用していない。Lumberg のデータシートが JC35P3 / JC35J3B への準拠を謳っていることを確認したのみで、規格本文は確認していない。"
+    },
+    {
+      "id": "force-methods",
+      "title": "挿抜力・接触抵抗の測定規格 (IEC 60512 系 / EIA-364 系 / JIS C 5402 系)",
+      "publisher": "IEC / EIA / JIS (二次まとめ)",
+      "accessed": "2026-07-30",
+      "reliability": "secondary",
+      "fetchStatus": "partial",
+      "usedFor": "メーカー公称の挿抜力・接触抵抗が『どういう条件で測った値か』の理解。摩擦係数の数値はここからは採っていない (ASSUMPTION)。"
+    }
+  ]
+}

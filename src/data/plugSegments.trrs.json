@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "_comment": [
+    "4極 (TRRS) プラグ。3極 TRS の検証完了後に追加した (仕様 §13)。",
+    "",
+    "【導体境界は FACT】",
+    "・図面 (Same Sky SP-3544 / Cliff FC68124) の寸法チェーンは肩基準。",
+    "  8.5±0.2 と 5.5±0.2 は、矢印の右端が嵌合長 14 と同じ肩で終わっている。",
+    "  先端基準に直すと 14−8.5=5.5 が Ring1 前端、14−5.5=8.5 が Ring2 前端。",
+    "  Sleeve 露出長 2.5±0.1 から 14−2.5=11.5 が Sleeve 前端。",
+    "  絶縁帯は 3 本とも 0.7±0.1。",
+    "",
+    "  Tip 0-4.8 | 絶縁 4.8-5.5 | Ring1 5.5-7.8 | 絶縁 7.8-8.5 | Ring2 8.5-10.8 | 絶縁 10.8-11.5 | Sleeve 11.5-14.0",
+    "",
+    "  合計 4.8+0.7+2.3+0.7+2.3+0.7+2.5 = 14.0 で閉じる。Ring1 と Ring2 は同じ幅 2.3mm。",
+    "",
+    "【2026-07-31 の訂正】",
+    "・それまで 5.5 と 8.5 を先端基準と誤読し、8.5 を Ring2 の後端としていた。",
+    "  その結果 Ring2 の幅が 0.7mm (絶縁帯と同じ)、Sleeve が 4.8mm という誤った構成になっていた。",
+    "  図面の 2.5±0.1 (Sleeve 長) を拾えていなかったことが、誤りを見逃した直接の原因。",
+    "  訂正により混挿 6 通りすべてが一般に言われる実挙動と一致するようになった。",
+    "  経緯は ASSUMPTIONS.md F-2 を見ること。",
+    "",
+    "【CTIA / OMTP】",
+    "・形状は完全に同一で、機能割当だけが違う (CTIA=L/R/GND/MIC、OMTP=L/R/MIC/GND)。",
+    "  配列の根拠は AOSP (CTIA) と OMTP v1.0 (OMTP)。"
+  ],
+  "common": {
+    "poleCount": 4,
+    "fingerLength": "plug.fingerLength",
+    "bodyDiameter": "plug.bodyDiameter",
+    "radiusProfile": [
+      {
+        "s": 0,
+        "r": "plug.tip.noseRadius",
+        "fillet": true
+      },
+      {
+        "s": "plug.tip.coneEnd",
+        "r": "plug.tip.coneEndRadius"
+      },
+      {
+        "s": "plug.tip.taperEnd",
+        "r": "plug.tip.taperEndRadius"
+      },
+      {
+        "s": "plug.tip.end",
+        "r": "plug.insulatorRadius"
+      },
+      {
+        "s": "plug.ins1.end",
+        "r": "plug.insulatorRadius"
+      },
+      {
+        "s": "plug.ring.start",
+        "r": "plug.bodyRadius"
+      },
+      {
+        "s": "trrs.ring1.end",
+        "r": "plug.bodyRadius"
+      },
+      {
+        "s": "trrs.ring1.end",
+        "r": "plug.insulatorRadius"
+      },
+      {
+        "s": "trrs.ring2.start",
+        "r": "plug.insulatorRadius"
+      },
+      {
+        "s": "trrs.ring2.start",
+        "r": "plug.bodyRadius"
+      },
+      {
+        "s": "trrs.ring2.end",
+        "r": "plug.bodyRadius"
+      },
+      {
+        "s": "trrs.ring2.end",
+        "r": "plug.insulatorRadius"
+      },
+      {
+        "s": "trrs.sleeve.start",
+        "r": "plug.insulatorRadius"
+      },
+      {
+        "s": "trrs.sleeve.start",
+        "r": "plug.bodyRadius"
+      },
+      {
+        "s": "plug.fingerLength",
+        "r": "plug.bodyRadius"
+      }
+    ],
+    "segments": [
+      {
+        "id": "TIP",
+        "label": "Tip 導体",
+        "kind": "conductor",
+        "net": "TIP",
+        "start": 0,
+        "end": "plug.tip.end",
+        "material": "plug-contact-metal"
+      },
+      {
+        "id": "INS1",
+        "label": "第1絶縁帯 (Tip/Ring1 間)",
+        "kind": "insulator",
+        "start": "plug.ins1.start",
+        "end": "plug.ins1.end",
+        "material": "plug-insulator"
+      },
+      {
+        "id": "RING",
+        "label": "Ring 1 導体",
+        "kind": "conductor",
+        "net": "RING",
+        "start": "plug.ring.start",
+        "end": "trrs.ring1.end",
+        "material": "plug-contact-metal"
+      },
+      {
+        "id": "INSM",
+        "label": "第2絶縁帯 (Ring1/Ring2 間)",
+        "kind": "insulator",
+        "start": "trrs.ring1.end",
+        "end": "trrs.ring2.start",
+        "material": "plug-insulator"
+      },
+      {
+        "id": "RING2",
+        "label": "Ring 2 導体",
+        "kind": "conductor",
+        "net": "RING2",
+        "start": "trrs.ring2.start",
+        "end": "trrs.ring2.end",
+        "material": "plug-contact-metal"
+      },
+      {
+        "id": "INS2",
+        "label": "第3絶縁帯 (Ring2/Sleeve 間)",
+        "kind": "insulator",
+        "start": "trrs.ring2.end",
+        "end": "trrs.sleeve.start",
+        "material": "plug-insulator"
+      },
+      {
+        "id": "SLEEVE",
+        "label": "Sleeve 導体",
+        "kind": "conductor",
+        "net": "SLEEVE",
+        "start": "trrs.sleeve.start",
+        "end": "plug.fingerLength",
+        "material": "plug-contact-metal"
+      }
+    ],
+    "handle": {
+      "shoulderDiameter": "plug.handle.shoulderDiameter",
+      "shoulderLength": "plug.handle.shoulderLength",
+      "bodyDiameter": "plug.handle.bodyDiameter",
+      "bodyLength": "plug.handle.bodyLength",
+      "strainReliefLength": "plug.handle.strainReliefLength",
+      "strainReliefDiameter": "plug.handle.strainReliefDiameter",
+      "cableDiameter": "plug.handle.cableDiameter",
+      "cableLength": "plug.handle.cableLength"
+    }
+  },
+  "variants": {
+    "ctia": {
+      "variant": "TRRS-CTIA",
+      "partNumber": "4極 CTIA/AHJ (代表形状)",
+      "manufacturer": "汎用 (JEITA RC-5325A 準拠品を想定)",
+      "netFunctions": {
+        "TIP": "L",
+        "RING": "R",
+        "RING2": "GND",
+        "SLEEVE": "MIC"
+      },
+      "netFunctionsGrade": "FACT",
+      "netFunctionsSources": [
+        "android-headset-spec"
+      ]
+    },
+    "omtp": {
+      "variant": "TRRS-OMTP",
+      "partNumber": "4極 OMTP (代表形状)",
+      "manufacturer": "汎用 (JEITA RC-5325A 準拠品を想定)",
+      "netFunctions": {
+        "TIP": "L",
+        "RING": "R",
+        "RING2": "MIC",
+        "SLEEVE": "GND"
+      },
+      "netFunctionsGrade": "FACT",
+      "netFunctionsSources": [
+        "omtp-spec"
+      ]
+    }
+  }
+}

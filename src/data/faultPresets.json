@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "_comment": [
+    "故障プリセットは正常モデルを書き換えず、パラメータとして重ねて適用する。",
+    "depthMm が null のプリセットは現在の挿入深度を変えない。",
+    "乱数 (断続接触) は既定で無効。有効にしても、ノイズは深度と接点 ID とシードのハッシュから",
+    "作るため、同じ条件なら常に同じ結果になる (再現可能)。"
+  ],
+  "presets": [
+    {
+      "id": "normal",
+      "label": "正常",
+      "description": "完全挿入。Tip/Ring/Sleeve が対応する導体に安定接触し、両方のブレーク接点が開いている。",
+      "depthMm": 14.0,
+      "params": {}
+    },
+    {
+      "id": "half-inserted",
+      "label": "半挿し",
+      "description": "完全挿入の 70%。帰線用の接点が Ring 導体に、Ring 用の接点が Tip 導体に触れている。左右の信号線と帰線が総入れ替わりになった状態。",
+      "depthMm": 9.8,
+      "params": {}
+    },
+    {
+      "id": "shallow",
+      "label": "浅い接触",
+      "description": "プラグ先端の円錐がようやく帰線用接点に届いた位置。押付がほとんど無く、接触は不安定。",
+      "depthMm": 3.95,
+      "params": {}
+    },
+    {
+      "id": "stopped-on-insulator",
+      "label": "絶縁帯上で停止",
+      "description": "Ring 用接点 (パッド 0.55mm) が第1絶縁帯 (0.7mm) の上に完全に乗って止まった状態。右チャンネルの回路だけが開く。パッドが絶縁帯より狭いから起こる。",
+      "depthMm": 12.25,
+      "params": {}
+    },
+    {
+      "id": "stopped-on-boundary",
+      "label": "導体境界で停止",
+      "description": "帰線用接点のパッド (0.9mm) が第2絶縁帯をまたぎ、Ring と Sleeve を同時に短絡している位置。右チャンネルが帰線に落ちる。Ring と Sleeve はどちらも φ3.5 で高さが同じなので、接点が両方に届く。第1絶縁帯では Tip が 0.15mm 低いため、同じことは起きない。",
+      "depthMm": 11.85,
+      "params": {}
+    },
+    {
+      "id": "lateral-offset",
+      "label": "軸ずれ",
+      "description": "プラグがジャック軸から横にずれた状態。片側の接点が強く当たり、反対側が弱くなる。入口ボアの片側隙間は 0.05mm しかないため、0.25mm は誇張表示である。",
+      "depthMm": null,
+      "params": { "lateralOffsetMm": 0.25 }
+    },
+    {
+      "id": "tilt",
+      "label": "傾き",
+      "description": "プラグが軸に対して傾いた状態。奥ほど横ずれが大きくなる。",
+      "depthMm": null,
+      "params": { "tiltDeg": 1.2 }
+    },
+    {
+      "id": "weak-spring",
+      "label": "接点ばねの押付不足",
+      "description": "ばねがへたって押付が公称の 25% に落ちた状態。導体には正しく触れているが、接触が不安定になる。",
+      "depthMm": 14.0,
+      "params": { "springForceScale": 0.25 }
+    },
+    {
+      "id": "worn",
+      "label": "接点摩耗",
+      "description": "接触ドームが減り、自由半径が広がって押付が落ちた状態。たわみが公称の 6 割程度まで落ちる。",
+      "depthMm": 14.0,
+      "params": { "wear": 0.9 }
+    },
+    {
+      "id": "contaminated",
+      "label": "酸化・汚れ",
+      "description": "接触面に絶縁性の皮膜が乗った状態。汚れは円周方向に広がりを持つので、プラグを回すと当たる接点が変わる (回転スライダで確認できる)。",
+      "depthMm": 14.0,
+      "params": { "contamination": 0.95, "rotationDeg": 0 }
+    },
+    {
+      "id": "break-only",
+      "label": "ブレーク接点だけが開いている",
+      "description": "信号接点はまだ正しい導体に届いていないのに、内蔵スイッチだけが先に開いた位置。機器は『プラグが挿さった』と判断するが音は正しく出ない。",
+      "depthMm": 8.1,
+      "params": {}
+    },
+    {
+      "id": "intermittent",
+      "label": "断続接触",
+      "description": "接触が不安定で、わずかな位置変化で導通が切り替わる状態。シード付きで再現可能。",
+      "depthMm": 14.0,
+      "params": { "intermittent": true, "seed": 7, "intermittentAmplitude": 0.75, "springForceScale": 0.5 }
+    }
+  ]
+}

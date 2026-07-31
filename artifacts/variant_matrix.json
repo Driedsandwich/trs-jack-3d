@@ -1,0 +1,787 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-07-31",
+ "note": "混挿の結果は、あらかじめ決めた結論ではなく各接点の軸位置とプラグ導体区間の幾何計算から出している。4極側の導体境界とジャック接点位置には ASSUMPTION が含まれる (ASSUMPTIONS.md 参照)。",
+ "variants": [
+  {
+   "id": "TRS|JACK-TRS",
+   "plug": "Lumberg 1532 10 (3極)",
+   "jack": "Lumberg 1503 09",
+   "plugBasis": "measured-part",
+   "jackBasis": "measured-part",
+   "netFunctions": {
+    "TIP": "L",
+    "RING": "R",
+    "SLEEVE": "GND"
+   },
+   "unmatchedJackContacts": [],
+   "atDepth": [
+    {
+     "depthMm": 0,
+     "connections": {
+      "T1": [],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 4,
+     "connections": {
+      "T1": [
+       "TIP"
+      ],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (TIP) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 8,
+     "connections": {
+      "T1": [
+       "TIP"
+      ],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "INSULATED",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (TIP) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 11,
+     "connections": {
+      "T1": [
+       "RING"
+      ],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (RING) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 14,
+     "connections": {
+      "T1": [
+       "SLEEVE"
+      ],
+      "T3": [
+       "TIP"
+      ],
+      "T5": [],
+      "T2": [
+       "RING"
+      ],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "CLOSED",
+      "JC_RING": "CLOSED",
+      "JC_TIP": "CLOSED"
+     },
+     "acoustic": {
+      "code": "NORMAL",
+      "label": "正常 (ステレオ)",
+      "severity": "ok"
+     }
+    }
+   ]
+  },
+  {
+   "id": "TRS|JACK-TRRS",
+   "plug": "Lumberg 1532 10 (3極)",
+   "jack": "汎用 (端子番号は Same Sky SJ3-35074A に準拠) 4極ジャック (代表構成)",
+   "plugBasis": "measured-part",
+   "jackBasis": "constructed",
+   "netFunctions": {
+    "TIP": "L",
+    "RING": "R",
+    "SLEEVE": "GND"
+   },
+   "unmatchedJackContacts": [
+    "JC_RING2"
+   ],
+   "atDepth": [
+    {
+     "depthMm": 0,
+     "connections": {
+      "P1": [],
+      "P2": [],
+      "P3": [],
+      "P4": []
+     },
+     "states": {
+      "JC_SLEEVE": "OPEN",
+      "JC_RING2": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 4,
+     "connections": {
+      "P1": [
+       "TIP"
+      ],
+      "P2": [],
+      "P3": [],
+      "P4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING2": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 8,
+     "connections": {
+      "P1": [
+       "RING"
+      ],
+      "P2": [],
+      "P3": [],
+      "P4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING2": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 11,
+     "connections": {
+      "P1": [
+       "SLEEVE"
+      ],
+      "P2": [],
+      "P3": [],
+      "P4": [
+       "RING"
+      ]
+     },
+     "states": {
+      "JC_SLEEVE": "CLOSED",
+      "JC_RING2": "WRONG_SEGMENT",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (RING) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 14,
+     "connections": {
+      "P1": [
+       "SLEEVE"
+      ],
+      "P2": [
+       "TIP"
+      ],
+      "P3": [
+       "RING"
+      ],
+      "P4": [
+       "SLEEVE"
+      ]
+     },
+     "states": {
+      "JC_SLEEVE": "CLOSED",
+      "JC_RING2": "WRONG_SEGMENT",
+      "JC_RING": "CLOSED",
+      "JC_TIP": "CLOSED"
+     },
+     "acoustic": {
+      "code": "NORMAL",
+      "label": "ステレオ再生は正常 / マイク未接続",
+      "severity": "warn"
+     }
+    }
+   ]
+  },
+  {
+   "id": "TRRS-CTIA|JACK-TRS",
+   "plug": "汎用 (JEITA RC-5325A 準拠品を想定) 4極 CTIA/AHJ (代表形状) (4極)",
+   "jack": "Lumberg 1503 09",
+   "plugBasis": "constructed",
+   "jackBasis": "measured-part",
+   "netFunctions": {
+    "TIP": "L",
+    "RING": "R",
+    "RING2": "GND",
+    "SLEEVE": "MIC"
+   },
+   "unmatchedJackContacts": [],
+   "atDepth": [
+    {
+     "depthMm": 0,
+     "connections": {
+      "T1": [],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 4,
+     "connections": {
+      "T1": [
+       "TIP"
+      ],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (TIP) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 8,
+     "connections": {
+      "T1": [
+       "TIP"
+      ],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "INSULATED",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (TIP) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 11,
+     "connections": {
+      "T1": [
+       "RING"
+      ],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (RING) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 14,
+     "connections": {
+      "T1": [
+       "RING2"
+      ],
+      "T3": [
+       "TIP"
+      ],
+      "T5": [],
+      "T2": [
+       "RING"
+      ],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "CLOSED",
+      "JC_TIP": "CLOSED"
+     },
+     "acoustic": {
+      "code": "NORMAL",
+      "label": "正常 (ステレオ)",
+      "severity": "ok"
+     }
+    }
+   ]
+  },
+  {
+   "id": "TRRS-CTIA|JACK-TRRS",
+   "plug": "汎用 (JEITA RC-5325A 準拠品を想定) 4極 CTIA/AHJ (代表形状) (4極)",
+   "jack": "汎用 (端子番号は Same Sky SJ3-35074A に準拠) 4極ジャック (代表構成)",
+   "plugBasis": "constructed",
+   "jackBasis": "constructed",
+   "netFunctions": {
+    "TIP": "L",
+    "RING": "R",
+    "RING2": "GND",
+    "SLEEVE": "MIC"
+   },
+   "unmatchedJackContacts": [],
+   "atDepth": [
+    {
+     "depthMm": 0,
+     "connections": {
+      "P1": [],
+      "P2": [],
+      "P3": [],
+      "P4": []
+     },
+     "states": {
+      "JC_SLEEVE": "OPEN",
+      "JC_RING2": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 4,
+     "connections": {
+      "P1": [
+       "TIP"
+      ],
+      "P2": [],
+      "P3": [],
+      "P4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING2": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 8,
+     "connections": {
+      "P1": [
+       "RING"
+      ],
+      "P2": [],
+      "P3": [],
+      "P4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING2": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 11,
+     "connections": {
+      "P1": [
+       "RING2"
+      ],
+      "P2": [],
+      "P3": [],
+      "P4": [
+       "RING"
+      ]
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING2": "WRONG_SEGMENT",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (RING) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 14,
+     "connections": {
+      "P1": [
+       "SLEEVE"
+      ],
+      "P2": [
+       "TIP"
+      ],
+      "P3": [
+       "RING"
+      ],
+      "P4": [
+       "RING2"
+      ]
+     },
+     "states": {
+      "JC_SLEEVE": "CLOSED",
+      "JC_RING2": "CLOSED",
+      "JC_RING": "CLOSED",
+      "JC_TIP": "CLOSED"
+     },
+     "acoustic": {
+      "code": "NORMAL",
+      "label": "正常 (ステレオ + マイク)",
+      "severity": "ok"
+     }
+    }
+   ]
+  },
+  {
+   "id": "TRRS-OMTP|JACK-TRS",
+   "plug": "汎用 (JEITA RC-5325A 準拠品を想定) 4極 OMTP (代表形状) (4極)",
+   "jack": "Lumberg 1503 09",
+   "plugBasis": "constructed",
+   "jackBasis": "measured-part",
+   "netFunctions": {
+    "TIP": "L",
+    "RING": "R",
+    "RING2": "MIC",
+    "SLEEVE": "GND"
+   },
+   "unmatchedJackContacts": [],
+   "atDepth": [
+    {
+     "depthMm": 0,
+     "connections": {
+      "T1": [],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 4,
+     "connections": {
+      "T1": [
+       "TIP"
+      ],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (TIP) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 8,
+     "connections": {
+      "T1": [
+       "TIP"
+      ],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "INSULATED",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (TIP) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 11,
+     "connections": {
+      "T1": [
+       "RING"
+      ],
+      "T3": [],
+      "T5": [],
+      "T2": [],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (RING) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 14,
+     "connections": {
+      "T1": [
+       "RING2"
+      ],
+      "T3": [
+       "TIP"
+      ],
+      "T5": [],
+      "T2": [
+       "RING"
+      ],
+      "T4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING": "CLOSED",
+      "JC_TIP": "CLOSED"
+     },
+     "acoustic": {
+      "code": "GROUND_OPEN",
+      "label": "帰線がマイク線経由になる (音量が大きく落ちる)",
+      "severity": "bad"
+     }
+    }
+   ]
+  },
+  {
+   "id": "TRRS-OMTP|JACK-TRRS",
+   "plug": "汎用 (JEITA RC-5325A 準拠品を想定) 4極 OMTP (代表形状) (4極)",
+   "jack": "汎用 (端子番号は Same Sky SJ3-35074A に準拠) 4極ジャック (代表構成)",
+   "plugBasis": "constructed",
+   "jackBasis": "constructed",
+   "netFunctions": {
+    "TIP": "L",
+    "RING": "R",
+    "RING2": "MIC",
+    "SLEEVE": "GND"
+   },
+   "unmatchedJackContacts": [],
+   "atDepth": [
+    {
+     "depthMm": 0,
+     "connections": {
+      "P1": [],
+      "P2": [],
+      "P3": [],
+      "P4": []
+     },
+     "states": {
+      "JC_SLEEVE": "OPEN",
+      "JC_RING2": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 4,
+     "connections": {
+      "P1": [
+       "TIP"
+      ],
+      "P2": [],
+      "P3": [],
+      "P4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING2": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 8,
+     "connections": {
+      "P1": [
+       "RING"
+      ],
+      "P2": [],
+      "P3": [],
+      "P4": []
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING2": "OPEN",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "SILENT",
+      "label": "無音",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 11,
+     "connections": {
+      "P1": [
+       "RING2"
+      ],
+      "P2": [],
+      "P3": [],
+      "P4": [
+       "RING"
+      ]
+     },
+     "states": {
+      "JC_SLEEVE": "WRONG_SEGMENT",
+      "JC_RING2": "WRONG_SEGMENT",
+      "JC_RING": "OPEN",
+      "JC_TIP": "OPEN"
+     },
+     "acoustic": {
+      "code": "LR_SHORTED",
+      "label": "帰線が信号導体 (RING) に接触",
+      "severity": "bad"
+     }
+    },
+    {
+     "depthMm": 14,
+     "connections": {
+      "P1": [
+       "SLEEVE"
+      ],
+      "P2": [
+       "TIP"
+      ],
+      "P3": [
+       "RING"
+      ],
+      "P4": [
+       "RING2"
+      ]
+     },
+     "states": {
+      "JC_SLEEVE": "CLOSED",
+      "JC_RING2": "CLOSED",
+      "JC_RING": "CLOSED",
+      "JC_TIP": "CLOSED"
+     },
+     "acoustic": {
+      "code": "UNKNOWN",
+      "label": "規格違い (CTIA ↔ OMTP)",
+      "severity": "warn"
+     }
+    }
+   ]
+  }
+ ]
+}

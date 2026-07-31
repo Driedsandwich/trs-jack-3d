@@ -1,0 +1,233 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-07-31",
+ "stepMm": 0.02,
+ "major": [
+  {
+   "kind": "FIRST_PHYSICAL_CONTACT",
+   "depthMm": 3.92,
+   "label": "最初の物理接触",
+   "detail": "ジャックの接点ばねがプラグ表面に触れ、たわみ始めた",
+   "severity": "info"
+  },
+  {
+   "kind": "LAST_CONTACT_RELEASE",
+   "depthMm": 3.92,
+   "label": "抜去時に最後の接点が離れる位置",
+   "detail": "これより浅いとジャックはプラグに一切触れていない。経路の幾何は挿入・抜去で同じなので最初の物理接触と同じ深度になる (違うのは力だけ)。",
+   "severity": "info"
+  },
+  {
+   "kind": "FIRST_ELECTRICAL_CONTACT",
+   "depthMm": 3.94,
+   "label": "最初の電気接触",
+   "detail": "いずれかの接点がプラグ導体と導通した",
+   "severity": "info"
+  },
+  {
+   "kind": "FIRST_WRONG_SEGMENT",
+   "depthMm": 3.94,
+   "label": "最初の誤セグメント接触",
+   "detail": "JC_SLEEVE が本来の SLEEVE ではなく TIP に触れた",
+   "severity": "warn"
+  },
+  {
+   "kind": "FIRST_BREAK_OPEN",
+   "depthMm": 8.06,
+   "label": "最初のブレーク接点開放",
+   "detail": "接点ばねが押し広げられ、内蔵スイッチが開いた (内蔵スピーカ等への切替が起きる位置)",
+   "severity": "info"
+  },
+  {
+   "kind": "FIRST_BRIDGE",
+   "depthMm": 11.78,
+   "label": "最初の橋絡 (短絡)",
+   "detail": "JC_SLEEVE が RING と SLEEVE を同時に短絡させた",
+   "severity": "bad"
+  },
+  {
+   "kind": "ALL_SIGNALS_CORRECT",
+   "depthMm": 12.34,
+   "label": "全接点が正規接続",
+   "detail": "Tip/Ring/Sleeve の全てが対応する導体に安定接触した",
+   "severity": "ok"
+  },
+  {
+   "kind": "FULL_INSERTION",
+   "depthMm": 14,
+   "label": "完全挿入",
+   "detail": "プラグ肩がジャックの停止面に当たり、それ以上入らない位置",
+   "severity": "ok"
+  }
+ ],
+ "stateChanges": [
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 3.92,
+   "label": "JC_SLEEVE: OPEN → INSULATED",
+   "detail": "接触セグメント: TIP",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 3.94,
+   "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
+   "detail": "接触セグメント: TIP",
+   "severity": "bad"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 6.32,
+   "label": "JC_SLEEVE: WRONG_SEGMENT → INSULATED",
+   "detail": "接触セグメント: TIP",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 6.34,
+   "label": "JC_SLEEVE: INSULATED → OPEN",
+   "detail": "接触セグメント: なし",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 7.02,
+   "label": "JC_SLEEVE: OPEN → INSULATED",
+   "detail": "接触セグメント: TIP",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 7.04,
+   "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
+   "detail": "接触セグメント: TIP",
+   "severity": "bad"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 8,
+   "label": "JC_RING: OPEN → INSULATED",
+   "detail": "接触セグメント: TIP",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 8.02,
+   "label": "JC_RING: INSULATED → WRONG_SEGMENT",
+   "detail": "接触セグメント: TIP",
+   "severity": "bad"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 8.06,
+   "label": "JC_RING ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
+   "detail": "ジャック内蔵スイッチの開閉",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 8.26,
+   "label": "JC_SLEEVE: WRONG_SEGMENT → INSULATED",
+   "detail": "接触セグメント: RING",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 8.28,
+   "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
+   "detail": "接触セグメント: RING",
+   "severity": "bad"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 9.44,
+   "label": "JC_RING ブレーク接点: BREAK_OPEN → BREAK_CLOSED",
+   "detail": "ジャック内蔵スイッチの開閉",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 10.04,
+   "label": "JC_RING: WRONG_SEGMENT → INSULATED",
+   "detail": "接触セグメント: TIP",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 10.06,
+   "label": "JC_RING: INSULATED → OPEN",
+   "detail": "接触セグメント: なし",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.1,
+   "label": "JC_RING: OPEN → INSULATED",
+   "detail": "接触セグメント: TIP",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.12,
+   "label": "JC_RING: INSULATED → WRONG_SEGMENT",
+   "detail": "接触セグメント: TIP",
+   "severity": "bad"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.24,
+   "label": "JC_RING ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
+   "detail": "ジャック内蔵スイッチの開閉",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.78,
+   "label": "JC_SLEEVE: WRONG_SEGMENT → BRIDGED",
+   "detail": "接触セグメント: RING, SLEEVE",
+   "severity": "bad"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.96,
+   "label": "JC_SLEEVE: BRIDGED → CLOSED",
+   "detail": "接触セグメント: SLEEVE",
+   "severity": "ok"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.96,
+   "label": "JC_TIP: OPEN → TOUCH_UNSTABLE",
+   "detail": "接触セグメント: TIP",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 12.02,
+   "label": "JC_TIP ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
+   "detail": "ジャック内蔵スイッチの開閉",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 12.18,
+   "label": "JC_RING: WRONG_SEGMENT → INSULATED",
+   "detail": "接触セグメント: INS1",
+   "severity": "info"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 12.18,
+   "label": "JC_TIP: TOUCH_UNSTABLE → CLOSED",
+   "detail": "接触セグメント: TIP",
+   "severity": "ok"
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 12.34,
+   "label": "JC_RING: INSULATED → CLOSED",
+   "detail": "接触セグメント: RING",
+   "severity": "ok"
+  }
+ ]
+}

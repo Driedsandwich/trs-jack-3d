@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "variant": "TRS",
+  "poleCount": 3,
+  "partNumber": "1532 10",
+  "manufacturer": "Lumberg",
+  "netFunctions": { "TIP": "L", "RING": "R", "SLEEVE": "GND" },
+  "netFunctionsGrade": "FACT",
+  "netFunctionsSources": ["ds-1503-09"],
+  "fingerLength": "plug.fingerLength",
+  "bodyDiameter": "plug.bodyDiameter",
+
+  "_comment_profile": [
+    "回転体の外形プロファイル。s = 先端からの軸方向距離、r = 外半径。",
+    "重要な特徴: Tip 導体は Ring/Sleeve より低い。先端の円錐終端で 1.51mm (φ3.02)、後端の立ち上がりでも最大 1.600mm (φ3.20) で、Ring/Sleeve の 1.750mm (φ3.5) に届かない。この 0.15mm の段差が、第1絶縁帯で橋絡が起きない理由になる。",
+    "この段差が『半挿しでは Tip 用接点が Ring/Sleeve 上で過大にたわむ』という実挙動を生む。",
+    "絶縁帯と導体の境界は面取りを持たない垂直な段として扱う。図面 (ベクタ) では各段が 1 本の垂直線で描かれており、面取りの作図も寸法記載も無いため (2026-07-31 に確認)。同じ s を持つ 2 点がその垂直な段を表す。並び順に意味があるので、s が同じ 2 点は必ず『低い半径 → 高い半径』の順に書くこと (resolve.ts のソートは安定ソートなのでこの順序が保たれる)。",
+    "実物には必ず何らかのエッジ処理があるが、その寸法は一次資料に無い (UNKNOWNS 参照)。"
+  ],
+  "radiusProfile": [
+    { "s": 0, "r": "plug.tip.noseRadius", "fillet": true },
+    { "s": "plug.tip.coneEnd", "r": "plug.tip.coneEndRadius" },
+    { "s": "plug.tip.taperEnd", "r": "plug.tip.taperEndRadius" },
+    { "s": "plug.tip.end", "r": "plug.insulatorRadius" },
+    { "s": "plug.ins1.end", "r": "plug.insulatorRadius" },
+    { "s": "plug.ring.start", "r": "plug.bodyRadius" },
+    { "s": "plug.ring.end", "r": "plug.bodyRadius" },
+    { "s": "plug.ins2.start", "r": "plug.insulatorRadius" },
+    { "s": "plug.ins2.end", "r": "plug.insulatorRadius" },
+    { "s": "plug.sleeve.start", "r": "plug.bodyRadius" },
+    { "s": "plug.fingerLength", "r": "plug.bodyRadius" }
+  ],
+
+  "segments": [
+    {
+      "id": "TIP", "label": "Tip 導体", "kind": "conductor", "net": "TIP",
+      "start": 0, "end": "plug.tip.end", "material": "plug-contact-metal"
+    },
+    {
+      "id": "INS1", "label": "第1絶縁帯 (Tip/Ring 間)", "kind": "insulator",
+      "start": "plug.ins1.start", "end": "plug.ins1.end", "material": "plug-insulator"
+    },
+    {
+      "id": "RING", "label": "Ring 導体", "kind": "conductor", "net": "RING",
+      "start": "plug.ring.start", "end": "plug.ring.end", "material": "plug-contact-metal"
+    },
+    {
+      "id": "INS2", "label": "第2絶縁帯 (Ring/Sleeve 間)", "kind": "insulator",
+      "start": "plug.ins2.start", "end": "plug.ins2.end", "material": "plug-insulator"
+    },
+    {
+      "id": "SLEEVE", "label": "Sleeve 導体", "kind": "conductor", "net": "SLEEVE",
+      "start": "plug.sleeve.start", "end": "plug.fingerLength", "material": "plug-contact-metal"
+    }
+  ],
+
+  "handle": {
+    "shoulderDiameter": "plug.handle.shoulderDiameter",
+    "shoulderLength": "plug.handle.shoulderLength",
+    "bodyDiameter": "plug.handle.bodyDiameter",
+    "bodyLength": "plug.handle.bodyLength",
+    "strainReliefLength": "plug.handle.strainReliefLength",
+    "strainReliefDiameter": "plug.handle.strainReliefDiameter",
+    "cableDiameter": "plug.handle.cableDiameter",
+    "cableLength": "plug.handle.cableLength"
+  }
+}

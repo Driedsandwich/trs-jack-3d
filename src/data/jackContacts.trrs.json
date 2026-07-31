@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "partNumber": "4極ジャック (代表構成)",
+  "manufacturer": "汎用 (端子番号は Same Sky SJ3-35074A に準拠)",
+  "_comment": [
+    "4極ジャックのモデル。Lumberg 1503 09 のような『実測できた実在部品』ではない。",
+    "",
+    "・端子番号と機能の対応 (PIN1=sleeve / PIN2=tip / PIN3=ring1 / PIN4=ring2) は",
+    "  Same Sky SJ3-35074A のデータシート記載であり FACT。",
+    "  4極ジャックの端子番号は『先端から数えた順』ではない点に注意。",
+    "・機器側の配線は CTIA (Android が必須とする配列) を前提に、",
+    "  ring2 端子を帰線、sleeve 端子をマイクとして割り当てている。",
+    "・内部接点の軸位置・パッド幅・ばね定数を示す一次図面は入手できていないため、",
+    "  全て ASSUMPTION である。完全挿入時に各接点が対応する導体の内側に入るという",
+    "  条件から置いた。",
+    "・ブレーク接点は、入手した 4極ジャック資料に記載が無いため定義していない。",
+    "  『無いことを確認した』のではなく『確認できていない』である。",
+    "",
+    "このモデルの用途は、3極プラグを4極ジャックへ挿したときに何が起きるかを",
+    "幾何から計算することにある (仕様 §13)。実部品の内部再現ではない。"
+  ],
+
+  "fullInsertionDepth": "jack.fullInsertionDepth",
+  "entryBoreDiameter": "trrs.jack.boreDiameter",
+  "entryBushingLength": "jack.entryBushingLength",
+  "noseLength": "jack.noseLength",
+  "nutDiameter": "jack.nutDiameter",
+
+  "housing": {
+    "width": "jack.housing.width",
+    "height": "jack.housing.height",
+    "depth": "jack.overallLength",
+    "axisHeightFromPcb": "jack.housing.axisHeightFromPcb"
+  },
+
+  "terminals": [
+    {
+      "id": "P1", "pin": "1", "role": "sleeve-signal", "signalRole": "MIC",
+      "label": "Sleeve 接点 (マイク)", "functionLabel": "Microphone (CTIA 配線)",
+      "grade": "FACT", "sources": ["xref-trrs-dims", "android-headset-spec"],
+      "note": "端子番号は Same Sky SJ3-35074A 記載。機能割当は CTIA 配線を前提とした。"
+    },
+    {
+      "id": "P2", "pin": "2", "role": "tip-signal", "signalRole": "L",
+      "label": "Tip 接点 (左)", "functionLabel": "Left channel",
+      "grade": "FACT", "sources": ["xref-trrs-dims"]
+    },
+    {
+      "id": "P3", "pin": "3", "role": "ring-signal", "signalRole": "R",
+      "label": "Ring1 接点 (右)", "functionLabel": "Right channel",
+      "grade": "FACT", "sources": ["xref-trrs-dims"]
+    },
+    {
+      "id": "P4", "pin": "4", "role": "ring2-signal", "signalRole": "GND",
+      "label": "Ring2 接点 (帰線)", "functionLabel": "Ground (CTIA 配線)",
+      "grade": "FACT", "sources": ["xref-trrs-dims", "android-headset-spec"]
+    }
+  ],
+
+  "contacts": [
+    {
+      "id": "JC_SLEEVE", "label": "Sleeve 接点", "expectedSegment": "SLEEVE", "terminalId": "P1",
+      "axialCenter": "trrs.jack.contact.sleeve.axialCenter",
+      "padWidth": "jack.contact.sleeve.padWidth",
+      "freeRadius": "jack.contact.sleeve.freeRadius",
+      "nominalDeflection": "jack.contact.sleeve.nominalDeflection",
+      "maxDeflection": "jack.contact.sleeve.maxDeflection",
+      "springRate": "jack.contact.sleeve.springRate",
+      "angularPosition": 0,
+      "rootAxial": 4.8,
+      "breakContact": null,
+      "grade": "ASSUMPTION"
+    },
+    {
+      "id": "JC_RING2", "label": "Ring2 接点", "expectedSegment": "RING2", "terminalId": "P4",
+      "axialCenter": "trrs.jack.contact.ring2.axialCenter",
+      "padWidth": "trrs.jack.contact.narrowPadWidth",
+      "freeRadius": "jack.contact.ring.freeRadius",
+      "nominalDeflection": "jack.contact.ring.nominalDeflection",
+      "maxDeflection": "jack.contact.ring.maxDeflection",
+      "springRate": "jack.contact.ring.springRate",
+      "angularPosition": 180,
+      "rootAxial": 7.8,
+      "breakContact": null,
+      "grade": "ASSUMPTION"
+    },
+    {
+      "id": "JC_RING", "label": "Ring1 接点", "expectedSegment": "RING", "terminalId": "P3",
+      "axialCenter": "trrs.jack.contact.ring1.axialCenter",
+      "padWidth": "trrs.jack.contact.narrowPadWidth",
+      "freeRadius": "jack.contact.ring.freeRadius",
+      "nominalDeflection": "jack.contact.ring.nominalDeflection",
+      "maxDeflection": "jack.contact.ring.maxDeflection",
+      "springRate": "jack.contact.ring.springRate",
+      "angularPosition": 90,
+      "rootAxial": 9.6,
+      "breakContact": null,
+      "grade": "ASSUMPTION"
+    },
+    {
+      "id": "JC_TIP", "label": "Tip 接点", "expectedSegment": "TIP", "terminalId": "P2",
+      "axialCenter": "trrs.jack.contact.tip.axialCenter",
+      "padWidth": "jack.contact.tip.padWidth",
+      "freeRadius": "jack.contact.tip.freeRadius",
+      "nominalDeflection": "jack.contact.tip.nominalDeflection",
+      "maxDeflection": "jack.contact.tip.maxDeflection",
+      "springRate": "jack.contact.tip.springRate",
+      "angularPosition": 270,
+      "rootAxial": 14.0,
+      "breakContact": null,
+      "grade": "ASSUMPTION"
+    }
+  ]
+}

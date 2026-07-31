@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "materials": [
+    {
+      "id": "plug-contact-metal",
+      "label": "プラグ接点 (CuZn ニッケルめっき)",
+      "spec": "CuZn, nickel-plated",
+      "color": "#c9ced6",
+      "metalness": 0.92,
+      "roughness": 0.26,
+      "conductive": true,
+      "grade": "FACT",
+      "sources": ["ds-1532-10"]
+    },
+    {
+      "id": "plug-insulator",
+      "label": "プラグ絶縁部 (POM)",
+      "spec": "POM",
+      "color": "#4b3f6b",
+      "metalness": 0.0,
+      "roughness": 0.62,
+      "conductive": false,
+      "grade": "FACT",
+      "sources": ["ds-1532-10"]
+    },
+    {
+      "id": "plug-jacket",
+      "label": "プラグ外装 (PVC)",
+      "spec": "PVC",
+      "color": "#1f2937",
+      "metalness": 0.05,
+      "roughness": 0.75,
+      "conductive": false,
+      "grade": "FACT",
+      "sources": ["ds-1532-10"]
+    },
+    {
+      "id": "plug-cable",
+      "label": "ケーブル",
+      "spec": "外径 5 mm",
+      "color": "#111827",
+      "metalness": 0.02,
+      "roughness": 0.85,
+      "conductive": false,
+      "grade": "FACT",
+      "sources": ["ds-1532-10"]
+    },
+    {
+      "id": "jack-housing",
+      "label": "ジャック絶縁ハウジング (PBT GF, UL94 V-0)",
+      "spec": "PBT GF, V-0 according to UL94",
+      "color": "#2a3550",
+      "metalness": 0.0,
+      "roughness": 0.7,
+      "conductive": false,
+      "grade": "FACT",
+      "sources": ["ds-1503-09"]
+    },
+    {
+      "id": "jack-bore",
+      "label": "ボア内壁",
+      "spec": "PBT GF",
+      "color": "#1a2438",
+      "metalness": 0.0,
+      "roughness": 0.8,
+      "conductive": false,
+      "grade": "DERIVED",
+      "sources": ["ds-1503-09"]
+    },
+    {
+      "id": "jack-bushing",
+      "label": "ローレットナット (CuZn ニッケルめっき)",
+      "spec": "CuZn, nickel-plated",
+      "color": "#b9c0c9",
+      "metalness": 0.9,
+      "roughness": 0.32,
+      "conductive": true,
+      "grade": "FACT",
+      "sources": ["ds-1503-09"]
+    },
+    {
+      "id": "jack-contact-spring",
+      "label": "接点ばね (Cu 合金 銀めっき)",
+      "spec": "Cu alloy, silver-plated",
+      "color": "#e8e8e0",
+      "metalness": 0.95,
+      "roughness": 0.2,
+      "conductive": true,
+      "grade": "FACT",
+      "sources": ["ds-1503-09"]
+    },
+    {
+      "id": "jack-terminal",
+      "label": "端子 (はんだ付け)",
+      "spec": "Cu 合金",
+      "color": "#9aa2ad",
+      "metalness": 0.85,
+      "roughness": 0.4,
+      "conductive": true,
+      "grade": "DERIVED",
+      "sources": ["ds-1503-09"]
+    }
+  ]
+}

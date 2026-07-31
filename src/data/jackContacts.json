@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "partNumber": "1503 09",
+  "manufacturer": "Lumberg",
+  "_comment": [
+    "端子番号と端子どうしの関係 (どの端子が信号ばねで、どの端子がそのブレーク接点か) は",
+    "データシート 2 頁の回路記号から読み取った FACT である。推測ではない。",
+    "  ・箱記号 → 端子1  : Sleeve 接点",
+    "  ・左のばね記号は端子3 に連続し、常時 端子5 に接触 (ノーマルクローズ)",
+    "  ・右のばね記号は端子2 に連続し、常時 端子4 に接触 (ノーマルクローズ)",
+    "回路記号は Tip / Ring の別を書いていない。どちらが Tip 側かは、基板レイアウト図の端子軸位置",
+    "(FACT) と、完全挿入時に正しく結線されねばならないという幾何条件から導出した (DERIVED)。",
+    "  端子3 は軸位置 13.4mm、端子2 は 8.9mm。接点ばねは端子側 (奥) を根元として前方へ伸びる。",
+    "  完全挿入時、Tip 導体は奥側 9.708〜14.0mm、Ring 導体は 5.694〜8.513mm を占める。",
+    "  よって 端子3=Tip、端子2=Ring 以外に成立する組み合わせはない。",
+    "内部接点そのものの寸法 (パッド幅・自由半径・ばね定数・根元位置) はデータシートに記載が無く、",
+    "メーカー外形 CAD にも含まれない。ASSUMPTION または DERIVED として明示している。"
+  ],
+
+  "fullInsertionDepth": "jack.fullInsertionDepth",
+  "entryBoreDiameter": "jack.entryBoreDiameter",
+  "entryBushingLength": "jack.entryBushingLength",
+  "noseLength": "jack.noseLength",
+  "nutDiameter": "jack.nutDiameter",
+
+  "housing": {
+    "width": "jack.housing.width",
+    "height": "jack.housing.height",
+    "depth": "jack.overallLength",
+    "axisHeightFromPcb": "jack.housing.axisHeightFromPcb"
+  },
+
+  "terminals": [
+    {
+      "id": "T1", "pin": "1", "role": "sleeve-signal", "signalRole": "GND",
+      "label": "Sleeve 接点", "functionLabel": "Common return (共通帰線)",
+      "grade": "FACT", "sources": ["ds-1503-09"],
+      "note": "回路記号で箱 (スリーブ接点) から直接引き出されている端子。"
+    },
+    {
+      "id": "T3", "pin": "3", "role": "tip-signal", "signalRole": "L",
+      "label": "Tip 接点ばね", "functionLabel": "Left channel",
+      "grade": "DERIVED", "sources": ["ds-1503-09", "ds-1532-10"],
+      "note": "回路記号上は『端子5 とノーマルクローズ対を成す可動ばね』であることが FACT。Tip 側であることは端子軸位置 13.4mm と完全挿入時の導体配置から導出。"
+    },
+    {
+      "id": "T5", "pin": "5", "role": "tip-normal",
+      "label": "Tip ブレーク接点", "functionLabel": "Tip 側ノーマルクローズ接点",
+      "grade": "FACT", "sources": ["ds-1503-09"],
+      "note": "回路記号で端子3 のばねが無挿入時に接触している固定接点。"
+    },
+    {
+      "id": "T2", "pin": "2", "role": "ring-signal", "signalRole": "R",
+      "label": "Ring 接点ばね", "functionLabel": "Right channel",
+      "grade": "DERIVED", "sources": ["ds-1503-09", "ds-1532-10"],
+      "note": "回路記号上は『端子4 とノーマルクローズ対を成す可動ばね』であることが FACT。Ring 側であることは端子軸位置 8.9mm から導出。"
+    },
+    {
+      "id": "T4", "pin": "4", "role": "ring-normal",
+      "label": "Ring ブレーク接点", "functionLabel": "Ring 側ノーマルクローズ接点",
+      "grade": "FACT", "sources": ["ds-1503-09"]
+    }
+  ],
+
+  "contacts": [
+    {
+      "id": "JC_SLEEVE",
+      "label": "Sleeve 接点",
+      "expectedSegment": "SLEEVE",
+      "terminalId": "T1",
+      "axialCenter": "jack.contact.sleeve.axialCenter",
+      "padWidth": "jack.contact.sleeve.padWidth",
+      "freeRadius": "jack.contact.sleeve.freeRadius",
+      "nominalDeflection": "jack.contact.sleeve.nominalDeflection",
+      "maxDeflection": "jack.contact.sleeve.maxDeflection",
+      "springRate": "jack.contact.sleeve.springRate",
+      "angularPosition": "jack.contact.sleeve.angularPosition",
+      "rootAxial": "jack.contact.sleeve.rootAxial",
+      "breakContact": null,
+      "grade": "DERIVED",
+      "sources": ["ds-1503-09"],
+      "note": "入口に最も近い接点。挿入途中では Tip / 絶縁帯 / Ring の上を順に通過する。ブレーク接点は持たない (データシートのブレーク接点は 2 つで、いずれも信号ばね側)。"
+    },
+    {
+      "id": "JC_RING",
+      "label": "Ring 接点ばね",
+      "expectedSegment": "RING",
+      "terminalId": "T2",
+      "axialCenter": "jack.contact.ring.axialCenter",
+      "padWidth": "jack.contact.ring.padWidth",
+      "freeRadius": "jack.contact.ring.freeRadius",
+      "nominalDeflection": "jack.contact.ring.nominalDeflection",
+      "maxDeflection": "jack.contact.ring.maxDeflection",
+      "springRate": "jack.contact.ring.springRate",
+      "angularPosition": "jack.contact.ring.angularPosition",
+      "rootAxial": "jack.contact.ring.rootAxial",
+      "breakContact": {
+        "id": "BRK_RING",
+        "label": "Ring ブレーク接点",
+        "terminalId": "T4",
+        "normalState": "closed",
+        "openDeflection": "jack.break.ring.openDeflection"
+      },
+      "grade": "DERIVED",
+      "sources": ["ds-1503-09"]
+    },
+    {
+      "id": "JC_TIP",
+      "label": "Tip 接点ばね",
+      "expectedSegment": "TIP",
+      "terminalId": "T3",
+      "axialCenter": "jack.contact.tip.axialCenter",
+      "padWidth": "jack.contact.tip.padWidth",
+      "freeRadius": "jack.contact.tip.freeRadius",
+      "nominalDeflection": "jack.contact.tip.nominalDeflection",
+      "maxDeflection": "jack.contact.tip.maxDeflection",
+      "springRate": "jack.contact.tip.springRate",
+      "angularPosition": "jack.contact.tip.angularPosition",
+      "rootAxial": "jack.contact.tip.rootAxial",
+      "breakContact": {
+        "id": "BRK_TIP",
+        "label": "Tip ブレーク接点",
+        "terminalId": "T5",
+        "normalState": "closed",
+        "openDeflection": "jack.break.tip.openDeflection"
+      },
+      "grade": "DERIVED",
+      "sources": ["ds-1503-09"],
+      "note": "最も奥の接点。自由半径が他より小さい (1.10mm) ため、Ring/Sleeve の φ3.5 面に乗ると 0.65mm と大きくたわむ。"
+    }
+  ]
+}

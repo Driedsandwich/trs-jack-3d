@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公開前監査 2026-07-31</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">対応状況（2026-07-31 最終）</a></li>
+    <li><a href="#s1">① 総合判定</a></li>
+    <li><a href="#s2">② 危険な主張</a></li>
+    <li><a href="#s3">③ 修正版の提案</a></li>
+    <li><a href="#s4">④ 公開前チェックリスト</a></li>
+    <li><a href="#s5">参考: 監査が落とした指摘</a></li>
+  </ol>
+</nav>
+<h1>公開前監査 — trs-jack-3d を public にしてよいか</h1>
+<div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
+<p>実施 2026-07-31 ／ 対象 <code>Driedsandwich/trs-jack-3d</code>（当時 private） 方式 publish-audit スキル準拠。8観点で洗い出し、各指摘を独立の懐疑役が反証。 洗い出し 105 件 → 重複除去 92 件 → <strong>反証を生き延びた 63 件</strong>（critical 0 / high 14 / medium 16 / low 33）。</p>
+<hr>
+<h2 id="s0">対応状況（2026-07-31 最終）</h2>
+<p>監査で挙がった <strong>high 14 件はすべて解消</strong>しました。 またこの監査のあと、一次資料（メーカー図面）へ戻った再監査を 2 巡おこない、 そこで見つかった誤りも同じ日に処理しています。以下は最終状態です。</p>
+<div class="tw"><table><thead><tr><th>状態</th><th>内容</th></tr></thead><tbody><tr><td>✅ 修正済み</td><td>実名 6 箇所を「メンテナ」へ置換（md / HTML 両方）</td></tr><tr><td>✅ 修正済み</td><td><strong>外部 CDN への 17 リクエスト → 0 件</strong>。Noto Sans JP を 102 字にサブセットして同梱（16.1 KB / SIL OFL 1.1）。本番ビルドと開発サーバの両方で実測確認</td></tr><tr><td>✅ 修正済み</td><td>12.38 → 12.34 mm ほか、半挿し表の 6 行を <code>artifacts/events.json</code> に一致させた（README / REPORT.md / REPORT.html）</td></tr><tr><td>✅ 修正済み</td><td>性能表を実値へ差し替え（p95 18.5〜18.7 ms / fps 59.9）。「フレーム落ちなし」の断定を外し、最大値未記録であることを明記</td></tr><tr><td>✅ 修正済み</td><td>他社規約 4 社の断定 → 「一次未確認」と明記した記述へ</td></tr><tr><td>✅ 修正済み</td><td>Vite ロゴ 3 件を削除／自作 favicon へ差し替え、<code>lang="ja"</code>・<code>&lt;title&gt;</code>・<code>description</code> を実態に</td></tr><tr><td>✅ 修正済み</td><td>ライセンス範囲表の穴（<code>src/data/index.ts</code>・<code>public/</code>・<code>public/fonts/</code>）を塞いだ</td></tr><tr><td>✅ 完了</td><td>コミット・push 済み。GitHub 上でライセンス3ファイルの実体を確認</td></tr><tr><td>✅ 完了</td><td>git 履歴を書き換えて実名を全コミットから除去し、force push 済み</td></tr><tr><td>✅ 修正済み</td><td><strong>接触判定のたわみ後の再判定を実装。</strong>第1絶縁帯の Tip↔Ring 橋絡（偽陽性）が消え、第2絶縁帯の Ring↔Sleeve だけが残った（11.77〜11.94 mm）。看板は差し替え済み</td></tr></tbody></table></div>
+<h3>この監査のあとに、一次資料へ戻って見つけたもの</h3>
+<p>監査自体は「文書と実データの整合」を見るものでした。そのあと<strong>図面そのものに戻って</strong> 全数を照合したところ、監査では拾えない種類の誤りが 3 巡ぶん出ました。</p>
+<div class="tw"><table><thead><tr><th>状態</th><th>内容</th></tr></thead><tbody><tr><td>✅ 修正済み</td><td><strong>4極の導体配置が図面と違っていた。</strong> 寸法線を先端基準と誤読し、図面にある <code>2.5</code> を拾えていなかった。訂正後、混挿 6 通りすべてが実挙動と一致するようになった（訂正前は 3 通りが不一致）</td></tr><tr><td>✅ 修正済み</td><td><strong>プラグ肩の外径 φ5.18 に当たる造形が図面に無かった。</strong> 図面記載は <code>Ø10</code>。実物を測る人に誤った照合値を渡すところだった</td></tr><tr><td>✅ 修正済み</td><td><strong>0.09 mm の面取りが図面に存在しなかった。</strong> ラスタ実測が線の太さ（0.302 pt ≒ 0.107 mm）を拾った産物。削除に伴い挿抜力モデルの発散と 3D 描画の破綻も直した</td></tr><tr><td>✅ 修正済み</td><td><strong>図面に記載があるのに拾っていない寸法が 3 件</strong>（ジャック前部ブッシング <code>ø6</code>、軸高さの直接寸法、断面 A-A の <code>Ø7</code>）</td></tr><tr><td>✅ 修正済み</td><td>根拠区分の是正 2 件（<code>plug.handle.shoulderLength</code> を FACT → DERIVED、ジャック接点の軸位置 3 件を DERIVED → ASSUMPTION）</td></tr><tr><td>✅ 修正済み</td><td>未定義の出典 ID 2 件（4極訂正の根拠図面がアプリの「根拠」タブから辿れなかった）</td></tr><tr><td>✅ 修正済み</td><td><strong>HTML を生成物にした</strong>（<code>npm run docs:html</code>）。手で保守していたため、根拠区分の件数・ピーク挿入力・ポリゴン数がいずれも本文とずれていた</td></tr><tr><td>📝 記録のみ</td><td>Sleeve 接点の軸位置と入口ブッシングの関係に緊張がある。両方とも根拠が弱いので値は動かさず <a href="../UNKNOWNS.md">UNKNOWNS.md</a> §3-8 に記録した</td></tr></tbody></table></div>
+<hr>
+<h2 id="s1">① 総合判定</h2>
+<h3>公開可（監査時点の判定は「修正後公開可」。その修正は完了している）</h3>
+<div class="note"><p><strong>以下は監査を実施した時点の判定です。</strong> 当時は「今の状態では公開しないこと」としていました。</p><p>挙げた 3 つの理由のうち、2 と 3 は同日に解消しています。記録として原文を残します。</p><p>1. <strong>公開を止めるほどの機微情報は無い。</strong> 認証情報・第三者の個人名・金銭情報・ローカルパスは1件も見つかりませんでした。コミットの著者も noreply アドレスです。</p><p>2. ~~<strong>事実と異なる断定が4件あります。</strong>~~ そのうち1件は「外部に一切通信しない」という主張で、実測すると起動しただけで外部へ17リクエスト出ていました。→ <strong>フォントを同梱して 0 件にしました</strong>（本番ビルドと開発サーバの両方で実測）。</p><p>3. ~~<strong>宣言したライセンス本文が、まだ公開される側に存在しません。</strong>~~ → <strong>コミット・push 済み</strong>で、GitHub 上で実体とリンクを確認しました。</p></div>
+<p><strong>現在の判定: 公開可。</strong> 上記に加えて、監査後の一次資料再監査で見つかった誤りもすべて処理しました。</p>
+<p>ただし、これは「内容が正しいことの保証」ではありません。 <strong>実物の部品と突き合わせた検証はまだしていません</strong>（→ <a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a>）。 このプロジェクトが主張しているのは「どこまでが figure で、どこからが仮定か」を 取り違えずに示すことであって、モデルが実物と一致することではありません。</p>
+<hr>
+<h2 id="s2">② 危険な主張</h2>
+<h3>最優先の4件 — 事実と異なる断定</h3>
+<div class="tw"><table><thead><tr><th>該当箇所</th><th>問題</th><th>修正案</th></tr></thead><tbody><tr><td><code>THIRD_PARTY_NOTICES.md:65</code><br>「外部 CDN からのダウンロードも行いません」<br>同 63「外部アセットへの依存なし」<br>同 62「フォント＝ブラウザのシステムフォント」<br><code>LICENSE-ASSETS.md:45</code>「外部アセットへの依存ゼロ」</td><td><strong>実測で反証。</strong> ページを開くだけで <code>cdn.jsdelivr.net</code> へ <strong>17 リクエスト</strong>（フォント索引 JSON 10件＋実フォント .woff 7件）。3D 内のラベルを drei の <code>&lt;Text&gt;</code> で描いており、<code>font</code> を指定していないため troika-three-text が実行時に外部フォントを取りに行く。日本語ラベルがあるので CJK サブセットまで引かれる。<strong>閲覧者の IP と User-Agent が CDN 事業者へ渡る。</strong></td><td>(A) 実装で直す: OFL フォントを <code>public/fonts/</code> に同梱し、5箇所の <code>&lt;Text&gt;</code> に <code>font=</code> を渡す（<code>Jack.tsx:165</code> <code>Plug.tsx:111</code> <code>Scene.tsx:134/159/181</code>）。オフラインでも動くようになる。<strong>推奨。</strong><br>(B) 記述で直す: 上記4行を実態に書き換え、§5 に troika-three-text（MIT）とフォント（SIL OFL 1.1）を追記する。</td></tr><tr><td><code>README.md:141</code><br><code>docs/REPORT.md:119</code> / <code>.html:231</code><br>「12.38 mm ようやく全接点が正しい導体に接触」</td><td>同梱の <code>artifacts/events.json</code> は <strong>12.34 mm</strong>。<code>npm run predict:probe</code> も 12.34。12.38 はどの生成物にも無い。<strong>出典として明示したファイルと、看板の表が食い違っている。</strong></td><td>12.34 mm に訂正。同じ表の 3.93→3.94、8.01→8.02、8.27→8.28、9.43→9.44 も events.json に合わせる（現在は 0.01 mm 刻みと 0.02 mm 刻みの2つの生成元が混ざっている）。</td></tr><tr><td><code>docs/TEST_RESULTS.md:205-212</code><br>性能表の p95 と「p95 も 17.8 ms 以内」</td><td><code>artifacts/perf_real_gpu.json</code> の実値は p95 <strong>18.50〜18.70 ms</strong>、fps <strong>59.88</strong>。表の 17.40〜17.80 ms は6行すべて実データと一致しない。さらに「33 ms のフレーム落ちは発生していない」を裏づける項目が artifact に無い（最大フレーム時間を記録していない）。</td><td>表を実値へ差し替え、「p95 は 18.5〜18.7 ms で 1 vsync（16.7 ms）を超えるフレームが数 % ある。33 ms 超の有無は最大値を記録していないため未確認」に書き換える。断定したいなら <code>scripts/perf.mjs</code> に最大値を足して再測定する。</td></tr><tr><td><code>THIRD_PARTY_NOTICES.md:35-38</code><br>TraceParts / 3D ContentCentral / CADENAS / SnapMagic の規約内容</td><td>4社の規約（違約金つきの生成AI学習禁止など）を断定しているが <strong>URL も確認日も無い</strong>。<code>SOURCES.md</code> にも1件も登録が無い。他社規約の断定に一次資料が付いていない。</td><td>各行に URL と確認日を付す。原文未確認なら表を削除し「代替の配布サイトも各社規約で再配布に制約があると理解しており検討対象から外した（各社規約の原文は未確認）」の1文に置き換える。</td></tr></tbody></table></div>
+<h3>実名 — あなたの判断が要る1件</h3>
+<div class="tw"><table><thead><tr><th>該当箇所</th><th>問題</th><th>修正案</th></tr></thead><tbody><tr><td><code>docs/VERIFICATION_PLAN.md:220,221,223</code><br><code>docs/VERIFICATION_PLAN.html:336,337,339</code><br>担当表の「誰が」列に<strong>本人の実名</strong>が入っていた</td><td>リポジトリ内で実名が出るのは<strong>この2ファイルだけ</strong>です。他は徹底してハンドル名で統一されています（<code>LICENSE</code> の著作権者 <code>Driedsandwich</code>、コミット著者も <code>Driedsandwich &lt;…@users.noreply.github.com&gt;</code>、<code>package.json</code> に author 欄なし）。public にすると<strong>ハンドル名と実名が恒久的に結びつきます</strong>（GitHub の履歴は消せません）。</td><td>ハンドルのままでいくなら「メンテナ」へ置換（md と HTML を同時に）。就活ポートフォリオとして実名で出す予定なら、逆に <code>LICENSE</code> の著作権者も実名にして最初から揃えるほうが後で辻褄合わせが要りません。<strong>どちらでもよく、あなたが決めることです。</strong></td></tr></tbody></table></div>
+<h3>モデルの正しさ — 私が実測した2件</h3>
+<p>公開後に「3.5 mm に詳しい人」から最初に飛んでくる指摘はここだと考えます。</p>
+<div class="tw"><table><thead><tr><th>該当箇所</th><th>問題</th><th>修正案</th></tr></thead><tbody><tr><td>~~<code>src/model/contact.ts:169</code>~~ <strong>修正済み</strong><br>看板は「11.78 mm の Ring↔Sleeve」へ差し替え</td><td>接点が届いているかを、<strong>たわむ前の自由半径</strong>で判定している。たわみ量はその後で計算するのに、判定をやり直していない。<br>実測（d=8.28）: 接点は Ring に押されて半径 <strong>1.7467 mm</strong> まで開いているのに、パッド窓内の Tip 導体面は <strong>1.536〜1.593 mm</strong>。<strong>0.21 mm 下にある面を「触れている」と扱っている。</strong><br>もう1つの橋絡（d=11.78 の Ring+Sleeve）も同様に 0.065 mm のずれがある。</td><td>たわみを求めたあと、<code>自由半径＋たわみ</code> を新しいしきい値にして届いている区間を計算し直す。接触ドームの追従量（コンプライアンス）をどこまで許すかは仮定になるので <code>dimensions.json</code> に ASSUMPTION として置く。<strong>橋絡が消えるとは限らないが、消える可能性がある。</strong>看板の記述はこの検証が済むまで断定を弱めるべき。</td></tr><tr><td><code>src/model/circuit.ts:224,269</code></td><td>CTIA プラグを3極ジャックへ完全挿入すると、<strong>プラグの GND 導体（Ring2）がどの接点にも触れていない</strong>のに判定は <code>NORMAL</code>「ステレオ再生は正常」。同じ関数は帰線が届かない場合に <code>GROUND_OPEN</code>（音量が大きく落ちる）を返すのに、224行の条件が「帰線端子が何にも届いていない」になっているため、<strong>帰線端子がマイク線に取られたこのケースを素通りする</strong>。173行が自ら掲げる「導体位置ではなく信号機能で判定する」という原則に反している。</td><td>224行の判定を「GND <strong>機能</strong>を持つ導体が GND 端子に届いているか」に変える。届いていなければ、帰線がマイク線経由になる旨と音量低下を返す。</td></tr></tbody></table></div>
+<h3>雛形の残骸 — 見た目に効く4件</h3>
+<div class="tw"><table><thead><tr><th>該当箇所</th><th>問題</th><th>修正案</th></tr></thead><tbody><tr><td><code>index.html:5</code> → <code>public/favicon.svg</code></td><td><strong>ブラウザのタブに Vite のロゴが出ている。</strong> 未使用の残骸ではなく、実際に参照されビルド出力にも入っている。Lumberg の商標にはあれだけ注記を付けている文書群と釣り合わない。</td><td>自作アイコンに差し替える（プラグの断面など）。</td></tr><tr><td><code>src/assets/vite.svg</code></td><td>Vite のロゴが <code>src/</code> 配下にあるため、<code>LICENSE</code> の「src/ = MIT」により<strong>他人のロゴに自分名義で MIT を付与している</strong>形になる。参照ゼロの未使用ファイル。</td><td>削除。</td></tr><tr><td><code>public/icons.svg</code></td><td>Bluesky / Discord / GitHub / X のブランドマーク6点。参照ゼロ。</td><td>削除。</td></tr><tr><td><code>index.html:2</code> <code>lang="en"</code></td><td>UI は全面日本語なのに文書言語が英語。読み上げソフトが日本語を英語音声で読み、ブラウザが不要な翻訳バーを出す。<code>&lt;title&gt;</code> も <code>trs-jack-3d</code> のまま。</td><td><code>lang="ja"</code>、<code>&lt;title&gt;</code> をアプリ名に。</td></tr></tbody></table></div>
+<h3>公開の前提条件（内容の問題ではない）</h3>
+<p><strong>public 化で世界に出るのは push 済みの HEAD です。</strong> 現在 HEAD には今日の作業が1つも入っていません。</p>
+<pre><code>未追跡: LICENSE / LICENSE-ASSETS.md
+未コミット: README.md / SOURCES.md / package.json / docs/REPORT.md / docs/REPORT.html
+          / LICENSE_ASSETS.md → THIRD_PARTY_NOTICES.md のリネーム</code></pre>
+<p><code>gh repo view</code> の <code>licenseInfo</code> は現時点で <code>{"key":"other"}</code>、つまり GitHub 側は既に「ライセンス不明」と判定しています。<strong>この6+2件をコミット・push するまでは、他の修正をいくら入れても公開される中身は変わりません。</strong></p>
+<hr>
+<h2 id="s3">③ 修正版の提案</h2>
+<p>原稿は書き換えていません（監査は読み取り専用）。差し替え案は②の表の「修正案」列がそのまま使えます。実行順だけ示します。</p>
+<div class="tw"><table><thead><tr><th>順</th><th>やること</th><th>所要</th><th>効果</th></tr></thead><tbody><tr><td>1</td><td>実名4箇所の扱いを決める（残す／「メンテナ」へ置換）</td><td>5分</td><td>不可逆な決定なので最初に</td></tr><tr><td>2</td><td>12.38→12.34 ほか表の数値を artifacts に合わせる</td><td>15分</td><td>看板の誤り</td></tr><tr><td>3</td><td>性能表を実値に差し替え、フレーム落ちの断定を外す</td><td>10分</td><td>事実誤り</td></tr><tr><td>4</td><td>他社規約4行に出典を付ける／削除する</td><td>5〜30分</td><td>事実誤り</td></tr><tr><td>5</td><td>フォントをローカル同梱し、外部通信ゼロを実測で再確認</td><td>1〜2時間</td><td>事実誤り＋プライバシー</td></tr><tr><td>6</td><td>favicon 差し替え・vite.svg / icons.svg 削除・<code>lang="ja"</code></td><td>20分</td><td>第一印象</td></tr><tr><td>7</td><td>全部コミットして push、GitHub 上で LICENSE の実体を目視確認</td><td>10分</td><td><strong>公開の必須ゲート</strong></td></tr><tr><td>8</td><td>接触判定のたわみ後の再判定を入れ、看板の橋絡を検証し直す</td><td>半日〜1日</td><td>技術的な信頼性。<strong>急がなくてよい</strong></td></tr></tbody></table></div>
+<p>1〜7 で <strong>おおよそ 2〜3 時間</strong>です。8 は結果次第で README の中心的な記述が変わるので、切り離して扱うのが安全です。</p>
+<hr>
+<h2 id="s4">④ 公開前チェックリスト</h2>
+<p><strong>公開してよい状態かどうかは、次が全部埋まったときです。</strong></p>
+<ul class="chk"><li><input type="checkbox" disabled checked> 実名をどう扱うか決めた（→「メンテナ」へ置換）。md と HTML の<strong>両方</strong>を直した</li><li><input type="checkbox" disabled checked> <code>README.md</code> / <code>docs/REPORT.md</code> / <code>.html</code> の「半挿しで何が起きるか」表が <code>artifacts/events.json</code> と一致する</li><li><input type="checkbox" disabled checked> <code>docs/TEST_RESULTS.md</code> の性能表が <code>artifacts/perf_real_gpu.json</code> と一致し、測っていないことを断定していない</li><li><input type="checkbox" disabled checked> 他社規約の記述を「一次未確認」と明記して弱めた</li><li><input type="checkbox" disabled checked> 外部通信について、書いてあることと実測が一致する（フォント同梱で <strong>0 件</strong>）</li><li><input type="checkbox" disabled checked> Vite のロゴがどこにも残っていない（<code>favicon.svg</code> / <code>src/assets/vite.svg</code> / <code>public/icons.svg</code>）</li><li><input type="checkbox" disabled checked> <code>index.html</code> の <code>lang</code> と <code>&lt;title&gt;</code> が実態に合っている</li><li><input type="checkbox" disabled> <strong><code>LICENSE</code> と <code>LICENSE-ASSETS.md</code> が push 済みで、GitHub 上でリンクが開ける</strong></li><li><input type="checkbox" disabled> <code>gh repo view --json licenseInfo</code> が <code>other</code> でなくなっている</li><li><input type="checkbox" disabled> <strong>git 履歴に残る実名をどうするか決めた</strong>（履歴を書き換える／許容する）</li><li><input type="checkbox" disabled checked> 接触判定の件を直した（<code>contactComplianceMm</code> を新設。残る未確認は UNKNOWNS §3-6）</li></ul>
+<h3>git 履歴について</h3>
+<p>ファイルを直しただけでは、<strong>過去のコミットの差分に実名が残ります。</strong> public にすると <code>git log -p</code> で誰でも読めるため、履歴そのものの書き換えが必要でした。</p>
+<p><strong>対応済み（2026-07-31）</strong>: 全コミットのツリーを走査して実名を「メンテナ」へ置換し （<code>git filter-branch</code>）、force push しました。書き換え後に GitHub から新規クローンして、 <strong>全差分・全コミットメッセージ・全ツリーで実名 0 件</strong>を確認しています。 コミット構造とメッセージは保たれており、初回コミットは元から実名を含まないため無変更です。</p>
+<p><strong>残る注意点</strong>: GitHub は force push のあとも、到達不能になった古いコミットを しばらく SHA 直指定で保持することがあります（実測で確認済み）。 このリポジトリは一度も public になっていないため古い SHA は外部に知られていませんが、 <strong>完全に消したい場合はリポジトリを作り直すか、GitHub サポートへ purge を依頼する</strong>必要があります。 本書に旧 SHA を書かないのも同じ理由です。</p>
+<h3>公開すると新しく効いてくるもの（今は未整備・必須ではない）</h3>
+<p>Issues / Discussions / Wiki は現在すべて有効です。リポジトリの description と topics は未設定。CI もライブデモもありません。動くものを見せたいなら GitHub Pages が効きますが、<code>vite.config.ts</code> に <code>base</code> の設定が要ります。CONTRIBUTING や SECURITY は、個人の技術デモとしては無くて構いません。</p>
+<hr>
+<h2 id="s5">参考: 監査が落とした指摘</h2>
+<p>29 件は反証で却下しました。判断の質を見てもらうため主なものを挙げます。</p>
+<ul><li>「Lumberg Legal Notes の引用にも URL と確認日が無い」→ <code>SOURCES.md</code> に登録済みで追跡可能。却下</li><li>「FACT 41 件はデータシートの表の網羅的複製にあたる」→ 個々の数値は事実情報。表の版面は複製していない。却下</li><li>「<code>docs/*.md</code> の glob がサブディレクトリを含まない」→ 実害なし。却下</li><li>「コミットメッセージに公開して困る内容がある」→ 全3件を読み、該当なし。却下</li></ul>
+<hr>
+<div class="note"><p>※この判定は参考情報です。公開の最終判断は人間が行ってください。このスキルは公開の実行・外部送信を行いません。</p></div>
+</div>
+</body>
+</html>

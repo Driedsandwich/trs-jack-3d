@@ -1,0 +1,107 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-07-31",
+ "dimensionCheck": [
+  {
+   "item": "プラグ軸径",
+   "design": "3.5 ±0.05",
+   "model": 3.5,
+   "diff": 0,
+   "unit": "mm",
+   "ok": true
+  },
+  {
+   "item": "プラグ指部長",
+   "design": 14,
+   "model": 14,
+   "diff": 0,
+   "unit": "mm",
+   "ok": true
+  },
+  {
+   "item": "第2絶縁帯幅",
+   "design": 0.7,
+   "model": 0.7,
+   "diff": 0,
+   "unit": "mm",
+   "ok": true
+  },
+  {
+   "item": "挿入穴径",
+   "design": 3.6,
+   "model": 3.6,
+   "diff": 0,
+   "unit": "mm",
+   "ok": true
+  },
+  {
+   "item": "完全挿入深度",
+   "design": 14,
+   "model": 14,
+   "diff": 0,
+   "unit": "mm",
+   "ok": true
+  },
+  {
+   "item": "ジャック全長",
+   "design": 17.6,
+   "model": 17.6,
+   "diff": 0,
+   "unit": "mm",
+   "ok": true
+  }
+ ],
+ "fullyInserted": {
+  "connections": {
+   "T1": [
+    "SLEEVE"
+   ],
+   "T3": [
+    "TIP"
+   ],
+   "T5": [],
+   "T2": [
+    "RING"
+   ],
+   "T4": []
+  },
+  "states": {
+   "JC_SLEEVE": "CLOSED",
+   "JC_RING": "CLOSED",
+   "JC_TIP": "CLOSED"
+  },
+  "breakStates": {
+   "BRK_RING": "BREAK_OPEN",
+   "BRK_TIP": "BREAK_OPEN"
+  },
+  "normalForcesN": {
+   "JC_SLEEVE": 1.085,
+   "JC_RING": 1.085,
+   "JC_TIP": 1.016
+  },
+  "anyBridged": false,
+  "acoustic": "NORMAL"
+ },
+ "fullyWithdrawn": {
+  "states": {
+   "JC_SLEEVE": "OPEN",
+   "JC_RING": "OPEN",
+   "JC_TIP": "OPEN"
+  },
+  "breakStates": {
+   "BRK_RING": "BREAK_CLOSED",
+   "BRK_TIP": "BREAK_CLOSED"
+  }
+ },
+ "gradeCounts": {
+  "FACT": 48,
+  "DERIVED": 39,
+  "ASSUMPTION": 41,
+  "UNKNOWN": 0
+ },
+ "force": {
+  "peakInsertionN": 5.27,
+  "peakWithdrawalN": 5.275,
+  "withinManufacturerRange": true
+ }
+}

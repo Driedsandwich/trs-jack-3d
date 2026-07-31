@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>3.5 mm TRS 接合機構ビューア</title>
+  <!-- 3.5mm TRS プラグの側面。先端の円錐・2本の絶縁帯・肩。 -->
+  <rect width="32" height="32" rx="6" fill="#0b1220"/>
+  <g transform="translate(2 11)">
+    <path d="M0 5 L4 1.6 L4 8.4 Z" fill="#cbd5e1"/>
+    <rect x="4" y="1.6" width="6.2" height="6.8" fill="#cbd5e1"/>
+    <rect x="10.2" y="1.6" width="1.6" height="6.8" fill="#7c5cff"/>
+    <rect x="11.8" y="1.6" width="4.4" height="6.8" fill="#cbd5e1"/>
+    <rect x="16.2" y="1.6" width="1.6" height="6.8" fill="#7c5cff"/>
+    <rect x="17.8" y="1.6" width="5.2" height="6.8" fill="#cbd5e1"/>
+    <rect x="23" y="0" width="5" height="10" rx="1" fill="#64748b"/>
+  </g>
+</svg>

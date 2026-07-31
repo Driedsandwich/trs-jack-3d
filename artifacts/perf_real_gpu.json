@@ -1,0 +1,153 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-07-31",
+ "mode": "headed Chrome (実 GPU) / vsync あり",
+ "host": "Darwin / 25.5.0 / arm64 / Apple M5 x10",
+ "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)",
+ "loadAverage1min": 10.66455078125,
+ "note": "実 GPU を使う headed Chrome での測定。ディスプレイのリフレッシュレートが上限になる (vsync)。",
+ "runs": [
+  {
+   "viewport": {
+    "name": "デスクトップ 1440x900 @2x",
+    "width": 1440,
+    "height": 900,
+    "dsf": 2
+   },
+   "gpu": {
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)",
+    "vendor": "Google Inc. (Apple)",
+    "dpr": 2
+   },
+   "idle": {
+    "label": "静止 (完全挿入)",
+    "samples": 169,
+    "medianMs": 16.700000002980232,
+    "p95Ms": 17.5,
+    "p99Ms": 18.400000005960464,
+    "minMs": 14.700000002980232,
+    "maxMs": 19.399999998509884,
+    "droppedFrames": 0,
+    "fps": 59.880239510272034,
+    "pixels": 3476420,
+    "triangles": 6228,
+    "drawCalls": 44
+   },
+   "animating": {
+    "label": "挿抜アニメ中",
+    "samples": 169,
+    "medianMs": 16.700000002980232,
+    "p95Ms": 17.5,
+    "p99Ms": 18,
+    "minMs": 14.799999997019768,
+    "maxMs": 18.30000000447035,
+    "droppedFrames": 0,
+    "fps": 59.880239510272034,
+    "pixels": 3476420,
+    "triangles": 6228,
+    "drawCalls": 44
+   },
+   "lowIdle": {
+    "label": "低負荷モード (静止)",
+    "samples": 169,
+    "medianMs": 16.69999999552965,
+    "p95Ms": 17.600000001490116,
+    "p99Ms": 18.200000002980232,
+    "minMs": 15.100000001490116,
+    "maxMs": 18.600000001490116,
+    "droppedFrames": 0,
+    "fps": 59.880239536987155,
+    "pixels": 868600,
+    "triangles": 6228,
+    "drawCalls": 43
+   },
+   "costNormal": {
+    "label": "通常品質の描画コスト",
+    "batch": 40,
+    "medianMs": 0.0875,
+    "minMs": 0.0700000001117587,
+    "p95Ms": 0.2099999999627471,
+    "pixels": 3476420
+   },
+   "costLow": {
+    "label": "低負荷モードの描画コスト",
+    "batch": 40,
+    "medianMs": 0.0800000000745058,
+    "minMs": 0.06749999988824129,
+    "p95Ms": 0.1474999999627471,
+    "pixels": 868600
+   }
+  },
+  {
+   "viewport": {
+    "name": "デスクトップ 1920x1080 @2x",
+    "width": 1920,
+    "height": 1080,
+    "dsf": 2
+   },
+   "gpu": {
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)",
+    "vendor": "Google Inc. (Apple)",
+    "dpr": 2
+   },
+   "idle": {
+    "label": "静止 (完全挿入)",
+    "samples": 169,
+    "medianMs": 16.69999999552965,
+    "p95Ms": 17.799999997019768,
+    "p99Ms": 18.100000001490116,
+    "minMs": 14.899999998509884,
+    "maxMs": 18.19999999552965,
+    "droppedFrames": 0,
+    "fps": 59.880239536987155,
+    "pixels": 6201380,
+    "triangles": 6228,
+    "drawCalls": 44
+   },
+   "animating": {
+    "label": "挿抜アニメ中",
+    "samples": 169,
+    "medianMs": 16.69999999552965,
+    "p95Ms": 17.5,
+    "p99Ms": 17.80000000447035,
+    "minMs": 15.299999997019768,
+    "maxMs": 18,
+    "droppedFrames": 0,
+    "fps": 59.880239536987155,
+    "pixels": 6201380,
+    "triangles": 6228,
+    "drawCalls": 44
+   },
+   "lowIdle": {
+    "label": "低負荷モード (静止)",
+    "samples": 169,
+    "medianMs": 16.700000002980232,
+    "p95Ms": 17.400000005960464,
+    "p99Ms": 17.900000005960464,
+    "minMs": 15.199999995529652,
+    "maxMs": 17.900000005960464,
+    "droppedFrames": 0,
+    "fps": 59.880239510272034,
+    "pixels": 1549600,
+    "triangles": 6228,
+    "drawCalls": 43
+   },
+   "costNormal": {
+    "label": "通常品質の描画コスト",
+    "batch": 40,
+    "medianMs": 0.0724999999627471,
+    "minMs": 0.0649999998509884,
+    "p95Ms": 0.1449999999254942,
+    "pixels": 6201380
+   },
+   "costLow": {
+    "label": "低負荷モードの描画コスト",
+    "batch": 40,
+    "medianMs": 0.07750000003725291,
+    "minMs": 0.0625,
+    "p95Ms": 0.1449999999254942,
+    "pixels": 1549600
+   }
+  }
+ ]
+}

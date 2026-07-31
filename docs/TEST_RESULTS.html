@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>検証結果</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">1. 寸法検証（仕様 §17）— 16 件</a></li>
+    <li><a href="#s1">2. 接点検証（仕様 §17）— 39 件</a></li>
+    <li><a href="#s2">3. TRRS 拡張（仕様 §13）— 14 件</a></li>
+    <li><a href="#s3">4. 実ブラウザ検証（Playwright / Chromium 1440×900 @2x）— 27 件</a></li>
+    <li><a href="#s4">5. 性能 — 実 GPU（仕様 §17）</a></li>
+    <li><a href="#s5">6. タッチ操作（仕様 §17）</a></li>
+    <li><a href="#s6">7. スクリーンショット</a></li>
+    <li><a href="#s7">8. この検証で担保していないこと</a></li>
+  </ol>
+</nav>
+<h1>検証結果</h1>
+<div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
+<p>実施日 <strong>2026-07-30</strong>。表のコマンドはすべて再実行できます。</p>
+<div class="note"><p>本文中の「仕様 §N」は、このプロジェクトの発注時に渡された<strong>要求仕様書</strong>の節番号です。</p><p>その文書自体は本リポジトリに含まれていません（公開の対象外）。</p><p>各項目が何を確認したかは、§番号を見なくても本文だけで読めるように書いてあります。</p><p>なお、図面の実測（DERIVED 39 件の土台）に使ったスクリプトと生の測定値もリポジトリにありません。</p><p><strong>この 1 工程だけは第三者が再現できません。</strong></p></div>
+<div class="tw"><table><thead><tr><th>種別</th><th>コマンド</th><th>結果</th></tr></thead><tbody><tr><td>型検査</td><td><code>npm run typecheck</code></td><td><strong>エラー 0</strong></td></tr><tr><td>単体テスト</td><td><code>npm run test</code></td><td><strong>69 件すべて成功</strong></td></tr><tr><td>実ブラウザ検証</td><td><code>npm run screenshots</code></td><td><strong>27 件すべて成功</strong>、コンソールエラー 0</td></tr><tr><td>本番ビルド</td><td><code>npm run build</code></td><td><strong>成功</strong>（1.34 MB / gzip 383 kB）</td></tr><tr><td>実 GPU 性能</td><td><code>npm run perf</code></td><td><strong>全条件 fps 59.9</strong>（Apple M5 / vsync 上限）、<strong>33 ms 超のフレーム落ち 0 件</strong></td></tr><tr><td>タッチ操作 (Chromium)</td><td><code>npm run touch</code></td><td><strong>20 件すべて成功</strong>（不具合 1 件を発見・修正）</td></tr><tr><td>タッチ操作 (iOS Safari)</td><td>iPhone 17 シミュレータ / iOS 26.4 で手動</td><td><strong>6 項目すべて成功</strong></td></tr></tbody></table></div>
+<p>機械可読な結果: <code>artifacts/verification_summary.json</code>、<code>artifacts/ui_verification.json</code>、<code>artifacts/perf_real_gpu.json</code>、<code>artifacts/touch_verification.json</code></p>
+<hr>
+<h2 id="s0">1. 寸法検証（仕様 §17）— 16 件</h2>
+<h3>設計値とモデル測定値の差</h3>
+<div class="tw"><table><thead><tr><th>項目</th><th>設計値</th><th>モデル</th><th>差</th></tr></thead><tbody><tr><td>プラグ軸径</td><td>3.5 ±0.05 mm</td><td>3.5 mm</td><td>0</td></tr><tr><td>プラグ指部長</td><td>14.0 mm</td><td>14.0 mm</td><td>0</td></tr><tr><td>第2絶縁帯幅</td><td>0.7 mm</td><td>0.700 mm</td><td>0</td></tr><tr><td>挿入穴径</td><td>3.6 mm</td><td>3.6 mm</td><td>0</td></tr><tr><td>完全挿入深度</td><td>14.0 mm</td><td>14.0 mm</td><td>0</td></tr><tr><td>ジャック全長</td><td>17.6 mm</td><td>17.6 mm</td><td>0</td></tr></tbody></table></div>
+<p><strong>許容差外の箇所はありません。</strong></p>
+<h3>確認した内容</h3>
+<ul><li>軸径が Ring / Sleeve 区間の全域で φ3.5±0.05 の公差内に収まる</li><li>セグメントが隙間なく連続し、合計が指部長 14.0 mm にちょうど一致する</li><li><strong>絶縁帯が幅ゼロではない</strong>（仕様 §4.2）。2 本ともちょうど 0.7 mm</li><li>記載寸法チェーンと整合する（14 − 8.5 = 5.5 が Ring 前端、14 − 5 = 9.0 が Sleeve 前端）</li><li>Tip 導体が Ring / Sleeve より細いという図面実測の特徴が保たれている（先端側の円錐終端 φ3.02、後端でも φ3.20。Ring / Sleeve は φ3.5）。<strong>この 0.15 mm の段差が、第1絶縁帯で橋絡が起きない理由になる</strong></li><li>ジャック外形寸法が記載値どおり（3.5 + 14.1 = 17.6 の整合を含む）</li><li>挿入穴 φ3.6 とプラグ φ3.5 の片側隙間が 0.05 mm</li><li>端子の軸位置が「基板レイアウト図の値 + ナット長 3.5」と一致する（5 端子すべて）</li><li>完全挿入時、<strong>各接点のパッド全幅が対応する導体区間の内側に収まる</strong></li><li>接点の根元が接触点より奥にある（前方へ伸びる片持ち梁として成立する）</li><li>自由半径がプラグ半径より小さい（押付が生じる）</li></ul>
+<hr>
+<h2 id="s1">2. 接点検証（仕様 §17）— 39 件</h2>
+<h3>完全抜去時（d = −5 mm）</h3>
+<div class="tw"><table><thead><tr><th>確認項目</th><th>結果</th></tr></thead><tbody><tr><td>プラグとの接触が一切ない</td><td>3 接点すべて OPEN、たわみ 0</td></tr><tr><td>ブレーク接点がデータシートの通常状態</td><td><strong>2 個ともクローズ</strong>（"with 2 break contacts" と個数も一致）</td></tr><tr><td>端子がどのプラグ導体にもつながらない</td><td>全端子 未接続</td></tr></tbody></table></div>
+<h3>完全挿入時（d = 14.0 mm）</h3>
+<div class="tw"><table><thead><tr><th>確認項目</th><th>結果</th></tr></thead><tbody><tr><td>Jack Tip → Plug Tip</td><td>✅ 端子 3 → TIP</td></tr><tr><td>Jack Ring → Plug Ring</td><td>✅ 端子 2 → RING</td></tr><tr><td>Jack Sleeve → Plug Sleeve</td><td>✅ 端子 1 → SLEEVE</td></tr><tr><td>全信号接点が CLOSED</td><td>✅ 3 接点とも</td></tr><tr><td>対応するブレーク接点が開く</td><td>✅ BRK_TIP / BRK_RING とも OPEN</td></tr><tr><td>不要な橋絡が無い</td><td>✅ 橋絡なし・誤セグメントなし・プラグ導体どうしの短絡なし</td></tr><tr><td>音響予測</td><td>NORMAL（正常・ステレオ）</td></tr><tr><td>押付力が参考値 0.8〜1.3 N/接点に収まる</td><td>✅ 1.085 / 1.085 / 1.016 N</td></tr><tr><td>許容たわみ超過なし</td><td>✅</td></tr></tbody></table></div>
+<h3>挿入途中</h3>
+<div class="tw"><table><thead><tr><th>確認項目</th><th>検出深度</th><th>結果</th></tr></thead><tbody><tr><td>帰線用接点が Tip 導体に触れる</td><td>4.5 mm</td><td>WRONG_SEGMENT → TIP</td></tr><tr><td>接点が絶縁帯に乗って回路が開く</td><td>12.25 mm</td><td>Ring 接点が INSULATED、右チャンネルのみ断（LEFT_ONLY）</td></tr><tr><td>幅を持つ接点が導体境界をまたいで橋絡する</td><td>11.85 mm</td><td>帰線接点が BRIDGED（RING + SLEEVE）</td></tr><tr><td><strong>第1絶縁帯では橋絡しない</strong>（Tip が 0.15 mm 低いため）</td><td>7.5〜9.5 mm を全走査</td><td>TIP+RING の同時接触は 1 箇所も出ない</td></tr><tr><td>橋絡の成立条件が「同じ高さの導体面どうしの間隔 &lt; パッド幅」である</td><td>—</td><td>プラトー間隔 0.700 &lt; 帰線パッド 0.9、Ring パッド 0.55 &lt; 0.700</td></tr><tr><td>ブレーク接点だけが先に開く</td><td>8.10 mm</td><td>Ring 側 BREAK_OPEN、正しい結線はまだ 0</td></tr><tr><td>Tip 用接点が Ring/Sleeve 面で過大にたわむ</td><td>—</td><td>0.65 mm（完全挿入時の 0.306 mm の 2 倍以上、許容内）</td></tr></tbody></table></div>
+<h3>決定性</h3>
+<div class="tw"><table><thead><tr><th>確認項目</th><th>結果</th></tr></thead><tbody><tr><td>同一条件で同一結果</td><td>✅ 完全一致</td></tr><tr><td>0.05 mm 以下のステップで全域走査できる</td><td>✅ 581 行、全ステップ ≤0.05 mm</td></tr><tr><td>スイープを 2 回走らせても完全一致</td><td>✅</td></tr><tr><td>断続接触のノイズが時刻でなく深度から決まる</td><td>✅ 同じシード・同じ深度で同じ値</td></tr><tr><td><strong>接点が存在しない位置に架空の接触を生成しない</strong></td><td>✅ プラグ未到達の深さでは必ず OPEN</td></tr><tr><td><strong>絶縁帯を無視して常時接続することはない</strong></td><td>✅ INSULATED の行はすべて導通ネットが空</td></tr></tbody></table></div>
+<h3>区間演算・イベント抽出</h3>
+<ul><li>区間の結合・交差・「半径がしきい値以上になる区間の解析解」を個別に検証</li><li>仕様 §11 の主要イベント 8 種がすべて抽出される</li><li>イベントが深度順に並ぶ／最初の電気接触が最初の物理接触以降に起こる</li><li>全接点が正規接続になったあと、完全挿入まで橋絡も誤接触も再発しない</li></ul>
+<h3>故障モード（仕様 §12）</h3>
+<div class="tw"><table><thead><tr><th>確認項目</th><th>結果</th></tr></thead><tbody><tr><td>正常モデルが書き換わらない</td><td>✅ 故障適用後も既定評価は不変</td></tr><tr><td>汚れ 1.0 で導通が失われる</td><td>✅ 該当方位の接点が OPEN</td></tr><tr><td><strong>理想状態ではプラグの軸回転で接続が変わらない</strong></td><td>✅ 0° と 137° で完全一致</td></tr><tr><td><strong>汚れがある場合に限り軸回転が効く</strong></td><td>✅ 0° と 180° で品質が変わる</td></tr><tr><td>押付不足で押付力が落ちる</td><td>✅</td></tr><tr><td>摩耗でたわみと品質が落ちる</td><td>✅</td></tr><tr><td>軸ずれで片側が強く、反対側が弱くなる</td><td>✅ Ring 側 +、Tip 側 −</td></tr><tr><td>全 12 プリセットが例外なく評価できる</td><td>✅</td></tr></tbody></table></div>
+<hr>
+<h2 id="s2">3. TRRS 拡張（仕様 §13）— 14 件</h2>
+<p>3極版の検証が通ったあとに追加しました。</p>
+<div class="tw"><table><thead><tr><th>確認項目</th><th>結果</th></tr></thead><tbody><tr><td>導体 4 本・絶縁帯 3 本を持つ</td><td>✅</td></tr><tr><td>嵌合長・軸径が 3極と共通、絶縁帯は 3 本ともちょうど 0.7 mm</td><td>✅</td></tr><tr><td><strong>図面の寸法チェーンが肩基準であり、記載値がそのまま導体境界になる</strong></td><td>✅ 5.5 / 8.5 / 2.5 の 3 値から全境界が決まる</td></tr><tr><td><strong>CTIA と OMTP は形状が完全に同一で、機能割当だけが違う</strong></td><td>✅ 区間定義が完全一致</td></tr><tr><td><strong>CTIA と OMTP を取り違えていない</strong></td><td>✅ Ring2 と Sleeve が必ず入れ替わっている</td></tr><tr><td>4極 CTIA × 4極ジャック（CTIA 配線）</td><td>✅ 4 端子とも正規接続、NORMAL</td></tr><tr><td>4極 OMTP × CTIA 配線ジャック</td><td>「規格違い (CTIA ↔ OMTP)」と判定</td></tr><tr><td><strong>4極 CTIA × 3極ジャック</strong></td><td><strong>正常（マイクだけ働かない）</strong>。帰線接点が Ring2（=CTIA の帰線）に届く</td></tr><tr><td><strong>4極 OMTP × 3極ジャック</strong></td><td><strong>帰線が浮いて音量が落ちる</strong>。帰線接点が Ring2（=OMTP のマイク）に当たる</td></tr><tr><td><strong>3極 × 4極ジャック</strong></td><td><strong>正常（マイク未接続）</strong>。Ring2 接点が 3極プラグの Sleeve に当たる</td></tr><tr><td>6 通り全てが例外なく評価でき決定論的</td><td>✅</td></tr><tr><td>どの組み合わせでも完全抜去時は全接点 OPEN</td><td>✅</td></tr><tr><td>4極ジャックのリング接点パッドが<strong>同じ高さの導体面どうしの間隔 (0.700 mm) より狭い</strong></td><td>✅ 常時橋絡しない</td></tr><tr><td><strong>混挿 3 通りがいずれも一般に言われる実挙動と一致する</strong></td><td>✅ 2026-07-31 の導体境界の訂正で 3 件とも解消</td></tr><tr><td><strong>どの組み合わせでも Tip 導体を含む橋絡が起きない</strong></td><td>✅ 6 モデル全域を 0.02 mm 刻みで走査して 0 件</td></tr></tbody></table></div>
+<p>導体境界は図面記載寸法からの演算で <strong>FACT</strong> です（<a href="../ASSUMPTIONS.md">ASSUMPTIONS.md</a> F-2）。 一方、4極ジャックの<strong>接点位置は依然として ASSUMPTION</strong> なので、混挿の結果はその仮定に依存します （<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-2）。</p>
+<div class="note"><p><strong>2026-07-31 に導体境界を訂正しました。</strong> それまで図面の 5.5 / 8.5 を先端基準と誤読し、</p><p>Ring2 の幅を 0.7 mm（実際は 2.3 mm）、Sleeve を 4.8 mm（実際は 2.5 mm）としていました。</p><p>訂正前は混挿 3 通りが実挙動と食い違っており、訂正後は 6 通りすべてが一致します。</p></div>
+<h3>橋絡の起きる位置（2026-07-31 の接触判定修正による変化）</h3>
+<p>接触判定を「たわみ後の位置で見直す」形に直したため、<strong>全 6 モデルで橋絡の位置が変わりました</strong>。 これを記述した文書が無かったので、ここに記録します。</p>
+<p><strong>Tip が絡む橋絡が全モデルから消えました。</strong> Tip 導体だけ φ3.20 と 0.15 mm 細く、 他の導体（すべて φ3.5）と同じ高さに来ないためです。残った橋絡はすべて φ3.5 どうしの組み合わせです。 修正前は 3極・4極とも Ring+<strong>Tip</strong> が 8.27〜8.44 mm に出ていました （<code>model.contact.complianceMm</code> を十分大きくして旧挙動を再現し、実測した値）。</p>
+<p>現在の橋絡位置は次のとおりです（0.01 mm 刻みで全域走査した実測値）。</p>
+<div class="tw"><table><thead><tr><th>プラグ × ジャック</th><th>橋絡する区間</th></tr></thead><tbody><tr><td>3極 × 3極</td><td>Ring+Sleeve 11.77〜11.94</td></tr><tr><td>3極 × 4極</td><td>Ring+Sleeve 9.82〜9.98</td></tr><tr><td>4極 CTIA × 3極</td><td>Ring+Ring2 11.27〜11.44</td></tr><tr><td>4極 OMTP × 3極</td><td>Ring+Ring2 11.27〜11.44</td></tr><tr><td>4極 CTIA × 4極</td><td>Ring+Ring2 9.32〜9.48 ／ Ring2+Sleeve 12.32〜12.48</td></tr><tr><td>4極 OMTP × 4極</td><td>Ring+Ring2 9.32〜9.48 ／ Ring2+Sleeve 12.32〜12.48</td></tr></tbody></table></div>
+<div class="note"><p><strong>4極の値はこのあと 2 回動いています。</strong> ここに以前載せていた</p><p>「Ring+Ring2 10.58〜10.72 ／ Ring2+Sleeve 11.98〜12.12」は、</p><p>導体配置を訂正する前（§3 冒頭の注記）に測った値でした。</p><p>上の表は現在のデータで測り直したものです。</p><p>CTIA と OMTP が同じ値になるのは、両者の形状が完全に同一で機能割当だけが違うためです。</p></div>
+<hr>
+<h2 id="s3">4. 実ブラウザ検証（Playwright / Chromium 1440×900 @2x）— 27 件</h2>
+<h3>表示</h3>
+<div class="tw"><table><thead><tr><th>項目</th><th>結果</th></tr></thead><tbody><tr><td>完全挿入で 3 接点すべて正常接触と表示</td><td>PASS</td></tr><tr><td>半挿しで誤接触が出る</td><td>PASS（帰線が信号導体 RING に接触）</td></tr><tr><td>境界停止で橋絡が出る</td><td>PASS（帰線が RING と SLEEVE に同時接触）</td></tr><tr><td>断面・接点のみ・分解・寸法表示が例外なく描ける</td><td>PASS</td></tr><tr><td>回路パネルが完全挿入の結線を出す</td><td>PASS（pin 3 → Plug Tip、pin 1 → Plug Sleeve）</td></tr><tr><td>イベントパネルに主要イベントが出る</td><td>PASS</td></tr><tr><td>力パネルが公称レンジ内と判定する</td><td>PASS（挿入ピーク 5.27 N）</td></tr><tr><td>根拠パネルに根拠区分の内訳が出る</td><td>PASS</td></tr><tr><td>4極 CTIA × 3極ジャックでマイク不動作を表示</td><td>PASS</td></tr></tbody></table></div>
+<h3>操作（仕様 §17 UI 検証）</h3>
+<div class="tw"><table><thead><tr><th>項目</th><th>結果</th></tr></thead><tbody><tr><td>マウス操作（ボタン・タブ・プリセット・セレクト）</td><td>PASS</td></tr><tr><td>キーボード <code>←</code> <code>→</code> で深度が動く</td><td>PASS（10.00 → 10.05）</td></tr><tr><td><code>Home</code> / <code>End</code> で完全抜去 / 完全挿入</td><td>PASS</td></tr><tr><td><code>R</code> でリセット</td><td>PASS</td></tr><tr><td>数値入力で任意深度へ移動</td><td>PASS（12.25 mm）</td></tr><tr><td>0.05 mm 刻みで動かせる</td><td>PASS（12.25 → 12.20）</td></tr><tr><td>イベントマーカーをクリックしてその深度へ移動</td><td>PASS（3.95 mm）</td></tr><tr><td>画面サイズ変更で 1 カラムに切り替わる</td><td>PASS（900 px 幅）</td></tr><tr><td>自動挿入が動き、一時停止で止まる</td><td>PASS</td></tr><tr><td><strong>コンソールエラー</strong></td><td><strong>0 件</strong></td></tr></tbody></table></div>
+<h3>参考: ヘッドレス（ソフトウェアラスタ）での測定</h3>
+<p>上記の Playwright 実行はヘッドレス Chromium で、GL 実装は <code>ANGLE (Google, Vulkan / SwiftShader)</code> = <strong>ソフトウェアラスタ</strong>でした。 したがってこの環境の fps は実機 GPU の値ではありません。ここで確認できるのは次の 2 点だけです。</p>
+<div class="tw"><table><thead><tr><th>測定</th><th>値</th></tr></thead><tbody><tr><td>ポリゴン数</td><td>5,460 三角形 / 44 draw call</td></tr><tr><td>静止時のフレーム時間</td><td>123.4 ms（3.5 Mpx）</td></tr><tr><td>挿抜アニメ中</td><td>138.5 ms（3.5 Mpx）</td></tr><tr><td>低負荷モード（dpr=1・AA 無し）</td><td>42.0 ms（0.9 Mpx）</td></tr></tbody></table></div>
+<div class="note"><p><strong>フレーム時間の 3 つは測定時のマシンの混み具合で大きく動きます。</strong> ソフトウェアラスタは</p><p>描画を CPU で行うため、他のアプリと CPU を奪い合うからです。実際、同じコードで</p><p>静止時 <strong>97.1 / 114.2 / 118.9 / 123.4 / 198.9 / 222.7 ms</strong> をすべて観測しています。</p><p><strong>絶対値を性能の指標として読まないでください。</strong> 実 GPU の測定は次項です。</p><p>このため <code>artifacts/ui_verification.json</code> には測定時の 1 分平均負荷（<code>loadAverage1min</code>）を</p><p>併記しています。上の値は負荷 15.6 のときの測定です。</p><p>負荷の記録が無いまま数値だけ比べると、混んでいただけの回を「性能が劣化した」と</p><p>読み違えます。</p></div>
+<p>ポリゴン数は 2026-07-31 に 6,228 から 5,460 へ減りました。プラグ外形から 存在しない面取り（<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §4-4）を削除したためです。 減った 768 三角形は <code>6 点 × 64 分割 × 2 三角形</code> とちょうど一致します。</p>
+<ol><li><strong>CPU 側が重くない</strong> — 毎フレーム全接点を再評価する挿抜アニメ中でも、静止時より悪化しない</li><li><strong>塗り面積に効く</strong> — 画素数を 4 分の 1 にするとフレーム時間が約 2 分の 1 になる （空いているときの測定では 2.9 分の 1 でした。CPU が混むと塗り以外の固定費の割合が上がり、比が縮みます）</li></ol>
+<p>実 GPU での測定は次項です。</p>
+<hr>
+<h2 id="s4">5. 性能 — 実 GPU（仕様 §17）</h2>
+<p><code>npm run perf</code>（Playwright + <strong>headed Google Chrome</strong>）で測定。 測定日 2026-07-30、macOS 26.5.2 / <strong>Apple M5</strong> / Metal 4。 GL 実装は <code>ANGLE (Apple, ANGLE Metal Renderer: Apple M5)</code> で、<strong>ソフトウェアラスタではありません</strong>。</p>
+<p>機械可読な結果: <code>artifacts/perf_real_gpu.json</code></p>
+<h3>実際に得られるフレームレート（vsync あり）</h3>
+<div class="tw"><table><thead><tr><th>ビューポート</th><th>条件</th><th class="num">中央値</th><th class="num">fps</th><th class="num">p95</th><th class="num">最大</th><th class="num">33 ms 超</th></tr></thead><tbody><tr><td>1440×900 @2x（3.48 Mpx）</td><td>静止（完全挿入）</td><td class="num">16.70 ms</td><td class="num"><strong>59.9</strong></td><td class="num">17.50 ms</td><td class="num">19.40 ms</td><td class="num"><strong>0</strong></td></tr><tr><td>1440×900 @2x（3.48 Mpx）</td><td>挿抜アニメ中</td><td class="num">16.70 ms</td><td class="num"><strong>59.9</strong></td><td class="num">17.50 ms</td><td class="num">18.30 ms</td><td class="num"><strong>0</strong></td></tr><tr><td>1440×900 @2x（0.87 Mpx）</td><td>低負荷モード</td><td class="num">16.70 ms</td><td class="num"><strong>59.9</strong></td><td class="num">17.60 ms</td><td class="num">18.60 ms</td><td class="num"><strong>0</strong></td></tr><tr><td>1920×1080 @2x（6.20 Mpx）</td><td>静止（完全挿入）</td><td class="num">16.70 ms</td><td class="num"><strong>59.9</strong></td><td class="num">17.80 ms</td><td class="num">18.20 ms</td><td class="num"><strong>0</strong></td></tr><tr><td>1920×1080 @2x（6.20 Mpx）</td><td>挿抜アニメ中</td><td class="num">16.70 ms</td><td class="num"><strong>59.9</strong></td><td class="num">17.50 ms</td><td class="num">18.00 ms</td><td class="num"><strong>0</strong></td></tr><tr><td>1920×1080 @2x（1.55 Mpx）</td><td>低負荷モード</td><td class="num">16.70 ms</td><td class="num"><strong>59.9</strong></td><td class="num">17.40 ms</td><td class="num">17.90 ms</td><td class="num"><strong>0</strong></td></tr></tbody></table></div>
+<p><strong>全条件で fps 59.9 に達しています。</strong> 16.7 ms はディスプレイのリフレッシュレート（60 Hz）による 上限なので、これは「上限に達している」という意味です。</p>
+<p><strong>フレーム落ちはありませんでした。</strong> 全条件の最大フレーム時間が 19.40 ms 以下で、 1 vsync 分の 2 倍（33 ms）を超えたフレームは <strong>6 条件合計で 0 件</strong>です。</p>
+<div class="note"><p><strong>測定時のマシン負荷を artifact に記録するようにしました。</strong> この回は load average 10.66 でした。</p><p>以前 p95 が 18.5〜18.7 ms と出た回がありましたが、それは負荷が高かったときの値です。</p><p>vsync がある以上、中央値と fps は負荷にほとんど影響されませんが、p95 と最大値は動きます。</p><p><code>artifacts/perf_real_gpu.json</code> の <code>loadAverage1min</code> と <code>host</code> を見て解釈してください。</p></div>
+<h3>1 フレームの実コスト</h3>
+<p>vsync がある限り rAF 間隔は 16.7 ms に張り付くため、そこからは余裕の有無しか分かりません。 そこで <code>gl.render()</code> の直後に <code>glFinish()</code> を入れて GPU の完了を待ち、描画そのものの時間を取り出しました （<code>performance.now()</code> は 0.1 ms 単位に丸められるので、40 回まとめて描いてから割っています）。</p>
+<div class="tw"><table><thead><tr><th>ビューポート</th><th class="num">通常品質</th><th class="num">低負荷モード</th></tr></thead><tbody><tr><td>1440×900 @2x</td><td class="num"><strong>0.095 ms</strong>（3.48 Mpx）</td><td class="num">0.097 ms（0.87 Mpx）</td></tr><tr><td>1920×1080 @2x</td><td class="num"><strong>0.080 ms</strong>（6.20 Mpx）</td><td class="num">0.087 ms（1.55 Mpx）</td></tr></tbody></table></div>
+<p><strong>16.7 ms の予算に対して 0.5〜0.6 % しか使っていません。</strong></p>
+<h3>低負荷モードの効果 — 数値での結論</h3>
+<div class="tw"><table><thead><tr><th>環境</th><th class="num">通常品質</th><th class="num">低負荷モード</th><th>効果</th></tr></thead><tbody><tr><td>ソフトウェアラスタ（弱い GPU の代役）</td><td class="num">97.1〜222.7 ms</td><td class="num">33.6〜112.1 ms</td><td><strong>2〜3 倍速</strong></td></tr><tr><td>Apple M5（実 GPU）</td><td class="num">0.095 ms</td><td class="num">0.097 ms</td><td><strong>差なし</strong></td></tr></tbody></table></div>
+<p><strong>Apple M5 では低負荷モードに効果がありません。</strong> 画素数を 4 分の 1 にしても描画コストが変わらないためです。 つまりこの GPU では塗り面積が律速になっておらず、コマンド送出側で既に頭打ちになっています。</p>
+<p>一方、ソフトウェアラスタでは 2〜2.9 倍速くなりました（倍率は CPU の混み具合で動きます）。 <strong>低負荷モードは「フィルレートが足りない環境で効く機能」であり、その環境では実際に効くことを確認しました。</strong> 高速な GPU で差が出ないのは、そもそも削る必要が無いからです。</p>
+<div class="note"><p>測定はディスプレイ 60 Hz の環境です。120 Hz（ProMotion）環境では上限が 8.3 ms になりますが、</p><p>実コストが 0.1 ms 未満なので余裕は十分あると考えられます。ただし <strong>120 Hz 環境では未測定です。</strong></p></div>
+<hr>
+<h2 id="s5">6. タッチ操作（仕様 §17）</h2>
+<p><code>npm run touch</code> で測定。機械可読な結果: <code>artifacts/touch_verification.json</code></p>
+<p>2 つの環境で確認しました。</p>
+<div class="tw"><table><thead><tr><th>環境</th><th>実行系</th><th>結果</th></tr></thead><tbody><tr><td><strong>iOS Safari（WebKit）</strong></td><td>iPhone 17 シミュレータ / iOS 26.4 / Mobile Safari。OS のタッチ入力で手動操作</td><td><strong>6 項目すべて成功</strong></td></tr><tr><td>Chromium（自動テスト）</td><td>iPhone 15 Pro / iPad Pro 11 相当のビューポート + CDP タッチ注入</td><td><strong>20 項目すべて成功</strong></td></tr></tbody></table></div>
+<h3>6-1. iOS Safari での確認（WebKit 実機エンジン）</h3>
+<p>iPhone 17 シミュレータ（<strong>iOS 26.4</strong>、402×874 pt / 3x）の Mobile Safari で <code>http://localhost:5173</code> を開き、シミュレータの OS タッチ入力で操作しました。</p>
+<div class="tw"><table><thead><tr><th>確認項目</th><th>結果</th></tr></thead><tbody><tr><td>iOS Safari で 3D が描画され、1 カラムレイアウトになる</td><td><strong>PASS</strong>（WebGL 描画・日本語表示とも正常）</td></tr><tr><td><strong>1 本指でプラグをドラッグして深度が変わる</strong></td><td><strong>PASS</strong>（−3.00 mm → <strong>7.21 mm</strong>。HUD が「帰線が信号導体 (TIP) に接触」と表示）</td></tr><tr><td><strong>2 本指ピンチでズームする（プラグの上から開始）</strong></td><td><strong>PASS</strong>（拡大され、かつ<strong>深度は 7.21 mm のまま</strong>＝プラグは動かずカメラだけが動いた）</td></tr><tr><td>タップでボタンが押せる</td><td><strong>PASS</strong>（「リセット」で −3.00 mm に戻る）</td></tr><tr><td>タップでタブとプリセットが切り替わる</td><td><strong>PASS</strong>（「故障」タブ →「半挿し」で 9.80 mm、誤接触 2 件を表示）</td></tr><tr><td>キャンバス外を指でなぞるとページがスクロールする</td><td><strong>PASS</strong>（3D は固定のまま下部パネルだけがスクロール）</td></tr></tbody></table></div>
+<p>とくに 3 番目は、<a href="#6-3-この検証で見つけて直した不具合">§6-3</a> で直した不具合が <strong>実機 WebKit でも正しく直っていること</strong>の確認になっています。 修正前は、ピンチの 1 本目の指がプラグに乗るとズームせずプラグが動いていました。</p>
+<p>スクリーンショット: <code>docs/screenshots/18_ios_safari_half_inserted.png</code>、<code>19_ios_safari_fault_presets.png</code></p>
+<div class="note"><p><strong>物理的な iPhone / iPad ではありません。</strong> iOS シミュレータです。</p><p>ブラウザエンジンは実機と同じ WebKit で、タッチ入力も OS 経由の本物ですが、</p><p>実機固有の要素（実際の指の接触面積、Safari のツールバー挙動、実機 GPU の性能、</p><p>低電力モードなど）は確認できていません。</p></div>
+<h3>6-2. Chromium での自動テスト — 20 件すべて成功</h3>
+<p><code>npm run touch</code> で毎回再実行できます。 iPhone 15 Pro / iPad Pro 11 相当の<strong>ビューポートと <code>hasTouch</code></strong> を有効にした Chromium に対し、 CDP の <code>Input.dispatchTouchEvent</code> で<strong>本物のタッチ入力を注入</strong>しています。 これにより OS が生成するのと同じ <code>pointerdown</code> / <code>pointermove</code> / <code>pointerup</code> が発火し、 アプリのドラッグ処理と OrbitControls のピンチ処理を実際に通ります （<code>page.evaluate</code> で合成イベントを撒くのとは違い、ポインタイベントの経路をそのまま通ります）。</p>
+<div class="tw"><table><thead><tr><th>項目</th><th>iPhone 15 Pro (393×659)</th><th>iPad Pro 11 (834×1194)</th></tr></thead><tbody><tr><td>1 カラムレイアウトになる</td><td>PASS</td><td>PASS</td></tr><tr><td>3D ビューが画面内に描かれる</td><td>PASS（393×330）</td><td>PASS（834×597）</td></tr><tr><td><strong>1 本指でプラグをドラッグして深度が変わる</strong></td><td>PASS（8.00 → 14.00 mm）</td><td>PASS（8.00 → 11.63 mm）</td></tr><tr><td><strong>背景から始める 2 本指ピンチでズームする</strong></td><td>PASS（40.5 → 10.6）</td><td>PASS（40.5 → 10.6）</td></tr><tr><td><strong>プラグの上から始める 2 本指ピンチでもズームする</strong></td><td>PASS（40.5 → 10.6）</td><td>PASS（40.5 → 10.6）</td></tr><tr><td>何も無い所を 1 本指でなぞると視点が回る</td><td>PASS（カメラ 48.3 移動）</td><td>PASS（カメラ 30.1 移動）</td></tr><tr><td>プラグの上をなぞると視点は動かずプラグだけ動く</td><td>PASS（カメラ移動 0.03）</td><td>PASS（カメラ移動 0.19）</td></tr><tr><td>タップでプリセットを切り替えられる</td><td>PASS</td><td>PASS</td></tr><tr><td>キャンバスに <code>touch-action: none</code> が効いている</td><td>PASS</td><td>PASS</td></tr><tr><td>JS エラーが無い</td><td>PASS</td><td>PASS</td></tr></tbody></table></div>
+<h3>6-3. この検証で見つけて直した不具合</h3>
+<p><strong>ピンチの 1 本目の指がプラグに乗ると、ズームがまったく効かなかった。</strong></p>
+<p>原因は、プラグのドラッグを開始したときに <code>OrbitControls.enabled = false</code> にしていたことです。 これだと OrbitControls が 1 本目の指を登録しないため、あとから 2 本目が触れても 「2 本指ジェスチャ」として認識されず、ピンチが成立しませんでした。 プラグの上でピンチしようとすると、ズームせずにプラグが動くという挙動になります。</p>
+<p>修正: <code>enabled</code> ではなく <strong><code>enableRotate</code> と <code>enablePan</code> だけを止める</strong>ようにしました。 OrbitControls は指を数え続けるので、2 本目が触れた瞬間にズームへ移れます。 あわせて、2 本目の指が触れたらプラグのドラッグは中止してカメラ操作に譲るようにしました。</p>
+<p>修正前後で、上表の「プラグの上から始める 2 本指ピンチ」が FAIL → PASS に変わっています。 マウス操作側（デスクトップ 27 件）に退行がないことも再実行で確認済みです。</p>
+<hr>
+<h2 id="s6">7. スクリーンショット</h2>
+<p><code>docs/screenshots/</code> に 19 枚。1〜17 は実ブラウザから自動取得、18〜19 は iOS シミュレータから取得しています。</p>
+<div class="tw"><table><thead><tr><th>ファイル</th><th>内容</th></tr></thead><tbody><tr><td><code>01_full_insertion.png</code></td><td>完全挿入（正常）</td></tr><tr><td><code>02_half_inserted.png</code></td><td>半挿し（誤接触）</td></tr><tr><td><code>03_bridged.png</code></td><td>導体境界で停止（橋絡）</td></tr><tr><td><code>04_section.png</code></td><td>断面表示</td></tr><tr><td><code>05_contacts_only.png</code></td><td>接点のみ表示（接点ばね拡大）</td></tr><tr><td><code>06_exploded.png</code></td><td>分解表示</td></tr><tr><td><code>07_dimensions.png</code></td><td>寸法表示</td></tr><tr><td><code>08_circuit_panel.png</code> 〜 <code>12_contact_table.png</code></td><td>各パネル</td></tr><tr><td><code>13_trrs_ctia_in_trs_jack.png</code> / <code>14_trrs_plug.png</code></td><td>4極 CTIA × 3極ジャック</td></tr><tr><td><code>15_responsive_narrow.png</code></td><td>狭い画面</td></tr><tr><td><code>16_touch_iphone.png</code></td><td>iPhone 相当のビューポート (タッチ検証)</td></tr><tr><td><code>17_touch_ipad.png</code></td><td>iPad 相当のビューポート (タッチ検証)</td></tr><tr><td><code>18_ios_safari_half_inserted.png</code></td><td><strong>iOS Safari</strong> で半挿し状態</td></tr><tr><td><code>19_ios_safari_fault_presets.png</code></td><td><strong>iOS Safari</strong> で故障プリセット一覧</td></tr></tbody></table></div>
+<hr>
+<h2 id="s7">8. この検証で担保していないこと</h2>
+<ul><li><strong>実物の部品との突き合わせをしていません</strong>（現物を持っていないため）。 ここで確認しているのは「モデルが自分の定義どおりに動くこと」と「データシート記載値と矛盾しないこと」です。</li><li>図面実測は 2 通りの独立した方法で一致を確認しましたが、どちらも同じ 1 つの図面を読んでいるので、 <strong>図面自体の誤りは検出できません</strong>。</li><li><strong>物理的な iPhone / iPad では未検証です。</strong> iOS Safari の確認は iOS 26.4 シミュレータで行いました。 ブラウザエンジンは実機と同じ WebKit ですが、実機固有の要素 (実際の指の接触面積、Safari の ツールバー挙動、実機 GPU の性能、低電力モードなど) は確認できていません。</li><li>実 GPU での測定は Apple M5 / 60 Hz ディスプレイ 1 台のみです。他の GPU、120 Hz 環境、実際の低性能端末では未測定です。</li><li>詳細は <a href="../UNKNOWNS.md">UNKNOWNS.md</a> を参照してください。</li></ul>
+</div>
+</body>
+</html>

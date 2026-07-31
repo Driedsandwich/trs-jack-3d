@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "units": "mm (特記なき場合)",
+  "readme": [
+    "全ての数値は根拠区分 (grade) を持つ。",
+    "FACT      = 一次資料に数値として直接記載されている",
+    "DERIVED   = 一次資料の記載寸法または図面から幾何学的に導出した",
+    "ASSUMPTION= 資料に無いため明示的に置いた仮定",
+    "UNKNOWN   = 確認できていない",
+    "図面実測 (measure-drawing) の方法: メーカー公式データシート PDF を 1200dpi のグレースケールに",
+    "ラスタライズし、輪郭線の上下対称ペアを検出して外半径を求めた。軸方向の校正は記載寸法 14mm",
+    "(先端〜肩) を用いた。独立にベクタ抽出でも同じ図面を測り、両者は 0.05mm 以内で一致した。"
+  ],
+  "entries": {
+    "plug.bodyDiameter": {
+      "value": 3.5, "tolerance": 0.05, "grade": "FACT", "sources": ["ds-1532-10"],
+      "note": "図面引出線 ø3.5±0.05。Ring / Sleeve 導体の外径。"
+    },
+    "plug.fingerLength": {
+      "value": 14.0, "grade": "FACT", "sources": ["ds-1532-10"],
+      "note": "記載寸法 14 (先端〜肩)。全ての軸方向寸法チェーンはこの肩側を基準にしている。"
+    },
+    "plug.insulatorDiameter": {
+      "value": 3.2, "grade": "DERIVED", "sources": ["ds-1532-10", "measure-drawing", "xref-trrs-dims"],
+      "note": "絶縁帯は導体より片側 0.15mm 縮径。図面実測 φ3.20〜3.22。同系列 3.5mm プラグ規格図の Ø3.2 とも一致。"
+    },
+    "plug.tip.noseDiameter": {
+      "value": 0.8, "grade": "DERIVED", "sources": ["ds-1532-10", "measure-drawing"],
+      "note": "先端は尖点ではなく約 φ0.8 の微小平坦面。図面に数値記載なし。"
+    },
+    "plug.tip.coneEnd": {
+      "value": 1.296, "grade": "DERIVED", "sources": ["ds-1532-10", "measure-drawing"],
+      "note": "先端円錐が最大径に達する軸位置。半角約 40°。"
+    },
+    "plug.tip.coneEndRadius": {
+      "value": 1.51, "grade": "DERIVED", "sources": ["ds-1532-10", "measure-drawing"],
+      "note": "先端の円錐が終わる位置の半径 (φ3.02)。Tip 導体はこのあと逆テーパで一度細くなり、後端 (plug.tip.end) で r=1.600 (φ3.20) まで戻る。つまり Tip 導体区間の最大半径は 1.600。いずれにせよ Ring/Sleeve の 1.750 (φ3.5) より低く、この 0.15mm の段差が半挿し時に橋絡が起きるかどうかを決める。"
+    },
+    "plug.tip.taperEnd": {
+      "value": 3.987, "grade": "DERIVED", "sources": ["ds-1532-10", "measure-drawing"],
+      "note": "円錐の後ろは緩い逆テーパ。ここで φ2.59 まで細る。"
+    },
+    "plug.tip.taperEndRadius": {
+      "value": 1.295, "grade": "DERIVED", "sources": ["ds-1532-10", "measure-drawing"]
+    },
+    "plug.tip.end": {
+      "value": 4.8, "grade": "DERIVED", "sources": ["ds-1532-10", "measure-drawing", "xref-trrs-dims"],
+      "note": "Tip 導体と第1絶縁帯の電気的境界。図面は金属と樹脂を塗り分けないため直接は読めない。根拠は2つ: (1) 図面実測で s=4.902 に分割線が検出された、(2) 3.5mm プラグの絶縁帯幅は複数社の図面で 0.7±0.1 に揃っており、Ring 前端 5.5 から 0.7 を引くと 4.8 になる。φ3.20 への段は 4.292 にあるが、その 4.292〜4.8 は Tip 金属の後端を絞った部分と解釈した。"
+    },
+    "plug.ins1.start": {
+      "value": 4.8, "grade": "DERIVED", "sources": ["ds-1532-10", "measure-drawing", "xref-trrs-dims"],
+      "note": "plug.tip.end と同一。区間は隙間なく連続する。これにより第1絶縁帯の幅も 0.7mm となり、第2絶縁帯 (図面記載 0.7) と揃う。"
+    },
+    "plug.ins1.end": {
+      "value": 5.5, "grade": "DERIVED", "sources": ["ds-1532-10"],
+      "note": "記載寸法の演算 14 − 8.5 = 5.5 を採用 (両方とも FACT)。図面実測は 5.487 で 0.013mm の差。電気的境界も外形プロファイルの段の位置も、記載寸法側を正とする。"
+    },
+    "plug.ring.start": { "value": 5.5, "grade": "DERIVED", "sources": ["ds-1532-10"] },
+    "plug.ring.end": {
+      "value": 8.3, "grade": "DERIVED", "sources": ["ds-1532-10"],
+      "note": "記載寸法の演算 14 − 5 − 0.7 = 8.3 を採用。図面実測は 8.306 で 0.006mm の差。"
+    },
+    "plug.ins2.start": { "value": 8.3, "grade": "DERIVED", "sources": ["ds-1532-10"] },
+    "plug.ins2.end": {
+      "value": 9.0, "grade": "DERIVED", "sources": ["ds-1532-10"],
+      "note": "記載寸法の演算 14 − 5 = 9.0 を採用。図面実測は 8.992 で 0.008mm の差。これにより第2絶縁帯の幅は記載どおり厳密に 0.7mm になる。"
+    },
+    "plug.ins2.width": {
+      "value": 0.7, "grade": "FACT", "sources": ["ds-1532-10"],
+      "note": "図面に 0.7 と直接記載。第2絶縁帯 (Ring/Sleeve 間) の軸方向幅。同系列規格図の絶縁帯幅 0.7±0.1 とも一致。"
+    },
+    "plug.sleeve.start": { "value": 9.0, "grade": "DERIVED", "sources": ["ds-1532-10"] },
+    "plug.dim.ringFrontToShoulder": {
+      "value": 8.5, "grade": "FACT", "sources": ["ds-1532-10"],
+      "note": "図面記載寸法 8.5。肩を基準に先端方向へ測る。"
+    },
+    "plug.dim.sleeveExposedLength": {
+      "value": 5.0, "grade": "FACT", "sources": ["ds-1532-10"],
+      "note": "図面記載寸法 5。肩から第2絶縁帯後端まで＝Sleeve 導体の露出長。"
+    },
+
+    "plug.bodyRadius": { "value": 1.75, "grade": "FACT", "sources": ["ds-1532-10"], "note": "ø3.5±0.05 の半径。" },
+    "plug.insulatorRadius": { "value": 1.6, "grade": "DERIVED", "sources": ["measure-drawing"], "note": "絶縁帯 φ3.2 の半径。" },
+    "plug.tip.noseRadius": { "value": 0.4, "grade": "DERIVED", "sources": ["measure-drawing"], "note": "先端平坦面 φ0.8 の半径。" },
+    "plug.handle.shoulderDiameter": {
+      "value": 10.0, "grade": "FACT", "sources": ["ds-1532-10", "measure-drawing"],
+      "note": "図面記載「Ø10」。肩カラー (先端から 14.0〜15.0mm) の外径。2026-07-31 まで 5.18 としていたが、その値に当たる造形は図面のどこにも無かった。Ø10 の寸法補助線は肩カラーの上下辺に付いている。完全挿入がここで止まる結論はどちらの値でも変わらない (ボア φ3.6 より大きいため)。表示専用で接触判定には入らない。"
+    },
+    "plug.handle.shoulderLength": { "value": 1.016, "grade": "DERIVED", "sources": ["measure-drawing"] , "note": "図面実測。肩カラーの長さ (先端から 14.000〜15.016mm)。この値に当たる記載寸法は図面に無く、軸方向チェーン 14 + 25 + 13.5 = 52.5 の内側に含まれるため作画から測るしかない。2026-07-31 まで 1.85 としており、また grade を FACT としていたが、FACT の定義 (一次資料に数値として直接記載) を満たさないため DERIVED へ下げた。" },
+    "plug.handle.bodyDiameter": {
+      "value": 10.0, "grade": "DERIVED", "sources": ["ds-1532-10"], "note": "ハンドル本体は八角柱で、図面に径の寸法記載は無い。対辺 ≒φ10.56 / 対角 ≒φ11.43 の実測から、表示用に φ10 とみなした。2026-07-31 まで「図面記載 Ø10」を根拠に FACT としていたが、図面の Ø10 は肩カラーの寸法であり、本体に付けられたものではなかった。"
+    },
+    "plug.handle.bodyLength": {
+      "value": 23.98, "grade": "DERIVED", "sources": ["ds-1532-10"],
+      "note": "図面記載 25 (肩前面〜歪み止め始点) から肩カラー 1.016 を引いた値。"
+    },
+    "plug.handle.strainReliefDiameter": { "value": 7.0, "grade": "FACT", "sources": ["ds-1532-10"], "note": "断面図 A-A 記載「Ø7」。歪み止めブーツの外径。一定径のリブ管で、主投影図の作画実測 φ7.012 とも一致する。2026-07-31 まで台帳に無く、plugGeometry.ts が φ10 → φ5.8 の円錐で描いていた。表示専用で接触判定には入らない。" },
+    "plug.handle.strainReliefLength": {
+      "value": 13.5, "grade": "FACT", "sources": ["ds-1532-10"], "note": "図面記載 13.5。"
+    },
+    "plug.handle.cableDiameter": {
+      "value": 5.0, "grade": "FACT", "sources": ["ds-1532-10"],
+      "note": "\"Connectable conductors for solder area / Cable diameter 5 mm\" および断面図 Ø5。"
+    },
+    "plug.handle.cableLength": { "value": 14.0, "grade": "ASSUMPTION", "note": "表示用。ケーブル長は部品仕様ではない。" },
+    "plug.spec.matingCycles": { "value": 5000, "unit": "回", "grade": "FACT", "sources": ["ds-1532-10"] },
+    "plug.spec.insertionForceMin": { "value": 0.29, "unit": "N", "grade": "FACT", "sources": ["ds-1532-10"],
+      "note": "プラグ側データシートの記載。ジャック側 (3〜20N) と一桁違う。UNKNOWNS.md の矛盾項目を参照。" },
+    "plug.spec.insertionForceMax": { "value": 2.94, "unit": "N", "grade": "FACT", "sources": ["ds-1532-10"] },
+    "plug.spec.ratedCurrent": { "value": 3, "unit": "A", "grade": "FACT", "sources": ["ds-1532-10"] },
+    "plug.spec.ratedVoltage": { "value": 34, "unit": "V", "grade": "FACT", "sources": ["ds-1532-10"] },
+
+    "jack.overallLength": { "value": 17.6, "grade": "FACT", "sources": ["ds-1503-09"], "note": "図面記載 17.6。ローレットナット前面から後端まで。" },
+    "jack.noseLength": { "value": 3.5, "grade": "FACT", "sources": ["ds-1503-09"], "note": "図面記載 3.5。ローレットナット (前面基準面) から本体前面まで。" },
+    "jack.housing.depth": { "value": 14.1, "grade": "FACT", "sources": ["ds-1503-09"], "note": "図面記載 14.1。絶縁ハウジング本体の長さ。" },
+    "jack.housing.width": { "value": 11.5, "grade": "FACT", "sources": ["ds-1503-09"], "note": "図面記載 11.5。" },
+    "jack.housing.height": { "value": 6.0, "grade": "FACT", "sources": ["ds-1503-09"], "note": "図面記載 6。" },
+    "jack.housing.axisOffsetFromEdge": { "value": 6.0, "grade": "FACT", "sources": ["ds-1503-09"],
+      "note": "前面図の 6 / 5.5 (合計 11.5)。軸は幅中心から 0.25mm ずれている。" },
+    "jack.housing.axisHeightFromPcb": { "value": 3.0, "grade": "FACT", "sources": ["ds-1503-09"],
+      "note": "図面記載。側面図に、軸の中心線からブッシング下端 (＝本体底面) までを公差付きで引いた「3」の寸法線がある。同じ位置の外側には全高を示す「ø6」がある。2026-07-31 まで「前面図でボアが本体高さ 6mm の中央に描かれていることから導出」と書いていたが、これは記載寸法の拾い漏れだった。残る仮定は「基板面＝本体底面」の 1 点だけで、その部分は依然として未確認 (UNKNOWNS §3-5)。" },
+    "jack.entryBoreDiameter": { "value": 3.6, "grade": "FACT", "sources": ["ds-1503-09"], "note": "図面記載 ø3.6。図面には公差が併記されているが、入手した PDF の解像度では判読できなかった (UNKNOWN)。プラグ φ3.5 との片側隙間 0.05mm は公称どうしの差であり、両者の公差を考えると実際の隙間はこれより広くも狭くもなりうる。" },
+    "jack.entryBushingLength": { "value": 3.5, "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "ローレットナット部の長さ＝jack.noseLength。" },
+    "jack.nutDiameter": { "value": 6, "grade": "FACT", "sources": ["ds-1503-09"], "note": "図面記載「ø6」。側面図の左端に、前部ブッシング (ローレットナット部) の外径として引かれている。2026-07-31 まで 5.6 としており、note にも「前面図で本体高さ 6mm より小さく描かれていることから推定」と書いていたが、実際にはこの円は本体高さ 6mm にちょうど接しており、記述は実測と逆だった。図面に記載がある寸法を拾えていなかった例。表示専用で接触判定には使わない。" },
+
+    "jack.fullInsertionDepth": {
+      "value": 14.0, "grade": "DERIVED", "sources": ["ds-1532-10", "ds-1503-09"],
+      "note": "プラグ肩 (図面記載 Ø10) はジャックのボア (φ3.6) に入れないため、肩が前面基準面に当たった所で止まる。よって完全挿入深度＝プラグ指部長 14mm。"
+    },
+    "jack.refPlane": { "value": 0, "grade": "DERIVED", "note": "座標系の定義。ローレットナット前面を x=0 とし、奥を + とする。" },
+
+    "jack.pin1.axial": { "value": 5.6, "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "基板レイアウト図の 2.1 (本体前面基準) に、ナット長 3.5 を加算。" },
+    "jack.pin2.axial": { "value": 8.9, "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "レイアウト図 5.4 + 3.5。" },
+    "jack.pin5.axial": { "value": 12.0, "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "レイアウト図 8.5 + 3.5。" },
+    "jack.pin3.axial": { "value": 13.4, "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "レイアウト図 9.9 + 3.5。" },
+    "jack.pin4.axial": { "value": 16.6, "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "レイアウト図 13.1 + 3.5。" },
+    "jack.pin3.lateral": { "value": -5.05, "grade": "FACT", "sources": ["ds-1503-09"], "note": "基板レイアウト図。軸から左へ 5.05。" },
+    "jack.pin5.lateral": { "value": -2.65, "grade": "FACT", "sources": ["ds-1503-09"] },
+    "jack.pin1.lateral": { "value": 0.0, "grade": "FACT", "sources": ["ds-1503-09"], "note": "軸上。" },
+    "jack.pin4.lateral": { "value": 4.0, "grade": "FACT", "sources": ["ds-1503-09"] },
+    "jack.pin2.lateral": { "value": 4.55, "grade": "FACT", "sources": ["ds-1503-09"] },
+
+    "jack.spec.contactResistance": { "value": 30, "unit": "mΩ", "grade": "FACT", "sources": ["ds-1503-09"], "note": "≤ 30 mΩ (Tamb 20°C)。完全接触時のメーカー保証値。" },
+    "jack.spec.insulationResistance": { "value": 100, "unit": "MΩ", "grade": "FACT", "sources": ["ds-1503-09"], "note": "≥ 100 MΩ。" },
+    "jack.spec.ratedCurrent": { "value": 1, "unit": "A", "grade": "FACT", "sources": ["ds-1503-09"] },
+    "jack.spec.ratedVoltage": { "value": 34, "unit": "V", "grade": "FACT", "sources": ["ds-1503-09"], "note": "34 V AC/DC。" },
+    "jack.spec.impulseVoltage": { "value": 250, "unit": "V", "grade": "FACT", "sources": ["ds-1503-09"], "note": "250 V / 60 s。" },
+    "jack.spec.matingCycles": { "value": 5000, "unit": "回", "grade": "FACT", "sources": ["ds-1503-09"], "note": "≥ 5000。" },
+    "jack.spec.insertionForceMin": { "value": 3, "unit": "N", "grade": "FACT", "sources": ["ds-1503-09"], "note": "3–20 N (measured with a gauge plug)。" },
+    "jack.spec.insertionForceMax": { "value": 20, "unit": "N", "grade": "FACT", "sources": ["ds-1503-09"] },
+    "jack.spec.tempMin": { "value": -10, "unit": "°C", "grade": "FACT", "sources": ["ds-1503-09"] },
+    "jack.spec.tempMax": { "value": 70, "unit": "°C", "grade": "FACT", "sources": ["ds-1503-09"] },
+
+    "jack.contact.tip.axialCenter": {
+      "value": 11.4, "grade": "ASSUMPTION", "sources": ["ds-1503-09", "ds-1532-10"],
+      "note": "完全挿入 (深度 14) で s=2.6 となり、Tip 導体区間 0〜4.8 の内側にパッド全幅が入る。端子3 (13.4) から前方へ伸びる梁。一次資料に接点の軸位置の記載は無く、この値は「完全挿入で対応する導体にパッド全幅が収まる」という条件を満たす範囲から選んだ当てはめ値である。端子の軸位置 (FACT) と前方へ伸びる片持ち梁という構造は範囲を狭めるが、梁の長さが不明なので値そのものは決まらない。2026-07-31 まで grade を DERIVED としていたが、幾何学的な導出ではないので、4極側 (trrs.jack.contact.*) と揃えて ASSUMPTION へ下げた。"
+    },
+    "jack.contact.tip.padWidth": { "value": 0.55, "grade": "ASSUMPTION", "note": "接触ドームの軸方向有効幅。3極プラグの平坦面どうしの間隔 0.700mm より狭いので橋絡を起こせない。絶縁帯 0.7mm より狭くもあるので、絶縁帯の上に完全に乗って回路が開くことがある。" },
+    "jack.contact.tip.freeRadius": {
+      "value": 1.1, "grade": "DERIVED", "sources": ["ds-1532-10", "te-contact-force"],
+      "note": "Tip 導体は接触位置で半径 1.406 しかない (φ3.5 の Ring/Sleeve より細い)。公称押付 0.8〜1.3N/接点を満たすには自由半径をここまで下げる必要がある。"
+    },
+    "jack.contact.tip.nominalDeflection": { "value": 0.31, "grade": "DERIVED", "note": "完全挿入時のたわみ = 1.406 − 1.10。" },
+    "jack.contact.tip.maxDeflection": { "value": 0.95, "grade": "ASSUMPTION", "note": "φ3.5 の Sleeve 上に乗ったとき 0.65mm たわむため、それを許容する値。" },
+    "jack.contact.tip.springRate": { "value": 3.1, "unit": "N/mm", "grade": "DERIVED", "sources": ["te-contact-force"], "note": "公称たわみで 0.8〜1.3 N/接点になるよう設定。" },
+    "jack.contact.tip.angularPosition": { "value": 270, "unit": "deg", "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "端子3 が軸の左 (−5.05mm) にあることから。0deg = +Y、90deg = +Z。" },
+    "jack.contact.tip.rootAxial": { "value": 14.2, "grade": "ASSUMPTION", "note": "端子3 (13.4) のわずかに奥。梁長 2.8mm。" },
+    "jack.break.tip.openDeflection": { "value": 0.05, "grade": "ASSUMPTION", "note": "信号ばねが少し持ち上がるだけでノーマル接点から離れる構造。" },
+
+    "jack.contact.ring.axialCenter": {
+      "value": 7.1, "grade": "ASSUMPTION", "sources": ["ds-1503-09", "ds-1532-10"],
+      "note": "完全挿入で s=6.9 となり、Ring 導体区間 5.5〜8.3 のほぼ中央に来る。前後の絶縁帯まで約 1.06mm の余裕がある。端子2 (8.9) から前方へ伸びる梁。一次資料に接点の軸位置の記載は無く、この値は「完全挿入で対応する導体にパッド全幅が収まる」という条件を満たす範囲から選んだ当てはめ値である。端子の軸位置 (FACT) と前方へ伸びる片持ち梁という構造は範囲を狭めるが、梁の長さが不明なので値そのものは決まらない。2026-07-31 まで grade を DERIVED としていたが、幾何学的な導出ではないので、4極側 (trrs.jack.contact.*) と揃えて ASSUMPTION へ下げた。"
+    },
+    "jack.contact.ring.padWidth": { "value": 0.55, "grade": "ASSUMPTION", "note": "3極プラグの平坦面どうしの間隔 0.700mm より狭いので、絶縁帯をまたいだ橋絡は起こせない。絶縁帯 0.7mm より狭くもあるので、絶縁帯の上に完全に乗って回路が開くことがある。" },
+    "jack.contact.ring.freeRadius": { "value": 1.4, "grade": "DERIVED", "sources": ["te-contact-force"], "note": "φ3.5 (半径1.75) に対しての公称たわみ 0.35mm。" },
+    "jack.contact.ring.nominalDeflection": { "value": 0.35, "grade": "DERIVED" },
+    "jack.contact.ring.maxDeflection": { "value": 0.85, "grade": "ASSUMPTION" },
+    "jack.contact.ring.springRate": { "value": 3.1, "unit": "N/mm", "grade": "DERIVED", "sources": ["te-contact-force"] },
+    "jack.contact.ring.angularPosition": { "value": 90, "unit": "deg", "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "端子2 が軸の右 (+4.55mm) にある。Tip 接点とは軸を挟んで反対側。" },
+    "jack.contact.ring.rootAxial": { "value": 9.7, "grade": "ASSUMPTION", "note": "端子2 (8.9) のわずかに奥。梁長 2.6mm。" },
+    "jack.break.ring.openDeflection": { "value": 0.05, "grade": "ASSUMPTION" },
+
+    "jack.contact.sleeve.axialCenter": {
+      "value": 3.2, "grade": "ASSUMPTION", "sources": ["ds-1503-09", "ds-1532-10"],
+      "note": "完全挿入で s=10.8 となり、Sleeve 導体区間 9.0〜14.0 の内側に来る。端子1 (5.6) から前方へ伸びる。入口に近いので、挿入途中では Tip/Ring/絶縁帯の上を通過する。一次資料に接点の軸位置の記載は無く、この値は「完全挿入で対応する導体にパッド全幅が収まる」という条件を満たす範囲から選んだ当てはめ値である。端子の軸位置 (FACT) と前方へ伸びる片持ち梁という構造は範囲を狭めるが、梁の長さが不明なので値そのものは決まらない。2026-07-31 まで grade を DERIVED としていたが、幾何学的な導出ではないので、4極側 (trrs.jack.contact.*) と揃えて ASSUMPTION へ下げた。 なお、この 3.2 は jack.entryBushingLength (3.5) の内側にあり、ø3.6 のボアはプラグ φ3.5 に対し片側 0.05mm しか空いていないので、たわみ 0.35mm のばねはそこに収まらない。ただし entryBushingLength 自身が「ノーズ長 3.5 の全長がボア」という DERIVED の仮定なので、これは確定した矛盾ではなく、根拠の弱い 2 値のあいだの緊張である。両立させるなら 3.95〜4.55 の範囲になり、その場合は橋絡を含む全ての深度がちょうど +1.0mm ずれる (実測: 橋絡 11.77〜11.94 → 12.77〜12.94)。状態の並びと区間幅は変わらない。UNKNOWNS §3-8 参照。"
+    },
+    "jack.contact.sleeve.padWidth": { "value": 0.9, "grade": "ASSUMPTION", "note": "帰線側は接触面積を広く取るのが一般的。橋絡が起きる条件はこの幅が「同じ高さの導体面どうしの間隔」より広いことで、絶縁帯の幅ではない。3極プラグの平坦面 (半径 1.750) どうしの間隔は 0.700mm (= 第2絶縁帯の幅そのもの。境界に面取りは無い) なので、この 0.9mm なら第2絶縁帯 (Ring↔Sleeve) をまたいで橋絡する。第1絶縁帯 (Tip↔Ring) では Tip 導体が 0.15mm 低いため、パッドがまたいでも同時には触れられない。" },
+    "jack.contact.sleeve.freeRadius": { "value": 1.4, "grade": "DERIVED", "sources": ["te-contact-force"] },
+    "jack.contact.sleeve.nominalDeflection": { "value": 0.35, "grade": "DERIVED" },
+    "jack.contact.sleeve.maxDeflection": { "value": 0.85, "grade": "ASSUMPTION" },
+    "jack.contact.sleeve.springRate": { "value": 3.1, "unit": "N/mm", "grade": "DERIVED", "sources": ["te-contact-force"] },
+    "jack.contact.sleeve.angularPosition": { "value": 0, "unit": "deg", "grade": "ASSUMPTION", "note": "端子1 は軸上 (横方向オフセット 0) のため、円周方向の位置は図面から確定できない。" },
+    "jack.contact.sleeve.rootAxial": { "value": 5.6, "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "端子1 の軸位置。梁長 2.4mm。" },
+
+    "trrs.ring1.end": {
+      "value": 7.8, "grade": "FACT", "sources": ["xref-trrs-dims"],
+      "note": "Ring1 後端。図面の寸法チェーンは肩基準 (先端ではない)。Same Sky SP-3544 / Cliff FC68124 の 2 社で一致。 肩から 5.5 の位置が Ring2 前端 (先端基準 8.5) で、そこから絶縁帯 0.7 を引いた 7.8。Ring1 の幅は 2.3mm になる。"
+    },
+    "trrs.ring2.start": {
+      "value": 8.5, "grade": "FACT", "sources": ["xref-trrs-dims"],
+      "note": "Ring2 前端。図面記載寸法「5.5±0.2」(肩基準) の先端側の端。先端基準では 14 − 5.5 = 8.5。"
+    },
+    "trrs.ring2.end": {
+      "value": 10.8, "grade": "FACT", "sources": ["xref-trrs-dims"],
+      "note": "Ring2 後端。図面記載の Sleeve 長 2.5 と絶縁帯 0.7 から、14 − 2.5 − 0.7 = 10.8。Ring2 の幅は 2.3mm で Ring1 と等しい。"
+    },
+    "trrs.sleeve.start": {
+      "value": 11.5, "grade": "FACT", "sources": ["xref-trrs-dims"],
+      "note": "Sleeve 前端。図面記載寸法「2.5±0.1」(Sleeve の露出長) から 14 − 2.5 = 11.5。"
+    },
+    "trrs.plug.sleeveLength": { "value": 2.5, "unit": "mm", "grade": "FACT", "sources": ["samesky-sp3544", "cliff-fc68124"], "note": "図面記載寸法「2.5±0.1」。Sleeve 導体の露出長。2026-07-31 まで拾えておらず、そのために Sleeve を 4.8mm (9.2〜14.0) と誤って構成していた。" },
+    "trrs.plug.insulatorWidth": {
+      "value": 0.7, "tolerance": 0.1, "unit": "mm", "grade": "FACT", "sources": ["xref-trrs-dims"],
+      "note": "4極プラグの絶縁帯幅 0.7±0.1 が 3 か所。Same Sky SP-3544 と Cliff FC68124 の 2 社の図面で一致。"
+    },
+    "trrs.plug.matingLength": {
+      "value": 14.0, "tolerance": 0.3, "unit": "mm", "grade": "FACT", "sources": ["xref-trrs-dims"],
+      "note": "4極も嵌合長は 14mm で 3極と同じ。独立 2 社の図面で一致。"
+    },
+    "trrs.jack.boreDiameter": {
+      "value": 3.6, "unit": "mm", "grade": "FACT", "sources": ["xref-trrs-dims"],
+      "note": "4極ジャックの挿入口も Ø3.6。Cliff FC68125/FC68128。"
+    },
+    "trrs.jack.detectThreshold": {
+      "value": 100, "unit": "Ω", "grade": "FACT", "sources": ["android-headset-spec"],
+      "note": "第3セグメントと第4セグメントの間の抵抗が 100Ω 以上なら 4極、未満なら 3極と判定する、という機器側の規定。"
+    },
+
+    "trrs.jack.contact.tip.axialCenter": { "value": 11.4, "grade": "ASSUMPTION", "note": "4極ジャックの内部接点位置を示す一次図面は入手できていない。完全挿入で対応導体の内側に入るという条件から置いた値。" },
+    "trrs.jack.contact.ring1.axialCenter": { "value": 7.35, "grade": "ASSUMPTION", "note": "完全挿入で s = 6.65 = Ring1 (5.5〜7.8) の中央。導体配置の修正 (2026-07-31) に合わせて再センタリング。位置そのものに一次資料は無い。" },
+    "trrs.jack.contact.ring2.axialCenter": { "value": 4.35, "grade": "ASSUMPTION", "note": "完全挿入で s = 9.65 = Ring2 (8.5〜10.8) の中央。修正前は 5.85 で、直すと s=8.15 が第2絶縁帯の内側に入って一切導通しなくなるため移動させた。位置そのものに一次資料は無い。" },
+    "trrs.jack.contact.sleeve.axialCenter": { "value": 1.25, "grade": "ASSUMPTION", "note": "完全挿入で s = 12.75 = Sleeve (11.5〜14.0) の中央。修正前は 3.2 で、直すと s=10.8 が Sleeve に届かなくなるため移動させた。位置そのものに一次資料は無い。" },
+    "trrs.jack.contact.narrowPadWidth": { "value": 0.5, "grade": "ASSUMPTION", "note": "4極プラグの平坦面 (半径 1.750) どうしの間隔は 0.700mm (= 絶縁帯の幅そのもの。境界に面取りは無い)。このパッド幅はそれより狭いので常時橋絡しない。判定基準は導体幅でも絶縁帯幅でもなく、この平坦面どうしの間隔。" },
+    "trrs.jack.contact.rootOffset": { "value": 1.6, "grade": "ASSUMPTION", "note": "接触点から根元までの梁長。" },
+
+    "model.quality.weightOverlap": { "value": 0.35, "unit": "-", "grade": "ASSUMPTION", "note": "接触品質スコアにおける有効接触幅の重み。抵抗値ではない相対指標。接触抵抗は接触幅より押付力に強く依存するため、押付側を重くしている。" },
+    "model.quality.weightForce": { "value": 0.65, "unit": "-", "grade": "ASSUMPTION", "note": "接触品質スコアにおける押付力の重み。実際の接触抵抗が押付力に強く依存することを反映した配分 (実測校正ではない)。" },
+    "model.quality.closedThreshold": { "value": 0.55, "unit": "-", "grade": "ASSUMPTION", "note": "これ以上を CLOSED、未満を TOUCH_UNSTABLE とする境界。" },
+    "model.conduction.minOverlap": { "value": 0.01, "grade": "ASSUMPTION", "note": "これ未満の重なり幅は導通とみなさない。" },
+    "model.wear.radiusGain": { "value": 0.15, "grade": "ASSUMPTION", "note": "摩耗 1.0 で接触ドームがこれだけ減り、自由半径が広がる。" },
+    "model.wear.qualityLoss": { "value": 0.4, "unit": "-", "grade": "ASSUMPTION" },
+    "model.contamination.spanDeg": { "value": 70, "unit": "deg", "grade": "ASSUMPTION", "note": "汚れパッチの円周方向の半値半幅。" },
+    "model.contamination.azimuthDeg": { "value": 90, "unit": "deg", "grade": "ASSUMPTION", "note": "汚れパッチのプラグ側方位。プラグを回すとこの角度が一緒に回る。" },
+    "model.intermittent.stepMm": { "value": 0.02, "grade": "ASSUMPTION", "note": "断続ノイズの量子化幅。深度のハッシュから生成するので再現可能。" },
+      "model.contact.complianceMm": {"value":0.05,"unit":"mm","grade":"ASSUMPTION","note":"接触ドームが、押し出された位置よりどれだけ低い面まで追従できるか。一次資料は無い。実測した破綻点の内側に余裕を取って置いた値。【上限】約 0.1538mm を超えると、プラグ Tip 導体 (後端の立ち上がりで最大 r=1.600 / φ3.20) と Ring 導体 (r=1.750 / φ3.50) の 0.15mm の段差をまたぐ、物理的にありえない同時接触が復活する。上限がこの段差 0.15 のすぐ上に来るのは当然で、走査刻み (0.005 / 0.01 / 0.02mm) を変えても同じ値だった。【下限】約 0.0008mm を下回ると完全挿入時に Tip 接点が導通しなくなる。Tip 後端の逆テーパ (plug.tip.coneEnd〜taperEnd、傾き 0.0799) の上では接触帯の幅が compliance/傾き になり、これが model.conduction.minOverlap (0.01mm) を割るため。導体と絶縁帯の段差とは無関係で、面取りを削除しても下限は変わらなかった (2026-07-31 実測)。さらに 0.01mm 未満では半挿し中の TOUCH_UNSTABLE / WRONG_SEGMENT の区間が消えて予測が粗くなる。【採用】破綻点 0.0008〜0.1538 の内側に余裕を取り 0.02〜0.10 を実用範囲とし、その中央付近の 0.05 を採った。この範囲では Ring↔Sleeve 橋絡の区間 (深さ 11.765〜11.940mm / 幅 0.175mm) は compliance に依らず一定。"},
+    "model.misalign.directionDeg": { "value": 90, "unit": "deg", "grade": "ASSUMPTION", "note": "軸ずれ・傾きが起きる方向。90deg = Ring 接点側。" },
+
+    "force.frictionInsert": { "value": 0.35, "unit": "-", "grade": "ASSUMPTION", "sources": ["force-methods"], "note": "ニッケルめっき CuZn と銀めっき Cu 合金の滑り摩擦係数。実測していない。" },
+    "force.frictionWithdraw": { "value": 0.3, "unit": "-", "grade": "ASSUMPTION", "note": "抜去時の方が小さいとしてヒステリシスを作る。" },
+    "force.entryFrictionPerMm": { "value": 0.09, "unit": "N/mm", "grade": "ASSUMPTION", "note": "入口ブッシングと絶縁ボアの摩擦。噛み合い長さに比例。" },
+    "force.entryFrictionMax": { "value": 1.2, "unit": "N", "grade": "ASSUMPTION" },
+    "force.detentPeak": { "value": 1.4, "unit": "N", "grade": "ASSUMPTION", "note": "完全挿入位置の保持力。プラグ外形に溝が無いため明示項として置いた。" },
+    "force.detentSigma": { "value": 0.6, "grade": "ASSUMPTION" },
+    "force.calibrationScale": { "value": 1.45, "unit": "-", "grade": "ASSUMPTION", "note": "全体を公称 3〜20N レンジに収めるための校正係数。有限要素解析の代替ではない。" },
+    "force.differentiationStep": { "value": 0.005, "grade": "ASSUMPTION", "note": "dδ/dd を中心差分で求める際の刻み。force.maxRampSlope が無いと、この値がそのままランプ項の大きさを決めてしまう (垂直な段の上で たわみが不連続になるため)。" },
+    "force.maxRampSlope": {
+      "value": 0.48, "unit": "-", "grade": "ASSUMPTION",
+      "note": "ランプ項 dδ/dd の絶対値の上限。一次資料は無い。導体と絶縁帯の境界は幅ゼロの垂直な段なので、そこでは たわみが 0.15mm 不連続に跳ぶ。上限を置かないと傾きが 0.15/(2×0.005) = 15 になり、走査刻みを変えるだけでピーク挿入力が 17.8N (0.02mm 刻み) にも 28.2N (0.005mm 刻み) にも変わってしまい、物理量にならない。実物の接触ドームは点ではなく有限の曲率を持ち、段の角に当たってから登り切るまでに水平距離 L = √(2RΔ − Δ²) を要する。ドーム半径 R=0.4mm・段の高さ Δ=0.15mm と仮定すると L=0.312mm、平均の傾きは 0.15/0.312 = 0.48。この値なら走査刻み 0.02mm と 0.005mm でピークが一致し (5.270N)、ピークは段の通過ではなく完全挿入位置のデテントで決まる。R は一次資料に無い仮定なので UNKNOWNS.md §3-7 に挙げてある。"
+    }
+  }
+}

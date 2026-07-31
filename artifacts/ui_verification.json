@@ -1,0 +1,165 @@
+{
+ "schemaVersion": 1,
+ "runner": "playwright chromium 1440x900 @2x",
+ "total": 27,
+ "passed": 27,
+ "failed": 0,
+ "performance": {
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+  "idle": {
+   "median": 123.3999999910593,
+   "p95": 165
+  },
+  "moving": {
+   "median": 138.5,
+   "p95": 191.5
+  },
+  "lowq": {
+   "median": 42,
+   "p95": 66.3999999910593
+  },
+  "triangles": 5460,
+  "drawCalls": 44,
+  "pixels": 3474400,
+  "lowPixels": 868600,
+  "loadAverage1min": 15.611328125
+ },
+ "consoleErrors": [],
+ "results": [
+  {
+   "name": "完全挿入で 3 接点すべて正常接触",
+   "ok": true,
+   "detail": "● Sleeve 接点: 正常接触 → SLEEVE"
+  },
+  {
+   "name": "半挿しで誤接触が出る",
+   "ok": true,
+   "detail": "帰線が信号導体 (RING) に接触"
+  },
+  {
+   "name": "境界停止で Ring↔Sleeve の橋絡が出る",
+   "ok": true,
+   "detail": "⇄ Sleeve 接点: 橋絡 → RING+SLEEVE"
+  },
+  {
+   "name": "第1絶縁帯の深さ (8.35mm) では橋絡が出ない",
+   "ok": true,
+   "detail": "帰線が信号導体 (RING) に接触"
+  },
+  {
+   "name": "断面表示が例外なく描ける",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "接点のみ表示が描ける",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "分解表示が描ける",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "寸法表示が描ける",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "回路パネルが完全挿入の結線を出す",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "イベントパネルに主要イベントが出る",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "力パネルが公称レンジ内と判定する",
+   "ok": true,
+   "detail": "挿入ピーク\t5.27 N"
+  },
+  {
+   "name": "根拠パネルに FACT/DERIVED/ASSUMPTION の内訳が出る",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "4極 CTIA プラグ × 3極ジャックで正常と表示",
+   "ok": true,
+   "detail": "正常 (ステレオ)"
+  },
+  {
+   "name": "キーボード ← → で深度が動く",
+   "ok": true,
+   "detail": "10.00 → 10.05"
+  },
+  {
+   "name": "End キーで完全挿入へ",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Home キーで完全抜去へ",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R キーでリセット",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "数値入力で任意深度へ移動できる",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "0.05mm 刻みで動かせる",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "イベントマーカーをクリックしてその深度へ移動できる",
+   "ok": true,
+   "detail": "3.95"
+  },
+  {
+   "name": "狭い画面では 1 カラムに切り替わる",
+   "ok": true,
+   "detail": "columns=1"
+  },
+  {
+   "name": "自動挿入が動き、一時停止で止まる",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "GL 実装を記録",
+   "ok": true,
+   "detail": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) (ソフトウェアラスタ)"
+  },
+  {
+   "name": "ポリゴン数が過大でない",
+   "ok": true,
+   "detail": "5460 三角形 / 44 draw call"
+  },
+  {
+   "name": "挿抜アニメ中もフレーム時間が静止時から大きく悪化しない (CPU 側が重くない)",
+   "ok": true,
+   "detail": "静止 123.4ms → 挿抜中 138.5ms"
+  },
+  {
+   "name": "低負荷モードでフレーム時間が改善する (塗り面積依存であることの確認)",
+   "ok": true,
+   "detail": "123.4ms (3.5Mpx) → 42.0ms (0.9Mpx)"
+  },
+  {
+   "name": "コンソールエラーが無い",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}
