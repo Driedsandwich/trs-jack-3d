@@ -15,6 +15,11 @@
    ]
   ],
   "tipBridge": false,
+  "bridgingByContact": {
+   "JC_SLEEVE": [
+    "RING+SLEEVE"
+   ]
+  },
   "fullOk": true,
   "events": {
    "firstTouch": 3.92,
@@ -422,6 +427,333 @@
      12.43
     ]
    }
+  }
+ },
+ "trrs": {
+  "variant": "TRRS-CTIA|JACK-TRRS",
+  "plateauGaps": [
+   0.701,
+   0.701
+  ],
+  "ranges": {
+   "trrs.jack.contact.tip.axialCenter": [
+    9.475000000000001,
+    13.725
+   ],
+   "trrs.jack.contact.ring1.axialCenter": [
+    6.45,
+    8.25
+   ],
+   "trrs.jack.contact.ring2.axialCenter": [
+    3.4499999999999993,
+    5.25
+   ],
+   "trrs.jack.contact.sleeve.axialCenter": [
+    0.4499999999999993,
+    2.0500000000000007
+   ],
+   "trrs.jack.contact.narrowPadWidth": [
+    0.01,
+    2.3
+   ],
+   "jack.contact.sleeve.padWidth": [
+    0.01,
+    2.5
+   ],
+   "model.contact.complianceMm": [
+    0,
+    0.2999999999999998
+   ]
+  },
+  "joint": {
+   "levels": 3,
+   "combinations": 2187,
+   "modelBuilt": 2187,
+   "fullInsertionOk": 336,
+   "tipBridgeCount": 648,
+   "belowStepHeightTried": 729,
+   "belowStepHeightTipBridge": 0,
+   "violations": [],
+   "bridgeKindPatterns": [
+    {
+     "pattern": "RING+RING2 → RING2+SLEEVE",
+     "count": 110
+    },
+    {
+     "pattern": "RING+TIP → RING+RING2 → RING2+SLEEVE",
+     "count": 100
+    },
+    {
+     "pattern": "RING+RING2",
+     "count": 66
+    },
+    {
+     "pattern": "RING+TIP → RING+RING2",
+     "count": 60
+    }
+   ],
+   "bridgingContactCounts": [
+    {
+     "contactId": "JC_RING2",
+     "count": 336
+    },
+    {
+     "contactId": "JC_SLEEVE",
+     "count": 210
+    },
+    {
+     "contactId": "JC_RING",
+     "count": 160
+    }
+   ],
+   "bridgingPairsByContact": [
+    "JC_RING2: RING+RING2",
+    "JC_RING2: RING+TIP",
+    "JC_RING: RING+TIP",
+    "JC_SLEEVE: RING+RING2",
+    "JC_SLEEVE: RING+TIP",
+    "JC_SLEEVE: RING2+SLEEVE"
+   ]
+  },
+  "padWidthThresholds": [
+   {
+    "contactId": "JC_RING2",
+    "axial": 3.5,
+    "threshold": 0.721
+   },
+   {
+    "contactId": "JC_RING2",
+    "axial": 4,
+    "threshold": 0.721
+   },
+   {
+    "contactId": "JC_RING2",
+    "axial": 4.35,
+    "threshold": 0.721
+   },
+   {
+    "contactId": "JC_RING2",
+    "axial": 4.8,
+    "threshold": 0.721
+   },
+   {
+    "contactId": "JC_RING2",
+    "axial": 5.2,
+    "threshold": 0.721
+   },
+   {
+    "contactId": "JC_SLEEVE",
+    "axial": 0.5,
+    "threshold": 0.721
+   },
+   {
+    "contactId": "JC_SLEEVE",
+    "axial": 1.25,
+    "threshold": 0.721
+   },
+   {
+    "contactId": "JC_SLEEVE",
+    "axial": 2,
+    "threshold": 0.721
+   },
+   {
+    "contactId": "JC_RING",
+    "axial": 6.45,
+    "threshold": null
+   },
+   {
+    "contactId": "JC_RING",
+    "axial": 7.35,
+    "threshold": null
+   },
+   {
+    "contactId": "JC_RING",
+    "axial": 8.25,
+    "threshold": null
+   }
+  ],
+  "mixedInsertion": {
+   "note": "3極プラグ × 4極ジャック。Ring2 接点の軸位置を成立範囲いっぱいに振ったときの、完全挿入での行き先。",
+   "range": [
+    3.4499999999999993,
+    5.25
+   ],
+   "samples": [
+    {
+     "axial": 3.45,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.495,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.54,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.585,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.63,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.675,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.72,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.765,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.81,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.855,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.9,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.945,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 3.99,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.035,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.08,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.125,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.17,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.215,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.26,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.305,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.35,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.395,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.44,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.485,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.53,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.575,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.62,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.665,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.71,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.755,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.8,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.845,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.89,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.935,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 4.98,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 5.025,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 5.07,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 5.115,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 5.16,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 5.205,
+     "ring2Nets": "SLEEVE"
+    },
+    {
+     "axial": 5.25,
+     "ring2Nets": "(未接続)"
+    }
+   ],
+   "counts": [
+    {
+     "nets": "SLEEVE",
+     "count": 40
+    },
+    {
+     "nets": "(未接続)",
+     "count": 1
+    }
+   ]
   }
  },
  "joint": {

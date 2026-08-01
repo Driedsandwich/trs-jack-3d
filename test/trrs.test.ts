@@ -8,8 +8,9 @@
 
 import { describe, expect, it } from 'vitest'
 import { plugRadiusAt } from '../src/model/resolve'
-import { allVariantIds, getModel, splitVariantId } from '../src/data'
+import { allVariantIds, buildModelWithOverrides, getModel, splitVariantId } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
+import { sweep } from '../src/model/sweep'
 
 const F = DEFAULT_FAULTS
 
@@ -231,4 +232,99 @@ describe('全組み合わせの健全性', () => {
       }
     }
   })
+})
+
+describe('4極: 仮定に依存しない性質 (docs/SENSITIVITY.md §3)', () => {
+  const m4 = getModel('TRRS-CTIA|JACK-TRRS')
+
+  /** その接点「そのもの」が 2 導体に同時に触れる深さがあるか。接点 ID で絞る */
+  const bridgesOf = (m: ReturnType<typeof getModel>, contactId: string, stepMm = 0.02) => {
+    const out = new Set<string>()
+    for (const r of sweep(m, { stepMm })) {
+      const c = r.contacts.find((x) => x.contactId === contactId)
+      if (c && c.connectedNets.length > 1) out.add([...c.connectedNets].sort().join('+'))
+    }
+    return out
+  }
+
+  it('同一半径のプラトー間隔は 3 本とも図面記載の絶縁帯幅 0.7 に一致する', () => {
+    const rMax = Math.max(...m4.plug.profile.map((p) => p.r))
+    const runs: [number, number][] = []
+    for (let s = 0; s <= m4.plug.fingerLengthMm; s += 0.001) {
+      const hi = plugRadiusAt(m4.plug.profile, s) >= rMax - 1e-9
+      const last = runs[runs.length - 1]
+      if (hi && last && Math.abs(last[1] - s) < 0.0015) last[1] = s
+      else if (hi) runs.push([s, s])
+    }
+    expect(runs.length, '最大半径の平坦面が 3 本 (Ring1 / Ring2 / Sleeve)').toBe(3)
+    const gaps = runs.slice(1).map((r, i) => r[0] - runs[i][1])
+    for (const g of gaps) expect(g).toBeCloseTo(0.7, 2)
+  })
+
+  it('Ring1 接点は、位置とパッド幅をどう置いても橋絡できない', () => {
+    // 制約 (完全挿入でパッド全幅が自分の導体に収まる) の内側では、
+    // パッドは自分の導体の奥端を越えられない。完全挿入が最も深い位置だから。
+    // したがって Ring1 接点がまたげるのは第1絶縁帯 (Tip↔Ring1) だけで、
+    // そこは Tip が 0.15mm 低いので橋絡できない。
+    const INS1_CENTER = (4.8 + 5.5) / 2
+    for (const axial of [6.45, 7.35, 8.25]) {
+      for (const w of [0.3, 0.5, 0.72, 0.9]) {
+        const m = buildModelWithOverrides('TRRS-CTIA|JACK-TRRS', {
+          'trrs.jack.contact.ring1.axialCenter': axial,
+          'trrs.jack.contact.narrowPadWidth': w,
+        })
+        // 第1絶縁帯の中心に来る深さ = 最も橋絡しやすい位置
+        const c = m
+          .evaluate(INS1_CENTER + axial, F)
+          .contacts.find((x) => x.contactId === 'JC_RING')!
+        expect(c.connectedNets.length, `Ring1 接点 位置${axial} パッド${w}`).toBeLessThan(2)
+      }
+    }
+  }, 30_000)
+
+  it('Ring2 接点が橋絡し始めるパッド幅は、接点位置に依存しない', () => {
+    // 深さを走査して「どこかで橋絡したか」を見る方法は使わない。
+    // 橋絡の窓はしきい値付近で幾らでも狭くなるので、走査刻みが答えを変えてしまう
+    // (0.02mm 刻みにしたら位置ごとに 0.725 と 0.745 に割れた)。
+    //
+    // 代わりに、最も橋絡しやすい深さ = パッドの中心が絶縁帯の中心に来る位置で
+    // 1 点だけ評価する。ここで橋絡しなければ、どの深さでも橋絡しない。
+    const INSM_CENTER = (7.8 + 8.5) / 2 // Ring1↔Ring2 の絶縁帯の中心
+    const bridgesAtBestDepth = (axial: number, w: number) => {
+      const m = buildModelWithOverrides('TRRS-CTIA|JACK-TRRS', {
+        'trrs.jack.contact.ring2.axialCenter': axial,
+        'trrs.jack.contact.narrowPadWidth': w,
+      })
+      const c = m
+        .evaluate(INSM_CENTER + axial, F)
+        .contacts.find((x) => x.contactId === 'JC_RING2')!
+      return c.connectedNets.length > 1
+    }
+    const threshold = (axial: number) => {
+      for (let i = 690; i <= 780; i += 1) {
+        if (bridgesAtBestDepth(axial, i / 1000)) return i / 1000
+      }
+      return null
+    }
+    const ts = [3.5, 4.0, 4.35, 4.8, 5.2].map(threshold)
+    for (const t of ts) expect(t).not.toBeNull()
+    expect(new Set(ts).size, `しきい値が位置で変わった: ${ts.join(', ')}`).toBe(1)
+
+    // しきい値 = プラトー間隔 0.700 + 導通の最小重なり 0.01 × 2 = 0.72
+    expect(ts[0]!).toBeCloseTo(0.72, 2)
+  }, 30_000)
+
+  it('3極プラグ × 4極ジャックで Ring2 接点が Sleeve に当たる結論は、位置の仮定にほぼ依存しない', () => {
+    // 成立範囲 3.45〜5.25 を 41 分割して、完全挿入での行き先を数える。
+    let sleeve = 0
+    const n = 41
+    for (let i = 0; i < n; i++) {
+      const a = +(3.45 + ((5.25 - 3.45) * i) / (n - 1)).toFixed(4)
+      const m = buildModelWithOverrides('TRS|JACK-TRRS', { 'trrs.jack.contact.ring2.axialCenter': a })
+      const full = sweep(m, { stepMm: 0.05 }).slice(-1)[0]
+      const c = full.contacts.find((x) => x.contactId === 'JC_RING2')
+      if (c?.connectedNets.join() === 'SLEEVE') sleeve++
+    }
+    expect(sleeve).toBeGreaterThanOrEqual(n - 1) // 端 1 点だけ絶縁帯に乗る
+  }, 30_000)
 })

@@ -17,6 +17,8 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { buildModelWithOverrides, getModel } from '../src/data'
 import { sweep } from '../src/model/sweep'
+import { DEFAULT_FAULTS } from '../src/model/contact'
+import { plugRadiusAt } from '../src/model/resolve'
 
 import type { TrsModel } from '../src/model/engine'
 
@@ -34,6 +36,8 @@ interface Observation {
   bridgeBands: [number, number, number][]
   /** Tip 導体を含む橋絡が 1 度でも起きたか (幾何的にありえないはずのもの) */
   tipBridge: boolean
+  /** どの接点が、何と何を橋絡したか。接点 ID で絞らないと取り違える */
+  bridgingByContact: Record<string, string[]>
   /** 完全挿入で 3 端子とも正しい導体に CLOSED でつながるか */
   fullOk: boolean
   /** 主要イベントの深度 */
@@ -45,6 +49,7 @@ function observe(m: TrsModel, stepMm = STEP): Observation {
   const bands: [number, number, number][] = []
   const kinds: string[] = []
   let tipBridge = false
+  const byContact: Record<string, Set<string>> = {}
   let cur: { k: string; a: number; b: number } | null = null
 
   const ev: Record<string, number | null> = {
@@ -71,7 +76,8 @@ function observe(m: TrsModel, stepMm = STEP): Observation {
     for (const c of r.contacts) {
       if (c.connectedNets.length < 2) continue
       const k = [...c.connectedNets].sort().join('+')
-      if (k.includes('TIP')) tipBridge = true
+      if (c.connectedNets.includes('TIP')) tipBridge = true
+      ;(byContact[c.contactId] ??= new Set()).add(k)
       if (!cur || cur.k !== k) {
         if (cur) bands.push([cur.a, cur.b, +(cur.b - cur.a).toFixed(4)])
         cur = { k, a: r.depthMm, b: r.depthMm }
@@ -103,7 +109,14 @@ function observe(m: TrsModel, stepMm = STEP): Observation {
     t.find((c) => c.contactId === 'JC_RING')!.connectedNets[0] === 'RING' &&
     t.find((c) => c.contactId === 'JC_SLEEVE')!.connectedNets[0] === 'SLEEVE'
 
-  return { bridgeKinds: kinds, bridgeBands: bands, tipBridge, fullOk, events: ev }
+  return {
+    bridgeKinds: kinds,
+    bridgeBands: bands,
+    tipBridge,
+    bridgingByContact: Object.fromEntries(Object.entries(byContact).map(([k, v]) => [k, [...v]])),
+    fullOk,
+    events: ev,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -284,6 +297,174 @@ console.log(`  Tip 橋絡が始まる compliance = ${hi2.toFixed(5)} (段差 ${S
 
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// 3) 4極 (TRRS)
+//
+// 4極ジャックの接点位置には一次図面が無い。そこを振っても「仮定を振ったら
+// 仮定の分だけ動いた」で終わる。意味があるのは、**プラグ側が FACT** である
+// ことを使った次の 2 つ。
+//   (A) Tip 導体は他の 3 本より 0.15mm 低い → Tip を含む橋絡は起きない
+//   (B) 同一半径 (1.750) のプラトーの間隔は 3 本とも 0.700 (図面記載の絶縁帯幅)
+//       → パッドがこれを超えるかどうかだけで橋絡の有無が決まる
+// どちらも接点の軸位置に依存しないはず。それを実測で確かめる。
+// ---------------------------------------------------------------------------
+
+const V4 = 'TRRS-CTIA|JACK-TRRS' as const
+const m4 = getModel(V4)
+const seg4 = (id: string) => m4.plug.segments.find((s) => s.id === id)!
+
+/** 4極プラグの同一半径プラトーの間隔 (FACT 由来のはず) */
+function plateauGaps(m: TrsModel): number[] {
+  const rMax = Math.max(...m.plug.profile.map((p) => p.r))
+  const runs: [number, number][] = []
+  for (let s = 0; s <= m.plug.fingerLengthMm; s += 0.001) {
+    const hi = plugRadiusAt(m.plug.profile, s) >= rMax - 1e-9
+    const last = runs[runs.length - 1]
+    if (hi && last && Math.abs(last[1] - s) < 0.0015) last[1] = s
+    else if (hi) runs.push([s, s])
+  }
+  return runs.slice(1).map((r, i) => +(r[0] - runs[i][1]).toFixed(4))
+}
+
+const GAPS4 = plateauGaps(m4)
+console.log(`\n  4極プラグの同一半径プラトー間隔: ${GAPS4.join(', ')} mm`)
+
+/** 4極ジャック接点の成立範囲 (完全挿入でパッド全幅が対応導体に収まること) */
+function axialRange4(segId: string, padWidth: number): [number, number] {
+  const s = seg4(segId)
+  return [Math.max(0, D - (s.endMm - padWidth / 2)), D - (s.startMm + padWidth / 2)]
+}
+
+const narrow = m4.dims.num('trrs.jack.contact.narrowPadWidth')
+const RANGES4: Record<string, [number, number]> = {
+  'trrs.jack.contact.tip.axialCenter': axialRange4('TIP', m4.dims.num('jack.contact.tip.padWidth')),
+  'trrs.jack.contact.ring1.axialCenter': axialRange4('RING', narrow),
+  'trrs.jack.contact.ring2.axialCenter': axialRange4('RING2', narrow),
+  'trrs.jack.contact.sleeve.axialCenter': axialRange4('SLEEVE', m4.dims.num('jack.contact.sleeve.padWidth')),
+  'trrs.jack.contact.narrowPadWidth': [base.contactCfg.minConductionOverlapMm, 2.3],
+  'jack.contact.sleeve.padWidth': [base.contactCfg.minConductionOverlapMm, 2.5],
+  'model.contact.complianceMm': [0, 2 * STEP_HEIGHT],
+}
+
+// --- (A) Tip を含む橋絡 -----------------------------------------------------
+const K4 = Object.keys(RANGES4)
+const L4 = 3
+const total4 = L4 ** K4.length
+let built4 = 0
+let fullOk4 = 0
+let tip4 = 0
+let belowStep4 = 0
+let belowStepTip4 = 0
+const kinds4 = new Map<string, number>()
+const byContact4 = new Map<string, number>()
+const pairByContact4 = new Set<string>()
+const viol4: { cfg: Record<string, number>; why: string }[] = []
+
+const idx4 = new Array(K4.length).fill(0)
+for (let n = 0; n < total4; n++) {
+  let t = n
+  for (let d = 0; d < K4.length; d++) {
+    idx4[d] = t % L4
+    t = Math.floor(t / L4)
+  }
+  const cfg: Record<string, number> = {}
+  K4.forEach((k, d) => {
+    const [lo, hi] = RANGES4[k]
+    cfg[k] = +(lo + ((hi - lo) * idx4[d]) / (L4 - 1)).toFixed(5)
+  })
+  let o: Observation
+  try {
+    o = observe(buildModelWithOverrides(V4, cfg), JOINT_STEP)
+  } catch {
+    continue
+  }
+  built4++
+  if (o.fullOk) {
+    fullOk4++
+    kinds4.set(o.bridgeKinds.join(' → ') || '(橋絡なし)', (kinds4.get(o.bridgeKinds.join(' → ') || '(橋絡なし)') ?? 0) + 1)
+    for (const [cid, ks] of Object.entries(o.bridgingByContact)) {
+      byContact4.set(cid, (byContact4.get(cid) ?? 0) + 1)
+      for (const k of ks) pairByContact4.add(`${cid}: ${k}`)
+    }
+  }
+  if (o.tipBridge) tip4++
+  if (cfg['model.contact.complianceMm'] < STEP_HEIGHT) {
+    belowStep4++
+    if (o.tipBridge) {
+      belowStepTip4++
+      if (viol4.length < 5) viol4.push({ cfg, why: '4極: compliance が段差未満なのに Tip 橋絡' })
+    }
+  }
+}
+console.log(`  4極 同時振り ${L4}^${K4.length} = ${total4} 通り: 組めた ${built4} / 完全挿入OK ${fullOk4}`)
+console.log(`  橋絡した接点 (完全挿入OK のみ): ${[...byContact4.entries()].map(([c, n]) => `${c} ${n}件`).join(' / ') || 'なし'}`)
+console.log(`  接点ごとの組: ${[...pairByContact4].sort().join(' | ')}`)
+console.log(`  うち compliance < ${STEP_HEIGHT.toFixed(3)} の ${belowStep4} 通りでの Tip 橋絡: ${belowStepTip4} 件`)
+
+// --- (B) 橋絡はパッド幅がプラトー間隔を超えたときだけ起きるか -----------------
+//     narrowPadWidth を細かく振り、接点位置は 3 通りに動かしても
+//     しきい値が動かないことを見る。
+/**
+ * 橋絡のしきい値を、走査ではなく「最も橋絡しやすい深さ」1 点で測る。
+ *
+ * 深さを走査して「どこかで橋絡したか」を見る方法は使えない。橋絡の窓は
+ * しきい値付近で幾らでも狭くなるので、走査刻みが答えを変えてしまう
+ * (0.02mm 刻みにしたら位置ごとに 0.725 と 0.745 に割れた)。
+ * パッド中心が絶縁帯の中心に来る深さで評価すれば、サンプリングが要らない。
+ */
+function bridgeThreshold(
+  axialKey: string,
+  padKey: string,
+  contactId: string,
+  insulatorCenter: number,
+  axial: number,
+): number | null {
+  for (let i = 600; i <= 900; i++) {
+    const w = i / 1000
+    const m = buildModelWithOverrides(V4, { [axialKey]: axial, [padKey]: w })
+    const c = m.evaluate(insulatorCenter + axial, DEFAULT_FAULTS).contacts.find((x) => x.contactId === contactId)
+    if (c && c.connectedNets.length > 1) return w
+  }
+  return null
+}
+
+const padThresholds: { contactId: string; axial: number; threshold: number | null }[] = []
+for (const [contactId, axialKey, padKey, insC, axials] of [
+  ['JC_RING2', 'trrs.jack.contact.ring2.axialCenter', 'trrs.jack.contact.narrowPadWidth', (7.8 + 8.5) / 2, [3.5, 4.0, 4.35, 4.8, 5.2]],
+  ['JC_SLEEVE', 'trrs.jack.contact.sleeve.axialCenter', 'jack.contact.sleeve.padWidth', (10.8 + 11.5) / 2, [0.5, 1.25, 2.0]],
+  // Ring1 接点がまたげるのは第1絶縁帯 (Tip↔Ring1) だけ。Tip が 0.15mm 低いので橋絡できないはず
+  ['JC_RING', 'trrs.jack.contact.ring1.axialCenter', 'trrs.jack.contact.narrowPadWidth', (4.8 + 5.5) / 2, [6.45, 7.35, 8.25]],
+] as const) {
+  for (const axial of axials) {
+    padThresholds.push({ contactId, axial, threshold: bridgeThreshold(axialKey, padKey, contactId, insC, axial) })
+  }
+}
+for (const cid of ['JC_RING2', 'JC_SLEEVE', 'JC_RING']) {
+  const g = padThresholds.filter((p) => p.contactId === cid)
+  console.log(
+    `  ${cid.padEnd(10)} が橋絡し始めるパッド幅: ${g.map((p) => `位置${p.axial}→${p.threshold ?? 'ならない'}`).join(' / ')}`,
+  )
+}
+console.log(`  (プラトー間隔 ${GAPS4[0]} + 導通の最小重なり ${base.contactCfg.minConductionOverlapMm} × 2 = ${(0.7 + 2 * base.contactCfg.minConductionOverlapMm).toFixed(3)} が理論値)`)
+
+// --- (C) 混挿: 3極プラグ × 4極ジャック --------------------------------------
+//     Ring2 接点が 3極プラグの Sleeve に当たるか絶縁帯に乗るかは、
+//     仮定した接点位置で変わる。成立範囲のどこで結論が変わるかを測る。
+const mixOutcomes: { axial: number; ring2Nets: string }[] = []
+const [r2lo, r2hi] = RANGES4['trrs.jack.contact.ring2.axialCenter']
+for (let i = 0; i <= 40; i++) {
+  const a = +(r2lo + ((r2hi - r2lo) * i) / 40).toFixed(4)
+  const m = buildModelWithOverrides('TRS|JACK-TRRS', { 'trrs.jack.contact.ring2.axialCenter': a })
+  const full = sweep(m, { stepMm: 0.05 }).slice(-1)[0]
+  const c = full.contacts.find((x) => x.contactId === 'JC_RING2')
+  mixOutcomes.push({ axial: a, ring2Nets: c?.connectedNets.join('+') || '(未接続)' })
+}
+const mixCount = new Map<string, number>()
+for (const o of mixOutcomes) mixCount.set(o.ring2Nets, (mixCount.get(o.ring2Nets) ?? 0) + 1)
+console.log(
+  `  混挿 3極×4極: Ring2 接点の行き先 ${[...mixCount.entries()].map(([k, v]) => `${k}:${v}/41`).join(' / ')}`,
+)
+
 const out = {
   schemaVersion: 1,
   variant: VARIANT,
@@ -294,6 +475,31 @@ const out = {
   baseline: observe(base),
   ranges: RANGES,
   oneAtATime: oat,
+  trrs: {
+    variant: V4,
+    plateauGaps: GAPS4,
+    ranges: RANGES4,
+    joint: {
+      levels: L4,
+      combinations: total4,
+      modelBuilt: built4,
+      fullInsertionOk: fullOk4,
+      tipBridgeCount: tip4,
+      belowStepHeightTried: belowStep4,
+      belowStepHeightTipBridge: belowStepTip4,
+      violations: viol4,
+      bridgeKindPatterns: [...kinds4.entries()].sort((a, b) => b[1] - a[1]).map(([pattern, count]) => ({ pattern, count })),
+      bridgingContactCounts: [...byContact4.entries()].map(([contactId, count]) => ({ contactId, count })),
+      bridgingPairsByContact: [...pairByContact4].sort(),
+    },
+    padWidthThresholds: padThresholds,
+    mixedInsertion: {
+      note: '3極プラグ × 4極ジャック。Ring2 接点の軸位置を成立範囲いっぱいに振ったときの、完全挿入での行き先。',
+      range: [r2lo, r2hi],
+      samples: mixOutcomes,
+      counts: [...mixCount.entries()].map(([nets, count]) => ({ nets, count })),
+    },
+  },
   joint: {
     levels: LEVELS,
     combinations: total,
