@@ -364,6 +364,17 @@ describe('B. 文書に転記した artifact の値が一致している', () => 
     expect(orphan).toEqual([])
   })
 
+  it('README 末尾の仮定件数が台帳と一致する', () => {
+    // 2026-08-01 の初見レビューで「41 件」と「37 件」が併存していたのが見つかった。
+    // 37 はどの部分集合にも対応しない、単に古い数字だった。
+    // 根拠区分を看板にしている文書で、自分の仮定件数が 2 通りあるのは最も安く直せる傷。
+    const dims = json('src/data/dimensions.json').entries as Record<string, { grade: string }>
+    const assumptions = Object.keys(dims).filter((k) => dims[k].grade === 'ASSUMPTION')
+    const jackInternal = assumptions.filter((k) => /^(jack\.|trrs\.jack\.)/.test(k))
+    expect(text['README.md']).toContain(`ジャック内部の寸法は ${jackInternal.length} 件の仮定を含み`)
+    expect(text['README.md']).toContain(`仮定は全体で ${assumptions.length} 件`)
+  })
+
   it('感度解析の振り幅は台帳から来ている (スクリプト直書きでない)', () => {
     const dims = json('src/data/dimensions.json').entries
     expect(dims['plug.bodyRadius'].tolerance).toBe(0.025)

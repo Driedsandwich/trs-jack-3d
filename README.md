@@ -58,7 +58,7 @@ npm run dev
 
 | コマンド | 内容 |
 |---|---|
-| `npm run test` | 単体テスト (Vitest) 138 件 |
+| `npm run test` | 単体テスト (Vitest) 139 件 |
 | `npm run typecheck` | TypeScript 型検査 (`src` / `scripts` / `test`) |
 | `npm run build` | 本番ビルド |
 | `npm run artifacts` | `artifacts/` へ走査結果 JSON を生成 |
@@ -335,5 +335,5 @@ Vitest (単体) / Playwright (実ブラウザ検証)。
 3D 形状はすべて公開寸法から自前で生成したもので、メーカー CAD の派生物ではありません。
 「Lumberg」は Lumberg Holding GmbH & Co. KG の商標です。本プロジェクトは同社と関係がなく、承認も受けていません。
 
-> **設計・製造・調達の根拠には使わないでください。** ジャック内部の寸法は 37 件の仮定を含み、
-> 実物と突き合わせた検証はまだ済んでいません（[UNKNOWNS.md](UNKNOWNS.md)）。
+> **設計・製造・調達の根拠には使わないでください。** ジャック内部の寸法は 20 件の仮定を含み
+> （仮定は全体で 41 件）、実物と突き合わせた検証はまだ済んでいません（[UNKNOWNS.md](UNKNOWNS.md)）。
