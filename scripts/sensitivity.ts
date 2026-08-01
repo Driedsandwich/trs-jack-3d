@@ -27,6 +27,15 @@
  *
  * また、しきい値の式に自分で minOverlap を挙げておきながら、それを振っていなかった。
  * ブレーク接点のしきい値も振っていなかった。どちらも公表値を動かす。→ 追加した。
+ *
+ * ── schemaVersion 3 (2026-08-01 夕) で足したもの ──────────────
+ *  A. 公差の「箱」。§6-1 では bodyRadius (FACT) だけを振っていたが、段差のもう一方の
+ *     端 insulatorRadius は DERIVED で、注記自身が図面実測 φ3.20〜3.22 という幅を
+ *     認めている。2 つを同時に振らないと「最悪どこまで薄くなるか」が出ない。
+ *  B. 力のモデル (force.* 9 件)。初版は「対象外」とだけ書いていた。ただし
+ *     calibrationScale は純粋な倍率で独立した根拠を持たないので、それを混ぜて振ると
+ *     「倍率を振れば倍率の分動く」以上のことが言えない。校正係数は固定し、
+ *     物理的な意味のある 8 件だけを振る。
  * ────────────────────────────────────────────────────────────
  */
 
@@ -34,6 +43,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { buildModelWithOverrides, getModel } from '../src/data'
 import { sweep } from '../src/model/sweep'
+import { computeForceCurve } from '../src/model/force'
 import { plugRadiusAt } from '../src/model/resolve'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import type { TrsModel } from '../src/model/engine'
@@ -336,9 +346,115 @@ for (const [cid, rows] of Object.entries(padThresholds)) {
 }
 
 // ---------------------------------------------------------------------------
+// 10) 公差の「箱」の隅で Tip 橋絡のしきい値を測る
+//
+// §6-1 で bodyRadius だけを振ったが、段差はもう一方の端 insulatorRadius にも依る。
+// そちらは DERIVED で、注記自身が図面実測 φ3.20〜3.22 という幅を認めている。
+// 2 つを同時に振って、いちばん薄くなる隅を出す。
+// ---------------------------------------------------------------------------
+
+const BODY_R = [1.725, 1.7375, 1.75, 1.7625, 1.775] // 図面公差 φ3.5±0.05
+const INS_R = [1.6, 1.605, 1.61] // 図面実測 φ3.20〜3.22
+const toleranceBox = BODY_R.flatMap((b) =>
+  INS_R.map((i) => ({
+    bodyDiameter: +(2 * b).toFixed(3),
+    insulatorDiameter: +(2 * i).toFixed(3),
+    stepHeight: +(b - i).toFixed(6),
+    tipThreshold: +bisect(0, 2 * STEP_HEIGHT, (c) =>
+      anyTipBridge(
+        buildModelWithOverrides(V3, {
+          'plug.bodyRadius': b,
+          'plug.insulatorRadius': i,
+          'model.contact.complianceMm': c,
+        }),
+      ),
+    ).toFixed(6),
+  })),
+)
+const worstCorner = toleranceBox.reduce((a, b) => (b.tipThreshold < a.tipThreshold ? b : a))
+console.log('\n  公差の箱の隅で Tip 橋絡のしきい値:')
+console.log(
+  `    最悪 φ${worstCorner.bodyDiameter} × 絶縁 φ${worstCorner.insulatorDiameter} → ${worstCorner.tipThreshold}` +
+    ` (採用 0.05 の ${(worstCorner.tipThreshold / 0.05).toFixed(2)} 倍 / 採用範囲上端 0.10 の ${(worstCorner.tipThreshold / 0.1).toFixed(2)} 倍)`,
+)
+
+// ---------------------------------------------------------------------------
+// 11) 力のモデル (force.* 9 件)
+//
+// 初版は「対象外。calibrationScale 1 個で 3.6〜7.3 N に動く」とだけ書いていた。
+// 校正係数は純粋な倍率なので、それを振っても「倍率を振れば倍率の分動く」以上の
+// ことが言えない。校正係数を固定したまま、物理的な意味のある 8 件を振る。
+// ---------------------------------------------------------------------------
+
+function peakForce(ov: Record<string, number>, stepMm = 0.02) {
+  const mm = buildModelWithOverrides(V3, ov)
+  const curve = computeForceCurve(mm.jack, mm.plug, F, mm.contactCfg, mm.forceCfg, stepMm, -2)
+  let insertion = 0
+  let withdrawal = 0
+  let atMm = 0
+  for (const p of curve) {
+    if (p.insertionN > insertion) {
+      insertion = p.insertionN
+      atMm = p.depthMm
+    }
+    if (p.withdrawalN > withdrawal) withdrawal = p.withdrawalN
+  }
+  return { insertion, withdrawal, atMm }
+}
+
+/** 各パラメータの「物理的に成立しうる」幅。根拠は ASSUMPTIONS D / UNKNOWNS §3-7 */
+const FORCE_RANGES: Record<string, [number, number]> = {
+  'force.frictionInsert': [0.2, 0.6],
+  'force.frictionWithdraw': [0.2, 0.6],
+  'force.entryFrictionPerMm': [0.0, 0.2],
+  'force.entryFrictionMax': [0.5, 2.5],
+  'force.detentPeak': [0.0, 3.0],
+  'force.detentSigma': [0.2, 1.5],
+  'force.differentiationStep': [0.001, 0.02],
+  'force.maxRampSlope': [0.285, 0.775], // ドーム半径 1.0〜0.2mm に対応
+}
+
+const forceBaseline = peakForce({})
+const forceOat = Object.entries(FORCE_RANGES).map(([key, [lo, hi]]) => ({
+  key,
+  lo,
+  hi,
+  peakAtLo: +peakForce({ [key]: lo }).insertion.toFixed(3),
+  peakAtHi: +peakForce({ [key]: hi }).insertion.toFixed(3),
+}))
+
+const forceKeys = Object.keys(FORCE_RANGES)
+let fLo = Infinity
+let fHi = -Infinity
+let belowSpec = 0
+let aboveSpec = 0
+let detentDominated = 0
+for (let mask = 0; mask < 1 << forceKeys.length; mask++) {
+  const ov: Record<string, number> = {}
+  forceKeys.forEach((k, i) => {
+    ov[k] = FORCE_RANGES[k][(mask >> i) & 1]
+  })
+  const p = peakForce(ov)
+  if (p.insertion < fLo) fLo = p.insertion
+  if (p.insertion > fHi) fHi = p.insertion
+  if (p.insertion < 3) belowSpec++
+  if (p.insertion > 20) aboveSpec++
+  if (Math.abs(p.atMm - base.fullDepthMm) < 0.5) detentDominated++
+}
+const calibrationLinear = [1.0, 1.45, 2.0].map((s) => ({
+  scale: s,
+  peakN: +peakForce({ 'force.calibrationScale': s }).insertion.toFixed(3),
+}))
+console.log('\n  力のモデル (校正係数を固定して物理 8 件を同時に振る):')
+console.log(`    既定 ${forceBaseline.insertion.toFixed(2)} N (深さ ${forceBaseline.atMm.toFixed(2)} mm)`)
+console.log(`    256 通り → ${fLo.toFixed(2)} 〜 ${fHi.toFixed(2)} N`)
+console.log(`    3 N 未満 ${belowSpec} / 20 N 超 ${aboveSpec} / ピークがデテント支配 ${detentDominated}`)
+console.log(`    校正係数は純粋な倍率: ${calibrationLinear.map((x) => `${x.scale}→${x.peakN}`).join(' / ')}`)
+
+// ---------------------------------------------------------------------------
 
 const out = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   generatedBy: 'npm run sensitivity',
   note:
     'しきい値は走査ではなく二分法で求めている (走査刻みが答えを変えるため)。乱数は使っていないので何度実行しても同じ結果になる。' +
@@ -355,6 +471,13 @@ const out = {
     byMinOverlap: tipByMinOverlap,
     insideStepHeight: { tried: insideTried, tipBridgeCount: insideTip, violations: insideViolations },
     factToleranceExcursion: tolExcursion,
+    toleranceBox: {
+      note: 'bodyRadius (FACT 公差 φ3.5±0.05) と insulatorRadius (DERIVED 図面実測 φ3.20〜3.22) を同時に振る',
+      grid: toleranceBox,
+      worstCorner,
+      marginVsAdopted: +(worstCorner.tipThreshold / 0.05).toFixed(3),
+      marginVsAdoptedRangeTop: +(worstCorner.tipThreshold / 0.1).toFixed(3),
+    },
   },
   bridgeDepthRange: {
     joint: { configs: sjConfigs, minMm: +Math.min(...sjFirst).toFixed(4), maxMm: +Math.max(...sjFirst).toFixed(4) },
@@ -363,6 +486,27 @@ const out = {
   previouslyUnswept: { minOverlap: minOverlapEffect, ringBreakOpenDeflection: breakEffect },
   plateauGaps: { threePole: GAP3, fourPole: GAPS4 },
   padThresholds,
+  forceModel: {
+    note:
+      'calibrationScale は純粋な倍率で独立した根拠を持たないため、同時振りからは外して固定した。' +
+      '振ったのは物理的な意味のある 8 件。',
+    baseline: {
+      peakInsertionN: +forceBaseline.insertion.toFixed(3),
+      peakWithdrawalN: +forceBaseline.withdrawal.toFixed(3),
+      peakAtMm: +forceBaseline.atMm.toFixed(3),
+    },
+    ranges: FORCE_RANGES,
+    oneAtATime: forceOat,
+    joint: {
+      configs: 1 << forceKeys.length,
+      minN: +fLo.toFixed(3),
+      maxN: +fHi.toFixed(3),
+      belowSpec3N: belowSpec,
+      aboveSpec20N: aboveSpec,
+      detentDominated,
+    },
+    calibrationScaleIsPureMultiplier: calibrationLinear,
+  },
 }
 
 const OUT = resolve(process.cwd(), 'artifacts')

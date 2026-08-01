@@ -144,6 +144,18 @@
 <p><code>model.conduction.minOverlap</code>（ASSUMPTION 0.01）は、<strong>初版で一度も振っていませんでした。</strong> しきい値の式に自分で書いておきながらです。</p>
 <div class="tw"><table><thead><tr><th>minOverlap</th><th>Ring↔Sleeve 橋絡の窓</th></tr></thead><tbody><tr><td>0.0001</td><td>11.750（幅 0.200）</td></tr><tr><td><strong>0.01（採用）</strong></td><td><strong>11.760（幅 0.180）</strong></td></tr><tr><td>0.05</td><td>11.800（幅 0.100）</td></tr><tr><td>0.09</td><td>11.840（幅 0.020）</td></tr><tr><td><strong>0.10 以上</strong></td><td><strong>橋絡しない</strong></td></tr></tbody></table></div>
 <p>橋絡の成立条件は <code>パッド幅 &gt; プラトー間隔 + 2 × minOverlap</code> なので、 <code>(0.9 − 0.7) / 2 = 0.100</code> でちょうど消えます。<strong>採用値との余裕は 10 倍です。</strong></p>
+<h3>3-4. 挿抜力の絶対値 — <strong>数字としてはほぼ意味を持ちません</strong></h3>
+<p>初版はここを「対象外」とだけ書き、「<code>force.calibrationScale</code> 1 個で 3.6〜7.3 N に動く」と 添えていました。<strong>振らずに済ませた言い訳になっていたので、測り直しました。</strong></p>
+<p>まず校正係数から分けます。<code>force.calibrationScale</code> は<strong>純粋な倍率</strong>です。</p>
+<div class="tw"><table><thead><tr><th>校正係数</th><th>ピーク挿入力</th></tr></thead><tbody><tr><td>1.00</td><td>3.635 N</td></tr><tr><td><strong>1.45（採用）</strong></td><td><strong>5.270 N</strong></td></tr><tr><td>2.00</td><td>7.269 N</td></tr></tbody></table></div>
+<p>完全に線形で、独立した根拠を持ちません（公称 3–20 N に合わせるために置いた値です）。 これを混ぜて振っても「倍率を振れば倍率の分動く」以上のことは言えないので、<strong>固定して</strong>、 物理的な意味のある 8 件を振りました。</p>
+<p><strong>片振り（採用値 5.27 N から）</strong></p>
+<div class="tw"><table><thead><tr><th>パラメータ</th><th>範囲</th><th>下端</th><th>上端</th></tr></thead><tbody><tr><td>挿入摩擦係数</td><td>0.2〜0.6</td><td>4.58 N</td><td>6.43 N</td></tr><tr><td>デテントのピーク</td><td>0.0〜3.0 N</td><td>4.25 N</td><td>7.59 N</td></tr><tr><td>入口摩擦の上限</td><td>0.5〜2.5 N</td><td>4.26 N</td><td>5.36 N</td></tr><tr><td>入口摩擦 N/mm</td><td>0.0〜0.2</td><td>3.53 N</td><td>5.27 N</td></tr><tr><td>デテントの広がり</td><td>0.2〜1.5 mm</td><td>5.27 N</td><td>5.41 N</td></tr><tr><td>抜去摩擦係数</td><td>0.2〜0.6</td><td>5.27 N</td><td>5.27 N</td></tr><tr><td><strong>微分の刻み</strong></td><td>0.001〜0.02</td><td><strong>5.27 N</strong></td><td><strong>5.27 N</strong></td></tr><tr><td><strong>ランプ項の上限</strong></td><td>0.285〜0.775</td><td><strong>5.27 N</strong></td><td><strong>5.27 N</strong></td></tr></tbody></table></div>
+<p>下の 2 行が動かないことは、<strong><code>maxRampSlope</code> を入れた目的がそのまま達成されている</strong>ことを 示しています（→ <a href="../ASSUMPTIONS.md">ASSUMPTIONS.md</a> D）。上限を置く前は、微分の刻みを 変えるだけでピークが 17.8 N にも 28.2 N にもなっていました。</p>
+<p><strong>8 件同時（2 水準・256 通り）</strong></p>
+<div class="tw"><table><thead><tr><th></th><th>値</th></tr></thead><tbody><tr><td>ピーク挿入力の幅</td><td><strong>1.52 〜 11.15 N</strong></td></tr><tr><td>公称 3–20 N を下回った構成</td><td>32 / 256</td></tr><tr><td>公称 3–20 N を上回った構成</td><td>0 / 256</td></tr><tr><td>ピークが完全挿入付近（デテント支配）</td><td>112 / 256</td></tr></tbody></table></div>
+<p><strong>採用値 5.27 N は、幅 7.3 倍の中の 1 点です。</strong> しかもその中心を決めているのは、独立した根拠を持たない校正係数です。</p>
+<div class="note"><p><strong>したがって「挿入ピーク 5.27 N」を有効数字 3 桁の量として読まないでください。</strong></p><p>意味があるのは次の 2 つだけです。</p><p>- <strong>曲線の形</strong>（入口摩擦の立ち上がり・段の乗り越え・完全挿入位置の保持・</p><p>  抜去時のヒステリシス）は幾何から出ており、係数を振っても形は変わりません</p><p>- <strong>公称レンジ 3–20 N に収まる</strong>こと。ただしこれは校正の結果であって検証ではありません</p><p>半分以上の構成（144/256）ではピークが完全挿入位置ですらありません。</p></div>
 <hr>
 <h2 id="s3">4. 4極（TRRS）</h2>
 <p>4極ジャックの接点位置は一次図面が無く全面的に仮定です。それでも不変条件が取れます。 3極で効いた論法が、<strong>ジャック側の仮定ではなくプラグ側の寸法</strong>から出ているためです。</p>
@@ -173,7 +185,7 @@
 <hr>
 <h2 id="s4">5. 読み方</h2>
 <p>README や REPORT に載せている深さの数字は、<strong>帰線接点の位置とパッド幅を 現在の仮定値に固定したときの値</strong>です。次の幅を持つと読んでください。</p>
-<div class="tw"><table><thead><tr><th>事象</th><th class="num">既定値</th><th>幅</th></tr></thead><tbody><tr><td>Ring↔Sleeve 橋絡が始まる</td><td class="num">11.76 mm</td><td><strong>6.96〜13.14 mm</strong></td></tr><tr><td>Ring 側ブレーク接点が開く</td><td class="num">8.05 mm</td><td><strong>8.00〜12.33 mm</strong>（0.4 以上では開かない）</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>事象</th><th class="num">既定値</th><th>幅</th></tr></thead><tbody><tr><td>Ring↔Sleeve 橋絡が始まる</td><td class="num">11.76 mm</td><td><strong>6.96〜13.14 mm</strong></td></tr><tr><td>Ring 側ブレーク接点が開く</td><td class="num">8.05 mm</td><td><strong>8.00〜12.33 mm</strong>（0.4 以上では開かない）</td></tr><tr><td>挿入ピーク力</td><td class="num">5.27 N</td><td><strong>1.5〜11.2 N</strong>（校正係数を固定して。§3-4）</td></tr></tbody></table></div>
 <p>一方、<strong>次のことは幅を持ちません。</strong></p>
 <ul><li>挿入の途中で、帰線接点がプラグの Tip 導体・Ring 導体の上を順に通過する</li><li>その過程で、Ring↔Sleeve の橋絡が起きる（ただし minOverlap が 0.10 以上なら起きない）</li><li><strong>Tip↔Ring の橋絡は起きない</strong>（公称寸法のモデルでは。§6-1 参照）</li><li>ブレーク接点が開くのは、正しい結線が完成するより前である</li></ul>
 <p><strong>「何が起きるか」はほぼ決まっていて、「何 mm で起きるか」が決まっていない</strong>、という状態です。</p>
@@ -184,9 +196,15 @@
 <div class="tw"><table><thead><tr><th>プラグ外径</th><th>Tip 橋絡のしきい値</th></tr></thead><tbody><tr><td><strong>φ3.45（公差下限）</strong></td><td><strong>0.128752 ← 0.150 を割る</strong></td></tr><tr><td><strong>φ3.475</strong></td><td><strong>0.141252 ← 0.150 を割る</strong></td></tr><tr><td>φ3.50（公称）</td><td>0.153752</td></tr><tr><td>φ3.525</td><td>0.166252</td></tr><tr><td>φ3.55（公差上限）</td><td>0.178752</td></tr></tbody></table></div>
 <p>つまり <strong>公差の下半分では、compliance を採用値より大きく取れば Tip 橋絡が実際に起きます。</strong></p>
 <p>さらに、段差 0.150 は <code>plug.bodyRadius</code>（1.75）− Tip 後端半径（1.60）ですが、 <strong>後者の <code>plug.insulatorRadius</code> は DERIVED であって FACT ではありません</strong> （出典は図面実測で、注記自身が「図面実測 φ3.20〜3.22」と幅を認めています）。</p>
-<div class="note"><p>**初版はここを「図面記載の φ3.20 と φ3.50 という 2 つの FACT から出る幾何的な帰結」と</p><p>書いていました。撤回します。** φ3.20 は DERIVED です。</p><p>正確には <strong>「公称寸法のモデルでは Tip 橋絡は起きない」</strong>であって、</p><p>「実物の 3.5 mm プラグでは起きない」ではありません。</p><p>採用値 compliance 0.05 は公差下限でも 2.6 倍の余裕がありますが、それは別の話です。</p></div>
+<div class="note"><p>**初版はここを「図面記載の φ3.20 と φ3.50 という 2 つの FACT から出る幾何的な帰結」と</p><p>書いていました。撤回します。** φ3.20 は DERIVED です。</p><p>正確には <strong>「公称寸法のモデルでは Tip 橋絡は起きない」</strong>であって、</p><p>「実物の 3.5 mm プラグでは起きない」ではありません。</p></div>
+<h4>両端を同時に振る</h4>
+<p>段差は<strong>両端とも幅を持つ量の差</strong>なので、片方だけ振っても最悪値は出ません。 2 つを同時に振った箱が次です。</p>
+<div class="tw"><table><thead><tr><th>プラグ外径 ＼ 絶縁帯径</th><th>φ3.20</th><th>φ3.21</th><th>φ3.22</th></tr></thead><tbody><tr><td><strong>φ3.45（公差下限）</strong></td><td>0.128752</td><td>0.123813</td><td><strong>0.118875 ← 最悪コーナー</strong></td></tr><tr><td>φ3.475</td><td>0.141252</td><td>0.136313</td><td>0.131375</td></tr><tr><td>φ3.50（公称）</td><td><strong>0.153752</strong></td><td>0.148813</td><td>0.143875</td></tr><tr><td>φ3.525</td><td>0.166252</td><td>0.161313</td><td>0.156375</td></tr><tr><td>φ3.55（公差上限）</td><td>0.178752</td><td>0.173813</td><td>0.168875</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th></th><th>しきい値</th><th>採用値 0.05 との比</th></tr></thead><tbody><tr><td>公称</td><td>0.153752</td><td><strong>3.08 倍</strong></td></tr><tr><td>最悪コーナー</td><td>0.118875</td><td><strong>2.38 倍</strong></td></tr></tbody></table></div>
+<p><strong>採用値 0.05 では最悪コーナーでも Tip 橋絡は起きません。</strong> ただし compliance の採用範囲の上端 0.10（<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §3-6）と比べると、 最悪コーナーでの余裕は <strong>1.19 倍</strong>しかありません。 公称寸法での 3.08 倍とは、まったく違う強さの主張になります。</p>
+<p><strong>実物のプラグ外径を測っていないので、どの行にいるのか分かりません</strong> （→ <a href="../UNKNOWNS.md">UNKNOWNS.md</a> §4-1b）。</p>
 <h3>6-2. その他</h3>
-<ul><li>走査で窓を挟み込む段は 0.002 mm 刻みです。<strong>これより狭い窓は取りこぼします。</strong></li><li>4極は <strong>CTIA プラグ × 4極ジャック</strong>を主対象にしました。OMTP は形状が完全に同一で 機能割当だけが違うので、幾何の結論はそのまま当てはまります。</li><li>力のモデル（<code>force.*</code> 9 件）はこの解析の対象外です。 REPORT の「挿入ピーク 5.27 N」は <code>force.calibrationScale</code> 1 個で 3.6〜7.3 N に動きます。 校正係数は公称レンジに合わせるために置いた値なので、これは仕方のない性質です。</li><li><code>jack.contact.*.freeRadius</code> は DERIVED なので振っていません。橋絡の結論には効きませんが、 イベントの深さには効きます。</li><li><strong>これは実物の検証ではありません。</strong> モデルの内部で、仮定をどう選び直しても 結論が変わらないことを確かめただけです。実物との照合は依然として <a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a> の手順が必要です。</li></ul>
+<ul><li>走査で窓を挟み込む段は 0.002 mm 刻みです。<strong>これより狭い窓は取りこぼします。</strong></li><li>4極は <strong>CTIA プラグ × 4極ジャック</strong>を主対象にしました。OMTP は形状が完全に同一で 機能割当だけが違うので、幾何の結論はそのまま当てはまります。</li><li>力のモデル（<code>force.*</code>）は §3-4 で振りました。ただし振ったのは 8 件で、 <strong><code>calibrationScale</code> は固定</strong>しています（純粋な倍率なので同時に振っても情報が増えないため）。 同時振りは 2 水準の全組み合わせなので、<strong>内側に非単調な山があれば取りこぼします</strong>。</li><li><code>jack.contact.*.freeRadius</code> は DERIVED なので振っていません。橋絡の結論には効きませんが、 イベントの深さには効きます。</li><li><strong>これは実物の検証ではありません。</strong> モデルの内部で、仮定をどう選び直しても 結論が変わらないことを確かめただけです。実物との照合は依然として <a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a> の手順が必要です。</li></ul>
 <hr>
 <h2 id="s6">7. 初版の何が間違っていたか</h2>
 <p>独立した 8 体の検証で、初版の主張 6 件のうち <strong>3 件が反証</strong>されました。記録として残します。</p>

@@ -58,10 +58,12 @@ npm run dev
 
 | コマンド | 内容 |
 |---|---|
-| `npm run test` | 単体テスト (Vitest) 69 件 |
-| `npm run typecheck` | TypeScript 型検査 |
+| `npm run test` | 単体テスト (Vitest) 75 件 |
+| `npm run typecheck` | TypeScript 型検査 (`src` / `scripts` / `test`) |
 | `npm run build` | 本番ビルド |
 | `npm run artifacts` | `artifacts/` へ走査結果 JSON を生成 |
+| `npm run sensitivity` | 仮定パラメータの感度解析（**15 分ほどかかる。CI 向けではない**） |
+| `npm run docs:html` | `docs/*.md` から `docs/*.html` を生成 |
 | `npm run screenshots` | 実ブラウザ (Playwright) で UI を操作し、`docs/screenshots/` へ画像を保存 |
 | `npm run perf` | 実 GPU (headed Chrome) でフレームレートと描画コストを測定 |
 | `npm run touch` | iPhone/iPad 相当のビューポートにタッチ入力を注入して操作を検証 |
@@ -253,6 +255,12 @@ src/
 | `ui_verification.json` | 実ブラウザでの UI 検証 27 項目の結果 |
 | `perf_real_gpu.json` | 実 GPU (Apple M5) でのフレームレートと描画コスト |
 | `touch_verification.json` | タッチ操作の検証 20 項目の結果 |
+| `sensitivity.json` | 仮定パラメータの感度解析の生データ（→ [docs/SENSITIVITY.md](docs/SENSITIVITY.md)） |
+
+`sensitivity.json` だけは `npm run artifacts` では作られません。**`npm run sensitivity`
+（単独・実行に 15 分ほど）**で生成します。二分法を何万回も回すため他の成果物より桁違いに重く、
+**CI で回すものではありません**。仮定の値や範囲を変えたときだけ手動で流し直してください。
+乱数は使っていないので、同じ入力なら何度実行しても同じ結果になります。
 
 ---
 
