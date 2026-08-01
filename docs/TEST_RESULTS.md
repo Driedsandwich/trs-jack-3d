@@ -19,7 +19,7 @@
 | 種別 | コマンド | 結果 |
 |---|---|---|
 | 型検査 | `npm run typecheck` | **エラー 0**（`src` / `scripts` / `test`） |
-| 単体テスト | `npm run test` | **140 件**＝モデル検証 75（16+41+18）＋ 文書照合 65 |
+| 単体テスト | `npm run test` | **154 件**＝モデル検証 75（16+41+18）＋ 文書照合 66 ＋ 連携 profile 13 |
 | 実ブラウザ検証 | `npm run screenshots` | **27 件すべて成功**、コンソールエラー 0 |
 | 本番ビルド | `npm run build` | **成功**（1,356 kB / gzip 388 kB・2026-08-01 実測） |
 | 実 GPU 性能 | `npm run perf` | **全条件 fps 59.9**（Apple M5 / vsync 上限）、**33 ms 超のフレーム落ち 0 件** |

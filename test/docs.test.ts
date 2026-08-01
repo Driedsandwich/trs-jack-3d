@@ -96,8 +96,10 @@ describe('A. 深さ表が events.json と一致している', () => {
       expect({ file, missing }).toEqual({ file, missing: [] })
     })
 
-    it(`${file}: 併記された「真値」は感度解析の値である`, () => {
-      expect(annotated.length).toBeGreaterThan(0)
+    it(`${file}: 表の中に走査値以外の精度を混ぜていない`, () => {
+      // 2026-08-02 の再読レビューで、6.96〜13.14 の幅を持つ量に 4 桁の「真値」を
+      // 併記すると精度の印象が戻る、と 2 人が独立に指摘した。
+      // 二分法の値は表の外へ出し、表は走査値だけで揃える。
       const unknown = annotated.filter((v) => !trueValues.has(v))
       expect({ file, unknown }).toEqual({ file, unknown: [] })
     })
@@ -106,6 +108,15 @@ describe('A. 深さ表が events.json と一致している', () => {
   it('2 つの表の深さが互いに一致している', () => {
     const [a, b] = TABLES.map(({ file, heading }) => extractDepths(text[file], heading).depths)
     expect(a).toEqual(b)
+  })
+
+  it('二分法の値は表の外に、走査値との違いを添えて置かれている', () => {
+    const md = text['README.md']
+    // 値そのものは残す (捨てると走査刻みの粒度が読者に分からなくなる)
+    expect(md).toContain(String(sensitivity.baseline.firstBridgeMm))
+    expect(md).toContain(String(sensitivity.baseline.bridgeEndMm))
+    // ただし「実物の値ではない」と明示すること
+    expect(md).toContain('モデル内部の値で、実物の値ではありません')
   })
 
   it('走査値と真値を取り違えていない', () => {

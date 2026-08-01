@@ -1,7 +1,7 @@
 {
   "name": "trs-jack-3d",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -20,7 +20,8 @@
     "perf": "node scripts/perf.mjs",
     "touch": "node scripts/touch.mjs",
     "predict:probe": "vite-node scripts/predictProbe.ts",
-    "fit:contacts": "vite-node scripts/fitContacts.ts"
+    "fit:contacts": "vite-node scripts/fitContacts.ts",
+    "export:half-plug": "vite-node scripts/exportHalfPlugProfile.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

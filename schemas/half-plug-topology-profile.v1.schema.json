@@ -1,0 +1,597 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/half-plug-topology-profile.v1.schema.json",
+  "title": "Half-Plug Topology Profile v1",
+  "description": "プラグ挿入経路を、接点トポロジーが変化しない区間へ分割した中立表現。DSP から独立している。**これは音響係数ではない。** 音に関する項目はすべて参考分類であり、フィルタ係数・ゲイン・クロストーク量として使ってはならない。",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "profileId",
+    "variantId",
+    "plug",
+    "jack",
+    "plugBasis",
+    "jackBasis",
+    "sourceRevision",
+    "generatedAt",
+    "fullInsertionDepthMm",
+    "stepMm",
+    "coordinateSystem",
+    "dataLicense",
+    "modelLimitations",
+    "assumptionSummary",
+    "intervals",
+    "events",
+    "sensitivitySummary",
+    "absentTopologies"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "profileId": {
+      "type": "string",
+      "description": "この profile の識別子。variantId + geometry revision から作る"
+    },
+    "variantId": {
+      "type": "string",
+      "description": "プラグ|ジャックの組み合わせ ID"
+    },
+    "plug": {
+      "$ref": "#/definitions/part"
+    },
+    "jack": {
+      "$ref": "#/definitions/part"
+    },
+    "plugBasis": {
+      "$ref": "#/definitions/basis"
+    },
+    "jackBasis": {
+      "$ref": "#/definitions/basis"
+    },
+    "sourceRevision": {
+      "type": "string",
+      "description": "生成元の git commit。取得できなければ UNKNOWN"
+    },
+    "generatedAt": {
+      "type": "string",
+      "description": "YYYY-MM-DD。ARTIFACT_DATE で固定できる"
+    },
+    "fullInsertionDepthMm": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "stepMm": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "区間を作るのに使った走査刻み。区間境界の分解能そのもの"
+    },
+    "coordinateSystem": {
+      "type": "object",
+      "required": [
+        "depthOrigin",
+        "depthDirection",
+        "normalized"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "depthOrigin": {
+          "type": "string"
+        },
+        "depthDirection": {
+          "type": "string"
+        },
+        "normalized": {
+          "type": "string",
+          "description": "normalizedStart/End の定義"
+        }
+      }
+    },
+    "dataLicense": {
+      "type": "object",
+      "required": [
+        "code",
+        "data",
+        "attribution"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        },
+        "attribution": {
+          "type": "string",
+          "description": "CC BY の帰属表示に使う文字列"
+        }
+      }
+    },
+    "modelLimitations": {
+      "type": "object",
+      "required": [
+        "verifiedPhysical",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "verifiedPhysical": {
+          "type": "boolean",
+          "description": "実物と突き合わせて検証済みか。未実測の profile では必ず false。true にできるのは実測記録が伴う場合のみ"
+        },
+        "physicalVerificationRef": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "assumptionSummary": {
+      "type": "object",
+      "required": [
+        "counts",
+        "jackInternalAssumptions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "counts": {
+          "type": "object",
+          "required": [
+            "FACT",
+            "DERIVED",
+            "ASSUMPTION",
+            "UNKNOWN"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "FACT": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "DERIVED": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "ASSUMPTION": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "UNKNOWN": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "jackInternalAssumptions": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "intervals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/interval"
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "depthMm",
+          "normalized",
+          "label"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "depthMm": {
+            "type": "number"
+          },
+          "normalized": {
+            "type": "number"
+          },
+          "label": {
+            "type": "string"
+          },
+          "spreadMm": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "帰線接点の位置とパッド幅を成立範囲いっぱいに振ったときの幅。null は未測定であって不動の意味ではない",
+            "required": [
+              "minMm",
+              "maxMm",
+              "sweptParameters"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "minMm": {
+                "type": "number"
+              },
+              "maxMm": {
+                "type": "number"
+              },
+              "sweptParameters": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "sensitivitySummary": {
+      "type": "object",
+      "required": [
+        "available",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "bridgeDepthJointRangeMm": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "tipBridgeComplianceThreshold": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tipBridgeWorstCornerThreshold": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "absentTopologies": {
+      "type": "object",
+      "description": "探したが、この profile には現れなかったトポロジー。Half-Plug 側の中核候補 GROUND_OPEN が既定モデルに存在しないことを、機械可読な反証として記録する。**表示上だけ足してはならない。**",
+      "required": [
+        "searched",
+        "absent"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "searched": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "absent": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "part": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "poles"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "poles": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "manufacturerPartNumber": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "basis": {
+      "type": "object",
+      "description": "その部品の寸法が何に由来するか",
+      "required": [
+        "source",
+        "evidenceGrade"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "evidenceGrade": {
+          "$ref": "#/definitions/grade"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "grade": {
+      "enum": [
+        "FACT",
+        "DERIVED",
+        "ASSUMPTION",
+        "UNKNOWN"
+      ]
+    },
+    "interval": {
+      "type": "object",
+      "required": [
+        "intervalId",
+        "nominalStartMm",
+        "nominalEndMm",
+        "normalizedStart",
+        "normalizedEnd",
+        "contacts",
+        "circuitEdges",
+        "circuitNets",
+        "terminalToPlugNet",
+        "breakStates",
+        "mechanicalFlags",
+        "acousticAnnotation",
+        "evidenceGrade",
+        "uncertainty",
+        "safetyFlags"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "intervalId": {
+          "type": "string"
+        },
+        "nominalStartMm": {
+          "type": "number"
+        },
+        "nominalEndMm": {
+          "type": "number"
+        },
+        "normalizedStart": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "normalizedEnd": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "contacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "contactId",
+              "terminalId",
+              "state",
+              "connectedNets",
+              "evidenceGrade"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "contactId": {
+                "type": "string"
+              },
+              "terminalId": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              },
+              "connectedNets": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "physicallyTouching": {
+                "type": "boolean"
+              },
+              "evidenceGrade": {
+                "$ref": "#/definitions/grade"
+              }
+            }
+          }
+        },
+        "circuitEdges": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "circuitNets": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "terminalToPlugNet": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "breakStates": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "mechanicalFlags": {
+          "type": "object",
+          "required": [
+            "anyBridged",
+            "anyWrongSegment",
+            "anyUnstable"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "anyBridged": {
+              "type": "boolean"
+            },
+            "anyWrongSegment": {
+              "type": "boolean"
+            },
+            "anyUnstable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "acousticAnnotation": {
+          "type": "object",
+          "description": "**参考分類であって DSP 係数ではない。** これをフィルタ係数・ゲイン・クロストーク量へ直接変換してはならない。topologyClass は電気的な接続の分類、audibleHypothesis は未検証の聴感の仮説である。",
+          "required": [
+            "topologyClass",
+            "audibleHypothesis",
+            "electricalRisk",
+            "confidence"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "topologyClass": {
+              "type": "string"
+            },
+            "audibleHypothesis": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "stabilityOverlay": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "electricalRisk": {
+              "enum": [
+                "none",
+                "protection-dependent",
+                "short-circuit"
+              ]
+            },
+            "confidence": {
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            }
+          }
+        },
+        "evidenceGrade": {
+          "$ref": "#/definitions/grade",
+          "description": "この区間の結論を支える最も弱い根拠区分"
+        },
+        "uncertainty": {
+          "type": "object",
+          "required": [
+            "boundaryResolutionMm",
+            "systematicShiftMm",
+            "notes"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "boundaryResolutionMm": {
+              "type": "number",
+              "description": "区間境界の分解能。走査刻みそのもの"
+            },
+            "systematicShiftMm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "全区間へ一律にかかりうる系統的なずれ"
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "safetyFlags": {
+          "type": "object",
+          "required": [
+            "shortsSignalToReturn",
+            "shortsSignalToSignal"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "shortsSignalToReturn": {
+              "type": "boolean"
+            },
+            "shortsSignalToSignal": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  }
+}

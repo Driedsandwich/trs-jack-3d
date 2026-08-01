@@ -42,7 +42,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { buildModelWithOverrides, getModel } from '../src/data'
-import { sweep } from '../src/model/sweep'
+import { extractEvents, sweep } from '../src/model/sweep'
 import { computeForceCurve } from '../src/model/force'
 import { plugRadiusAt } from '../src/model/resolve'
 import { DEFAULT_FAULTS } from '../src/model/contact'
@@ -241,6 +241,8 @@ for (const t of tolExcursion)
 // 5) 帰線接点の 2 パラメータを「同時に」振る (初版は片振りの合併を幅としていた)
 // ---------------------------------------------------------------------------
 
+/** 主要イベントごとの深さの幅。同時振りの全構成にわたって集める */
+const eventSpread = new Map<string, { min: number; max: number; n: number }>()
 const sjFirst: number[] = []
 let sjConfigs = 0
 for (let i = 0; i <= 30; i++) {
@@ -257,6 +259,16 @@ for (let i = 0; i <= 30; i++) {
     sjConfigs++
     const f = firstBridgeDepth(m, 'JC_SLEEVE', 0.005)
     if (f !== null) sjFirst.push(f)
+    // 同じ構成で、主要イベントの深さも全部記録する。
+    // README の深さ表は 12 行あるが、幅を出せていたのは 2 行だけだった
+    // (2026-08-02 の再読レビューの指摘)。同じループで残りも測れる。
+    for (const ev of extractEvents(m, sweep(m, { stepMm: 0.02 }))) {
+      const cur = eventSpread.get(ev.kind) ?? { min: Infinity, max: -Infinity, n: 0 }
+      cur.min = Math.min(cur.min, ev.depthMm)
+      cur.max = Math.max(cur.max, ev.depthMm)
+      cur.n++
+      eventSpread.set(ev.kind, cur)
+    }
   }
 }
 console.log(
@@ -500,7 +512,7 @@ console.log(`    校正係数は純粋な倍率: ${calibrationLinear.map((x) => 
 // ---------------------------------------------------------------------------
 
 const out = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   generatedBy: 'npm run sensitivity',
   note:
     'しきい値は走査ではなく二分法で求めている (走査刻みが答えを変えるため)。乱数は使っていないので何度実行しても同じ結果になる。' +
@@ -525,6 +537,17 @@ const out = {
       marginVsAdoptedRangeTop: +(worstCorner.tipThreshold / 0.1).toFixed(3),
       breakEven,
     },
+  },
+  eventSpread: {
+    note:
+      '主要イベントごとの深さの幅。帰線接点の軸位置とパッド幅を同時に振った全構成にわたる最小・最大。' +
+      'README の深さ表の全行に幅を付けるために測った。n は、その構成数のうちそのイベントが現れた回数。',
+    byKind: Object.fromEntries(
+      [...eventSpread.entries()].map(([k, v]) => [
+        k,
+        { minMm: +v.min.toFixed(4), maxMm: +v.max.toFixed(4), configs: v.n, movesMm: +(v.max - v.min).toFixed(4) },
+      ]),
+    ),
   },
   bridgeDepthRange: {
     joint: { configs: sjConfigs, minMm: +Math.min(...sjFirst).toFixed(4), maxMm: +Math.max(...sjFirst).toFixed(4) },

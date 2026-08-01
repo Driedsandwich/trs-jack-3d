@@ -1,5 +1,5 @@
 {
- "schemaVersion": 3,
+ "schemaVersion": 4,
  "generatedBy": "npm run sensitivity",
  "note": "しきい値は走査ではなく二分法で求めている (走査刻みが答えを変えるため)。乱数は使っていないので何度実行しても同じ結果になる。初版 (schemaVersion 1) には手法上の欠陥が 4 つあり作り直した。scripts/sensitivity.ts の冒頭を参照。",
  "stepHeightMm": 0.15,
@@ -190,6 +190,65 @@
      "stepRadius": 0.095579,
      "diameterDiff": 0.1912
     }
+   }
+  }
+ },
+ "eventSpread": {
+  "note": "主要イベントごとの深さの幅。帰線接点の軸位置とパッド幅を同時に振った全構成にわたる最小・最大。README の深さ表の全行に幅を付けるために測った。n は、その構成数のうちそのイベントが現れた回数。",
+  "byKind": {
+   "FIRST_PHYSICAL_CONTACT": {
+    "minMm": -0.88,
+    "maxMm": 5.72,
+    "configs": 869,
+    "movesMm": 6.6
+   },
+   "LAST_CONTACT_RELEASE": {
+    "minMm": -0.88,
+    "maxMm": 5.72,
+    "configs": 869,
+    "movesMm": 6.6
+   },
+   "STATE_CHANGE": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "configs": 17082,
+    "movesMm": 14.88
+   },
+   "FIRST_ELECTRICAL_CONTACT": {
+    "minMm": -0.86,
+    "maxMm": 8.02,
+    "configs": 869,
+    "movesMm": 8.88
+   },
+   "FIRST_WRONG_SEGMENT": {
+    "minMm": -0.86,
+    "maxMm": 8.02,
+    "configs": 869,
+    "movesMm": 8.88
+   },
+   "FIRST_BREAK_OPEN": {
+    "minMm": 8.06,
+    "maxMm": 8.06,
+    "configs": 869,
+    "movesMm": 0
+   },
+   "ALL_SIGNALS_CORRECT": {
+    "minMm": 12.34,
+    "maxMm": 14,
+    "configs": 869,
+    "movesMm": 1.66
+   },
+   "FULL_INSERTION": {
+    "minMm": 14,
+    "maxMm": 14,
+    "configs": 869,
+    "movesMm": 0
+   },
+   "FIRST_BRIDGE": {
+    "minMm": 6.98,
+    "maxMm": 13.14,
+    "configs": 714,
+    "movesMm": 6.16
    }
   }
  },
