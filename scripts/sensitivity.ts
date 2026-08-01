@@ -353,8 +353,27 @@ for (const [cid, rows] of Object.entries(padThresholds)) {
 // 2 つを同時に振って、いちばん薄くなる隅を出す。
 // ---------------------------------------------------------------------------
 
-const BODY_R = [1.725, 1.7375, 1.75, 1.7625, 1.775] // 図面公差 φ3.5±0.05
-const INS_R = [1.6, 1.605, 1.61] // 図面実測 φ3.20〜3.22
+// 振り幅は台帳 (dimensions.json の tolerance) から取る。ここに数値を直書きすると、
+// 台帳を直したときに解析だけ古い幅のまま残る。
+const levels = (key: string, n: number) => {
+  const e = base.dims.entry(key)
+  // 非対称な幅は sweepRange、左右対称の公差は tolerance。両方あれば sweepRange を採る
+  let lo: number
+  let hi: number
+  if (e.sweepRange) {
+    if (e.sweepRange.length !== 2) throw new Error(`${key} の sweepRange は [min, max] の 2 要素で書く`)
+    ;[lo, hi] = e.sweepRange
+  } else if (e.tolerance !== undefined) {
+    lo = e.value - e.tolerance
+    hi = e.value + e.tolerance
+  } else {
+    throw new Error(`${key} に sweepRange も tolerance も無い。振り幅を決められない`)
+  }
+  return Array.from({ length: n }, (_, i) => +(lo + ((hi - lo) * i) / (n - 1)).toFixed(6))
+}
+const BODY_R = levels('plug.bodyRadius', 5) // 図面公差 φ3.5±0.05 → 半径 ±0.025
+const INS_R = levels('plug.insulatorRadius', 3) // 図面実測 φ3.20〜3.22 → 半径 1.60〜1.61
+console.log(`  振り幅は台帳から: bodyRadius ${BODY_R.join('/')} , insulatorRadius ${INS_R.join('/')}`)
 const toleranceBox = BODY_R.flatMap((b) =>
   INS_R.map((i) => ({
     bodyDiameter: +(2 * b).toFixed(3),
@@ -372,6 +391,33 @@ const toleranceBox = BODY_R.flatMap((b) =>
   })),
 )
 const worstCorner = toleranceBox.reduce((a, b) => (b.tipThreshold < a.tipThreshold ? b : a))
+
+/**
+ * 「実物のプラグを測ったとき、段差がどこまで薄ければ結論が崩れるか」。
+ *
+ * VERIFICATION_PLAN §1-1 がこの値を判定線として使うので、artifact に出して
+ * 文書と機械照合できるようにしておく。段差を薄くしていって (絶縁帯半径を上げて)、
+ * その compliance で実際に Tip 橋絡が始まる点を二分法で探す。
+ */
+function stepBreakEven(compliance: number): { stepRadius: number; diameterDiff: number } {
+  const bridges = (ir: number) =>
+    anyTipBridge(
+      buildModelWithOverrides(V3, { 'plug.insulatorRadius': ir, 'model.contact.complianceMm': compliance }),
+    )
+  const body = base.plug.bodyRadiusMm
+  if (bridges(1.6) || !bridges(body - 1e-4)) throw new Error(`端点が想定外 (compliance=${compliance})`)
+  const ir = bisect(1.6, body, bridges)
+  return { stepRadius: +(body - ir).toFixed(6), diameterDiff: +(2 * (body - ir)).toFixed(4) }
+}
+const breakEven = {
+  note: '段差がこれより薄いと、その compliance で第1絶縁帯の Tip 橋絡が実際に起きる',
+  atAdopted005: stepBreakEven(0.05),
+  atRangeTop010: stepBreakEven(0.1),
+}
+console.log(
+  `  段差の破綻点: compliance 0.05 → 直径差 ${breakEven.atAdopted005.diameterDiff} mm / ` +
+    `0.10 → ${breakEven.atRangeTop010.diameterDiff} mm (公称の直径差は 0.30)`,
+)
 console.log('\n  公差の箱の隅で Tip 橋絡のしきい値:')
 console.log(
   `    最悪 φ${worstCorner.bodyDiameter} × 絶縁 φ${worstCorner.insulatorDiameter} → ${worstCorner.tipThreshold}` +
@@ -477,6 +523,7 @@ const out = {
       worstCorner,
       marginVsAdopted: +(worstCorner.tipThreshold / 0.05).toFixed(3),
       marginVsAdoptedRangeTop: +(worstCorner.tipThreshold / 0.1).toFixed(3),
+      breakEven,
     },
   },
   bridgeDepthRange: {

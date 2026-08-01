@@ -90,18 +90,20 @@
   <h2>目次</h2>
   <ol>
     <li><a href="#s0">1. 何を測ると何が分かるか</a></li>
-    <li><a href="#s1">1-2. 決着実験 — 橋絡がどこで起きるか</a></li>
-    <li><a href="#s2">2. 深さをどう決めるか</a></li>
-    <li><a href="#s3">3. 必要なもの</a></li>
-    <li><a href="#s4">4. 合否の基準</a></li>
-    <li><a href="#s5">5. 測った後どうするか</a></li>
-    <li><a href="#s6">6. この実験で分からないこと</a></li>
-    <li><a href="#s7">7. 進め方</a></li>
+    <li><a href="#s1">1-1. プラグ 1 個とノギスだけで決まること — 最初にこれをやってください</a></li>
+    <li><a href="#s2">1-2. 決着実験 — 橋絡がどこで起きるか</a></li>
+    <li><a href="#s3">2. 深さをどう決めるか</a></li>
+    <li><a href="#s4">3. 必要なもの</a></li>
+    <li><a href="#s5">4. 合否の基準</a></li>
+    <li><a href="#s6">5. 測った後どうするか</a></li>
+    <li><a href="#s7">6. この実験で分からないこと</a></li>
+    <li><a href="#s8">7. 進め方</a></li>
   </ol>
 </nav>
 <h1>実物との突き合わせ計画</h1>
 <div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
-<p>作成 2026-07-31 ／ 状態: <strong>部品の手配待ち</strong></p>
+<p>作成 2026-07-31 ／ 更新 2026-08-01 ／ 状態: <strong>部品の手配待ち</strong></p>
+<div class="note"><p><strong>2026-08-01 の変更</strong>: 感度解析で、中心的な結論の土台（Tip と Ring の 0.15 mm の段差）が</p><p><strong>両端とも幅を持つ量の差</strong>だと分かりました（<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §4-1b）。</p><p>これはノギス 1 本で決着するので、**§1-1 として独立させ、LED 回路を使う §1-2 より前に</p><p>置きました**。あわせて §1-2 にあった判定線 0.24 mm を実測で取り直しています（→ §1-1）。</p></div>
 <p>このモデルの一番弱いところは、<strong>ジャック内部の接点ばねの寸法をすべて仮定で置いている</strong>ことです （<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §3、<a href="../ASSUMPTIONS.md">ASSUMPTIONS.md</a> A）。 データシートにもメーカー CAD にも書かれていないので、図面からは埋められません。</p>
 <p>ただし幸運なことに、<strong>その仮定は電気的に測れます。</strong> テスターで端子間の導通を見ながらプラグをゆっくり挿していけば、 接点が切り替わる深さが分かります。モデルはその深さを予測しているので、当たり外れが判定できます。</p>
 <p>この文書は、その測定をどうやるかを決めたものです。</p>
@@ -122,17 +124,36 @@
 <p>プラグの端子に線を出せば、こちらも測れます。半挿しの誤接触がそのまま見えます。</p>
 <div class="tw"><table><thead><tr><th>ピン</th><th class="num">深さ</th><th class="num">すき間</th><th>つながる先</th></tr></thead><tbody><tr><td>ピン1（Sleeve 接点）</td><td class="num">3.93 mm</td><td class="num">10.07 mm</td><td>→ <strong>プラグ Tip</strong>（帰線が左信号に触れる）</td></tr><tr><td>〃</td><td class="num">6.32 mm</td><td class="num">7.68 mm</td><td>→ 切れる（絶縁帯を通過）</td></tr><tr><td>〃</td><td class="num">7.03 mm</td><td class="num">6.97 mm</td><td>→ プラグ Tip</td></tr><tr><td>〃</td><td class="num">8.26 mm</td><td class="num">5.74 mm</td><td>→ 切れる（第1絶縁帯を通過）</td></tr><tr><td>〃</td><td class="num">8.27 mm</td><td class="num">5.73 mm</td><td>→ プラグ Ring</td></tr><tr><td>〃</td><td class="num">11.77 mm</td><td class="num">2.23 mm</td><td>→ <strong>Ring と Sleeve の両方</strong>（橋絡）</td></tr><tr><td>〃</td><td class="num">11.95 mm</td><td class="num">2.05 mm</td><td>→ <strong>プラグ Sleeve</strong>（ようやく正常）</td></tr><tr><td>ピン2（Ring 接点）</td><td class="num">8.01 mm</td><td class="num">5.99 mm</td><td>→ プラグ Tip</td></tr><tr><td>〃</td><td class="num">10.04 mm</td><td class="num">3.96 mm</td><td>→ 切れる</td></tr><tr><td>〃</td><td class="num">11.11 mm</td><td class="num">2.89 mm</td><td>→ プラグ Tip</td></tr><tr><td>〃</td><td class="num">12.17 mm</td><td class="num">1.83 mm</td><td>→ 切れる</td></tr><tr><td>〃</td><td class="num">12.34 mm</td><td class="num">1.66 mm</td><td>→ <strong>プラグ Ring</strong>（正常）</td></tr><tr><td>ピン3（Tip 接点）</td><td class="num">11.96 mm</td><td class="num">2.04 mm</td><td>→ <strong>プラグ Tip</strong>（正常）</td></tr></tbody></table></div>
 <hr>
-<h2 id="s1">1-2. 決着実験 — 橋絡がどこで起きるか</h2>
+<h2 id="s1">1-1. プラグ 1 個とノギスだけで決まること — <strong>最初にこれをやってください</strong></h2>
+<p><strong>この計画で一番安く、一番早く、一番効くのがこれです。</strong> ジャックも LED もはんだ付けも要りません。<strong>プラグ 1 個とノギスだけ</strong>、実測 30 秒です。</p>
+<h3>何が決まるか</h3>
+<p>このモデルの中心的な結論は「第1絶縁帯（Tip↔Ring）では橋絡しない」ですが、 その根拠は <strong>Tip 導体が Ring より 0.15 mm 低い（半径で）</strong>という 1 点だけです。 そしてこの 0.15 mm は、<strong>両端とも幅を持つ量の差</strong>です。</p>
+<div class="tw"><table><thead><tr><th></th><th>値</th><th>区分</th><th>幅</th></tr></thead><tbody><tr><td>Ring / Sleeve 半径</td><td>1.750</td><td><strong>FACT</strong></td><td>図面公差 φ3.5±0.05 → 半径 ±0.025</td></tr><tr><td>Tip 後端半径</td><td>1.600</td><td><strong>DERIVED</strong></td><td>図面実測 φ3.20〜3.22 → 半径 +0.01</td></tr></tbody></table></div>
+<p><strong>実物がこの帯のどこにいるかは測っていません</strong>（<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §4-1b）。 ノギスで直径を 2 箇所測れば、それが 1 つに決まります。</p>
+<h3>測り方</h3>
+<div class="tw"><table><thead><tr><th>測る場所</th><th>予測</th></tr></thead><tbody><tr><td>Tip 導体の後端（先端から約 4.5 mm）</td><td><strong>φ3.20</strong></td></tr><tr><td>Ring 導体（先端から約 6.5 mm）</td><td><strong>φ3.50</strong></td></tr><tr><td><strong>その差</strong></td><td><strong>0.30 mm</strong>（＝半径の段差 0.15 mm）</td></tr></tbody></table></div>
+<p>Tip 後端は逆テーパの頂点なので、<strong>先端から 4.3〜4.8 mm の間で最も太いところ</strong>を探して読んでください。</p>
+<h3>読み方 — 線は 2 本あって、意味が違う</h3>
+<p><strong>この 2 本を混同しないでください。</strong>（数値は <code>npm run sensitivity</code> の実測です）</p>
+<div class="tw"><table><thead><tr><th>実測の直径差</th><th>意味</th></tr></thead><tbody><tr><td><strong>0.23 mm 以上</strong></td><td>✅ <strong>図面の範囲内。</strong> 図面から出る最悪の組み合わせ（外径 φ3.45 × 絶縁帯 φ3.22）がちょうど 0.23 mm です</td></tr><tr><td>0.090〜0.23 mm</td><td>⚠️ <strong>図面より薄い。</strong> 結論は保たれますが、実測の読み違いか、この個体が図面どおりでないかを疑ってください</td></tr><tr><td><strong>0.090 mm 未満</strong></td><td>❌ <strong>結論が崩れます。</strong> ここまで薄いと、採用値 compliance 0.05 でも第1絶縁帯で Tip 橋絡が起きます</td></tr></tbody></table></div>
+<p><strong>上の 2 つなら結論は保たれます。</strong>ただし余裕の大きさは変わります。</p>
+<div class="tw"><table><thead><tr><th>実測の直径差</th><th>Tip 橋絡が始まる compliance</th><th>採用値 0.05 との比</th></tr></thead><tbody><tr><td>0.30（公称）</td><td>0.153752</td><td>3.08 倍</td></tr><tr><td>0.23（図面上の最悪）</td><td>0.118875</td><td>2.38 倍</td></tr><tr><td>0.19</td><td>≈ 0.10</td><td>2.0 倍（<strong>compliance の採用範囲の上端と等しくなる</strong>）</td></tr><tr><td><strong>0.090</strong></td><td><strong>≈ 0.05</strong></td><td><strong>1.0 倍 = 破綻</strong></td></tr></tbody></table></div>
+<div class="note"><p>2026-08-01 まで、ここには「<strong>差が 0.24 mm を下回ったら実験の前提そのものが崩れます</strong>」と</p><p>書いていました。<strong>言い過ぎでした。</strong></p><p>実際に橋絡が始まるのは <strong>0.090 mm</strong> で、<strong>2.7 倍離れています</strong>。</p><p>しかも 0.24 という線自体が中途半端で、図面が許す最悪値 0.23 のほうが下にありました</p><p>（＝図面どおりの個体でも「前提が崩れた」と誤判定しかねない線でした）。</p></div>
+<h3>結果をどう反映するか</h3>
+<div class="tw"><table><thead><tr><th>実測</th><th>やること</th></tr></thead><tbody><tr><td>0.23 以上</td><td><code>plug.insulatorRadius</code> を実測値へ更新し、<code>tolerance</code> を実測のばらつきに置き換える。<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §4-1b を閉じる</td></tr><tr><td>0.090〜0.23</td><td>同上。加えて余裕が縮むので、<a href="SENSITIVITY.md">SENSITIVITY.md</a> §6-1 の箱を実測行に絞り、REPORT §2-3 の余裕の記述を直す</td></tr><tr><td>0.090 未満</td><td><strong>結論の撤回。</strong> 第1絶縁帯で橋絡しないという主張を取り下げ、REPORT §4 と README を書き換える</td></tr></tbody></table></div>
+<p>いずれの場合も、<code>npm run sensitivity</code> を流し直して数字を取り直してください（15 分）。</p>
+<hr>
+<h2 id="s2">1-2. 決着実験 — 橋絡がどこで起きるか</h2>
 <p><strong>この 1 つの測定だけで、モデルの修正が正しかったかどうかが決まります。</strong></p>
 <h3>何が争点か</h3>
 <p>2026-07-31 の公開前監査で、接触判定に誤りが見つかりました。 接点が届いているかを「たわむ<strong>前</strong>の自由半径」で判定していて、 プラグに押し開かれたあとの位置で見直していなかったのです。</p>
 <p>その結果、修正前と修正後で<strong>予測が正面から食い違います</strong>。</p>
 <div class="tw"><table><thead><tr><th></th><th>第1絶縁帯（Tip↔Ring）</th><th>第2絶縁帯（Ring↔Sleeve）</th></tr></thead><tbody><tr><td><strong>修正前</strong></td><td>深さ 8.27〜8.44 mm で<strong>橋絡する</strong></td><td>11.77〜11.94 mm で橋絡する</td></tr><tr><td><strong>修正後（現在）</strong></td><td><strong>一度も橋絡しない</strong></td><td>11.77〜11.94 mm で橋絡する</td></tr></tbody></table></div>
 <p>修正の根拠は、プラグ導体の<strong>高さの差</strong>です。Tip は最大 φ3.20（半径 1.600）、 Ring / Sleeve は φ3.50（半径 1.750）。<strong>Tip だけ 0.15 mm 低い。</strong> 接点は Ring に押し上げられた位置にいるので、0.15 mm 下の Tip 面には届かない ―― という理屈です。</p>
-<h3>先に 30 秒でできる事前確認</h3>
-<p><strong>部品が届いたら、まずノギスでプラグの直径を 2 箇所測ってください。</strong></p>
-<div class="tw"><table><thead><tr><th>測る場所</th><th>予測</th></tr></thead><tbody><tr><td>Tip 導体の後端（先端から約 4.5 mm）</td><td><strong>φ3.20</strong></td></tr><tr><td>Ring 導体（先端から約 6.5 mm）</td><td><strong>φ3.50</strong></td></tr><tr><td>その差</td><td><strong>0.30 mm</strong></td></tr></tbody></table></div>
-<p><strong>差が 0.24 mm を下回ったら、この実験の前提そのものが崩れます。</strong> 修正の根拠は「Tip が Ring より 0.15 mm 低い（半径で）」なので、 実物にその段差が無ければ、下の導通試験をするまでもなく修正が間違っていたことになります。</p>
+<h3>先に §1-1 を済ませてください</h3>
+<p><strong>この実験の前に、§1-1（すぐ上）のノギス測定を必ず先にやってください。</strong></p>
+<p>実物の段差が図面どおり（直径差 0.30 mm 前後）なら、下の導通試験で第1絶縁帯に 橋絡が出ないことが<strong>予測どおり</strong>の結果です。 しかし実物の段差が薄ければ、<strong>橋絡が出るのが正しい</strong>ことになります。 先に段差を知らずに導通試験だけをすると、<strong>どちらの結果も解釈できません。</strong></p>
+<p>ノギス測定はプラグ 1 個だけででき、この実験より先に終わります。</p>
 <h3>測り方 — プラグの Tip 線と Ring 線の間を見る</h3>
 <p>橋絡が起きると、ジャックの帰線接点が 2 つのプラグ導体を橋渡しします。 つまり<strong>プラグ側の 2 本の線どうしが短絡します</strong>。だからプラグ側だけを見れば分かります。</p>
 <pre><code>   LED + ボタン電池 + 抵抗（直列）
@@ -158,7 +179,7 @@
 <p>§1 の「一番おいしい観測点」（ピン2↔ピン4、ピン3↔ピン5）は、この論点に対して<strong>判別力がゼロ</strong>です。 開閉する深さは修正前後でまったく同じ（8.06 / 9.43 / 11.23 / 12.01 mm）でした。</p>
 <p>あちらはプラグ外形と接点の軸位置を試す実験で、橋絡の真偽は試せません。 <strong>この決着実験にはプラグ側への配線が必須</strong>です。プラグ 1532 10 ははんだ付け端子を持つので、 3 本のリード線をはんだ付けするか、市販の 3.5 mm ステレオケーブルを切って各線を確認してください。</p>
 <hr>
-<h2 id="s2">2. 深さをどう決めるか</h2>
+<h2 id="s3">2. 深さをどう決めるか</h2>
 <p><strong>深さそのものを測るのは難しいので、「すき間」を測ります。</strong></p>
 <pre><code>   プラグ肩            ジャック前面
       │                    │
@@ -172,7 +193,7 @@
 <ol><li>ジャックを動かないように固定する（万力・両面テープ・ブレッドボードなど）</li><li>テスターを導通ブザーにして、ピン2とピン4に当てる（クリップ付きが楽）</li><li>プラグをごくゆっくり押し込む</li><li>ブザーが切れた（または鳴った）瞬間に手を止める</li><li>その状態でプラグ肩とジャック前面のすき間をノギスで測る</li><li>深さ = 14.00 − すき間 を記録する</li><li>一度完全に抜いて、<strong>3回繰り返す</strong>（ばらつきを見るため）</li><li>ピン3とピン5でも同じことをする</li></ol>
 <p>プラグは指で押すと傾きます。まっすぐ入るよう、指先で軸を支えてください。</p>
 <hr>
-<h2 id="s3">3. 必要なもの</h2>
+<h2 id="s4">3. 必要なもの</h2>
 <h3>本体（欧州から取り寄せ）</h3>
 <div class="tw"><table><thead><tr><th>品目</th><th>型番</th><th class="num">数</th><th>在庫（2026-08-01 メーカーサイト調べ）</th></tr></thead><tbody><tr><td>ジャック</td><td>Lumberg <strong>1503 09</strong></td><td class="num">2</td><td>Farnell GB 1,873 ／ Arrow DE 1,000 ／ Bürklin DE 529 ／ TME PL 431</td></tr><tr><td>プラグ</td><td>Lumberg <strong>1532 10</strong></td><td class="num">1</td><td>Lumberg DE 1,200 ／ Bürklin DE 501 ／ Arrow DE 38</td></tr></tbody></table></div>
 <div class="note"><p><strong>プラグの方が探しにくい。</strong> 1532 10 は TME / Farnell / RS の検索に出てきません</p><p>（同じ 1532 系でも 02 / 04 / 05 / 06 しか並びません）。</p><p>メーカー自身のページには在庫が出ているので、**Bürklin か Arrow、あるいは</p><p>Lumberg への直接問い合わせ**が確実です。</p></div>
@@ -180,7 +201,8 @@
 <div class="tw"><table><thead><tr><th>品目</th><th>目安</th><th>備考</th></tr></thead><tbody><tr><td>赤色 LED</td><td>Vf 約 1.8〜2.1 V</td><td>秋月電子などで数十円。低電流で光るものが見やすい</td></tr><tr><td>抵抗</td><td>100〜330 Ω</td><td>CR2032 3 V − Vf 2 V で 3〜10 mA 程度になる値</td></tr><tr><td>CR2032 + ホルダー</td><td>電池 ¥200/5個・ホルダー ¥75〜100</td><td>秋月 通販コード 105694（電池）/ 101443・100706（ホルダー）</td></tr><tr><td>配線</td><td>みの虫クリップ付きリード</td><td>プラグの Tip / Ring / Sleeve から線を出すため</td></tr></tbody></table></div>
 <div class="note"><p>CR2032 は内部抵抗が大きい電池ですが、<strong>この用途では問題になりません</strong>。</p><p>見るのは 0.36〜0.90 秒の点灯で、必要な電流も数 mA だからです。</p><p>手持ちの単3×2 本（3 V）でも同じことができます。</p></div>
 <h3>測定器</h3>
-<div class="tw"><table><thead><tr><th>品目</th><th>目安</th><th>概算</th><th>備考</th></tr></thead><tbody><tr><td>デジタルノギス</td><td>0.01 mm 表示</td><td>¥2,000〜4,000</td><td>すき間の測定に必須</td></tr><tr><td>テスター</td><td>導通ブザー付き</td><td>¥1,500〜3,000</td><td>§1・§2 用。クリップ付きリードがあると格段に楽</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>品目</th><th>目安</th><th>概算</th><th>備考</th></tr></thead><tbody><tr><td>デジタルノギス</td><td>0.01 mm 表示</td><td>¥2,000〜4,000</td><td><strong>§1-1 はこれとプラグ 1 個だけで完結</strong>。§2 のすき間測定にも必須</td></tr><tr><td>テスター</td><td>導通ブザー付き</td><td>¥1,500〜3,000</td><td>§1・§2 用。クリップ付きリードがあると格段に楽</td></tr></tbody></table></div>
+<div class="note"><p><strong>§1-1 だけなら、ジャックも LED 回路もテスターも要りません。</strong></p><p>プラグ 1 個（€2〜4）とノギスがあれば、届いたその日に 30 秒で終わります。</p><p>しかも <a href="../UNKNOWNS.md">UNKNOWNS.md</a> §4-1b がそれで閉じます。</p><p><strong>費用対効果はこの計画の中で断トツです。</strong></p></div>
 <h3>費用と納期</h3>
 <div class="tw"><table><thead><tr><th></th><th>概算</th></tr></thead><tbody><tr><td>部品（ジャック2・プラグ1）</td><td>€6〜10</td></tr><tr><td>送料（欧州発）</td><td>€15〜25</td></tr><tr><td>LED 回路一式</td><td>¥500 以下</td></tr><tr><td>ノギス・テスター（未所持なら）</td><td>¥3,500〜7,000</td></tr></tbody></table></div>
 <p><strong>部品と送料だけなら ¥4,000〜6,000、納期 2〜4 週間。</strong> 一番高いのは送料なので、他に欲しい部品があればまとめて頼むほうが得です。</p>
@@ -193,14 +215,14 @@
 <h3>予備を買うか</h3>
 <p>ジャックは<strong>2個</strong>買うことを勧めます。1個は測定用、1個は必要になったとき切断して 内部を直接見るためです。単価が安いので、選択肢を残しておく価値があります。</p>
 <hr>
-<h2 id="s4">4. 合否の基準</h2>
+<h2 id="s5">4. 合否の基準</h2>
 <p>「だいたい合っていた」で終わらせないために、先に線を引いておきます。</p>
 <div class="tw"><table><thead><tr><th>予測とのずれ</th><th>判定</th><th>やること</th></tr></thead><tbody><tr><td><strong>0.3 mm 以内</strong></td><td>モデルは実測と整合</td><td><code>dimensions.json</code> の note に実測日と実測値を追記。grade は DERIVED のまま（実測で裏付いたと明記）</td></tr><tr><td><strong>0.3〜1.0 mm</strong></td><td>位置がずれている</td><td>逆算した軸位置へ更新し、grade を ASSUMPTION → DERIVED に上げる</td></tr><tr><td><strong>1.0 mm 超</strong>、または再閉が起きない</td><td>構造の仮定が違う</td><td>軸位置だけの問題ではない。パッド幅・自由半径・プラグ外形のどれが効いているか切り分ける</td></tr></tbody></table></div>
 <p>0.3 mm という線は、<strong>測定側の誤差の見積り</strong>から決めています。 ノギスの読み ±0.02 mm、切り替わり位置の判断 ±0.1 mm、プラグの傾きによる影響 ±0.1 mm 程度を 足し合わせると 0.2 mm 強になるので、その外側に置きました。</p>
 <h3>定性的な合否（数字より重い）</h3>
 <ul><li><strong>Ring ブレーク接点の「再閉」が起きるか</strong> — 起きなければ、プラグ先端の逆テーパの解釈か Ring 接点の自由半径が違います。数値のずれより重大です</li><li><strong>開閉の回数</strong> — 予測は「開・閉・開」の3回。回数が違えば構造の理解が違います</li><li><strong>ピン1が最初に触れる相手がプラグ Tip か</strong> — 帰線用の接点が左信号に触れるという予測。 ここが違うと接点の並び順の理解が違います</li><li><strong>第1絶縁帯で Tip↔Ring が短絡しないか</strong> — §1-2 の決着実験。鳴ってしまったら、 接触判定の修正そのものが間違っていたことになります。<strong>深さの一致より重い判定です</strong></li></ul>
 <hr>
-<h2 id="s5">5. 測った後どうするか</h2>
+<h2 id="s6">5. 測った後どうするか</h2>
 <p>逆算の道具を用意してあります。<strong>測った深さを渡すと、その深さになる接点位置を計算します。</strong></p>
 <pre><code>npm run fit:contacts -- 8.4 12.3 4.1</code></pre>
 <p>引数の順は「Ring ブレーク開放 / Tip ブレーク開放 / Sleeve 接点が Tip に触れ始める」の深さ（mm）です。</p>
@@ -211,14 +233,17 @@
 <pre><code>npm run fit:contacts</code></pre>
 <h3>反映の手順</h3>
 <ol><li>実測値を <code>docs/measurements/2026-XX-XX.md</code> として記録（生データ・3回分・気温も）</li><li><code>npm run fit:contacts -- ...</code> で逆算</li><li>判定表に従って <code>src/data/dimensions.json</code> を更新</li><li><code>npm run test</code> と <code>npm run artifacts</code> を回し、予測がどう変わったか差分で確認</li><li><a href="../UNKNOWNS.md">UNKNOWNS.md</a> §3 の該当項目を「解決済み」に移し、実測日と方法を書く</li><li><a href="TEST_RESULTS.md">TEST_RESULTS.md</a> に実測の節を足す</li></ol>
+<p><strong>§1-1（ノギス）だけは経路が違います。</strong> 逆算は要りません。</p>
+<ol><li><code>plug.bodyRadius</code> と <code>plug.insulatorRadius</code> の <code>value</code> を実測値へ、<code>tolerance</code> を 実測のばらつき（3 回測った幅）へ置き換える</li><li><strong><code>npm run sensitivity</code> を流し直す</strong>（15 分）。この 2 つの <code>tolerance</code> が振り幅の正本なので、 公差の箱と最悪コーナーが自動で実測ベースに変わります</li><li><a href="SENSITIVITY.md">SENSITIVITY.md</a> §6-1、<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §4-1b、 <a href="../ASSUMPTIONS.md">ASSUMPTIONS.md</a> A-2、<a href="REPORT.md">REPORT.md</a> §2-3 の数字を差し替える</li><li><code>plug.insulatorRadius</code> の grade を <strong>DERIVED → FACT</strong>（実測）へ上げ、 <a href="../SOURCES.md">SOURCES.md</a> §5 に実測日と方法を追記する</li></ol>
 <hr>
-<h2 id="s6">6. この実験で分からないこと</h2>
+<h2 id="s7">6. この実験で分からないこと</h2>
 <p>正直に書いておきます。</p>
 <ul><li><strong>接点ばねの形そのもの</strong>（板厚・梁の長さ・曲げ方）は分かりません。分かるのは 「どの深さで切り替わるか」から逆算した<strong>接触点の軸位置</strong>だけです。 形を知るには切断するしかありません（だから予備を買う）</li><li><strong>押付力（N）</strong> は測れません。ばね定数は依然として仮定のままです</li><li><strong>接触抵抗の絶対値</strong> は、この方法では意味のある精度で出ません。 導通ブザーが鳴るかどうかしか見ていないためです</li><li><strong>4極（TRRS）側の仮定</strong> は、この実験では一切検証されません。別部品が必要です</li><li><strong>接触ドームの追従量そのもの</strong>（0.05 mm と仮定）は測れません。決着実験で分かるのは 「0.118 mm より小さいかどうか」だけで、その中のどこかは決まりません</li></ul>
 <p>つまりこの実験で ASSUMPTION から降ろせるのは「接点の軸位置3つ」と、 間接的に「プラグ外形の解釈」です。37件の仮定のうち片付くのは数件で、 残りは残ります。それでも、<strong>一番効く数件</strong>です。</p>
 <hr>
-<h2 id="s7">7. 進め方</h2>
-<div class="tw"><table><thead><tr><th>段階</th><th>内容</th><th>誰が</th></tr></thead><tbody><tr><td>1</td><td>部品を発注する（ジャック2個・プラグ1個）</td><td>メンテナ</td></tr><tr><td>2</td><td>ノギスとテスターを用意する（既にあれば不要）</td><td>メンテナ</td></tr><tr><td>3</td><td>部品到着まで待つ（2〜4週間）</td><td>—</td></tr><tr><td>4</td><td>測定（§2 の手順、1〜2時間）</td><td>メンテナ（手順は本書のとおり）</td></tr><tr><td>5</td><td>逆算・モデル更新・文書反映</td><td>Claude Code</td></tr></tbody></table></div>
+<h2 id="s8">7. 進め方</h2>
+<div class="tw"><table><thead><tr><th>段階</th><th>内容</th><th>誰が</th></tr></thead><tbody><tr><td>1</td><td>部品を発注する（ジャック2個・プラグ1個）</td><td>メンテナ</td></tr><tr><td>2</td><td>ノギスとテスターを用意する（既にあれば不要）</td><td>メンテナ</td></tr><tr><td>3</td><td>部品到着まで待つ（2〜4週間）</td><td>—</td></tr><tr><td>4</td><td><strong>§1-1 のノギス測定（プラグ1個だけ・30秒）</strong></td><td>メンテナ</td></tr><tr><td>5</td><td>§1-1 の結果を反映し、必要なら感度解析を流し直す</td><td>Claude Code</td></tr><tr><td>6</td><td>測定（§2 の手順、1〜2時間）</td><td>メンテナ（手順は本書のとおり）</td></tr><tr><td>7</td><td>逆算・モデル更新・文書反映</td><td>Claude Code</td></tr></tbody></table></div>
+<p><strong>段階 4 を段階 6 より先に置いているのは意図的です。</strong> §1-1 はプラグ 1 個とノギスだけででき、 はんだ付けも LED 回路も要りません。しかも §1-2 の導通試験の結果を解釈するには、 先に実物の段差を知っている必要があります（§1-2 冒頭）。 <strong>一番安い測定が、一番効きます。</strong></p>
 <p>部品の到着を待つ間にできることは、このモデルの外側にあります（ライセンス整備・公開前監査など）。 測定そのものは部品が届くまで始められません。</p>
 </div>
 </body>

@@ -179,7 +179,18 @@
     "tipThreshold": 0.118875
    },
    "marginVsAdopted": 2.377,
-   "marginVsAdoptedRangeTop": 1.189
+   "marginVsAdoptedRangeTop": 1.189,
+   "breakEven": {
+    "note": "段差がこれより薄いと、その compliance で第1絶縁帯の Tip 橋絡が実際に起きる",
+    "atAdopted005": {
+     "stepRadius": 0.044956,
+     "diameterDiff": 0.0899
+    },
+    "atRangeTop010": {
+     "stepRadius": 0.095579,
+     "diameterDiff": 0.1912
+    }
+   }
   }
  },
  "bridgeDepthRange": {

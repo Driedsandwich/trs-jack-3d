@@ -26,8 +26,16 @@ export interface DimensionEntry {
   value: number
   /** 単位。省略時 mm */
   unit?: string
-  /** 公差 (± value)。分かっている場合のみ */
+  /** 公差 (± value)。分かっている場合のみ。左右対称なものに限る */
   tolerance?: number
+  /**
+   * 感度解析でこの値を振る範囲 [min, max]。要素は 2 個 (使う側で検査する)。
+   *
+   * `tolerance` が左右対称の公差しか表せないので、実測のばらつきのように
+   * 非対称な幅はこちらに書く。両方ある場合はこちらが優先。
+   * 用途は scripts/sensitivity.ts のみで、モデルの計算には入らない。
+   */
+  sweepRange?: number[]
   grade: Grade
   /** sourceReferences.json の id 配列 */
   sources?: string[]

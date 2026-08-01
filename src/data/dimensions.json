@@ -79,8 +79,8 @@
       "note": "図面記載寸法 5。肩から第2絶縁帯後端まで＝Sleeve 導体の露出長。"
     },
 
-    "plug.bodyRadius": { "value": 1.75, "grade": "FACT", "sources": ["ds-1532-10"], "note": "ø3.5±0.05 の半径。" },
-    "plug.insulatorRadius": { "value": 1.6, "grade": "DERIVED", "sources": ["measure-drawing"], "note": "絶縁帯 φ3.2 の半径。" },
+    "plug.bodyRadius": { "value": 1.75, "tolerance": 0.025, "grade": "FACT", "sources": ["ds-1532-10"], "note": "ø3.5±0.05 の半径。公差も半径換算 (±0.025) で持つ。感度解析 (scripts/sensitivity.ts) はこの値を読んで振る。" },
+    "plug.insulatorRadius": { "value": 1.6, "sweepRange": [1.6, 1.61], "grade": "DERIVED", "sources": ["measure-drawing"], "note": "絶縁帯 φ3.2 の半径。図面実測は φ3.20〜3.22 に散ったので、半径換算した 1.60〜1.61 を sweepRange に持つ (左右非対称なので tolerance 欄は使えない)。感度解析 (scripts/sensitivity.ts) はこれを読んで振る。" },
     "plug.tip.noseRadius": { "value": 0.4, "grade": "DERIVED", "sources": ["measure-drawing"], "note": "先端平坦面 φ0.8 の半径。" },
     "plug.handle.shoulderDiameter": {
       "value": 10.0, "grade": "FACT", "sources": ["ds-1532-10", "measure-drawing"],

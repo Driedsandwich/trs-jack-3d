@@ -213,6 +213,9 @@
 <div class="tw"><table><thead><tr><th></th><th>初版</th><th>訂正後</th></tr></thead><tbody><tr><td>橋絡開始の基準値</td><td>11.77 mm（走査格子由来）</td><td><strong>11.760 mm</strong>（二分法）</td></tr><tr><td>パッド幅のしきい値</td><td>0.721 mm（0.001 刻みの目盛り）</td><td><strong>0.720 mm</strong></td></tr><tr><td>橋絡深さの幅</td><td>9.0〜13.1 mm（片振りの合併）</td><td><strong>6.96〜13.14 mm</strong>（同時振り）</td></tr><tr><td>Tip 橋絡が起きない根拠</td><td>「2 つの FACT から出る幾何的帰結」</td><td><strong>φ3.20 は DERIVED。「公称寸法のモデルでは起きない」</strong></td></tr></tbody></table></div>
 <p>作り直した版でも<strong>単調性を仮定した二分法</strong>というバグを 1 つ踏みました（橋絡もブレーク接点も 深さに対して単調ではありません）。粗い走査で窓を挟んでから詰める方式に直しています。</p>
 <p>この一連の作業で、<code>scripts/</code> が<strong>型検査の対象外</strong>（<code>tsconfig.app.json</code> の <code>include</code> が <code>src</code> のみ） だったことも分かりました。未定義の変数を参照したまま <code>npm run typecheck</code> が通ります。 <code>tsconfig.scripts.json</code> を追加して検査対象に入れ、そこで見つかった 3 件を直しました。</p>
+<p>さらに同日、解析に 2 つ穴が残っていたので埋めました。</p>
+<ul><li><strong>公差を片端しか振っていなかった。</strong> 段差 0.150 の両端を同時に振ると、最悪コーナーで 余裕が 3.08 → 2.38 倍まで落ちます。ノギス 1 本で決着するので、 <a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a> に <strong>§1-1</strong> として独立させ、 LED 回路を使う決着実験より前に置きました。 そこにあった判定線「0.24 mm を下回ったら前提が崩れる」も実測で取り直しています （<strong>実際に崩れるのは 0.090 mm</strong>。しかも 0.24 は図面が許す最悪値 0.23 より上にあり、 図面どおりの個体でも誤判定しかねない線でした）。</li><li><strong>力のモデルを「対象外」で済ませていた。</strong> 校正係数が純粋な倍率であることを確かめたうえで 固定し、物理 8 件を振りました（§5）。</li></ul>
+<p>あわせて、<strong>振り幅をスクリプトに直書きしていた</strong>のを台帳（<code>dimensions.json</code>）へ移しました。 台帳を直したときに解析だけ古い幅で残る状態だったためです。</p>
 <h3>11-4. 公開した（07-31）</h3>
 <p>MIT ライセンスの public リポジトリとして公開しました。 実名を含む古いコミットが SHA 指定で取得できる状態だったため、<strong>履歴は引き継がず</strong>、 現在の内容だけを単一のコミットとして新しいリポジトリへ置いています。 旧リポジトリは削除せず、private のまま残しています。</p>
 </div>

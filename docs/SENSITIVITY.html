@@ -114,6 +114,12 @@
 <h3>単調でない量に二分法を使わない</h3>
 <p>ただし二分法だけでも足りません。<strong>橋絡もブレーク接点も、深さに対して単調ではありません。</strong> Ring 側ブレーク接点は <code>8.05 で開く → 9.43 で閉じる → 11.23 で再び開く</code> と動きます。 いきなり二分法をかけると、最初の遷移ではなく最後の遷移を拾ってしまいます。</p>
 <p>そこで、粗い走査（0.002 mm）で最初の窓を挟み込んでから、その区間だけを二分法で詰めています。</p>
+<h3>振り幅は台帳から読む</h3>
+<p>公差を振る幅（§6-1 の箱）は、<code>dimensions.json</code> から読んでいます。</p>
+<div class="tw"><table><thead><tr><th>キー</th><th>欄</th><th>値</th><th>由来</th></tr></thead><tbody><tr><td><code>plug.bodyRadius</code></td><td><code>tolerance</code></td><td>±0.025</td><td>図面記載 φ3.5±0.05 の半径換算</td></tr><tr><td><code>plug.insulatorRadius</code></td><td><code>sweepRange</code></td><td>1.60〜1.61</td><td>図面実測 φ3.20〜3.22 の半径換算</td></tr></tbody></table></div>
+<p><strong>解析スクリプトに数値を直書きしていません。</strong> 直書きすると、台帳を直したときに 解析だけが古い幅のまま残るためです。実物を測って台帳を更新したら、 <code>npm run sensitivity</code> を流し直すだけで箱も最悪コーナーも追随します。</p>
+<p>欄が 2 種類あるのは、<strong><code>tolerance</code> が左右対称の公差しか表せない</strong>ためです。 絶縁帯の幅は実測が片側にだけ散っている（1.60〜1.61）ので、<code>tolerance: 0.01</code> と書くと 画面に「1.6 ±0.01」と出て、<strong>測っていない下側 1.59 まで測ったことになってしまいます。</strong> 非対称な幅は <code>sweepRange</code> に分けました。</p>
+<div class="note"><p>2026-08-01 の追加時点では、この 2 つは<strong>スクリプト側の直書きでした</strong>。</p><p><code>plug.bodyRadius</code> に <code>tolerance</code> 欄が無く（注記の文中に「ø3.5±0.05」とあるだけ）、</p><p><code>plug.insulatorRadius</code> に至っては幅がどこにも構造化されていませんでした。</p><p><strong>台帳が持つべき情報を解析側が抱えていた</strong>ので、台帳へ移しました。</p></div>
 <hr>
 <h2 id="s1">2. 揺れない結論（3極）</h2>
 <h3>2-1. Tip 導体を含む橋絡は起きない</h3>
@@ -202,7 +208,11 @@
 <div class="tw"><table><thead><tr><th>プラグ外径 ＼ 絶縁帯径</th><th>φ3.20</th><th>φ3.21</th><th>φ3.22</th></tr></thead><tbody><tr><td><strong>φ3.45（公差下限）</strong></td><td>0.128752</td><td>0.123813</td><td><strong>0.118875 ← 最悪コーナー</strong></td></tr><tr><td>φ3.475</td><td>0.141252</td><td>0.136313</td><td>0.131375</td></tr><tr><td>φ3.50（公称）</td><td><strong>0.153752</strong></td><td>0.148813</td><td>0.143875</td></tr><tr><td>φ3.525</td><td>0.166252</td><td>0.161313</td><td>0.156375</td></tr><tr><td>φ3.55（公差上限）</td><td>0.178752</td><td>0.173813</td><td>0.168875</td></tr></tbody></table></div>
 <div class="tw"><table><thead><tr><th></th><th>しきい値</th><th>採用値 0.05 との比</th></tr></thead><tbody><tr><td>公称</td><td>0.153752</td><td><strong>3.08 倍</strong></td></tr><tr><td>最悪コーナー</td><td>0.118875</td><td><strong>2.38 倍</strong></td></tr></tbody></table></div>
 <p><strong>採用値 0.05 では最悪コーナーでも Tip 橋絡は起きません。</strong> ただし compliance の採用範囲の上端 0.10（<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §3-6）と比べると、 最悪コーナーでの余裕は <strong>1.19 倍</strong>しかありません。 公称寸法での 3.08 倍とは、まったく違う強さの主張になります。</p>
-<p><strong>実物のプラグ外径を測っていないので、どの行にいるのか分かりません</strong> （→ <a href="../UNKNOWNS.md">UNKNOWNS.md</a> §4-1b）。</p>
+<h4>では、どこまで薄ければ本当に崩れるのか</h4>
+<p>上の箱は「図面が許す範囲」ですが、<strong>結論が実際に崩れる線はその外側</strong>にあります。 段差を薄くしていって、採用値で Tip 橋絡が始まる点を二分法で探しました。</p>
+<div class="tw"><table><thead><tr><th>compliance</th><th>破綻する段差（半径）</th><th>直径差に直すと</th></tr></thead><tbody><tr><td><strong>0.05（採用値）</strong></td><td>0.0450</td><td><strong>0.090 mm</strong></td></tr><tr><td>0.10（採用範囲の上端）</td><td>0.0956</td><td>0.191 mm</td></tr></tbody></table></div>
+<p>公称の直径差は 0.30 mm、図面が許す最悪でも 0.23 mm なので、 <strong>破綻線 0.090 mm までは 2.5 倍以上の隔たりがあります。</strong></p>
+<p><strong>実物のプラグ外径を測っていないので、どの行にいるのか分かりません。</strong> ノギス 1 本・30 秒で決まるので、 <a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a> <strong>§1-1</strong> として独立させ、 LED 回路を使う決着実験（§1-2）より前に置きました （→ <a href="../UNKNOWNS.md">UNKNOWNS.md</a> §4-1b）。</p>
 <h3>6-2. その他</h3>
 <ul><li>走査で窓を挟み込む段は 0.002 mm 刻みです。<strong>これより狭い窓は取りこぼします。</strong></li><li>4極は <strong>CTIA プラグ × 4極ジャック</strong>を主対象にしました。OMTP は形状が完全に同一で 機能割当だけが違うので、幾何の結論はそのまま当てはまります。</li><li>力のモデル（<code>force.*</code>）は §3-4 で振りました。ただし振ったのは 8 件で、 <strong><code>calibrationScale</code> は固定</strong>しています（純粋な倍率なので同時に振っても情報が増えないため）。 同時振りは 2 水準の全組み合わせなので、<strong>内側に非単調な山があれば取りこぼします</strong>。</li><li><code>jack.contact.*.freeRadius</code> は DERIVED なので振っていません。橋絡の結論には効きませんが、 イベントの深さには効きます。</li><li><strong>これは実物の検証ではありません。</strong> モデルの内部で、仮定をどう選び直しても 結論が変わらないことを確かめただけです。実物との照合は依然として <a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a> の手順が必要です。</li></ul>
 <hr>
