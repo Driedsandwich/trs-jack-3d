@@ -237,16 +237,6 @@ describe('全組み合わせの健全性', () => {
 describe('4極: 仮定に依存しない性質 (docs/SENSITIVITY.md §3)', () => {
   const m4 = getModel('TRRS-CTIA|JACK-TRRS')
 
-  /** その接点「そのもの」が 2 導体に同時に触れる深さがあるか。接点 ID で絞る */
-  const bridgesOf = (m: ReturnType<typeof getModel>, contactId: string, stepMm = 0.02) => {
-    const out = new Set<string>()
-    for (const r of sweep(m, { stepMm })) {
-      const c = r.contacts.find((x) => x.contactId === contactId)
-      if (c && c.connectedNets.length > 1) out.add([...c.connectedNets].sort().join('+'))
-    }
-    return out
-  }
-
   it('同一半径のプラトー間隔は 3 本とも図面記載の絶縁帯幅 0.7 に一致する', () => {
     const rMax = Math.max(...m4.plug.profile.map((p) => p.r))
     const runs: [number, number][] = []
@@ -311,7 +301,7 @@ describe('4極: 仮定に依存しない性質 (docs/SENSITIVITY.md §3)', () =>
     expect(new Set(ts).size, `しきい値が位置で変わった: ${ts.join(', ')}`).toBe(1)
 
     // しきい値 = プラトー間隔 0.700 + 導通の最小重なり 0.01 × 2 = 0.72
-    expect(ts[0]!).toBeCloseTo(0.72, 2)
+    expect(ts[0]!).toBeCloseTo(0.72, 2) // = プラトー間隔 0.700 + minOverlap 0.01 × 2
   }, 30_000)
 
   it('3極プラグ × 4極ジャックで Ring2 接点が Sleeve に当たる結論は、位置の仮定にほぼ依存しない', () => {

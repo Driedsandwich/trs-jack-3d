@@ -1,796 +1,243 @@
 {
- "schemaVersion": 1,
- "variant": "TRS|JACK-TRS",
- "stepMm": 0.01,
- "note": "各仮定パラメータを、図面の FACT 値と幾何条件から導いた成立範囲いっぱいに振った結果。範囲の導出は scripts/sensitivity.ts の deriveRanges を参照。乱数は使っていないので何度実行しても同じ結果になる。",
+ "schemaVersion": 2,
+ "generatedBy": "npm run sensitivity",
+ "note": "しきい値は走査ではなく二分法で求めている (走査刻みが答えを変えるため)。乱数は使っていないので何度実行しても同じ結果になる。初版 (schemaVersion 1) には手法上の欠陥が 4 つあり作り直した。scripts/sensitivity.ts の冒頭を参照。",
+ "stepHeightMm": 0.15,
  "baseline": {
-  "bridgeKinds": [
-   "RING+SLEEVE"
-  ],
-  "bridgeBands": [
-   [
-    11.77,
-    11.94,
-    0.17
-   ]
-  ],
-  "tipBridge": false,
-  "bridgingByContact": {
-   "JC_SLEEVE": [
-    "RING+SLEEVE"
-   ]
-  },
-  "fullOk": true,
-  "events": {
-   "firstTouch": 3.92,
-   "firstConduction": 3.93,
-   "sleeveOnTip": 3.93,
-   "ringBreakOpen": 8.06,
-   "firstBridge": 11.77,
-   "bridgeEnd": 11.94,
-   "allCorrect": 12.34
-  }
- },
- "ranges": {
-  "jack.contact.tip.axialCenter": [
-   9.475000000000001,
-   13.4
-  ],
-  "jack.contact.ring.axialCenter": [
-   5.975,
-   8.225
-  ],
-  "jack.contact.sleeve.axialCenter": [
-   0.4499999999999993,
-   4.550000000000001
-  ],
-  "jack.contact.tip.padWidth": [
-   0.01,
-   4.8
-  ],
-  "jack.contact.ring.padWidth": [
-   0.01,
-   2.8000000000000007
-  ],
-  "jack.contact.sleeve.padWidth": [
-   0.01,
-   5
-  ],
-  "model.contact.complianceMm": [
-   0,
-   0.2999999999999998
+  "firstBridgeMm": 11.76,
+  "bridgeEndMm": 11.94,
+  "widthMm": 0.18,
+  "byScanStep": [
+   {
+    "stepMm": 0.02,
+    "firstBridgeMm": 11.78
+   },
+   {
+    "stepMm": 0.01,
+    "firstBridgeMm": 11.77
+   },
+   {
+    "stepMm": 0.005,
+    "firstBridgeMm": 11.765
+   }
   ]
  },
- "oneAtATime": {
-  "jack.contact.tip.axialCenter": {
-   "range": [
-    9.475000000000001,
-    13.4
-   ],
-   "current": 11.4,
-   "tried": 41,
-   "modelBuilt": 41,
-   "fullInsertionOkCount": 39,
-   "fullInsertionOkRange": [
-    9.475,
-    13.20375
-   ],
-   "tipBridgeCount": 0,
-   "bridgeKindPatterns": [
-    "RING+SLEEVE"
-   ],
-   "firstBridgeRange": [
-    11.77,
-    11.77
-   ],
-   "eventRanges": {
-    "firstTouch": [
-     3.92,
-     3.92
-    ],
-    "firstConduction": [
-     3.93,
-     3.93
-    ],
-    "sleeveOnTip": [
-     3.93,
-     3.93
-    ],
-    "ringBreakOpen": [
-     8.06,
-     8.06
-    ],
-    "firstBridge": [
-     11.77,
-     11.77
-    ],
-    "bridgeEnd": [
-     11.94,
-     11.94
-    ],
-    "allCorrect": [
-     12.34,
-     13.76
-    ]
+ "tipBridge": {
+  "complianceThreshold": 0.153752,
+  "byMinOverlap": [
+   {
+    "minOverlap": 0.001,
+    "threshold": 0.150375
+   },
+   {
+    "minOverlap": 0.005,
+    "threshold": 0.151876
+   },
+   {
+    "minOverlap": 0.01,
+    "threshold": 0.153752
+   },
+   {
+    "minOverlap": 0.02,
+    "threshold": 0.157503
+   },
+   {
+    "minOverlap": 0.05,
+    "threshold": 0.168758
    }
-  },
-  "jack.contact.ring.axialCenter": {
-   "range": [
-    5.975,
-    8.225
-   ],
-   "current": 7.1,
-   "tried": 41,
-   "modelBuilt": 41,
-   "fullInsertionOkCount": 41,
-   "fullInsertionOkRange": [
-    5.975,
-    8.225
-   ],
-   "tipBridgeCount": 0,
-   "bridgeKindPatterns": [
-    "RING+SLEEVE"
-   ],
-   "firstBridgeRange": [
-    11.77,
-    11.77
-   ],
-   "eventRanges": {
-    "firstTouch": [
-     3.92,
-     3.92
-    ],
-    "firstConduction": [
-     3.93,
-     3.93
-    ],
-    "sleeveOnTip": [
-     3.93,
-     3.93
-    ],
-    "ringBreakOpen": [
-     6.93,
-     9.18
-    ],
-    "firstBridge": [
-     11.77,
-     11.77
-    ],
-    "bridgeEnd": [
-     11.94,
-     11.94
-    ],
-    "allCorrect": [
-     11.96,
-     13.46
-    ]
-   }
-  },
-  "jack.contact.sleeve.axialCenter": {
-   "range": [
-    0.4499999999999993,
-    4.550000000000001
-   ],
-   "current": 3.2,
-   "tried": 41,
-   "modelBuilt": 41,
-   "fullInsertionOkCount": 41,
-   "fullInsertionOkRange": [
-    0.45,
-    4.55
-   ],
-   "tipBridgeCount": 0,
-   "bridgeKindPatterns": [
-    "RING+SLEEVE"
-   ],
-   "firstBridgeRange": [
-    9.02,
-    13.12
-   ],
-   "eventRanges": {
-    "firstTouch": [
-     1.17,
-     5.27
-    ],
-    "firstConduction": [
-     1.18,
-     5.28
-    ],
-    "sleeveOnTip": [
-     1.18,
-     5.28
-    ],
-    "ringBreakOpen": [
-     8.06,
-     8.06
-    ],
-    "firstBridge": [
-     9.02,
-     13.12
-    ],
-    "bridgeEnd": [
-     9.18,
-     13.29
-    ],
-    "allCorrect": [
-     12.34,
-     13.3
-    ]
-   }
-  },
-  "jack.contact.tip.padWidth": {
-   "range": [
-    0.01,
-    4.8
-   ],
-   "current": 0.55,
-   "tried": 41,
-   "modelBuilt": 41,
-   "fullInsertionOkCount": 40,
-   "fullInsertionOkRange": [
-    0.12975,
-    4.8
-   ],
-   "tipBridgeCount": 0,
-   "bridgeKindPatterns": [
-    "RING+SLEEVE"
-   ],
-   "firstBridgeRange": [
-    11.77,
-    11.77
-   ],
-   "eventRanges": {
-    "firstTouch": [
-     3.92,
-     3.92
-    ],
-    "firstConduction": [
-     3.93,
-     3.93
-    ],
-    "sleeveOnTip": [
-     3.93,
-     3.93
-    ],
-    "ringBreakOpen": [
-     8.06,
-     8.06
-    ],
-    "firstBridge": [
-     11.77,
-     11.77
-    ],
-    "bridgeEnd": [
-     11.94,
-     11.94
-    ],
-    "allCorrect": [
-     12.34,
-     12.34
-    ]
-   }
-  },
-  "jack.contact.ring.padWidth": {
-   "range": [
-    0.01,
-    2.8000000000000007
-   ],
-   "current": 0.55,
-   "tried": 41,
-   "modelBuilt": 41,
-   "fullInsertionOkCount": 40,
-   "fullInsertionOkRange": [
-    0.07975,
-    2.8
-   ],
-   "tipBridgeCount": 0,
-   "bridgeKindPatterns": [
-    "RING+SLEEVE"
-   ],
-   "firstBridgeRange": [
-    11.77,
-    11.77
-   ],
-   "eventRanges": {
-    "firstTouch": [
-     3.92,
-     3.92
-    ],
-    "firstConduction": [
-     3.93,
-     3.93
-    ],
-    "sleeveOnTip": [
-     3.93,
-     3.93
-    ],
-    "ringBreakOpen": [
-     6.93,
-     8.29
-    ],
-    "firstBridge": [
-     11.77,
-     11.77
-    ],
-    "bridgeEnd": [
-     11.94,
-     11.94
-    ],
-    "allCorrect": [
-     11.96,
-     12.58
-    ]
-   }
-  },
-  "jack.contact.sleeve.padWidth": {
-   "range": [
-    0.01,
-    5
-   ],
-   "current": 0.9,
-   "tried": 41,
-   "modelBuilt": 41,
-   "fullInsertionOkCount": 41,
-   "fullInsertionOkRange": [
-    0.01,
-    5
-   ],
-   "tipBridgeCount": 0,
-   "bridgeKindPatterns": [
-    "",
-    "RING+SLEEVE"
-   ],
-   "firstBridgeRange": [
-    9.71,
-    11.84
-   ],
-   "eventRanges": {
-    "firstTouch": [
-     1.87,
-     4.37
-    ],
-    "firstConduction": [
-     1.88,
-     8.01
-    ],
-    "sleeveOnTip": [
-     1.88,
-     4.32
-    ],
-    "ringBreakOpen": [
-     8.06,
-     8.06
-    ],
-    "firstBridge": [
-     9.71,
-     11.84
-    ],
-    "bridgeEnd": [
-     11.86,
-     13.99
-    ],
-    "allCorrect": [
-     12.34,
-     14
-    ]
-   }
-  },
-  "model.contact.complianceMm": {
-   "range": [
-    0,
-    0.2999999999999998
-   ],
-   "current": 0.05,
-   "tried": 41,
-   "modelBuilt": 41,
-   "fullInsertionOkCount": 40,
-   "fullInsertionOkRange": [
-    0.0075,
-    0.3
-   ],
-   "tipBridgeCount": 20,
-   "bridgeKindPatterns": [
-    "RING+SLEEVE",
-    "RING+TIP → RING+SLEEVE"
-   ],
-   "firstBridgeRange": [
-    8.27,
-    11.77
-   ],
-   "eventRanges": {
-    "firstTouch": [
-     3.92,
-     3.92
-    ],
-    "firstConduction": [
-     3.93,
-     4.05
-    ],
-    "sleeveOnTip": [
-     3.93,
-     4.05
-    ],
-    "ringBreakOpen": [
-     8.06,
-     8.06
-    ],
-    "firstBridge": [
-     8.27,
-     11.77
-    ],
-    "bridgeEnd": [
-     11.94,
-     11.94
-    ],
-    "allCorrect": [
-     12.34,
-     12.43
-    ]
-   }
-  }
- },
- "trrs": {
-  "variant": "TRRS-CTIA|JACK-TRRS",
-  "plateauGaps": [
-   0.701,
-   0.701
   ],
-  "ranges": {
-   "trrs.jack.contact.tip.axialCenter": [
-    9.475000000000001,
-    13.725
-   ],
-   "trrs.jack.contact.ring1.axialCenter": [
-    6.45,
-    8.25
-   ],
-   "trrs.jack.contact.ring2.axialCenter": [
-    3.4499999999999993,
-    5.25
-   ],
-   "trrs.jack.contact.sleeve.axialCenter": [
-    0.4499999999999993,
-    2.0500000000000007
-   ],
-   "trrs.jack.contact.narrowPadWidth": [
-    0.01,
-    2.3
-   ],
-   "jack.contact.sleeve.padWidth": [
-    0.01,
-    2.5
-   ],
-   "model.contact.complianceMm": [
-    0,
-    0.2999999999999998
-   ]
+  "insideStepHeight": {
+   "tried": 864,
+   "tipBridgeCount": 0,
+   "violations": []
   },
+  "factToleranceExcursion": [
+   {
+    "bodyRadius": 1.725,
+    "diameter": 3.45,
+    "tipThreshold": 0.128752
+   },
+   {
+    "bodyRadius": 1.7375,
+    "diameter": 3.475,
+    "tipThreshold": 0.141252
+   },
+   {
+    "bodyRadius": 1.75,
+    "diameter": 3.5,
+    "tipThreshold": 0.153752
+   },
+   {
+    "bodyRadius": 1.7625,
+    "diameter": 3.525,
+    "tipThreshold": 0.166252
+   },
+   {
+    "bodyRadius": 1.775,
+    "diameter": 3.55,
+    "tipThreshold": 0.178752
+   }
+  ]
+ },
+ "bridgeDepthRange": {
   "joint": {
-   "levels": 3,
-   "combinations": 2187,
-   "modelBuilt": 2187,
-   "fullInsertionOk": 336,
-   "tipBridgeCount": 648,
-   "belowStepHeightTried": 729,
-   "belowStepHeightTipBridge": 0,
-   "violations": [],
-   "bridgeKindPatterns": [
-    {
-     "pattern": "RING+RING2 → RING2+SLEEVE",
-     "count": 110
-    },
-    {
-     "pattern": "RING+TIP → RING+RING2 → RING2+SLEEVE",
-     "count": 100
-    },
-    {
-     "pattern": "RING+RING2",
-     "count": 66
-    },
-    {
-     "pattern": "RING+TIP → RING+RING2",
-     "count": 60
-    }
-   ],
-   "bridgingContactCounts": [
-    {
-     "contactId": "JC_RING2",
-     "count": 336
-    },
-    {
-     "contactId": "JC_SLEEVE",
-     "count": 210
-    },
-    {
-     "contactId": "JC_RING",
-     "count": 160
-    }
-   ],
-   "bridgingPairsByContact": [
-    "JC_RING2: RING+RING2",
-    "JC_RING2: RING+TIP",
-    "JC_RING: RING+TIP",
-    "JC_SLEEVE: RING+RING2",
-    "JC_SLEEVE: RING+TIP",
-    "JC_SLEEVE: RING2+SLEEVE"
-   ]
+   "configs": 869,
+   "minMm": 6.96,
+   "maxMm": 13.1392
   },
-  "padWidthThresholds": [
-   {
-    "contactId": "JC_RING2",
-    "axial": 3.5,
-    "threshold": 0.721
-   },
-   {
-    "contactId": "JC_RING2",
-    "axial": 4,
-    "threshold": 0.721
-   },
-   {
-    "contactId": "JC_RING2",
-    "axial": 4.35,
-    "threshold": 0.721
-   },
-   {
-    "contactId": "JC_RING2",
-    "axial": 4.8,
-    "threshold": 0.721
-   },
-   {
-    "contactId": "JC_RING2",
-    "axial": 5.2,
-    "threshold": 0.721
-   },
-   {
-    "contactId": "JC_SLEEVE",
-    "axial": 0.5,
-    "threshold": 0.721
-   },
-   {
-    "contactId": "JC_SLEEVE",
-    "axial": 1.25,
-    "threshold": 0.721
-   },
-   {
-    "contactId": "JC_SLEEVE",
-    "axial": 2,
-    "threshold": 0.721
-   },
-   {
-    "contactId": "JC_RING",
-    "axial": 6.45,
-    "threshold": null
-   },
-   {
-    "contactId": "JC_RING",
-    "axial": 7.35,
-    "threshold": null
-   },
-   {
-    "contactId": "JC_RING",
-    "axial": 8.25,
-    "threshold": null
-   }
-  ],
-  "mixedInsertion": {
-   "note": "3極プラグ × 4極ジャック。Ring2 接点の軸位置を成立範囲いっぱいに振ったときの、完全挿入での行き先。",
-   "range": [
-    3.4499999999999993,
-    5.25
-   ],
-   "samples": [
-    {
-     "axial": 3.45,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.495,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.54,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.585,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.63,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.675,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.72,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.765,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.81,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.855,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.9,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.945,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 3.99,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.035,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.08,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.125,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.17,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.215,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.26,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.305,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.35,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.395,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.44,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.485,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.53,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.575,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.62,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.665,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.71,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.755,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.8,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.845,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.89,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.935,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 4.98,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 5.025,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 5.07,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 5.115,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 5.16,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 5.205,
-     "ring2Nets": "SLEEVE"
-    },
-    {
-     "axial": 5.25,
-     "ring2Nets": "(未接続)"
-    }
-   ],
-   "counts": [
-    {
-     "nets": "SLEEVE",
-     "count": 40
-    },
-    {
-     "nets": "(未接続)",
-     "count": 1
-    }
-   ]
+  "oneAtATime": {
+   "minMm": 9.01,
+   "maxMm": 13.11
   }
  },
- "joint": {
-  "levels": 3,
-  "combinations": 2187,
-  "modelBuilt": 2187,
-  "fullInsertionOk": 308,
-  "tipBridgeCount": 666,
-  "stepHeightMm": 0.1499999999999999,
-  "belowStepHeightTried": 729,
-  "belowStepHeightTipBridge": 0,
-  "tipBridgeComplianceThreshold": 0.15375,
-  "violations": [],
-  "firstBridgeRange": [
-   3.48,
-   13.04
+ "previouslyUnswept": {
+  "minOverlap": [
+   {
+    "minOverlap": 0.0001,
+    "first": 11.7501,
+    "width": 0.1998
+   },
+   {
+    "minOverlap": 0.01,
+    "first": 11.76,
+    "width": 0.18
+   },
+   {
+    "minOverlap": 0.05,
+    "first": 11.8,
+    "width": 0.1
+   },
+   {
+    "minOverlap": 0.09,
+    "first": 11.84,
+    "width": 0.02
+   },
+   {
+    "minOverlap": 0.1,
+    "first": null,
+    "width": 0
+   },
+   {
+    "minOverlap": 0.12,
+    "first": null,
+    "width": 0
+   }
   ],
-  "bridgeKindPatterns": [
+  "ringBreakOpenDeflection": [
    {
-    "pattern": "RING+SLEEVE",
-    "count": 96
+    "openDeflection": 0.01,
+    "depth": 8.0042
    },
    {
-    "pattern": "(橋絡なし)",
-    "count": 84
+    "openDeflection": 0.03,
+    "depth": 8.0276
    },
    {
-    "pattern": "RING+TIP",
-    "count": 48
+    "openDeflection": 0.05,
+    "depth": 8.0509
    },
    {
-    "pattern": "RING+TIP → RING+SLEEVE",
-    "count": 40
+    "openDeflection": 0.1,
+    "depth": 8.1093
    },
    {
-    "pattern": "RING+TIP → RING+SLEEVE+TIP → RING+SLEEVE",
-    "count": 40
+    "openDeflection": 0.2,
+    "depth": 11.625
+   },
+   {
+    "openDeflection": 0.35,
+    "depth": 12.325
+   },
+   {
+    "openDeflection": 0.4,
+    "depth": null
+   }
+  ]
+ },
+ "plateauGaps": {
+  "threePole": [
+   0.7
+  ],
+  "fourPole": [
+   0.7,
+   0.7
+  ]
+ },
+ "padThresholds": {
+  "JC_RING2": [
+   {
+    "axial": 3.45,
+    "threshold": 0.72,
+    "evaluatedDepthMm": 11.6,
+    "idealDepthReachable": true
+   },
+   {
+    "axial": 4,
+    "threshold": 0.72,
+    "evaluatedDepthMm": 12.15,
+    "idealDepthReachable": true
+   },
+   {
+    "axial": 4.35,
+    "threshold": 0.72,
+    "evaluatedDepthMm": 12.5,
+    "idealDepthReachable": true
+   },
+   {
+    "axial": 5.25,
+    "threshold": 0.72,
+    "evaluatedDepthMm": 13.4,
+    "idealDepthReachable": true
+   },
+   {
+    "axial": 5.85,
+    "threshold": 0.72,
+    "evaluatedDepthMm": 14,
+    "idealDepthReachable": true
+   },
+   {
+    "axial": 6,
+    "threshold": 1.02,
+    "evaluatedDepthMm": 14,
+    "idealDepthReachable": false
+   },
+   {
+    "axial": 6.5,
+    "threshold": 2.02,
+    "evaluatedDepthMm": 14,
+    "idealDepthReachable": false
+   }
+  ],
+  "JC_SLEEVE": [
+   {
+    "axial": 0.45,
+    "threshold": 0.72,
+    "evaluatedDepthMm": 11.6,
+    "idealDepthReachable": true
+   },
+   {
+    "axial": 1.25,
+    "threshold": 0.72,
+    "evaluatedDepthMm": 12.4,
+    "idealDepthReachable": true
+   },
+   {
+    "axial": 2.05,
+    "threshold": 0.72,
+    "evaluatedDepthMm": 13.2,
+    "idealDepthReachable": true
+   },
+   {
+    "axial": 2.85,
+    "threshold": 0.72,
+    "evaluatedDepthMm": 14,
+    "idealDepthReachable": true
+   },
+   {
+    "axial": 3.5,
+    "threshold": 2.02,
+    "evaluatedDepthMm": 14,
+    "idealDepthReachable": false
    }
   ]
  }

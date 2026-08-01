@@ -440,14 +440,15 @@ describe('故障モード (仕様 §12)', () => {
     const base = firstBridge({})
     expect(base).not.toBeNull()
     // Tip / Ring 接点を成立範囲の端まで動かしても、橋絡の深さは変わらない
-    for (const over of [
+    const overrides: Record<string, number>[] = [
       { 'jack.contact.tip.axialCenter': 9.5 },
       { 'jack.contact.tip.axialCenter': 13.2 },
       { 'jack.contact.ring.axialCenter': 6.0 },
       { 'jack.contact.ring.axialCenter': 8.2 },
       { 'jack.contact.tip.padWidth': 2.0 },
       { 'jack.contact.ring.padWidth': 2.0 },
-    ]) {
+    ]
+    for (const over of overrides) {
       expect(firstBridge(over), JSON.stringify(over)).toBeCloseTo(base!, 6)
     }
     // 帰線接点を動かすと、橋絡の深さは 1:1 でずれる
