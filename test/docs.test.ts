@@ -364,6 +364,24 @@ describe('B. 文書に転記した artifact の値が一致している', () => 
     expect(orphan).toEqual([])
   })
 
+  it('README の「振れ幅」が感度解析の実測と一致する', () => {
+    // 2026-08-02 の再読レビューで、要約が「±3 mm」となっていて実測と合わないことが
+    // 見つかった。実際は非対称で最大 4.82 mm。対称な誤差だという誤った印象も与えていた。
+    // 要約を書き換えた以上、artifact から再計算して固定する。
+    const j = sensitivity.bridgeDepthRange.joint
+    const breaks = (sensitivity.previouslyUnswept.ringBreakOpenDeflection as { depth: number | null }[])
+      .map((x) => x.depth)
+      .filter((d): d is number => d != null)
+    const md = text['README.md']
+    // 表に出している基準値 (走査値) から見た振れ
+    expect(md).toContain(`下へ **−${(11.78 - j.minMm).toFixed(2)}** / 上へ +${(j.maxMm - 11.78).toFixed(2)}`)
+    expect(md).toContain(
+      `下へ −${(8.06 - Math.min(...breaks)).toFixed(2)} / 上へ **+${(Math.max(...breaks) - 8.06).toFixed(2)}**`,
+    )
+    const worst = Math.max(11.78 - j.minMm, j.maxMm - 11.78, 8.06 - Math.min(...breaks), Math.max(...breaks) - 8.06)
+    expect(md).toContain(`最大 ${worst.toFixed(1)} mm`)
+  })
+
   it('README 末尾の仮定件数が台帳と一致する', () => {
     // 2026-08-01 の初見レビューで「41 件」と「37 件」が併存していたのが見つかった。
     // 37 はどの部分集合にも対応しない、単に古い数字だった。

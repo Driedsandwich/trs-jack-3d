@@ -28,7 +28,7 @@
 | ジャック | Lumberg **1503 09**（JIS C 6560 JC35J3B、3.5 mm、3極ステレオ、アングル型、**ブレーク接点 2 個**） |
 | 形式 | ローカルで起動する単一ページ Web アプリ |
 | 技術 | TypeScript / React 19 / Vite / Three.js / React Three Fiber / zustand / Vitest / Playwright |
-| 規模 | `src/` 配下 6,484 行（うち TypeScript 5,151 行、残りはデータ JSON と CSS）、データ JSON 8 ファイル、テスト 139 件 |
+| 規模 | `src/` 配下 6,484 行（うち TypeScript 5,151 行、残りはデータ JSON と CSS）、データ JSON 8 ファイル、テスト 140 件 |
 
 > 行数は `git ls-files 'src/*' 'src/**/*' | xargs wc -l` の実測値です（2026-08-01 時点）。
 > 以前ここには数え方を書かずに「6,275 行」とだけ書いていましたが、何を数えた値か
@@ -189,7 +189,7 @@ Tip↔Ring の橋絡が（公称寸法では）起きないこと、ブレーク
 | 種別 | 結果 |
 |---|---|
 | 型検査 | **エラー 0**（`src` / `scripts` / `test`） |
-| 単体テスト | **139 件すべて成功**（モデル検証 75 件 ＋ 文書照合 64 件） |
+| 単体テスト | **140 件すべて成功**（モデル検証 75 件 ＋ 文書照合 65 件） |
 | 実ブラウザ検証（Playwright / Chromium） | **27 件すべて成功**、コンソールエラー **0 件** |
 | 実 GPU 性能（Apple M5） | **全条件 fps 59.9**（vsync 上限）／**フレーム落ち 0 件**（最大 19.4 ms） |
 | タッチ操作 (iOS Safari) | **6 項目すべて成功**（iPhone 17 シミュレータ / iOS 26.4） |
@@ -301,7 +301,7 @@ npm run dev
 
 | コマンド | 内容 |
 |---|---|
-| `npm run test` | 単体テスト 139 件 |
+| `npm run test` | 単体テスト 140 件 |
 | `npm run typecheck` | 型検査 |
 | `npm run build` | 本番ビルド |
 | `npm run artifacts` | 走査結果 JSON を生成 |
@@ -388,7 +388,7 @@ Lumberg は STEP モデルを登録不要で配布していますが、Legal Not
 | `artifacts/perf_real_gpu.json` | 実 GPU でのフレームレートと描画コスト |
 | `artifacts/touch_verification.json` | タッチ操作の検証 20 項目の結果 |
 | `artifacts/sensitivity.json` | 感度解析の生データ（`npm run sensitivity` で生成・15 分／CI 向けではない） |
-| `test/` | テストコード 4 ファイル（139 件） |
+| `test/` | テストコード 4 ファイル（140 件） |
 
 ---
 
