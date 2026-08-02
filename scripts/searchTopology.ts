@@ -165,6 +165,10 @@ interface Witness {
   fullInsertionOk: boolean
   /** L と R が別々の導体に届いたまま帰線だけが浮く、厳密な差分信号か */
   strictDifferenceSignal: boolean
+  /** 既定値から 1 つも動かしていないか。＝市販品のままで起きるか */
+  needsNoModification: boolean
+  /** 製造しうるパッド幅か (0.3mm 未満は現実的でないとみなす) */
+  realizablePadWidth: boolean
   windows: { fromMm: number; toMm: number }[]
   robustIntervalWidthMm: number
 }
@@ -214,6 +218,10 @@ for (const variantId of VARIANTS) {
       constructed,
       evidenceGrade: 'ASSUMPTION',
       fullInsertionOk: fullInsertionOk(m),
+      needsNoModification: axes.every((a) => ov[a.key] === a.shipped),
+      realizablePadWidth: axes
+        .filter((a) => a.key.toLowerCase().includes('padwidth'))
+        .every((a) => ov[a.key] >= 0.3),
       strictDifferenceSignal: wins.some((w) => {
         for (let d = w.fromMm; d <= w.toMm + 1e-9; d += COARSE) if (isStrictDifferenceSignal(m, d)) return true
         return false
@@ -286,6 +294,9 @@ const stratified = (ws: Witness[], nPerVariant: number) =>
   )
 
 const strict = usable.filter((w) => w.strictDifferenceSignal)
+// 「作れる可能性のある構成」と「計算上そうなるだけの構成」を分ける
+const realizable = strict.filter((w) => w.realizablePadWidth)
+const noMod = strict.filter((w) => w.needsNoModification)
 const broken = witnesses.filter((w) => !w.fullInsertionOk)
 
 // --- 書き出し -----------------------------------------------------------
@@ -330,6 +341,20 @@ const out = {
     samples: stratified(strict, 8),
     droppedFromListing: Math.max(0, strict.length - stratified(strict, 8).length),
   },
+  // **ここが「作れるか」の答え。**
+  realizability: {
+    note:
+      'realizablePadWidth はパッド幅 0.3mm 以上 (それ未満は製造上現実的でないとみなす)。' +
+      'needsNoModification は既定値から 1 つも動かしていない構成、つまり市販品のままで起きるもの。' +
+      'ただし 4極ジャックの接点位置は一次資料が無く全て仮定なので、' +
+      '「市販品のまま」であっても実物がそうだという意味にはならない。',
+    realizablePadWidth: { total: realizable.length, byVariant: byVariant(realizable) },
+    needsNoModification: {
+      total: noMod.length,
+      byVariant: byVariant(noMod),
+      samples: stratified(noMod, 3),
+    },
+  },
   brokenJackWitnesses: {
     note: '目標は通るが、完全挿入時の結線が壊れている構成。ジャックとして使えない',
     total: broken.length,
@@ -358,6 +383,8 @@ console.log(`  現れた構成: ${witnesses.length}`)
 console.log(`  うち完全挿入が壊れていないもの: ${usable.length}`)
 console.log(`  うち厳密な差分信号 (L/R が別導体・帰線だけ浮く): ${strict.length}`)
 console.log(`    variant 別: ${JSON.stringify(byVariant(strict))}`)
+console.log(`  うちパッド 0.3mm 以上 (作れそう): ${realizable.length}`)
+console.log(`  うち既定値のまま (無改造): ${noMod.length} ${JSON.stringify(byVariant(noMod))}`)
 if (out.robustIntervalWidthMm !== null) console.log(`  最も広い窓: ${out.robustIntervalWidthMm} mm`)
 if (notFoundReason) console.log(`  → ${notFoundReason}`)
 console.log(`  artifacts/topology_search_${TARGET.toLowerCase()}.json を書き出した`)

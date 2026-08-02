@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "generatedAt": "2026-07-31",
+ "generatedAt": "2026-08-02",
  "note": "混挿の結果は、あらかじめ決めた結論ではなく各接点の軸位置とプラグ導体区間の幾何計算から出している。4極側の導体境界とジャック接点位置には ASSUMPTION が含まれる (ASSUMPTIONS.md 参照)。",
  "variants": [
   {

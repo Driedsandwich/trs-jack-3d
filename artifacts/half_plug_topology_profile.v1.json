@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRS:5c348cc90396",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:ba2eb0ba91c0",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -24,8 +24,8 @@
   "evidenceGrade": "ASSUMPTION",
   "note": "外形は図面どおりだが、内部の接点ばね寸法は一次資料に無く、全て仮定である。"
  },
- "sourceRevision": "5c348cc903965a9cb8d0d94d02ab9c658ab6d769",
- "generatedAt": "2026-08-01",
+ "sourceRevision": "ba2eb0ba91c0d9b12df15bdea86e0b48373a517e",
+ "generatedAt": "2026-08-02",
  "fullInsertionDepthMm": 14,
  "stepMm": 0.02,
  "coordinateSystem": {

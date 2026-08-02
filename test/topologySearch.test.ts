@@ -14,15 +14,15 @@ import { describe, expect, it } from 'vitest'
 import { buildModelWithOverrides, getModel } from '../src/data'
 
 const ROOT = resolve(__dirname, '..')
-const PATH = resolve(ROOT, 'artifacts/topology_search_ground_open.json')
+const PATH = resolve(ROOT, 'artifacts/topology_search_difference_signal.json')
 
 // artifact は npm run search:topology で作る。無い環境ではこの検査を飛ばす
 const present = existsSync(PATH)
 const search = present ? JSON.parse(readFileSync(PATH, 'utf8')) : null
 
-describe.skipIf(!present)('目標トポロジー探索 (GROUND_OPEN)', () => {
+describe.skipIf(!present)('目標トポロジー探索 (DIFFERENCE_SIGNAL)', () => {
   it('目標と探索空間が記録されている', () => {
-    expect(search.targetCode).toBe('GROUND_OPEN')
+    expect(search.targetCode).toBe('DIFFERENCE_SIGNAL')
     expect(search.searchSpace.configurationsTried).toBeGreaterThan(100)
     expect(search.searchSpace.variants.length).toBeGreaterThanOrEqual(2)
   })

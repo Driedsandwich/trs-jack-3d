@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "generatedBy": "npm run search:topology",
- "targetCode": "GROUND_OPEN",
+ "targetCode": "DIFFERENCE_SIGNAL",
  "searchSpace": {
   "variants": [
    "TRS|JACK-TRS",
@@ -166,9 +166,9 @@
  "foundWithWorkingJack": true,
  "usableWitnesses": {
   "note": "完全挿入で正しく結線されたまま目標を通る構成。実在部品ではないが、成立しうることの証拠",
-  "total": 318,
+  "total": 240,
   "byVariant": {
-   "TRS|JACK-TRS": 156,
+   "TRS|JACK-TRS": 78,
    "TRRS-CTIA|JACK-TRRS": 0,
    "TRS|JACK-TRRS": 162
   },
@@ -185,6 +185,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -206,6 +208,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -227,6 +231,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -248,6 +254,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -269,6 +277,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -290,6 +300,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -302,8 +314,8 @@
    {
     "variantId": "TRS|JACK-TRS",
     "overrides": {
-     "jack.contact.sleeve.axialCenter": 3.2,
-     "jack.contact.ring.axialCenter": 7.1,
+     "jack.contact.sleeve.axialCenter": 4.5,
+     "jack.contact.ring.axialCenter": 5.5,
      "jack.contact.tip.axialCenter": 9.5,
      "jack.contact.sleeve.padWidth": 0.1,
      "model.contact.complianceMm": 0.02
@@ -311,11 +323,13 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
-    "strictDifferenceSignal": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
     "windows": [
      {
-      "fromMm": 11.55,
-      "toMm": 12.15
+      "fromMm": 12.85,
+      "toMm": 13.45
      }
     ],
     "robustIntervalWidthMm": 0.65
@@ -323,8 +337,8 @@
    {
     "variantId": "TRS|JACK-TRS",
     "overrides": {
-     "jack.contact.sleeve.axialCenter": 3.2,
-     "jack.contact.ring.axialCenter": 7.1,
+     "jack.contact.sleeve.axialCenter": 4.5,
+     "jack.contact.ring.axialCenter": 5.5,
      "jack.contact.tip.axialCenter": 9.5,
      "jack.contact.sleeve.padWidth": 0.1,
      "model.contact.complianceMm": 0.05
@@ -332,11 +346,13 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
-    "strictDifferenceSignal": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
     "windows": [
      {
-      "fromMm": 11.55,
-      "toMm": 12.15
+      "fromMm": 12.85,
+      "toMm": 13.45
      }
     ],
     "robustIntervalWidthMm": 0.65
@@ -354,6 +370,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -376,6 +394,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -398,6 +418,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -420,6 +442,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -442,6 +466,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -464,6 +490,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -486,6 +514,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -508,6 +538,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -518,12 +550,12 @@
     "robustIntervalWidthMm": 0.5
    }
   ],
-  "droppedFromListing": 302
+  "droppedFromListing": 224
  },
  "strictDifferenceSignal": {
   "note": "GROUND_OPEN のうち、L と R が別々の導体へ正しく届いたまま帰線だけが浮くもの。predictAcoustic の判定順の都合で、L と R が同じ導体に落ちていても GROUND_OPEN と分類される。それらを混ぜると、実体が左右短絡の構成まで数に入ってしまう。",
   "total": 240,
-  "outOfUsable": 318,
+  "outOfUsable": 240,
   "byVariant": {
    "TRS|JACK-TRS": 78,
    "TRRS-CTIA|JACK-TRRS": 0,
@@ -543,6 +575,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -564,6 +598,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -585,6 +621,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -606,6 +644,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -627,6 +667,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -648,6 +690,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -669,6 +713,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -690,6 +736,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -712,6 +760,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -734,6 +784,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -756,6 +808,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -778,6 +832,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -800,6 +856,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -822,6 +880,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -844,6 +904,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -866,6 +928,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -878,13 +942,58 @@
   ],
   "droppedFromListing": 224
  },
+ "realizability": {
+  "note": "realizablePadWidth はパッド幅 0.3mm 以上 (それ未満は製造上現実的でないとみなす)。needsNoModification は既定値から 1 つも動かしていない構成、つまり市販品のままで起きるもの。ただし 4極ジャックの接点位置は一次資料が無く全て仮定なので、「市販品のまま」であっても実物がそうだという意味にはならない。",
+  "realizablePadWidth": {
+   "total": 159,
+   "byVariant": {
+    "TRS|JACK-TRS": 51,
+    "TRRS-CTIA|JACK-TRRS": 0,
+    "TRS|JACK-TRRS": 108
+   }
+  },
+  "needsNoModification": {
+   "total": 1,
+   "byVariant": {
+    "TRS|JACK-TRS": 0,
+    "TRRS-CTIA|JACK-TRRS": 0,
+    "TRS|JACK-TRRS": 1
+   },
+   "samples": [
+    {
+     "variantId": "TRS|JACK-TRRS",
+     "overrides": {
+      "trrs.jack.contact.sleeve.axialCenter": 1.25,
+      "trrs.jack.contact.ring2.axialCenter": 4.35,
+      "trrs.jack.contact.ring1.axialCenter": 7.35,
+      "trrs.jack.contact.tip.axialCenter": 11.4,
+      "trrs.jack.contact.narrowPadWidth": 0.5,
+      "model.contact.complianceMm": 0.05
+     },
+     "constructed": false,
+     "evidenceGrade": "ASSUMPTION",
+     "fullInsertionOk": true,
+     "needsNoModification": true,
+     "realizablePadWidth": true,
+     "strictDifferenceSignal": true,
+     "windows": [
+      {
+       "fromMm": 12.9,
+       "toMm": 13.1
+      }
+     ],
+     "robustIntervalWidthMm": 0.25
+    }
+   ]
+  }
+ },
  "brokenJackWitnesses": {
   "note": "目標は通るが、完全挿入時の結線が壊れている構成。ジャックとして使えない",
-  "total": 5913,
+  "total": 2928,
   "byVariant": {
-   "TRS|JACK-TRS": 711,
-   "TRRS-CTIA|JACK-TRRS": 2790,
-   "TRS|JACK-TRRS": 2412
+   "TRS|JACK-TRS": 354,
+   "TRRS-CTIA|JACK-TRRS": 1458,
+   "TRS|JACK-TRRS": 1116
   },
   "samples": [
    {
@@ -899,12 +1008,10 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
-     {
-      "fromMm": 8.6,
-      "toMm": 9.05
-     },
      {
       "fromMm": 10.75,
       "toMm": 12.2
@@ -932,12 +1039,10 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
-     {
-      "fromMm": 8.6,
-      "toMm": 9.05
-     },
      {
       "fromMm": 10.75,
       "toMm": 12.2
@@ -965,12 +1070,10 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
-     {
-      "fromMm": 8.6,
-      "toMm": 9.05
-     },
      {
       "fromMm": 10.75,
       "toMm": 12.2
@@ -998,6 +1101,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -1024,6 +1129,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -1046,6 +1153,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -1068,6 +1177,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -1090,6 +1201,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -1112,6 +1225,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -1138,6 +1253,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -1164,6 +1281,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -1190,6 +1309,8 @@
     "constructed": true,
     "evidenceGrade": "ASSUMPTION",
     "fullInsertionOk": false,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
     "strictDifferenceSignal": true,
     "windows": [
      {
@@ -1204,15 +1325,15 @@
     "robustIntervalWidthMm": 1.5
    }
   ],
-  "droppedFromListing": 5901
+  "droppedFromListing": 2916
  },
- "witnessCount": 6231,
+ "witnessCount": 3168,
  "witnessCountByVariant": {
-  "TRS|JACK-TRS": 867,
-  "TRRS-CTIA|JACK-TRRS": 2790,
-  "TRS|JACK-TRRS": 2574
+  "TRS|JACK-TRS": 432,
+  "TRRS-CTIA|JACK-TRRS": 1458,
+  "TRS|JACK-TRRS": 1278
  },
- "usableWitnessCount": 318,
+ "usableWitnessCount": 240,
  "robustIntervalWidthMmAmongUsable": 0.65,
  "robustIntervalWidthMm": 1.5,
  "sensitivity": [
@@ -1238,7 +1359,6 @@
     8
    ],
    "valuesAmongUsableWitnesses": [
-    1.5,
     2.5,
     3.2,
     4.5
@@ -1261,13 +1381,11 @@
     5.5,
     7.1,
     8.5,
-    10,
     11.5
    ],
    "valuesAmongUsableWitnesses": [
     5.5,
-    7.1,
-    8.5
+    7.1
    ],
    "shippedValueAppearsInWitness": true
   },
@@ -1400,9 +1518,7 @@
    ],
    "valuesAmongWitnesses": [
     5,
-    7.35,
-    9,
-    11
+    7.35
    ],
    "valuesAmongUsableWitnesses": [
     7.35

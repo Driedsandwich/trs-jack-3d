@@ -92,7 +92,7 @@ npm run dev
 | `npm run sensitivity` | 仮定パラメータの感度解析（**15 分ほどかかる。CI 向けではない**） |
 | `npm run docs:html` | `docs/*.md` から `docs/*.html` を生成 |
 | `npm run export:half-plug` | 接点トポロジーを DSP 非依存の JSON として書き出す（→ [連携](#half-plug-lab-との連携)） |
-| `npm run search:topology -- --target GROUND_OPEN` | 目標トポロジーが成立する構成を探す（**約 10 分**） |
+| `npm run search:topology -- --target DIFFERENCE_SIGNAL` | 目標トポロジーが成立する構成を探す（**約 10 分**） |
 | `npm run screenshots` | 実ブラウザ (Playwright) で UI を操作し、`docs/screenshots/` へ画像を保存 |
 | `npm run perf` | 実 GPU (headed Chrome) でフレームレートと描画コストを測定 |
 | `npm run touch` | iPhone/iPad 相当のビューポートにタッチ入力を注入して操作を検証 |
@@ -335,38 +335,49 @@ Half-Plug Lab                     DSP 状態候補への写像は向こう側の
 profile はこれを `absentTopologies` として**機械可読な「不在」の記録**にしています。
 **表示上だけ足すことはしません。**
 
-### では原理的に無理なのか — 探索した結果
+### 3極プラグを 4極ジャックへ半挿しにすると、無改造で起きます
 
-`npm run search:topology -- --target GROUND_OPEN` で、接点の軸位置・パッド幅・
+`npm run search:topology -- --target DIFFERENCE_SIGNAL` で、接点の軸位置・パッド幅・
 接触ドームの追従量を振り、**14,670 構成**を調べました。
 
 | | 件数 |
 |---|---:|
-| 共通帰線断が現れた構成 | 6,231 |
-| うち**完全挿入時の結線が壊れていない**もの | 318 |
-| うち**L と R が別導体のまま帰線だけが浮く**もの（本命） | **240** |
+| 完全挿入を壊さずに成立する構成 | **240** |
+| うちパッド幅 0.3 mm 以上（製造しうる） | **159** |
+| うち**既定値から 1 つも動かさないもの** | **1** |
 
-**幾何的には成立します。**ただし成立する構成は、既定値と大きく違います。
+| variant | 成立 | 製造しうる | 無改造 |
+|---|---:|---:|---:|
+| 3極プラグ × 3極ジャック | 78 | 51 | 0 |
+| 4極 CTIA × 4極ジャック | 0 | 0 | 0 |
+| **3極プラグ × 4極ジャック** | **162** | **108** | **1** |
+
+**3極プラグを 4極ジャックへ挿す構成は、何も改造せずに成立します。**
 
 ```
-例: 帰線接点 2.5mm（既定 3.2） / Ring 5.5（7.1） / Tip 9.5（11.4）
-    帰線パッド 0.1mm（既定 0.9 — 9 分の 1）
-    → 深さ 10.86mm 付近で L=Tip / R=Ring / 帰線=どこにも触れず
+深さ 12.9〜13.1 mm（幅 0.2 mm）で
+   L → Tip 導体 ／ R → Ring 導体 ／ 帰線 → どこにも触れず
 ```
 
-**この構成は実在の部品ではありません。**探索結果の全構成が `constructed: true` /
-`evidenceGrade: ASSUMPTION` です。**「3.5mm ジャック一般でこうなる」とは言えません。**
+4極ジャックの帰線接点が、3極プラグの絶縁帯にちょうど落ちるためです。
+**スマホ用の 4極ジャックに、ふつうの 3極イヤホンを半挿しにする**という、
+特別な部品を要さない構成です。
 
-| variant | 本命の成立数 |
-|---|---:|
-| 3極プラグ × 3極ジャック | 78 |
-| 4極 CTIA × 4極ジャック | 0 |
-| **3極プラグ × 4極ジャック** | **162** |
+### ただし、この結論が乗っている土台
 
-窓の幅は最大でも **0.65 mm** です。深さをこの精度で保つ必要があります。
+**4極ジャックの接点位置 4 件は、一次資料がなく全て ASSUMPTION です**
+（[UNKNOWNS.md](UNKNOWNS.md) §5-2）。「既定値のまま起きる」は
+**「こちらが仮定した位置のまま起きる」**という意味でしかありません。
 
-> **4極 CTIA × 4極ジャックでは 0 件**でした。共通帰線断そのものは現れますが、
-> そのすべてで完全挿入時の結線が壊れています。
+ただし**仮定の一点だけに乗ってはいません。** 完全挿入が壊れない 432 構成のうち
+**162 件（38 %）**で成立します（3極×3極は 675 中 78 件＝12 %）。
+
+> **現象が起きること**は仮定の振り方に対してかなり頑健ですが、
+> **深さ 12.9〜13.1 mm という数字**は仮定した接点位置に完全に依存します。
+> 実物で確かめる手順は [docs/VERIFICATION_PLAN.md](docs/VERIFICATION_PLAN.md) です。
+
+探索結果の構成はすべて `evidenceGrade: ASSUMPTION` です。
+**「3.5 mm ジャック一般でこうなる」とは言えません。**
 
 ---
 
@@ -415,7 +426,7 @@ profile はこれを `absentTopologies` として**機械可読な「不在」�
 | `touch_verification.json` | タッチ操作の検証 20 項目の結果 |
 | `sensitivity.json` | 仮定パラメータの感度解析の生データ（→ [docs/SENSITIVITY.md](docs/SENSITIVITY.md)） |
 | `half_plug_topology_profile.v1.json` | 接点トポロジーの中立表現（`npm run export:half-plug`）。**音響係数ではありません** |
-| `topology_search_ground_open.json` | 共通帰線断が成立する構成の探索結果（`npm run search:topology`・約 10 分） |
+| `topology_search_difference_signal.json` | 左右差分が残る構成の探索結果（`npm run search:topology`・約 10 分） |
 
 `sensitivity.json` だけは `npm run artifacts` では作られません。**`npm run sensitivity`
 （単独・実行に 15 分ほど）**で生成します。二分法を何万回も回すため他の成果物より桁違いに重く、

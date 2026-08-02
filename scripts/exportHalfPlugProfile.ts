@@ -69,6 +69,19 @@ const ANNOTATION: Record<string, Omit<Annotation, 'stabilityOverlay'>> = {
   SILENT: { topologyClass: 'no-path', audibleHypothesis: '無音', electricalRisk: 'none', confidence: 'medium' },
   LEFT_ONLY: { topologyClass: 'one-sided', audibleHypothesis: '左のみ', electricalRisk: 'none', confidence: 'medium' },
   RIGHT_ONLY: { topologyClass: 'one-sided', audibleHypothesis: '右のみ', electricalRisk: 'none', confidence: 'medium' },
+  DIFFERENCE_SIGNAL: {
+    topologyClass: 'ground-open-differential',
+    // 「左右の差分が残る」は電気的な帰結であって、聴感の実測ではない
+    audibleHypothesis: '音量が落ち、左右の差分成分が残る',
+    electricalRisk: 'none',
+    confidence: 'low',
+  },
+  GROUND_OPEN: {
+    topologyClass: 'ground-open-nondifferential',
+    audibleHypothesis: 'ほぼ無音',
+    electricalRisk: 'none',
+    confidence: 'low',
+  },
   LR_SHORTED: {
     topologyClass: 'signal-to-return-short',
     // 聴感は機器の保護動作に依存するので、断定しない
@@ -289,7 +302,7 @@ const profile = {
   // 統合オーダー §3 P0: 既定モデルに GROUND_OPEN が無いなら、それを明示的に出力する。
   // Half-Plug 側の中核候補なので、「無い」ことこそ渡すべき情報である。
   absentTopologies: (() => {
-    const searched = ['fully-seated', 'no-path', 'one-sided', 'signal-to-return-short', 'on-insulator', 'wrong-conductor', 'ground-open']
+    const searched = ['fully-seated', 'no-path', 'one-sided', 'signal-to-return-short', 'on-insulator', 'wrong-conductor', 'ground-open-differential', 'ground-open-nondifferential']
     const present = new Set(intervals.map((i) => (i.acousticAnnotation as Annotation).topologyClass))
     return {
       searched,
@@ -309,6 +322,6 @@ writeFileSync(resolve(OUT, 'half_plug_topology_profile.v1.json'), JSON.stringify
 const codes = new Set(intervals.map((i) => (i.acousticAnnotation as Annotation).topologyClass))
 console.log(`  区間 ${intervals.length} / イベント ${events.length}`)
 console.log(`  現れたトポロジー: ${[...codes].sort().join(', ')}`)
-console.log(`  GROUND_OPEN: ${[...codes].some((c) => /floating|ground-open/.test(c)) ? '存在する' : '**この既定モデルには存在しない**'}`)
+console.log(`  共通帰線断: ${[...codes].some((c) => /ground-open/.test(c)) ? '存在する' : '**この既定モデルには存在しない**'}`)
 console.log(`  sourceRevision: ${profile.sourceRevision} / generatedAt: ${profile.generatedAt}`)
 console.log('  artifacts/half_plug_topology_profile.v1.json を書き出した')
