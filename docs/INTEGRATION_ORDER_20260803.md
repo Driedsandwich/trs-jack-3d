@@ -107,6 +107,51 @@ revision 版は、**中身が同じでもコミットのたびに ID が変わ�
 > 「落ちていても気にしない」テストが 1 つ生まれます。**
 > それは空振りと同じくらい悪いので（→ CONTRIBUTING §7）、別コマンドにしました。
 
+#### 項目 1 の実走記録（2026-08-03・`aac0084`）
+
+```
+  HEAD aac008421ea7 から clean な checkout を作る
+  inputDigest: 91a0e62a4eca / dirty: false / release
+
+  ✓ workingTreeDirty が false
+  ✓ artifactKind が release
+  ✓ generatedFromCommit が HEAD と一致
+  ✓ revisionOverride が false
+  ✓ inputDigest が 64 桁の hex
+  ✓ inputFiles が 10 件以上
+  ✓ 生成物自身が入力に入っていない
+
+  手元の artifact: dirty=true / local / digest 91a0e62a4eca
+  clean checkout : dirty=false / release / digest 91a0e62a4eca
+  → digest が一致。手元の artifact は clean な入力から作られている
+```
+
+**`workingTreeDirty` と `inputDigest` は別の種類の事実です。**
+前者は「生成した瞬間の作業ツリーの状態」、後者は「何から作ったか」です。
+上の実走では、手元の artifact が `dirty: true` を記録しているのに
+digest は clean checkout と一致しました。生成後に同じ入力をコミットしたためです。
+**固定に使うべきなのは digest のほう**である、ということがそのまま出ています。
+
+> このあと入力が clean な状態で作り直したので、
+> コミット済みの profile は現在 `workingTreeDirty: false` / `artifactKind: local` です。
+> `release` の artifact は P0-8（承認待ち）で作ります。
+
+#### 受入試験 3 の実証
+
+作り直した profile をコミットする前に、作業ツリーで確かめました。
+
+```
+$ git status --short
+ M artifacts/half_plug_topology_profile.v1.trs_jack_trs.json
+ M artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json
+
+$ npm run export:half-plug
+  inputDigest: 91a0e62a4eca / dirty: false / local
+```
+
+**artifact が 2 件とも変更されているのに `dirty: false`、digest も不変。**
+これが「artifact を含めてコミットしても自己参照にならない」ということです。
+
 ### P0-2 — TRRS profile の basis が陳腐化していた
 
 **指摘は正しく、しかも指摘より深いものでした。**

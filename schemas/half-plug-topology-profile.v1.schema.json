@@ -504,7 +504,8 @@
         },
         "artifactDate": {
           "type": "string",
-          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "**UTC の日付**（`toISOString()` 由来）。生成した人の現地時刻より 1 日手前になることがある。commit の日付と 1 日ずれていても陳腐化ではない。ARTIFACT_DATE で固定できる"
         }
       }
     },

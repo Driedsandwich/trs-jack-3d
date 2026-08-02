@@ -124,6 +124,32 @@
 <div class="tw"><table><thead><tr><th></th><th>受入条件</th><th>どこ</th><th>変異試験</th></tr></thead><tbody><tr><td>1</td><td>clean checkout から生成</td><td><code>npm run verify:provenance</code>（実走）＋ 規則は単体テスト</td><td>✅</td></tr><tr><td>2</td><td>入力 1 文字変更で <code>inputDigest</code> が変わる</td><td><code>test/provenance.test.ts</code></td><td>✅</td></tr><tr><td>3</td><td>artifact だけの再コミットでは変わらない</td><td>同上</td><td>✅</td></tr><tr><td>4</td><td>dirty tree で release モードが失敗</td><td>同上</td><td>✅</td></tr><tr><td>5</td><td>同一入力・同一日で byte-identical</td><td>同上（実際に 2 回生成して比較）</td><td>✅</td></tr><tr><td>6</td><td>根拠件数と生成元データの件数が一致</td><td>同上</td><td>✅</td></tr><tr><td>7</td><td>stale な <code>SOURCE_REVISION</code> で失敗</td><td>同上</td><td>✅</td></tr></tbody></table></div>
 <p><strong>7 項目すべて、検査を壊すと落ちることを変異試験で確かめました</strong> （生成物を入力に混ぜる／digest が中身を見ないようにする／release 判定を骨抜きにする／ 出力へ現在時刻を混ぜる／台帳の区分を 1 件変える／食い違う revision を素通しにする）。</p>
 <div class="note"><p><strong>項目 1 だけスイートに入れていません。</strong></p><p>開発中は入力を直している最中なので作業ツリーが汚れており、</p><p>「clean なら dirty=false」を実物で確かめられるのはコミット後だけです。</p><p>**作業ツリーの状態で成否が変わるテストをスイートに入れると、</p><p>「落ちていても気にしない」テストが 1 つ生まれます。**</p><p>それは空振りと同じくらい悪いので（→ CONTRIBUTING §7）、別コマンドにしました。</p></div>
+<h4>項目 1 の実走記録（2026-08-03・<code>aac0084</code>）</h4>
+<pre><code>  HEAD aac008421ea7 から clean な checkout を作る
+  inputDigest: 91a0e62a4eca / dirty: false / release
+
+  ✓ workingTreeDirty が false
+  ✓ artifactKind が release
+  ✓ generatedFromCommit が HEAD と一致
+  ✓ revisionOverride が false
+  ✓ inputDigest が 64 桁の hex
+  ✓ inputFiles が 10 件以上
+  ✓ 生成物自身が入力に入っていない
+
+  手元の artifact: dirty=true / local / digest 91a0e62a4eca
+  clean checkout : dirty=false / release / digest 91a0e62a4eca
+  → digest が一致。手元の artifact は clean な入力から作られている</code></pre>
+<p><strong><code>workingTreeDirty</code> と <code>inputDigest</code> は別の種類の事実です。</strong> 前者は「生成した瞬間の作業ツリーの状態」、後者は「何から作ったか」です。 上の実走では、手元の artifact が <code>dirty: true</code> を記録しているのに digest は clean checkout と一致しました。生成後に同じ入力をコミットしたためです。 <strong>固定に使うべきなのは digest のほう</strong>である、ということがそのまま出ています。</p>
+<div class="note"><p>このあと入力が clean な状態で作り直したので、</p><p>コミット済みの profile は現在 <code>workingTreeDirty: false</code> / <code>artifactKind: local</code> です。</p><p><code>release</code> の artifact は P0-8（承認待ち）で作ります。</p></div>
+<h4>受入試験 3 の実証</h4>
+<p>作り直した profile をコミットする前に、作業ツリーで確かめました。</p>
+<pre><code>$ git status --short
+ M artifacts/half_plug_topology_profile.v1.trs_jack_trs.json
+ M artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json
+
+$ npm run export:half-plug
+  inputDigest: 91a0e62a4eca / dirty: false / local</code></pre>
+<p><strong>artifact が 2 件とも変更されているのに <code>dirty: false</code>、digest も不変。</strong> これが「artifact を含めてコミットしても自己参照にならない」ということです。</p>
 <h3>P0-2 — TRRS profile の basis が陳腐化していた</h3>
 <p><strong>指摘は正しく、しかも指摘より深いものでした。</strong></p>
 <p>問題は「artifact を作り直していない」ことではありません。 <strong>この artifact は 2026-08-02 に作り直されており</strong>（<code>sourceRevision: 1f26460</code>）、 それでも旧説明が残っていました。原因は exporter 側の<strong>直書き文字列</strong>です。</p>
