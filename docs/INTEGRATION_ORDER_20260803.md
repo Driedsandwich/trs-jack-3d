@@ -64,14 +64,14 @@ release のほうは clean な入力から作ったことが記録に残って�
 | artifact だけ作り直してコミットした | **変わる** | 変わらない |
 | 文書だけ直してコミットした | **変わる** | 変わらない |
 
-digest の対象は **21 ファイル**です。
+digest の対象は **22 ファイル**です（v0.1.0 時点）。
 
 | role | 件数 | 中身 |
 |---|---:|---|
 | `schema` | 1 | profile の schema |
 | `generator` | 2 | exporter と provenance |
 | `model-data` | 9 | `src/data/**` |
-| `model-code` | 7 | `src/model/**` |
+| `model-code` | 8 | `src/model/**` |
 | `lockfile` | 1 | `package-lock.json` |
 | `sensitivity-input` | 1 | `artifacts/sensitivity.json`（`spreadMm` の元データ。**入力として読んでいる**） |
 
