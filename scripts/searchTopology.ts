@@ -50,7 +50,7 @@ const TARGET_CLASS_BY_CODE: Record<string, TopologyClass> = {
   GROUND_OPEN: 'ground-open-nondifferential',
   LR_SHORTED: 'signal-to-return-short',
   SILENT: 'no-path',
-  NORMAL: 'fully-seated',
+  NORMAL: 'all-expected-functions-match',
 }
 const TARGET_CLASS = TARGET_CLASS_BY_CODE[TARGET]
 if (!TARGET_CLASS)

@@ -69,6 +69,13 @@
    （2026-08-03 に感度 artifact 2 件と頑健性 artifact 1 件を追加。それまで schema が無く、受け手が独自に構造検査を書いていました）
 9. `npm run docs:html` — HTML を作り直す
 
+> **release を作るときは、さらに 2 つ回します。**
+> `npm run release:evidence`（検証結果と入力一覧を artifact にする）→
+> `npm run release:stage -- --version vX.Y.Z`（asset を集めて `SHA256SUMS` を作る）。
+> **asset の一覧は `scripts/releaseAssets.mjs` が正本です。**その場で選ばないでください——
+> v0.1.1 では選び忘れて `event-sensitivity` schema を落とし、受け手が感度 artifact を
+> 検証できませんでした。`release:stage` は `artifactKind: local` の artifact を既定で拒みます。
+
 > **`npm run verify:provenance` は手順に入れません。**
 > これは clean checkout から生成して provenance を確かめるもので、
 > **開発中は必ず落ちます**（入力を直している最中なので作業ツリーが汚れている）。

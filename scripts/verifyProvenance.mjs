@@ -50,7 +50,7 @@ try {
   console.log(out.split('\n').filter((l) => l.trim()).map((l) => `  ${l.trim()}`).join('\n'))
 
   const p = JSON.parse(
-    readFileSync(join(wt, 'artifacts/half_plug_topology_profile.v1.trs_jack_trs.json'), 'utf8'),
+    readFileSync(join(wt, 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json'), 'utf8'),
   ).provenance
 
   // **HEAD の生成器で走っている。** provenance を足した変更をまだコミットしていなければ、
@@ -81,7 +81,7 @@ try {
   // 手元の committed artifact との比較。**一致は要求しない。**
   // 手元は開発中に生成しているので workingTreeDirty=true が正しい
   const local = JSON.parse(
-    readFileSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v1.trs_jack_trs.json'), 'utf8'),
+    readFileSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json'), 'utf8'),
   ).provenance
   console.log(
     `\n  コミット済み artifact: dirty=${local.workingTreeDirty} / ${local.artifactKind}`

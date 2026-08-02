@@ -1,6 +1,80 @@
 {
- "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRS:0a1d12caf96a",
+ "schemaVersion": 2,
+ "schemaId": "half-plug-topology-profile.v2",
+ "contractMigration": {
+  "fromSchemaVersion": 1,
+  "toSchemaVersion": 2,
+  "breaking": true,
+  "schemaId": "half-plug-topology-profile.v2",
+  "previousSchemaId": "half-plug-topology-profile.v1",
+  "renamedEnumValues": [
+   {
+    "field": "intervals[].electricalTopology.topologyClass",
+    "from": "fully-seated",
+    "to": "all-expected-functions-match",
+    "introducedIn": "schemaVersion 2",
+    "reason": "「プラグ肩が当たった」と読めたが、実体は reasonCode のとおり ALL_EXPECTED_FUNCTIONS_MATCH でしかない"
+   },
+   {
+    "field": "events[].spreadStatus",
+    "from": "MEASURED",
+    "to": "MODEL_SWEEP_EVENT_SPECIFIC",
+    "introducedIn": "v0.1.1 (schemaVersion 1 のまま変えてしまった)",
+    "reason": "実物の測定と誤認される。実際はモデルのパラメータを振った結果"
+   },
+   {
+    "field": "events[].spreadStatus",
+    "from": "NOT_EVENT_SPECIFIC",
+    "to": "MODEL_SWEEP_NOT_EVENT_SPECIFIC",
+    "introducedIn": "v0.1.1 (schemaVersion 1 のまま変えてしまった)",
+    "reason": "同上"
+   },
+   {
+    "field": "events[].spreadStatus",
+    "from": "NOT_MEASURED",
+    "to": "NOT_ANALYZED",
+    "introducedIn": "v0.1.1 (schemaVersion 1 のまま変えてしまった)",
+    "reason": "同上"
+   }
+  ],
+  "addedFields": [
+   {
+    "field": "schemaId",
+    "introducedIn": "schemaVersion 2"
+   },
+   {
+    "field": "contractMigration",
+    "introducedIn": "schemaVersion 2"
+   },
+   {
+    "field": "mechanicalInsertion",
+    "introducedIn": "schemaVersion 2"
+   },
+   {
+    "field": "coordinateSystem.normalizedScope",
+    "introducedIn": "schemaVersion 2"
+   },
+   {
+    "field": "coordinateSystem.crossProfileComparable",
+    "introducedIn": "schemaVersion 2"
+   },
+   {
+    "field": "sensitivitySummary.eventSpreadAvailable",
+    "introducedIn": "v0.1.2 (追加のみ)"
+   },
+   {
+    "field": "sensitivitySummary.globalSummaryAvailable",
+    "introducedIn": "v0.1.2 (追加のみ)"
+   },
+   {
+    "field": "sensitivitySummary.basis",
+    "introducedIn": "v0.1.2 (追加のみ)"
+   }
+  ],
+  "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。旧語彙のまま読むと、値で絞り込む箇所が「そのデータが 1 件も無い」と区別できず、沈黙して壊れる。",
+  "versionSelectionEvidence": "下流 release-verifier.mjs は schemaVersion を見て拒否するが contractRevision はどこも読まない。2026-08-03 に両方を実際に import させて確かめた (A: 停止 / B: PASS)。"
+ },
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:230d73c49eb6",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -35,16 +109,16 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "6e72f2eead0102c1a51a0140df3404020a7594db",
+ "sourceRevision": "d8ea90d0186b8b45ec7d6dad28bf9eab6cae7683",
  "generatedAt": "2026-08-02",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "6e72f2eead0102c1a51a0140df3404020a7594db",
+  "generatedFromCommit": "d8ea90d0186b8b45ec7d6dad28bf9eab6cae7683",
   "workingTreeDirty": true,
   "revisionOverride": false,
   "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "0a1d12caf96af399bb7ff63a7e62a61685983ca928ba3bfcc88d6983cc62925f",
+  "inputDigest": "230d73c49eb6a3af39416007e15b1fb3899fa986dfb48fdfe3b4a16fc377401e",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -54,7 +128,7 @@
    },
    {
     "path": "artifacts/sensitivity.trs_jack_trs.json",
-    "sha256": "72519c8db8e18521c9356f989d39dbbcc25f53032ea3a1b0a0a32080797968d3",
+    "sha256": "e64af819c7030be4cf5125e697af4dd43baf84e45390fbf9e40d997827f14a54",
     "role": "sensitivity-input"
    },
    {
@@ -63,18 +137,18 @@
     "role": "lockfile"
    },
    {
-    "path": "schemas/half-plug-topology-profile.v1.schema.json",
-    "sha256": "dec56082e2dfcf22c382b88fd96d750b47cdbd296aa7fe5d24db9940d77e3c4b",
+    "path": "schemas/half-plug-topology-profile.v2.schema.json",
+    "sha256": "6b13f53d0e73ce0dc13ecb71ba72a0c7dc9fc8dc8f6cc72f0970dc22ea0769a8",
     "role": "schema"
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "8f85670cc17fba42677cd71bafa5568d7c2cf152d797fe52f972472730eb63a1",
+    "sha256": "0dc7041abee048898e5f51c6f68ec435e37b3eb53391e0b84194fde4aa066e57",
     "role": "generator"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "28ed8b12f9df0fe1f30338d5f0e35382d0e7702097981d4e76f098db1a2e3ad9",
+    "sha256": "204132bf64251a3ff74d6ae298a8718b13384547d6c084130ef88c2716c22033",
     "role": "generator"
    },
    {
@@ -154,7 +228,7 @@
    },
    {
     "path": "src/model/topology.ts",
-    "sha256": "85594e701a195a574238853bcdf3bc5e421a9f860703443ee7ae123e953de478",
+    "sha256": "12203873d4c89084734cd4cc2e6de4b139aaa3000bf8651f9bf8c1dd7db5cac9",
     "role": "model-code"
    },
    {
@@ -171,7 +245,16 @@
  "coordinateSystem": {
   "depthOrigin": "ジャック前面基準面 (ローレットナット前面)。プラグ先端がここにあるとき depth = 0",
   "depthDirection": "正が挿入方向",
-  "normalized": "depthMm / fullInsertionDepthMm。0 = 先端が前面、1 = 完全挿入"
+  "normalized": "depthMm / fullInsertionDepthMm。0 = 先端が前面、1 = 完全挿入",
+  "normalizedScope": "PROFILE_LOCAL",
+  "crossProfileComparable": false,
+  "normalizedNote": "**profile 内のモデル相対座標である。**分母 (fullInsertionDepthMm) は profile ごとに違い、接点配置も違うので、**同じ normalized 値が別 profile で同じ電気状態を意味することは保証しない。**機種をまたいで比べるときは normalized ではなく、電気トポロジーの遷移そのもので対応づけること。"
+ },
+ "mechanicalInsertion": {
+  "completeAtMm": 14,
+  "firstAllFunctionsMatchAtMm": 12.34,
+  "gapMm": 1.66,
+  "note": "**クラス名を「奥まで刺さった」と読まないこと。**電気的にすべての機能が揃う深さは、機械的な完全挿入より手前にある。gapMm がその差である。"
  },
  "dataLicense": {
   "code": "MIT",
@@ -200,7 +283,7 @@
  },
  "absentTopologies": {
   "searched": [
-   "fully-seated",
+   "all-expected-functions-match",
    "no-path",
    "one-sided",
    "on-insulator",
@@ -3141,7 +3224,7 @@
     "anyUnstable": false
    },
    "electricalTopology": {
-    "topologyClass": "fully-seated",
+    "topologyClass": "all-expected-functions-match",
     "reasonCode": "ALL_EXPECTED_FUNCTIONS_MATCH",
     "openSignals": [],
     "confidenceBoundary": false
@@ -3741,8 +3824,8 @@
     "jack.contact.sleeve.axialCenter",
     "jack.contact.sleeve.padWidth"
    ],
-   "generatedFromCommit": "6e72f2eead0102c1a51a0140df3404020a7594db",
-   "inputDigest": "bdedbcf70d5804702b0c919dcafac80c4ffaf8125592f8e7e310181bf84b7dad",
+   "generatedFromCommit": "d8ea90d0186b8b45ec7d6dad28bf9eab6cae7683",
+   "inputDigest": "70f2db61dde07f2694163ebd2574b6f8d76a938995ecb58c44ae63ac97790333",
    "configurationsUsable": 869,
    "shippedInsideSweptRange": true
   },

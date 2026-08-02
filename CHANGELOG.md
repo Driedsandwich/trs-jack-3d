@@ -17,6 +17,61 @@
 
 ## [Unreleased]
 
+### 破壊的変更 — Schema v2（非阻害フォローアップ P1-5 / P2-6）
+
+**v1 とは非互換です。**v1 を期待する実装は `schemaVersion` を見て停止してください。
+対応表は profile の `contractMigration` にあります。
+
+| | 旧 | 新 |
+|---|---|---|
+| `topologyClass` | `fully-seated` | **`all-expected-functions-match`** |
+| profile のファイル名 | `half_plug_topology_profile.v1.*` | **`half_plug_topology_profile.v2.*`** |
+| `schemaVersion` | 1 | **2** |
+
+**なぜ `schemaVersion` を上げたのか。**v0.1.0 → v0.1.1 で `spreadStatus` の enum を
+非互換に変えたのに `schemaVersion` は 1 のままにしました。その結果、下流の adapter は
+`spreadStatus !== 'MEASURED'` で全 event を弾き、**エラーも警告も出さずに汚染検出が
+丸ごと素通り**しました。**沈黙が最悪の壊れ方です。**
+
+**方式は実測で選びました。**下流が何を見るかを確かめたところ、
+
+- `schemaVersion` を 2 にする → `Unsupported profile schemaVersion: 2` で**停止する**
+- `contractRevision` を足すだけ → **どこも読まないので PASS する**
+
+沈黙を避けるという目的に対して、答えは 1 つしかありませんでした。
+
+**`fully-seated` を改めた理由。**「プラグ肩が当たった」と読めますが、実体は `reasonCode` の
+とおり `ALL_EXPECTED_FUNCTIONS_MATCH` でしかありません。名前を直すだけでは同じ誤読が
+起きるので、**その差を数字でも出します**（`mechanicalInsertion.gapMm`。TRS×TRRS で 0.48 mm）。
+
+**`normalized` の射程を機械可読にしました。**`normalizedScope: PROFILE_LOCAL` /
+`crossProfileComparable: false`。文章では v0.1.1 で弱めていましたが、
+**機械が読める形では何も言っていませんでした。**
+
+### 追加 — release evidence の自己完結性（非阻害フォローアップ P2-7 / P2-8）
+
+v0.1.1 の配布物では、受け手が次を確かめられませんでした。どれも「こちらは知っているが
+渡していない」だけだったので、渡します。
+
+| 追加した asset | 何が確かめられるようになるか |
+|---|---|
+| `artifacts/validation-results.json` | こちらで意味規則が通っているか（判定は `validate:profiles` と同一実装） |
+| `artifacts/source-input-manifest.json` | `provenance.inputFiles[].sha256` を tag source と独立に検算できる |
+| `artifacts/test_counts.json` | **tag 時点の件数**（v0.1.1 では入っておらず、報告の 260 件が tag の 258 件か main かを判別できなかった） |
+| `schemas/event-sensitivity.v1.schema.json` ほか | 感度・頑健性 artifact を受け手が検証できる（v0.1.1 では**入れ忘れていた**） |
+
+asset の一覧は `scripts/releaseAssets.mjs` に固めました。**その場で選ぶのをやめます。**
+入れ忘れは「毎回思い出す」に頼っていたから起きました。
+
+`package.json` の `version` も配布版と揃えました（v0.1.1 tag では `0.1.0` のままで、
+release tooling の判定材料にできませんでした）。
+
+### 訂正 — `validate:profiles` が symlink 経由だと何も検証せず成功していた
+
+CLI 判定をパスの単純比較で書いていたため、symlink 越しに起動すると `main()` が走らず、
+**出力ゼロ・終了コード 0** になりました。realpath で比べるよう直しました。
+変異試験を symlink 構成で回して見つけたもので、**このリポジトリが一番嫌う壊れ方**です。
+
 ### 訂正 — TRS の感度解析が TRS×TRRS profile へ混入していた（統合フォローアップ P0-1〜P0-4）
 
 **Half-Plug Lab 側の fixture import で見つかった。**こちらの検査 45 本は 1 つも捕まえなかった。

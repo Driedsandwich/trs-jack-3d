@@ -6,7 +6,7 @@
 
 ## 0-1. 対応状況（2026-08-03 追記・trs-jack-3d 側）
 
-**優先 1〜4 を実装しました。5 以降は未着手です。**v0.1.1 の asset は上書きしていません。
+**優先 1〜8 をすべて実装しました。**tag と公開は承認待ちです。v0.1.1 の asset は上書きしていません。
 
 | | 項目 | 状態 |
 |---|---|---|
@@ -14,7 +14,49 @@
 | 2 | sensitivity artifact 専用 Schema | **実装** — `schemas/event-sensitivity.v1.schema.json`。`validate:profiles` は 5 件 → **8 件**（項目 4 の 1 件を含む） |
 | 3 | 感度 availability の分離 | **実装** — `eventSpreadAvailable` / `globalSummaryAvailable` / `basis` を追加。`available` は別名として残置 |
 | 4 | 目標トポロジーの多軸ロバストネス | **実装** — `artifacts/topology-robustness.trs_jack_trrs.json` / `schemas/topology-robustness.v1.schema.json`。8 軸を同時走査（5,184 構成） |
-| 5〜8 | Schema versioning 以降 | 未着手 |
+| 5 | release test evidence | **実装** — `validation-results.json` / `source-input-manifest.json` / `test_counts.json` を asset へ。一覧は `scripts/releaseAssets.mjs` に固定 |
+| 6 | Schema 契約の versioning | **実装** — `schemaVersion: 2` / `schemaId` / `contractMigration`。**方式は下流の実測で選んだ**（→ 下） |
+| 7 | `fully-seated` の改名 | **実装** — `all-expected-functions-match` へ。差を `mechanicalInsertion.gapMm` で数字にも出す |
+| 8 | `normalized` の意味明確化 | **実装** — `normalizedScope: PROFILE_LOCAL` / `crossProfileComparable: false` |
+
+### 項目 6 — 版の上げ方は**下流が何を見るか**で決めた
+
+`contractRevision` を足すだけでも良さそうに見えるが、**下流が読んでいなければ意味がない。**
+実際に両方を import させた。
+
+| 方式 | `half-plug-emulator` v0.4.3 の反応 |
+|---|---|
+| `schemaVersion` を 2 にする | `Unsupported profile schemaVersion: 2` で**停止** |
+| `contractRevision` を足すだけ | **PASS**（`release-verifier.mjs` はどこでも読んでいない） |
+
+沈黙を避けるという目的に対して、答えは 1 つしかなかった。
+根拠は artifact 自身（`contractMigration.versionSelectionEvidence`）にも入れてある。
+
+**ファイル名も変えた。**`half_plug_topology_profile.v1.*` → `v2.*`。
+下流の release lock が `filename` で引くので、名前が同じまま契約だけ変わると、
+lock が同じ名前で非互換な内容を指すことになる。
+
+### 項目 7 — 名前を直すだけでは同じ誤読が起きる
+
+```
+TRS×TRRS  電気的に全機能が揃う  13.52 mm
+          機械的な完全挿入      14.00 mm
+          差 (gapMm)             0.48 mm
+```
+
+`mechanicalInsertion` として profile に出し、**差が 0 でないこと**を機械で固定した。
+
+### この回で見つけた自分の欠陥
+
+**`validate:profiles` が symlink 経由だと何も検証せず成功していた。**
+CLI 判定をパスの単純比較で書いていたため、symlink 越しに起動すると `main()` が走らず、
+**出力ゼロ・終了コード 0** になる。realpath 比較へ直した。
+
+変異試験を symlink 構成で回して見つけた。**「検査が通った」が「検査が走った」を意味しない**という、
+このリポジトリが全編で潰してきた型そのものだった。
+
+もう 1 件、**移行表の検査を片方の profile でしか見ていなかった。**
+片方から記録が消えても緑になる。全 profile を見るよう直した（これも変異試験で発覚）。
 
 ### 項目 4 の結果
 
@@ -84,18 +126,12 @@
 `sensitivitySummary.basis` を約束していましたが、**profile にその項目はありませんでした**（読むと `undefined`）。
 文書と artifact を突き合わせる検査が `sensitivitySummary` に無かったためです。項目 3 の実装で実在するようになりました。
 
-**次の release で必要な作業**（今回は release を作らないので未実施）:
+**release asset へ追加するものは実装済み**（`scripts/releaseAssets.mjs` が正本・14 件）。
+`npm run release:stage` が集めるが、**`artifactKind: local` の artifact は既定で拒む。**
+配布は clean checkout から `--release` 付きで作り直したものだけ。tag と公開は承認待ち。
 
-| 追加するもの | 理由 |
-|---|---|
-| `schemas/event-sensitivity.v1.schema.json` | 感度 artifact を受け手が検証できるようにする（項目 2） |
-| `schemas/topology-robustness.v1.schema.json` | 頑健性 artifact を受け手が検証できるようにする（項目 4） |
-| `artifacts/topology-robustness.trs_jack_trrs.json` | `IV028` の扱いを決めるための根拠そのもの |
-
-いずれも `SHA256SUMS` にも入れること。
-
-検査はすべて変異させて確認しました。**意味規則 50 件・テスト 21 件を壊して、狙った検査が鳴ることを確かめています**
-（項目 1〜3 で意味規則 23・テスト 8、項目 4 で意味規則 27・テスト 13）。
+検査はすべて変異させて確認しました。**意味規則 65 件・テスト 32 件を壊して、狙った検査が鳴ることを確かめています**
+（項目 1〜3 で意味規則 23・テスト 8、項目 4 で 27・13、項目 5〜8 で 15・11）。
 rc≠0 だけでは別の検査に助けられている可能性があるため、**artifact ごとの節と、その検査だけが持つ文言**で照合しています。
 等価変異は 0 件です。
 

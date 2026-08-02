@@ -98,7 +98,7 @@ export function listInputs(root: string, variantSlug?: string): InputFile[] {
       // 読めないものは記録しない。存在しない入力は digest に影響させない
     }
   }
-  add('schemas/half-plug-topology-profile.v1.schema.json', 'schema')
+  add('schemas/half-plug-topology-profile.v2.schema.json', 'schema')
   add('scripts/exportHalfPlugProfile.ts', 'generator')
   add('scripts/provenance.ts', 'generator')
   for (const f of walk(root, 'src/data')) add(f, 'model-data')

@@ -31,8 +31,8 @@ import { mustFind } from './_must'
 const ROOT = resolve(__dirname, '..')
 const J = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 
-const trs = J('artifacts/half_plug_topology_profile.v1.trs_jack_trs.json')
-const trrs = J('artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json')
+const trs = J('artifacts/half_plug_topology_profile.v2.trs_jack_trs.json')
+const trrs = J('artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json')
 const sensTrs = J('artifacts/sensitivity.trs_jack_trs.json')
 const sensTrrs = J('artifacts/sensitivity.trs_jack_trrs.json')
 
@@ -70,7 +70,7 @@ function exportWith(variant: string, slug: string, mutate: (a: Record<string, un
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   })
-  return JSON.parse(readFileSync(join(d, `artifacts/half_plug_topology_profile.v1.${slug}.json`), 'utf8'))
+  return JSON.parse(readFileSync(join(d, `artifacts/half_plug_topology_profile.v2.${slug}.json`), 'utf8'))
 }
 
 describe('P0-4 感度情報が variant を跨がない', () => {

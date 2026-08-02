@@ -427,7 +427,7 @@ describe('B. 文書に転記した artifact の値が一致している', () => 
 
   it('HALF_PLUG_ADAPTER の本命区間が profile と一致する', () => {
     // 手で書いた区間の数字が、生成物とずれないようにする
-    const prof = json('artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json')
+    const prof = json('artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json')
     const iv = prof.intervals.find(
       (x: { electricalTopology: { topologyClass: string } }) =>
         x.electricalTopology.topologyClass === 'ground-open-differential',

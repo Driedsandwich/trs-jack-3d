@@ -7,15 +7,15 @@
   "trrs.jack.contact.sleeve.axialCenter",
   "trrs.jack.contact.narrowPadWidth"
  ],
- "generatedFromCommit": "6e72f2eead0102c1a51a0140df3404020a7594db",
+ "generatedFromCommit": "d8ea90d0186b8b45ec7d6dad28bf9eab6cae7683",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "6e72f2eead0102c1a51a0140df3404020a7594db",
+  "generatedFromCommit": "d8ea90d0186b8b45ec7d6dad28bf9eab6cae7683",
   "workingTreeDirty": true,
   "revisionOverride": false,
   "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "353055255f660b6f251e29f803a22f73aec40e248b59a81ff18f48e31cc1b979",
+  "inputDigest": "35ff83e2dbd8c7b7fe112e2d7f53698c39ef4d8eee3e05d5ad0b968d17de3e62",
   "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 6 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
   "inputSettings": {
    "variantId": "TRS|JACK-TRRS",
@@ -38,7 +38,7 @@
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "28ed8b12f9df0fe1f30338d5f0e35382d0e7702097981d4e76f098db1a2e3ad9",
+    "sha256": "204132bf64251a3ff74d6ae298a8718b13384547d6c084130ef88c2716c22033",
     "role": "generator"
    },
    {
@@ -123,7 +123,7 @@
    },
    {
     "path": "src/model/topology.ts",
-    "sha256": "85594e701a195a574238853bcdf3bc5e421a9f860703443ee7ae123e953de478",
+    "sha256": "12203873d4c89084734cd4cc2e6de4b139aaa3000bf8651f9bf8c1dd7db5cac9",
     "role": "model-code"
    },
    {

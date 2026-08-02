@@ -1,5 +1,7 @@
 /**
- * Half-Plug Topology Profile v1 の互換性試験。
+ * Half-Plug Topology Profile v2 の互換性試験。
+ * (2026-08-03 に v1 → v2。`fully-seated` の改名を含む破壊的変更のため schemaVersion を上げた。
+ *  版そのものの契約は test/schemaContractV2.test.ts が見る)
  * 統合オーダー (2026-08-01) §3 P0「Schemaと互換性試験」の 10 項目に対応する。
  *
  * ## 自前の検証器をやめた (2026-08-03・統合オーダー P0-6)
@@ -28,13 +30,13 @@ import { getModel } from '../src/data'
 const ROOT = resolve(__dirname, '..')
 const json = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 
-const schema = json('schemas/half-plug-topology-profile.v1.schema.json')
+const schema = json('schemas/half-plug-topology-profile.v2.schema.json')
 
 // variant ごとに profile を出すので、**全部を検査する**。
 // 1 つだけ見て通すと、追加した variant が壊れていても気づけない。
 const PROFILES = [
-  ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v1.trs_jack_trs.json'],
-  ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json'],
+  ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json'],
+  ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json'],
 ] as const
 const profiles = PROFILES.map(([id, path]) => [id, json(path)] as const)
 /** 既定 variant。個別の主張はこちらで見る */
@@ -59,7 +61,7 @@ function validate(value: unknown): string[] {
 
 // ---------------------------------------------------------------------------
 
-describe('Half-Plug Topology Profile v1', () => {
+describe('Half-Plug Topology Profile v2', () => {
   // 1. JSON Schema validation (draft-07 の完全実装)
   it.each(profiles.map(([id]) => id))('1. schema に適合する (%s)', (id) => {
     const p = profiles.find(([x]) => x === id)![1]
@@ -68,7 +70,7 @@ describe('Half-Plug Topology Profile v1', () => {
 
   it('1b. 検証器そのものが働く (壊した profile を弾ける)', () => {
     // 通るだけの検証器では意味がないので、確かに落ちることを見る
-    expect(validate({ ...profile, schemaVersion: 2 }).length).toBeGreaterThan(0)
+    expect(validate({ ...profile, schemaVersion: 1 }).length).toBeGreaterThan(0)
     expect(validate({ ...profile, intervals: [] }).length).toBeGreaterThan(0)
     const bad = structuredClone(profile)
     bad.intervals[0].normalizedStart = 1.5

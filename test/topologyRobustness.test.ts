@@ -33,7 +33,7 @@ const J = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 
 const rob = J('artifacts/topology-robustness.trs_jack_trrs.json')
 const sens = J('artifacts/sensitivity.trs_jack_trrs.json')
-const profile = J('artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json')
+const profile = J('artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json')
 const V = 'TRS|JACK-TRRS' as const
 
 /** 走査は 0.05 で足りる。存否ではなく「列が変わるか」を見るため */

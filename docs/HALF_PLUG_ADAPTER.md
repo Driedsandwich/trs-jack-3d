@@ -2,7 +2,7 @@
 
 > この文書の HTML 版（同名 `.html`）は `npm run docs:html` で生成しています。**HTML を直接編集しないでください。**
 
-作成 2026-08-02 ／ 対象 `Half-Plug Topology Profile v1`
+作成 2026-08-02 ／ 対象 `Half-Plug Topology Profile v2`（2026-08-03 に v1 から更新）
 
 統合オーダー §4 が Half-Plug 側へ求めている `integrations/trs-jack-3d/` の
 初期マッピングを、**現在のコード体系で**書き起こしたものです。
@@ -34,8 +34,8 @@
 
 | ファイル | 中身 | 左右差分 |
 |---|---|---|
-| `half_plug_topology_profile.v1.trs_jack_trs.json` | 3極プラグ × 3極ジャック（Lumberg 実部品） | **現れない** |
-| `half_plug_topology_profile.v1.trs_jack_trrs.json` | 3極プラグ × **4極ジャック** | **現れる**（`IV028` / 13.30〜13.52 mm） |
+| `half_plug_topology_profile.v2.trs_jack_trs.json` | 3極プラグ × 3極ジャック（Lumberg 実部品） | **現れない** |
+| `half_plug_topology_profile.v2.trs_jack_trrs.json` | 3極プラグ × **4極ジャック** | **現れる**（`IV028` / 13.30〜13.52 mm） |
 
 **再現したい音が出るのは後者だけです。**前者は「出ない」ことを
 `absentTopologies` に記録した反証として持っています。
@@ -53,7 +53,7 @@ npm run export:half-plug -- --variant "TRS|JACK-TRRS"
 
 | profile の `topologyClass` | Half-Plug の状態 | 備考 |
 |---|---|---|
-| `fully-seated` | Normal / seated | 通常再生。**機械的な完全挿入ではない**（下記） |
+| `all-expected-functions-match` | Normal / seated | 通常再生。**機械的な完全挿入ではない**（下記）。v1 では `fully-seated` |
 | `no-path` | Silent | 導通経路が無い |
 | `one-sided` | One-sided contact | 片チャンネルのみ |
 | **`ground-open-differential`** | **Floating return（本命）** | **§2-1 を必ず読むこと** |
@@ -65,9 +65,9 @@ npm run export:half-plug -- --variant "TRS|JACK-TRRS"
 `stabilityOverlay: "intermittent"` は**基底トポロジーと直交する重ね合わせ**です。
 状態を別物に置き換えるのではなく、その状態の上に不安定性を乗せてください。
 
-### 2-0. `fully-seated` は「肩が当たった」という意味ではありません
+### 2-0. `all-expected-functions-match` は「肩が当たった」という意味ではありません
 
-TRS×TRRS profile では `fully-seated` が **13.52 mm から**始まりますが、
+TRS×TRRS profile では `all-expected-functions-match` が **13.52 mm から**始まりますが、
 機械的な完全挿入は **14 mm** です。
 
 このクラスが意味するのは `reasonCode` のとおり
@@ -77,8 +77,8 @@ TRS×TRRS profile では `fully-seated` が **13.52 mm から**始まります�
 UI で「物理的に完全に挿さっている」と表示しないでください。
 機械的な完了を見たい場合は `nominalEndMm === fullInsertionDepthMm` で判定します。
 
-> Schema v1 の間は名前を変えません。v2 で `electrically-normal` などへの
-> 改名を検討します（統合フォローアップ §6-1）。
+> **v2 で改名しました。**旧名 `fully-seated` は「プラグ肩が当たった」と読めたためです。
+> 差は `mechanicalInsertion.gapMm`（TRS×TRRS で 0.48 mm）として profile にも入っています。
 
 ### 2-1. `ground-open-differential` を自動で L−R 係数にしないでください
 
@@ -107,7 +107,7 @@ UI で「物理的に完全に挿さっている」と表示しないでくだ�
 
 ## 3. 本命の区間
 
-`half_plug_topology_profile.v1.trs_jack_trrs.json` の `IV028`:
+`half_plug_topology_profile.v2.trs_jack_trrs.json` の `IV028`:
 
 ```
 nominalStartMm  13.30      normalizedStart  0.9500
@@ -297,6 +297,30 @@ physicalClaimStatus      未実測なら "unverified"
 **どれも「動かない」の意味ではありません。**
 `kind` 単位の集計は捨てず、`sensitivitySummary.aggregateSpreadByKind` に残してあります。
 そちらを個々の事象へ当てはめないでください。
+
+### ⚠ v0.2.0 は `schemaVersion: 2` です（**破壊的変更**）
+
+**読み込む前に版で分岐してください。**`schemaVersion === 1` を期待する実装は、
+2 を受け取ったら停止してください。語彙の対応表は profile の `contractMigration` にあります。
+
+| | 旧 | 新 |
+|---|---|---|
+| `schemaVersion` | 1 | **2** |
+| `topologyClass` | `fully-seated` | **`all-expected-functions-match`** |
+| ファイル名 | `half_plug_topology_profile.v2.*` | **`half_plug_topology_profile.v2.*`** |
+
+ファイル名も変えたのは、**release lock が `filename` で引く**ためです。
+名前が同じまま契約だけ変わると、lock が同じ名前で非互換な内容を指します。
+
+**`fully-seated` を改めた理由**は、「プラグ肩が当たった」と読めるからです。
+実体は `reasonCode` のとおり `ALL_EXPECTED_FUNCTIONS_MATCH` でしかありません。
+名前だけでは同じ誤読が起きるので、差を数字でも出します。
+
+```
+TRS×TRRS  電気的に全機能が揃う  13.52 mm   ← all-expected-functions-match の開始
+          機械的な完全挿入      14.00 mm   ← mechanicalInsertion.completeAtMm
+          差 (gapMm)             0.48 mm
+```
 
 ### ⚠ `spreadStatus` の語を変えました（v0.1.1・**破壊的変更**）
 

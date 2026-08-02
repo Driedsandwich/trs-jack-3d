@@ -47,8 +47,8 @@ const mk = (o: {
   })
 
 describe('分類器そのもの', () => {
-  it('全部つながっていれば fully-seated', () => {
-    expect(mk({ l: ['TIP'], r: ['RING'], g: ['SLEEVE'] }).topologyClass).toBe('fully-seated')
+  it('全部つながっていれば all-expected-functions-match', () => {
+    expect(mk({ l: ['TIP'], r: ['RING'], g: ['SLEEVE'] }).topologyClass).toBe('all-expected-functions-match')
   })
 
   it('どこにも届いていなければ no-path', () => {
@@ -130,8 +130,8 @@ describe('parity — 同じ判定が 2 通りの答えを出さない', () => {
     // artifact 側の topologyClass を、いまのモデルから計算し直して突き合わせる。
     // exporter が別の判定を持ち始めたらここで落ちる
     for (const [variant, file] of [
-      ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v1.trs_jack_trs.json'],
-      ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json'],
+      ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json'],
+      ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json'],
     ] as const) {
       const p = JSON.parse(readFileSync(resolve(ROOT, file), 'utf8'))
       const m = getModel(variant)
@@ -181,7 +181,7 @@ describe('parity — 同じ判定が 2 通りの答えを出さない', () => {
 
   it('**profile の safetyFlags が分類器と一致する**', () => {
     // 2026-08-03 まで導体名 (TIP/RING) から作っており、機能ではなかった
-    const p = JSON.parse(readFileSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json'), 'utf8'))
+    const p = JSON.parse(readFileSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json'), 'utf8'))
     const m = getModel('TRS|JACK-TRRS')
     for (const iv of p.intervals as {
       intervalId: string

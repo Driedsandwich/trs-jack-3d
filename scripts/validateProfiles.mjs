@@ -27,8 +27,9 @@
 
 import Ajv from 'ajv'
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
@@ -48,13 +49,13 @@ const compile = (schemaPath) => {
 /** 検証対象。schema が無いものは semantic だけ回す */
 const TARGETS = [
   {
-    artifact: 'artifacts/half_plug_topology_profile.v1.trs_jack_trs.json',
-    schema: 'schemas/half-plug-topology-profile.v1.schema.json',
+    artifact: 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json',
+    schema: 'schemas/half-plug-topology-profile.v2.schema.json',
     semantic: 'profile',
   },
   {
-    artifact: 'artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json',
-    schema: 'schemas/half-plug-topology-profile.v1.schema.json',
+    artifact: 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json',
+    schema: 'schemas/half-plug-topology-profile.v2.schema.json',
     semantic: 'profile',
   },
   {
@@ -244,6 +245,49 @@ const SEMANTIC = {
           )
     }
 
+    /**
+     * --- v2 契約（非阻害フォローアップ P1-5 / P2-6）---
+     *
+     * **改名を宣言しただけで、実際には改名していない**という食い違いを防ぐ。
+     * 移行表は受け手が語彙を対応づける唯一の手がかりなので、
+     * ここが嘘だと「表のとおり読んだのに合わない」が起きる。
+     */
+    const cm = a.contractMigration ?? {}
+    const body = JSON.stringify({ intervals: a.intervals, events: a.events })
+    for (const r of cm.renamedEnumValues ?? []) {
+      // 旧語が本体にまだ残っていたら、改名は完了していない
+      if (body.includes(`"${r.from}"`))
+        errs.push(`contractMigration が ${r.from} → ${r.to} と宣言しているのに、旧語 "${r.from}" が本体に残っている`)
+      if (r.from === r.to) errs.push(`contractMigration の from と to が同じ (${r.from})`)
+    }
+    if (a.schemaId !== cm.schemaId) errs.push(`schemaId (${a.schemaId}) が contractMigration.schemaId (${cm.schemaId}) と違う`)
+    if (cm.toSchemaVersion !== a.schemaVersion)
+      errs.push(`contractMigration.toSchemaVersion (${cm.toSchemaVersion}) が schemaVersion (${a.schemaVersion}) と違う`)
+    if (cm.breaking === true && cm.fromSchemaVersion === cm.toSchemaVersion)
+      errs.push('breaking と宣言しているのに schemaVersion が上がっていない')
+
+    // --- 機械的な完全挿入との差（P2-6.1）---
+    const mi = a.mechanicalInsertion ?? {}
+    if (mi.completeAtMm !== a.fullInsertionDepthMm)
+      errs.push(`mechanicalInsertion.completeAtMm (${mi.completeAtMm}) が fullInsertionDepthMm (${a.fullInsertionDepthMm}) と違う`)
+    const firstMatch = (a.intervals ?? []).find(
+      (x) => x.electricalTopology?.topologyClass === 'all-expected-functions-match',
+    )?.nominalStartMm ?? null
+    if (mi.firstAllFunctionsMatchAtMm !== firstMatch)
+      errs.push(`mechanicalInsertion.firstAllFunctionsMatchAtMm (${mi.firstAllFunctionsMatchAtMm}) が実際の区間の開始 (${firstMatch}) と違う`)
+    if (firstMatch !== null) {
+      const gap = +(a.fullInsertionDepthMm - firstMatch).toFixed(4)
+      if (Math.abs((mi.gapMm ?? NaN) - gap) > 1e-6)
+        errs.push(`mechanicalInsertion.gapMm (${mi.gapMm}) が completeAtMm − firstAllFunctionsMatchAtMm (${gap}) と合わない`)
+    } else if (mi.gapMm !== null) {
+      errs.push('全機能が揃う区間が無いのに gapMm が null でない')
+    }
+
+    // --- normalized の射程（P2-6.2）---
+    const cs = a.coordinateSystem ?? {}
+    if (cs.crossProfileComparable !== false) errs.push('coordinateSystem.crossProfileComparable が false でない')
+    if (cs.normalizedScope !== 'PROFILE_LOCAL') errs.push(`normalizedScope が ${cs.normalizedScope}`)
+
     // --- provenance ---
     const p = a.provenance
     checkProvenance(p, 'half_plug_topology_profile', errs)
@@ -431,7 +475,7 @@ const SEMANTIC = {
      * 突き合わせる検査がどこにも無かったので通ってしまった。
      */
     const slug = String(a.variantId).toLowerCase().replace(/[^a-z0-9]+/g, '_')
-    const profilePath = `artifacts/half_plug_topology_profile.v1.${slug}.json`
+    const profilePath = `artifacts/half_plug_topology_profile.v2.${slug}.json`
     if (!existsSync(resolve(ROOT, profilePath))) return
     const prof = read(profilePath)
     if (prof.variantId !== a.variantId)
@@ -561,8 +605,8 @@ const SEMANTIC = {
     if (a.physicalProbabilityClaim !== false) errs.push('physicalProbabilityClaim が false でない')
     if (a.empiricalEvidence !== null) {
       // 実測を入れるなら profile の verifiedPhysical も動くはず。片方だけ動かせない
-      const prof = existsSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json'))
-        ? read('artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json')
+      const prof = existsSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json'))
+        ? read('artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json')
         : null
       if (prof && prof.modelLimitations?.verifiedPhysical === false)
         errs.push('empiricalEvidence が入っているのに profile の verifiedPhysical が false のまま')
@@ -580,47 +624,73 @@ const SEMANTIC = {
 
 // ---------------------------------------------------------------------------
 
-let failed = 0
-for (const t of TARGETS) {
-  if (!existsSync(resolve(ROOT, t.artifact))) {
-    console.log(`  ✗ ${t.artifact} — 存在しない`)
-    failed++
-    continue
-  }
-  const a = read(t.artifact)
-  const schemaErrs = []
-  const semanticErrs = []
-
-  // --- schema ---
-  const v = compile(t.schema)
-  if (!v(a))
-    for (const e of v.errors) schemaErrs.push(`${e.instancePath || '(root)'}: ${e.keyword} — ${e.message}`)
-
-  // --- semantic ---
-  SEMANTIC[t.semantic](a, semanticErrs)
-
-  const n = schemaErrs.length + semanticErrs.length
-  if (n === 0) {
-    console.log(`  ✓ ${t.artifact}`)
-  } else {
-    failed++
-    console.log(`  ✗ ${t.artifact} — ${n} 件`)
-    if (schemaErrs.length) {
-      console.log(`      [schema] ${schemaErrs.length} 件 — 形の問題`)
-      for (const e of schemaErrs.slice(0, 12)) console.log(`        ${e}`)
-      if (schemaErrs.length > 12) console.log(`        ... 他 ${schemaErrs.length - 12} 件`)
-    }
-    if (semanticErrs.length) {
-      console.log(`      [semantic] ${semanticErrs.length} 件 — 中身の問題`)
-      for (const e of semanticErrs.slice(0, 12)) console.log(`        ${e}`)
-      if (semanticErrs.length > 12) console.log(`        ... 他 ${semanticErrs.length - 12} 件`)
-    }
-  }
+/**
+ * 全対象を検証して結果を返す。**CLI と release evidence の両方がここを使う。**
+ *
+ * 別実装にすると「コマンドは通るのに evidence は古い」がいつか起きる。
+ * 判定は 1 か所しか持たない。
+ */
+export function validateAll() {
+  return TARGETS.map((t) => {
+    if (!existsSync(resolve(ROOT, t.artifact)))
+      return { artifact: t.artifact, schema: t.schema, missing: true, schemaErrors: [], semanticErrors: [] }
+    const a = read(t.artifact)
+    const schemaErrors = []
+    const semanticErrors = []
+    const v = compile(t.schema)
+    if (!v(a))
+      for (const e of v.errors) schemaErrors.push(`${e.instancePath || '(root)'}: ${e.keyword} — ${e.message}`)
+    SEMANTIC[t.semantic](a, semanticErrors)
+    return { artifact: t.artifact, schema: t.schema, missing: false, schemaErrors, semanticErrors }
+  })
 }
 
-console.log(
-  failed === 0
-    ? `\n${TARGETS.length} 件すべてが schema と意味規則の両方に適合しています。`
-    : `\n**${failed} / ${TARGETS.length} 件が不適合です。**`,
-)
-process.exit(failed === 0 ? 0 : 1)
+export const TARGET_COUNT = TARGETS.length
+
+function main() {
+  const results = validateAll()
+  let failed = 0
+  for (const r of results) {
+    if (r.missing) {
+      console.log(`  ✗ ${r.artifact} — 存在しない`)
+      failed++
+      continue
+    }
+    const n = r.schemaErrors.length + r.semanticErrors.length
+    if (n === 0) {
+      console.log(`  ✓ ${r.artifact}`)
+      continue
+    }
+    failed++
+    console.log(`  ✗ ${r.artifact} — ${n} 件`)
+    for (const [label, errs] of [['schema', r.schemaErrors], ['semantic', r.semanticErrors]]) {
+      if (!errs.length) continue
+      console.log(`      [${label}] ${errs.length} 件 — ${label === 'schema' ? '形' : '中身'}の問題`)
+      for (const e of errs.slice(0, 12)) console.log(`        ${e}`)
+      if (errs.length > 12) console.log(`        ... 他 ${errs.length - 12} 件`)
+    }
+  }
+  console.log(
+    failed === 0
+      ? `\n${TARGETS.length} 件すべてが schema と意味規則の両方に適合しています。`
+      : `\n**${failed} / ${TARGETS.length} 件が不適合です。**`,
+  )
+  process.exit(failed === 0 ? 0 : 1)
+}
+
+/**
+ * CLI として起動されたときだけ走らせる。
+ *
+ * **realpath で比べる。**単純なパス比較にすると、symlink 経由で起動したときに
+ * 一致せず **`main()` が走らないまま exit 0** になる。
+ * 何も検証していないのに成功に見えるのは、このリポジトリが一番嫌う壊れ方である。
+ * (2026-08-03、変異試験を symlink 構成で回して実際に踏んだ)
+ */
+const isCli = (() => {
+  try {
+    return realpathSync(resolve(process.argv[1] ?? '')) === realpathSync(fileURLToPath(import.meta.url))
+  } catch {
+    return false
+  }
+})()
+if (isCli) main()

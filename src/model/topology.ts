@@ -37,7 +37,7 @@ import type { BreakState, ContactState, PlugNet, SignalFunction } from './types'
  * Half-Plug Lab 側の受け取り表（docs/HALF_PLUG_ADAPTER.md §5.3）と 1 対 1 で対応する。
  */
 export type TopologyClass =
-  | 'fully-seated'
+  | 'all-expected-functions-match'
   | 'no-path'
   | 'one-sided'
   | 'on-insulator'
@@ -49,7 +49,7 @@ export type TopologyClass =
 
 /** 分類対象として調べた全クラス。`absentTopologies.searched` の正本 */
 export const ALL_TOPOLOGY_CLASSES: readonly TopologyClass[] = [
-  'fully-seated',
+  'all-expected-functions-match',
   'no-path',
   'one-sided',
   'on-insulator',
@@ -190,7 +190,7 @@ export function classifyElectricalTopology(input: TopologyInput): TopologyClassi
     )
     if (!gndConductorReached && gndNets.some((n) => netFunctions[n] === 'MIC'))
       return out('ground-open-nondifferential', 'RETURN_ROUTED_THROUGH_MIC_ELEMENT')
-    if (gOk) return out('fully-seated', 'ALL_EXPECTED_FUNCTIONS_MATCH')
+    if (gOk) return out('all-expected-functions-match', 'ALL_EXPECTED_FUNCTIONS_MATCH')
   }
 
   if ((lOk && !rOk && gOk) || (!lOk && rOk && gOk)) return out('one-sided', 'ONE_CHANNEL_NOT_REACHED')

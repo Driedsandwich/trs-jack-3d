@@ -100,7 +100,7 @@
 </nav>
 <h1>Half-Plug Lab へ渡すもの — adapter 仕様</h1>
 <div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
-<p>作成 2026-08-02 ／ 対象 <code>Half-Plug Topology Profile v1</code></p>
+<p>作成 2026-08-02 ／ 対象 <code>Half-Plug Topology Profile v2</code>（2026-08-03 に v1 から更新）</p>
 <p>統合オーダー §4 が Half-Plug 側へ求めている <code>integrations/trs-jack-3d/</code> の 初期マッピングを、<strong>現在のコード体系で</strong>書き起こしたものです。</p>
 <p>このリポジトリは Half-Plug Lab 側を持っていないので、ここに置いた仕様を 向こうで実装してもらう形になります。</p>
 <hr>
@@ -110,19 +110,19 @@
 <div class="tw"><table><thead><tr><th>してはいけないこと</th><th>なぜ</th></tr></thead><tbody><tr><td><code>topologyClass</code> を係数へ直接写像する</td><td>分類であって量ではない</td></tr><tr><td><code>quality</code> を接触抵抗 Ω やゲインへ換算する</td><td>相対スコアで、Ω に換算していない（profile に含めてもいません）</td></tr><tr><td>1 機種の <code>nominalStartMm</code> を一般的な「挿入深度」として使う</td><td>§4-1 を読むこと。<code>normalized</code> も万能ではない</td></tr><tr><td><strong><code>ground-open-differential</code> を自動的に L−R 係数へ変換する</strong></td><td>§2 を参照</td></tr><tr><td>未実測なのに「実物と同じ」と表示する</td><td>全 profile が <code>verifiedPhysical: false</code></td></tr></tbody></table></div>
 <hr>
 <h2 id="s1">1. 渡す profile は 2 つあります</h2>
-<div class="tw"><table><thead><tr><th>ファイル</th><th>中身</th><th>左右差分</th></tr></thead><tbody><tr><td><code>half_plug_topology_profile.v1.trs_jack_trs.json</code></td><td>3極プラグ × 3極ジャック（Lumberg 実部品）</td><td><strong>現れない</strong></td></tr><tr><td><code>half_plug_topology_profile.v1.trs_jack_trrs.json</code></td><td>3極プラグ × <strong>4極ジャック</strong></td><td><strong>現れる</strong>（<code>IV028</code> / 13.30〜13.52 mm）</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>ファイル</th><th>中身</th><th>左右差分</th></tr></thead><tbody><tr><td><code>half_plug_topology_profile.v2.trs_jack_trs.json</code></td><td>3極プラグ × 3極ジャック（Lumberg 実部品）</td><td><strong>現れない</strong></td></tr><tr><td><code>half_plug_topology_profile.v2.trs_jack_trrs.json</code></td><td>3極プラグ × <strong>4極ジャック</strong></td><td><strong>現れる</strong>（<code>IV028</code> / 13.30〜13.52 mm）</td></tr></tbody></table></div>
 <p><strong>再現したい音が出るのは後者だけです。</strong>前者は「出ない」ことを <code>absentTopologies</code> に記録した反証として持っています。</p>
 <pre><code>npm run export:half-plug -- --variant "TRS|JACK-TRRS"</code></pre>
 <hr>
 <h2 id="s2">2. 初期マッピング</h2>
 <p><strong>1 対 1 ではありません。</strong>同じ <code>topologyClass</code> でも、<code>stabilityOverlay</code> と <code>electricalRisk</code> の組み合わせで扱いが変わります。</p>
-<div class="tw"><table><thead><tr><th>profile の <code>topologyClass</code></th><th>Half-Plug の状態</th><th>備考</th></tr></thead><tbody><tr><td><code>fully-seated</code></td><td>Normal / seated</td><td>通常再生。<strong>機械的な完全挿入ではない</strong>（下記）</td></tr><tr><td><code>no-path</code></td><td>Silent</td><td>導通経路が無い</td></tr><tr><td><code>one-sided</code></td><td>One-sided contact</td><td>片チャンネルのみ</td></tr><tr><td><strong><code>ground-open-differential</code></strong></td><td><strong>Floating return（本命）</strong></td><td><strong>§2-1 を必ず読むこと</strong></td></tr><tr><td><code>ground-open-nondifferential</code></td><td>Silent 相当</td><td>帰線が浮くが左右が同一節点。差分は生じない</td></tr><tr><td><code>signal-to-return-short</code></td><td>Miscontact / protection-dependent</td><td><strong>過渡音を作らないこと</strong>（§2-2）</td></tr><tr><td><code>on-insulator</code></td><td>Open / fragmented</td><td>絶縁帯上</td></tr><tr><td><code>wrong-conductor</code></td><td>Miscontact</td><td>誤った導体</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>profile の <code>topologyClass</code></th><th>Half-Plug の状態</th><th>備考</th></tr></thead><tbody><tr><td><code>all-expected-functions-match</code></td><td>Normal / seated</td><td>通常再生。<strong>機械的な完全挿入ではない</strong>（下記）。v1 では <code>fully-seated</code></td></tr><tr><td><code>no-path</code></td><td>Silent</td><td>導通経路が無い</td></tr><tr><td><code>one-sided</code></td><td>One-sided contact</td><td>片チャンネルのみ</td></tr><tr><td><strong><code>ground-open-differential</code></strong></td><td><strong>Floating return（本命）</strong></td><td><strong>§2-1 を必ず読むこと</strong></td></tr><tr><td><code>ground-open-nondifferential</code></td><td>Silent 相当</td><td>帰線が浮くが左右が同一節点。差分は生じない</td></tr><tr><td><code>signal-to-return-short</code></td><td>Miscontact / protection-dependent</td><td><strong>過渡音を作らないこと</strong>（§2-2）</td></tr><tr><td><code>on-insulator</code></td><td>Open / fragmented</td><td>絶縁帯上</td></tr><tr><td><code>wrong-conductor</code></td><td>Miscontact</td><td>誤った導体</td></tr></tbody></table></div>
 <p><code>stabilityOverlay: "intermittent"</code> は<strong>基底トポロジーと直交する重ね合わせ</strong>です。 状態を別物に置き換えるのではなく、その状態の上に不安定性を乗せてください。</p>
-<h3>2-0. <code>fully-seated</code> は「肩が当たった」という意味ではありません</h3>
-<p>TRS×TRRS profile では <code>fully-seated</code> が <strong>13.52 mm から</strong>始まりますが、 機械的な完全挿入は <strong>14 mm</strong> です。</p>
+<h3>2-0. <code>all-expected-functions-match</code> は「肩が当たった」という意味ではありません</h3>
+<p>TRS×TRRS profile では <code>all-expected-functions-match</code> が <strong>13.52 mm から</strong>始まりますが、 機械的な完全挿入は <strong>14 mm</strong> です。</p>
 <p>このクラスが意味するのは <code>reasonCode</code> のとおり <strong><code>ALL_EXPECTED_FUNCTIONS_MATCH</code></strong>（機器が期待する全機能が正しい導体に届いた）だけで、 <strong>プラグの肩がジャックへ当たったことではありません。</strong></p>
 <p>UI で「物理的に完全に挿さっている」と表示しないでください。 機械的な完了を見たい場合は <code>nominalEndMm === fullInsertionDepthMm</code> で判定します。</p>
-<div class="note"><p>Schema v1 の間は名前を変えません。v2 で <code>electrically-normal</code> などへの</p><p>改名を検討します（統合フォローアップ §6-1）。</p></div>
+<div class="note"><p><strong>v2 で改名しました。</strong>旧名 <code>fully-seated</code> は「プラグ肩が当たった」と読めたためです。</p><p>差は <code>mechanicalInsertion.gapMm</code>（TRS×TRRS で 0.48 mm）として profile にも入っています。</p></div>
 <h3>2-1. <code>ground-open-differential</code> を自動で L−R 係数にしないでください</h3>
 <p>この状態は「帰線が浮き、L と R が別々の導体に届いている」という<strong>電気的な接続の記述</strong>です。 そこから何 dB 落ちて、どういう周波数特性になるかは、<strong>このモデルは一切計算していません</strong>。</p>
 <ul><li>ドライバのインピーダンス、アンプの出力段、保護回路のどれもモデル化していません</li><li><code>audibleHypothesis</code>（「音量が落ち、左右の差分成分が残る」）は <strong>回路構成からの定性的な推測</strong>であって、実測ではありません</li><li><code>confidence: "low"</code> が付いています</li></ul>
@@ -132,7 +132,7 @@
 <p>安全な DSP 表現（減衰・mono 化・mute など）へ写像し、 <strong>クラックルやポップのような過渡音を生成しないでください。</strong></p>
 <hr>
 <h2 id="s3">3. 本命の区間</h2>
-<p><code>half_plug_topology_profile.v1.trs_jack_trrs.json</code> の <code>IV028</code>:</p>
+<p><code>half_plug_topology_profile.v2.trs_jack_trrs.json</code> の <code>IV028</code>:</p>
 <pre><code>nominalStartMm  13.30      normalizedStart  0.9500
 nominalEndMm    13.52      normalizedEnd    0.9657
 topologyClass   ground-open-differential
@@ -193,6 +193,14 @@ physicalClaimStatus      未実測なら "unverified"</code></pre>
 <p>現在は <code>spreadStatus</code> で 3 つを区別します。</p>
 <div class="tw"><table><thead><tr><th><code>spreadStatus</code></th><th><code>spreadMm</code></th><th>意味</th></tr></thead><tbody><tr><td><code>MODEL_SWEEP_EVENT_SPECIFIC</code></td><td>値あり</td><td><strong>その事象そのものを走査で求めた幅</strong></td></tr><tr><td><code>MODEL_SWEEP_NOT_EVENT_SPECIFIC</code></td><td><code>null</code></td><td><code>kind</code> 単位の集計しか無く、この事象へは配れない</td></tr><tr><td><code>NOT_ANALYZED</code></td><td><code>null</code></td><td>解析していない</td></tr></tbody></table></div>
 <p><strong>どれも「動かない」の意味ではありません。</strong> <code>kind</code> 単位の集計は捨てず、<code>sensitivitySummary.aggregateSpreadByKind</code> に残してあります。 そちらを個々の事象へ当てはめないでください。</p>
+<h3>⚠ v0.2.0 は <code>schemaVersion: 2</code> です（<strong>破壊的変更</strong>）</h3>
+<p><strong>読み込む前に版で分岐してください。</strong><code>schemaVersion === 1</code> を期待する実装は、 2 を受け取ったら停止してください。語彙の対応表は profile の <code>contractMigration</code> にあります。</p>
+<div class="tw"><table><thead><tr><th></th><th>旧</th><th>新</th></tr></thead><tbody><tr><td><code>schemaVersion</code></td><td>1</td><td><strong>2</strong></td></tr><tr><td><code>topologyClass</code></td><td><code>fully-seated</code></td><td><strong><code>all-expected-functions-match</code></strong></td></tr><tr><td>ファイル名</td><td><code>half_plug_topology_profile.v2.*</code></td><td>**<code>half_plug_topology_profile.v2.*</code>**</td></tr></tbody></table></div>
+<p>ファイル名も変えたのは、<strong>release lock が <code>filename</code> で引く</strong>ためです。 名前が同じまま契約だけ変わると、lock が同じ名前で非互換な内容を指します。</p>
+<p><strong><code>fully-seated</code> を改めた理由</strong>は、「プラグ肩が当たった」と読めるからです。 実体は <code>reasonCode</code> のとおり <code>ALL_EXPECTED_FUNCTIONS_MATCH</code> でしかありません。 名前だけでは同じ誤読が起きるので、差を数字でも出します。</p>
+<pre><code>TRS×TRRS  電気的に全機能が揃う  13.52 mm   ← all-expected-functions-match の開始
+          機械的な完全挿入      14.00 mm   ← mechanicalInsertion.completeAtMm
+          差 (gapMm)             0.48 mm</code></pre>
 <h3>⚠ <code>spreadStatus</code> の語を変えました（v0.1.1・<strong>破壊的変更</strong>）</h3>
 <div class="tw"><table><thead><tr><th>旧（v0.1.0）</th><th>新（v0.1.1）</th></tr></thead><tbody><tr><td><code>MEASURED</code></td><td><strong><code>MODEL_SWEEP_EVENT_SPECIFIC</code></strong></td></tr><tr><td><code>NOT_EVENT_SPECIFIC</code></td><td><strong><code>MODEL_SWEEP_NOT_EVENT_SPECIFIC</code></strong></td></tr><tr><td><code>NOT_MEASURED</code></td><td><strong><code>NOT_ANALYZED</code></strong></td></tr></tbody></table></div>
 <p><strong><code>MEASURED</code> は実物の測定と誤認されます。</strong>実際にはモデルのパラメータを振った結果です。 <code>sensitivitySummary.basis</code> にも <code>MODEL_PARAMETER_SWEEP</code> と書いてあります。</p>

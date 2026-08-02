@@ -507,8 +507,88 @@ const dupIds = [...new Map<string, number>(
 if (dupIds.length)
   throw new Error(`eventId が重複している: ${dupIds.map(([id, n]) => `${id} ×${n}`).join(', ')}`)
 
+/** 電気的に全機能が揃う最初の深さ。無ければ null（その variant では揃わない） */
+const allFunctionsFromMm: number | null =
+  (intervals as { electricalTopology?: { topologyClass?: string }; nominalStartMm: number }[])
+    .find((x) => x.electricalTopology?.topologyClass === 'all-expected-functions-match')?.nominalStartMm ?? null
+
+/**
+ * **v1 → v2 の移行表（非阻害オーダー P1-5）。**
+ *
+ * ## なぜ schemaVersion を上げるのか
+ *
+ * v0.1.0 → v0.1.1 で `spreadStatus` の enum を非互換に変えたのに `schemaVersion` は 1 のままだった。
+ * その結果、下流の adapter は `spreadStatus !== 'MEASURED'` で全 event を弾き、
+ * **エラーも警告も出さずに汚染検出が丸ごと素通り**した。沈黙は最悪の壊れ方である。
+ *
+ * ## 選び方は実測で決めた
+ *
+ * 下流 (`half-plug-emulator` の `release-verifier.mjs`) が実際に何を見るかを確かめた。
+ *
+ *   - `schemaVersion` を 2 にする  → `Unsupported profile schemaVersion: 2` で**停止する**
+ *   - `contractRevision` を足すだけ → **どこも読まないので PASS する**
+ *
+ * 沈黙を避けるという目的に対して、答えは 1 つしかなかった。
+ */
+const CONTRACT_MIGRATION = {
+  fromSchemaVersion: 1,
+  toSchemaVersion: 2,
+  breaking: true,
+  schemaId: 'half-plug-topology-profile.v2',
+  previousSchemaId: 'half-plug-topology-profile.v1',
+  /** 旧語彙を読む消費側が沈黙ではなくエラーになるための対応表 */
+  renamedEnumValues: [
+    {
+      field: 'intervals[].electricalTopology.topologyClass',
+      from: 'fully-seated',
+      to: 'all-expected-functions-match',
+      introducedIn: 'schemaVersion 2',
+      reason: '「プラグ肩が当たった」と読めたが、実体は reasonCode のとおり ALL_EXPECTED_FUNCTIONS_MATCH でしかない',
+    },
+    {
+      field: 'events[].spreadStatus',
+      from: 'MEASURED',
+      to: 'MODEL_SWEEP_EVENT_SPECIFIC',
+      introducedIn: 'v0.1.1 (schemaVersion 1 のまま変えてしまった)',
+      reason: '実物の測定と誤認される。実際はモデルのパラメータを振った結果',
+    },
+    {
+      field: 'events[].spreadStatus',
+      from: 'NOT_EVENT_SPECIFIC',
+      to: 'MODEL_SWEEP_NOT_EVENT_SPECIFIC',
+      introducedIn: 'v0.1.1 (schemaVersion 1 のまま変えてしまった)',
+      reason: '同上',
+    },
+    {
+      field: 'events[].spreadStatus',
+      from: 'NOT_MEASURED',
+      to: 'NOT_ANALYZED',
+      introducedIn: 'v0.1.1 (schemaVersion 1 のまま変えてしまった)',
+      reason: '同上',
+    },
+  ],
+  addedFields: [
+    { field: 'schemaId', introducedIn: 'schemaVersion 2' },
+    { field: 'contractMigration', introducedIn: 'schemaVersion 2' },
+    { field: 'mechanicalInsertion', introducedIn: 'schemaVersion 2' },
+    { field: 'coordinateSystem.normalizedScope', introducedIn: 'schemaVersion 2' },
+    { field: 'coordinateSystem.crossProfileComparable', introducedIn: 'schemaVersion 2' },
+    { field: 'sensitivitySummary.eventSpreadAvailable', introducedIn: 'v0.1.2 (追加のみ)' },
+    { field: 'sensitivitySummary.globalSummaryAvailable', introducedIn: 'v0.1.2 (追加のみ)' },
+    { field: 'sensitivitySummary.basis', introducedIn: 'v0.1.2 (追加のみ)' },
+  ],
+  consumerAction:
+    '**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。'
+    + '旧語彙のまま読むと、値で絞り込む箇所が「そのデータが 1 件も無い」と区別できず、沈黙して壊れる。',
+  versionSelectionEvidence:
+    '下流 release-verifier.mjs は schemaVersion を見て拒否するが contractRevision はどこも読まない。'
+    + '2026-08-03 に両方を実際に import させて確かめた (A: 停止 / B: PASS)。',
+} as const
+
 const profile = {
-  schemaVersion: 1 as const,
+  schemaVersion: 2 as const,
+  schemaId: 'half-plug-topology-profile.v2',
+  contractMigration: CONTRACT_MIGRATION,
   /**
    * **revision ではなく inputDigest で作る (2026-08-03 変更)。**
    *
@@ -541,6 +621,34 @@ const profile = {
     depthOrigin: 'ジャック前面基準面 (ローレットナット前面)。プラグ先端がここにあるとき depth = 0',
     depthDirection: '正が挿入方向',
     normalized: 'depthMm / fullInsertionDepthMm。0 = 先端が前面、1 = 完全挿入',
+    /**
+     * **normalized の射程を機械可読にする（非阻害オーダー P2-6.2）。**
+     *
+     * 「機種横断では normalized を使う」と読める書き方をしていた時期があり、
+     * v0.1.1 で文章としては弱めたが、**機械が読める形では何も言っていなかった。**
+     * 同じ 0.95 が別 profile で同じ電気状態を意味する保証はどこにも無い。
+     */
+    normalizedScope: 'PROFILE_LOCAL' as const,
+    crossProfileComparable: false,
+    normalizedNote:
+      '**profile 内のモデル相対座標である。**分母 (fullInsertionDepthMm) は profile ごとに違い、'
+      + '接点配置も違うので、**同じ normalized 値が別 profile で同じ電気状態を意味することは保証しない。**'
+      + '機種をまたいで比べるときは normalized ではなく、電気トポロジーの遷移そのもので対応づけること。',
+  },
+  /**
+   * **電気的に全機能が揃う深さと、機械的な完全挿入は違う（非阻害オーダー P2-6.1）。**
+   *
+   * 旧クラス名 `fully-seated` は「プラグ肩が当たった」と読めたが、実体は
+   * `ALL_EXPECTED_FUNCTIONS_MATCH` でしかない。v2 でクラス名を改めたうえで、
+   * **その差が何 mm あるのかを数字で出す。**名前を直しただけでは同じ誤読が起きる。
+   */
+  mechanicalInsertion: {
+    completeAtMm: m.fullDepthMm,
+    firstAllFunctionsMatchAtMm: allFunctionsFromMm,
+    gapMm: allFunctionsFromMm === null ? null : +(m.fullDepthMm - allFunctionsFromMm).toFixed(4),
+    note:
+      '**クラス名を「奥まで刺さった」と読まないこと。**電気的にすべての機能が揃う深さは、'
+      + '機械的な完全挿入より手前にある。gapMm がその差である。',
   },
   dataLicense: {
     code: 'MIT',
@@ -586,7 +694,7 @@ const profile = {
 // artifacts/ へ 2 回書いて比べると、比較の途中で作業ツリーが汚れてしまう
 const OUT_DIR = argOf('out', resolve(ROOT, 'artifacts'))
 mkdirSync(OUT_DIR, { recursive: true })
-const OUT_PATH = resolve(OUT_DIR, `half_plug_topology_profile.v1.${slug}.json`)
+const OUT_PATH = resolve(OUT_DIR, `half_plug_topology_profile.v2.${slug}.json`)
 writeFileSync(OUT_PATH, JSON.stringify(profile, null, 1) + '\n')
 
 const codes = new Set(intervals.map((i) => (i.electricalTopology as { topologyClass: string }).topologyClass))
