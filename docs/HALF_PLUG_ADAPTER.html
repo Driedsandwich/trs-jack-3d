@@ -140,6 +140,13 @@ safetyFlags     shortsSignalToReturn: false / shortsSignalToSignal: false</code>
 <p><strong>4極ジャックの接点位置は一次資料がなく、4 件とも仮定です</strong> （<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-2）。したがって:</p>
 <ul><li><strong>現象が起きること</strong>は仮定の振り方に対して頑健です （完全挿入が壊れない 432 構成のうち 162 件 = 38 % で成立）</li><li><strong>深さ 12.90〜13.12 mm という数字</strong>は、仮定した接点位置に完全に依存します</li></ul>
 <p><code>normalized</code>（0.9214〜0.9371）で扱うほうが、機種差に対しては幾分ましですが、 <strong>それも同じ仮定の上に乗っています。</strong></p>
+<h3>⚠ 2026-08-02 追記 — 実在図面 1 件は、この区間を支持していません</h3>
+<p>データシートを 170 型番探して、<strong>接点位置が寸法記入された断面図を 1 件</strong>見つけました （pro-SIGNAL PS000001）。その値を本モデルへ入れると、<strong>この区間は消えます。</strong></p>
+<div class="tw"><table><thead><tr><th></th><th class="num">Tip 接点の軸位置</th><th><code>IV019</code> の区間</th></tr></thead><tbody><tr><td>本モデルの仮定</td><td class="num">11.4 mm</td><td>12.90〜13.12 mm</td></tr><tr><td>PS000001 の図面値</td><td class="num"><strong>12.75 mm</strong></td><td><strong>出ない</strong></td></tr></tbody></table></div>
+<p>成否を決めるのは <strong>Tip 接点が 12.6 mm より浅いかどうか</strong>の 1 点です。</p>
+<p><strong>受け取り側への影響:</strong></p>
+<ul><li><code>IV019</code> を「実機で必ず起きる状態」として UI に出さないでください。 <code>evidenceGrade: ASSUMPTION</code> と <code>physicalClaimStatus: "unverified"</code> は、 この意味でも落とせません（§4）。</li><li>ただし <strong>DSP エミュレーションとしての価値は変わりません。</strong> 再現したいのは音であって、特定の実機の深さではありません。 「この電気的状態がどう聞こえるか」は独立に有用です。</li><li>変わったのは「実機のこの深さで起きる」と言えるかどうかだけです。</li></ul>
+<p>詳細 → <a href="REAL_JACK_COMPARISON.md">REAL_JACK_COMPARISON.md</a></p>
 <hr>
 <h2 id="s4">4. プリセットへ持たせるメタデータ</h2>
 <p>統合オーダー §4 のとおり、Half-Plug 側のプリセットには次を持たせてください。</p>

@@ -162,6 +162,30 @@
       "reliability": "secondary",
       "fetchStatus": "partial",
       "usedFor": "メーカー公称の挿抜力・接触抵抗が『どういう条件で測った値か』の理解。摩擦係数の数値はここからは採っていない (ASSUMPTION)。"
+    },
+    {
+      "id": "ds-ps000001",
+      "title": "3.5mm 4 Pole Audio Jack, SMT, IPX5/7 (PS000001)",
+      "publisher": "pro-SIGNAL (Premier Farnell 自社ブランド。製造者名は図面に記載なし)",
+      "partNumber": "PS000001",
+      "docDate": "2017-03-31 V1.0",
+      "url": "https://www.farnell.com/datasheets/2261829.pdf",
+      "accessed": "2026-08-02",
+      "reliability": "distributor",
+      "fetchStatus": "full-text-read",
+      "usedFor": "モデルには使っていない。断面図 SEC:A-A の接点軸位置 1.28/4.4/7.55/12.75 を、本モデルの仮定値との比較対象として参照した (docs/REAL_JACK_COMPARISON.md)。"
+    },
+    {
+      "id": "ds-1503-28",
+      "title": "Data Sheet 1503 28 — Jack chassis socket according to JEITA RC-5325A, 3.5 mm, 4 poles/stereo, with two break contacts, SMT",
+      "publisher": "Lumberg (Lumberg Holding GmbH & Co. KG)",
+      "partNumber": "1503 28",
+      "docDate": "07/2025",
+      "url": "https://downloads.lumberg.com/datenblaetter/en/1503_28.pdf",
+      "accessed": "2026-08-02",
+      "reliability": "manufacturer",
+      "fetchStatus": "full-text-read",
+      "usedFor": "モデルには使っていない。Lumberg が 4極の対応組み合わせ (1503 28 / 1532 02) を持つことの確認。4極を組み直す際の候補として記録。"
     }
   ]
 }

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>実在部品の図面と本モデルの仮定の突き合わせ</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">0. 結論を先に</a></li>
+    <li><a href="#s1">1. 見つけた資料</a></li>
+    <li><a href="#s2">2. その図面が信用できるかを、先に確かめました</a></li>
+    <li><a href="#s3">3. 何が起きて、なぜ消えるのか</a></li>
+    <li><a href="#s4">4. 差し替えも variant 追加もしません</a></li>
+    <li><a href="#s5">5. 探した範囲（見つからなかった方向も残します）</a></li>
+  </ol>
+</nav>
+<h1>実在部品の図面と、本モデルの仮定を突き合わせた結果</h1>
+<div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
+<p>作成 2026-08-02 ／ 成果物 <code>artifacts/real_jack_comparison.json</code>（<code>npm run compare:real-jack</code>）</p>
+<hr>
+<h2 id="s0">0. 結論を先に</h2>
+<p><strong>このプロジェクトの看板だった結論は、見つかった唯一の実在図面には支持されませんでした。</strong></p>
+<p>4極ジャックの接点位置には一次資料が 1 つもなく、4 件とも仮定でした（<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-2）。 これを資料で埋められないか <strong>170 型番</strong>を実際に開いて探し、<strong>接点位置そのものが寸法記入された図面を 1 件</strong>見つけました。 その値を本モデルへ入れると、</p>
+<div class="tw"><table><thead><tr><th></th><th>深さ 12.9〜13.1 mm 付近</th></tr></thead><tbody><tr><td>仮定値（1.25 / 4.35 / 7.35 / <strong>11.4</strong>）</td><td>左右差分が残る区間が出る（幅 0.23 mm）</td></tr><tr><td>図面値（1.28 / 4.4 / 7.55 / <strong>12.75</strong>）</td><td><strong>区間が出ない</strong>（全ストロークで 1 点も無い）</td></tr></tbody></table></div>
+<p>3 件はほぼ一致しました（差 0.03 / 0.05 / 0.20 mm）。<strong>外れたのは Tip 接点 1 件だけで、その 1 件が結論を決めていました。</strong></p>
+<hr>
+<h2 id="s1">1. 見つけた資料</h2>
+<div class="tw"><table><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody><tr><td>部品番号</td><td><strong>PS000001</strong></td></tr><tr><td>ブランド</td><td>pro-SIGNAL（Premier Farnell の自社ブランド）</td></tr><tr><td>製造者</td><td><strong>図面に記載なし</strong>（商社の自社ブランド資料）</td></tr><tr><td>文書名</td><td>3.5mm 4 Pole Audio Jack, SMT, IPX5/7</td></tr><tr><td>発行</td><td>2017-03-31 V1.0</td></tr><tr><td>URL</td><td>https://www.farnell.com/datasheets/2261829.pdf</td></tr><tr><td>取得日</td><td>2026-08-02</td></tr></tbody></table></div>
+<p>図面の <code>SEC:A-A</code> が <strong>4極プラグを挿した状態の断面図</strong>（"Image of plug match with contact point"）で、 図中の <code>* Reference plane</code> から各接点ばねへ引出線を引き、 <strong>1.28 / 4.4 / 7.55 / 12.75 mm</strong> と 4 接点すべてが寸法記入されています。</p>
+<p><strong>探した 170 型番のうち、接点位置そのものが寸法記入されていたのはこの 1 件だけです。</strong> 残りはすべて「はんだ端子の位置」まで（→ §4）。</p>
+<div class="note"><p><strong>信頼度は「メーカー公式図面」ではありません。</strong><a href="../SOURCES.md">SOURCES.md</a> の格付けでは</p><p>4 番目の「部品商社資料」にあたります。製造者名が書かれていないため、</p><p>一次資料としての強さは Lumberg の図面に劣ります。</p></div>
+<hr>
+<h2 id="s2">2. その図面が信用できるかを、先に確かめました</h2>
+<p>寸法が書いてあっても、図が縮尺どおりでなければ読み違えます。 そこで<strong>図面の中に描かれているプラグ</strong>を使って照合しました。</p>
+<p>断面図を 800 dpi で描画し、Reference plane を 0・<code>12.75</code> の寸法線終端を基準に px/mm を求めて、 <strong>プラグの絶縁帯 3 本の中心位置</strong>を読み取りました。<strong>自動計測ではなく目視の読み取りで、精度はおよそ 0.1 mm です。</strong></p>
+<div class="tw"><table><thead><tr><th></th><th class="num">絶縁帯 1</th><th class="num">絶縁帯 2</th><th class="num">絶縁帯 3</th></tr></thead><tbody><tr><td>図面から読み取り</td><td class="num">2.76</td><td class="num">5.79</td><td class="num">8.80</td></tr><tr><td>本モデルが計算する値</td><td class="num">2.85</td><td class="num">5.85</td><td class="num">8.85</td></tr></tbody></table></div>
+<p><strong>最大 0.09 mm の差でした。これは読み取り精度と同程度なので、「ずれが無い」と読むべきです。</strong> 逆に言うと、<strong>この照合で言えるのは 0.1 mm の粒度まで</strong>です。</p>
+<p>本モデルのプラグ導体境界は、独立した 2 社の図面から得た FACT です（<a href="../SOURCES.md">SOURCES.md</a> §9）。 そこと合うということは、次の 2 つが同時に言えます。</p>
+<ol><li>この断面図は<strong>縮尺どおりに描かれている</strong></li><li>図中のプラグは<strong>完全挿入の状態</strong>で描かれており、<code>Reference plane</code> は <strong>完全挿入時にプラグ肩が来る面</strong> ＝ 本モデルの深さ基準と同じ</li></ol>
+<p>つまり <strong>座標系が一致している</strong>ので、図面の 4 値をそのまま本モデルへ入れて比較できます。</p>
+<hr>
+<h2 id="s3">3. 何が起きて、なぜ消えるのか</h2>
+<h3>3-1. 消え方</h3>
+<div class="tw"><table><thead><tr><th class="num">深さ</th><th>仮定値のとき</th><th>図面値のとき</th></tr></thead><tbody><tr><td class="num">12.90</td><td>L=Tip / R=Ring / GND=浮き → <strong>左右差分</strong></td><td>L=<strong>届かず</strong> / R=Ring / GND=Ring</td></tr><tr><td class="num">13.00</td><td>L=Tip / R=Ring / GND=浮き → <strong>左右差分</strong></td><td>L=<strong>届かず</strong> / R=Ring / GND=浮き → 無音</td></tr><tr><td class="num">13.20</td><td>L=Tip / R=Ring / GND=Sleeve → 正常</td><td>L=<strong>届かず</strong> / R=Ring / GND=Sleeve → 片側のみ</td></tr><tr><td class="num">13.40</td><td>正常</td><td>正常</td></tr></tbody></table></div>
+<p><strong>帰線が浮く区間そのものは、図面値でも残っています。</strong> 消えるのは「そのとき L も生きている」という条件のほうです。 Tip 接点が 1.35 mm 奥へ動いたため、帰線が浮く深さに達しても <strong>Tip 接点はまだプラグ先端の円錐部にしか届いておらず、L が生きません。</strong> 判定は左右差分ではなく無音になります。</p>
+<h3>3-2. しきい値</h3>
+<p>Tip 接点の軸位置だけを 0.05 mm 刻みで振ると、境目がはっきり出ます。</p>
+<div class="tw"><table><thead><tr><th class="num">Tip 接点の軸位置</th><th>左右差分の区間</th></tr></thead><tbody><tr><td class="num">〜 <strong>12.60 mm</strong></td><td>出る</td></tr><tr><td class="num"><strong>12.65 mm</strong> 〜</td><td><strong>出ない</strong></td></tr></tbody></table></div>
+<p>図面値 12.75 は、<strong>しきい値の 0.15 mm 向こう側</strong>です。</p>
+<p><strong>看板の結論は「Tip 接点が 12.6 mm より浅いこと」を必要条件にしていました。</strong> これは今回まで書かれていなかった条件です。</p>
+<h3>3-3. 他の軸では戻りません</h3>
+<p>図面の 4 値を固定したまま、パッド幅（0.3〜0.9 mm）と接触ドームの追従量（0.02〜0.15 mm）を 総当たり 20 通り振りましたが、<strong>1 通りも区間は戻りませんでした</strong>。 Tip 接点の位置が単独で効いています。</p>
+<h3>3-4. 図面値のほうが「もっともらしい」</h3>
+<p>12.75 mm は、プラグ側で見ると s = 14 − 12.75 = <strong>1.25 mm</strong> の位置です。 本モデルの図面実測では、プラグ先端の円錐は <strong>s = 1.296 mm</strong> で終わって外径が最大になります。</p>
+<p><strong>実在部品は、Tip 導体に触れられる最も手前で当てています。</strong> 一方、本モデルの仮定 11.4 mm（s = 2.6）は Tip 導体の真ん中でした。 図面値は恣意的な数字ではなく、設計上の意味がある位置です。</p>
+<hr>
+<h2 id="s4">4. 差し替えも variant 追加もしません</h2>
+<p><strong>採用: 比較対象として持つ（compare-only）</strong></p>
+<div class="tw"><table><thead><tr><th>選択肢</th><th>採らなかった理由</th></tr></thead><tbody><tr><td>仮定値を図面値で<strong>差し替える</strong></td><td>図面にあるのは接点の軸位置 4 件だけです。パッド幅・ばね定数・端子配置・ブレーク接点は図面にありません。4 件だけ入れ替えると、<strong>残りが仮定のままなのに「実在部品の値」を名乗る</strong>ことになります</td></tr><tr><td><strong>新しい variant</strong> として足す</td><td>同じ理由です。足りない諸元を今の仮定で埋めることになり、<strong>部品の形をした別物</strong>ができます。公開済みの artifact と Half-Plug profile が参照している構成も静かに変わります</td></tr></tbody></table></div>
+<p>いま確実に言えるのは値そのものではなく、<strong>しきい値と反例</strong>です。</p>
+<ul><li>看板の結論には「Tip 接点が 12.6 mm より浅い」という<strong>必要条件</strong>がある</li><li>見つかった唯一の実在図面は、<strong>その条件を満たさない</strong></li></ul>
+<p>この 2 つを artifact（<code>artifacts/real_jack_comparison.json</code>）とテストで固定しました。 将来この結論を復活させる変更が入っても、テストが落ちます。</p>
+<div class="note"><p><strong>この 1 件で「4極ジャック一般」は語れません。</strong>PS000001 は防水 SMT 品 1 部品です。</p><p>別の部品では Tip 接点がもっと手前にあるかもしれません。</p><p>言えるのは「少なくとも 1 つの実在設計では成立しない」ということです。</p></div>
+<h3>次にやるなら — Lumberg 1503 28</h3>
+<p>探索中に、<strong>Lumberg 自身が 3.5mm 4極ジャックを出している</strong>ことが分かりました。</p>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>部品</td><td><strong>1503 28</strong>（JEITA RC-5325A 準拠・4極・ブレーク接点 2 個・SMT）</td></tr><tr><td>対応プラグ</td><td><strong>1532 02</strong>（データシートの Counterparts 欄）</td></tr><tr><td>URL</td><td>https://downloads.lumberg.com/datenblaetter/en/1503_28.pdf</td></tr></tbody></table></div>
+<p>本プロジェクトの 3極は 1532 10 / 1503 09 という Lumberg の対で組んであります。 <strong>4極も同じ品質・同じ図面様式・同じ読み取り手順で組み直せます。</strong> ただし 1503 28 の図面にも<strong>断面図はなく</strong>、基板レイアウトの端子位置 （2.75 / 5.50 / 6.87 / 9.30 / 10.50 / 11.50 mm）までです。接点位置は依然として仮定になります。</p>
+<hr>
+<h2 id="s5">5. 探した範囲（見つからなかった方向も残します）</h2>
+<p>「探したが無かった」と「探していない」は別の情報です。 2026-08-02 に <strong>13 方面・170 型番</strong>を実際に開いて確認しました。</p>
+<div class="tw"><table><thead><tr><th>方面</th><th class="num">確認</th><th class="num">当たり</th><th class="num">うち<strong>接点位置</strong></th></tr></thead><tbody><tr><td>Same Sky Devices（旧 CUI）</td><td class="num">11</td><td class="num">9</td><td class="num">0</td></tr><tr><td>Cliff Electronics</td><td class="num">12</td><td class="num">8</td><td class="num">0</td></tr><tr><td>Kycon</td><td class="num">20</td><td class="num">9</td><td class="num">0</td></tr><tr><td>Switchcraft</td><td class="num">10</td><td class="num">6</td><td class="num">0</td></tr><tr><td>Würth Elektronik</td><td class="num">7</td><td class="num">0</td><td class="num">0</td></tr><tr><td>日本メーカー（Hosiden / SMK / Alps / JAE / Hirose）</td><td class="num">14</td><td class="num">4</td><td class="num">0</td></tr><tr><td>Amphenol / TE / Molex / CONEC / <strong>Lumberg</strong></td><td class="num">17</td><td class="num">8</td><td class="num">0</td></tr><tr><td>汎用中国製（PJ-320 系ほか）</td><td class="num">12</td><td class="num">10</td><td class="num">0</td></tr><tr><td><strong>流通（Digi-Key / Mouser / Farnell ほか）</strong></td><td class="num">13</td><td class="num">7</td><td class="num"><strong>1</strong></td></tr><tr><td>3D CAD（STEP / IGES）</td><td class="num">19</td><td class="num">3</td><td class="num">0</td></tr><tr><td>規格（JEITA RC-5325A / JIS C 6560）</td><td class="num">8</td><td class="num">1</td><td class="num">0</td></tr><tr><td>特許</td><td class="num">14</td><td class="num">2</td><td class="num">0</td></tr><tr><td>第三者の実測・分解記事</td><td class="num">13</td><td class="num">6</td><td class="num">0</td></tr><tr><td><strong>合計</strong></td><td class="num"><strong>170</strong></td><td class="num"><strong>73</strong></td><td class="num"><strong>1</strong></td></tr></tbody></table></div>
+<div class="note"><p><strong>「当たり」の中身は一様ではありません。</strong> 大半は基板レイアウト図の<strong>端子位置</strong>（クラス B）ですが、</p><p>3D CAD の 3 件は STEP の配布があるという意味、規格の 1 件と特許の 2 件は別種の手がかりです。</p><p><strong>接点位置そのものが寸法記入されていたのは 1 件だけ</strong>という点だけが、方面をまたいで一様です。</p></div>
+<h3>分かったこと</h3>
+<ul><li><strong>端子の位置なら、どこでも手に入ります。</strong> メーカー・流通・汎用品を問わず、 基板レイアウト図に挿入軸方向の端子位置が入っていました（当たり 73 件の大半）。</li><li><strong>しかし端子の位置から接点の位置は出せません。</strong>3極の Lumberg 1503 09 では 「端子＝接点ばねの根元、ばねは前方へ伸びる」と読めましたが、 <strong>実在の 4極品ではこれが成り立ちません。</strong>Cliff FC68125 を自分で読むと、 本体前面基準で <strong>Tip 端子 = 3.4 / Ring1・Ring2 端子 = 11.5 / Sleeve 端子 = 12.4 mm</strong> です。 接点は必ず「開口に近い順に Sleeve → Ring2 → Ring1 → Tip」でなければならないので、 <strong>端子の並びは接点の並びと逆</strong>になっています。同じ逆転は Same Sky SJ-43514 / SJ3-35044A でも見ました。</li><li><strong>規格からは取れません。</strong> JEITA RC-5325A（4極）は有償・非公開で、無償サンプルは付図に届きません。 JIS C 6560 は公開ミラーで読めましたが、2極・3極のみで、内部接点の寸法記入はありません。</li><li><strong>Würth Elektronik はオーディオジャックを作っていません。</strong> 探索前提が誤りでした（同社カタログで確認）。</li><li>5極ジャックの特許 <strong>US9774152B2</strong> の FIG.5 が、ジャック外端面基準の接点位置を寸法記入しています。 ただし<strong>明細書本文で確認できたのは 10.0 mm（Ring 3 spring）1 件だけ</strong>で、残りは図中にしかなく、 Google Patents が 503 / patentimages が 403 で図を取得できませんでした。 しかも 5極の<strong>推奨値</strong>であって出荷部品の実測ではありません。二次的な傍証として扱います。</li></ul>
+<h3>探索の限界</h3>
+<ul><li><strong>13 方面は網羅ではありません。</strong> 台湾・韓国メーカー、車載向け、日本メーカーの個別品番カタログは 十分に当たれていません。</li><li>図面がラスタ画像でテキスト抽出できないものは、レンダリングして目視で読みました。 <strong>寸法の数字そのものは図に書かれているので読み違えにくい</strong>一方、 §2 の照合のような「図から位置を測る」作業は目視なので 0.1 mm 程度の誤差を含みます。本命の PS000001 と Cliff FC68125 / FC68129 については、 <strong>上記のとおり自分で PDF を取得し、図を描画して確認しています。</strong></li></ul>
+<div class="note"><p><strong>付記（2026-08-02）:</strong> <a href="../SOURCES.md">SOURCES.md</a> §9 で挿入口径の根拠として引いていた</p><p><strong>Cliff FC68128 は「3.5mm PHONE JACK - 4 POLE (17mm PLUG)」</strong> で、嵌合長 17 mm の別規格品でした。</p><p>挿入口径 Ø3.6 の根拠としては有効ですが、<strong>14 mm プラグの部品として扱ってはいけません。</strong></p></div>
+</div>
+</body>
+</html>

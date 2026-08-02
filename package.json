@@ -23,6 +23,7 @@
     "fit:contacts": "vite-node scripts/fitContacts.ts",
     "export:half-plug": "vite-node scripts/exportHalfPlugProfile.ts",
     "search:topology": "vite-node scripts/searchTopology.ts",
+    "compare:real-jack": "vite-node scripts/compareRealJack.ts",
     "export:half-plug:all": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" && npm run export:half-plug -- --variant \"TRS|JACK-TRRS\""
   },
   "dependencies": {

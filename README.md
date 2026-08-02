@@ -85,7 +85,7 @@ npm run dev
 
 | コマンド | 内容 |
 |---|---|
-| `npm run test` | 単体テスト (Vitest) 173 件 |
+| `npm run test` | 単体テスト (Vitest) 183 件 |
 | `npm run typecheck` | TypeScript 型検査 (`src` / `scripts` / `test`) |
 | `npm run build` | 本番ビルド |
 | `npm run artifacts` | `artifacts/` へ走査結果 JSON を生成 |
@@ -94,6 +94,7 @@ npm run dev
 | `npm run export:half-plug -- --variant "TRS\|JACK-TRRS"` | 接点トポロジーを DSP 非依存の JSON として書き出す |
 | `npm run export:half-plug:all` | 3極×3極 と 3極×4極 の両方を書き出す |
 | `npm run search:topology -- --target DIFFERENCE_SIGNAL` | 目標トポロジーが成立する構成を探す（**約 10 分**） |
+| `npm run compare:real-jack` | 実在部品の図面値と本モデルの仮定値を突き合わせる（→ [docs/REAL_JACK_COMPARISON.md](docs/REAL_JACK_COMPARISON.md)） |
 | `npm run screenshots` | 実ブラウザ (Playwright) で UI を操作し、`docs/screenshots/` へ画像を保存 |
 | `npm run perf` | 実 GPU (headed Chrome) でフレームレートと描画コストを測定 |
 | `npm run touch` | iPhone/iPad 相当のビューポートにタッチ入力を注入して操作を検証 |
@@ -375,6 +376,31 @@ profile はこれを `absentTopologies` として**機械可読な「不在」�
 
 > **現象が起きること**は仮定の振り方に対してかなり頑健ですが、
 > **深さ 12.9〜13.1 mm という数字**は仮定した接点位置に完全に依存します。
+
+### ⚠ 2026-08-02 の訂正 — 実在図面 1 件は、この結論を支持していません
+
+上の「頑健」は、**仮定値の周りを格子で振った中での割合**です。
+実物がその格子のどこにいるかは、別の問題でした。
+
+4極ジャックのデータシートを **13 方面・170 型番**探して、
+**接点位置そのものが寸法記入された図面を 1 件**見つけました（pro-SIGNAL PS000001 の断面図）。
+その値を入れると、**上の区間は 1 つも出ません。**
+
+| | Tip 接点の軸位置 | 区間 |
+|---|---:|---|
+| 本モデルの仮定 | 11.4 mm | 12.9〜13.1 mm |
+| **PS000001 の図面値** | **12.75 mm** | **出ない** |
+
+4 値のうち 3 値はほぼ一致しました（差 0.03 / 0.05 / 0.20 mm）。
+**外れたのは Tip の 1 件だけで、その 1 件が結論を決めていました。**
+分かれ目は **Tip 接点が 12.6 mm より浅いこと**で、これは今回まで書いていなかった必要条件です。
+
+**言えるのは「少なくとも 1 つの実在設計では成立しない」までです。**
+PS000001 は防水 SMT 品 1 部品で、4極ジャック一般を代表しません。
+逆に、この 1 件で現象が否定されたわけでもありません。
+
+経緯・図面の照合方法・なぜ図面値へ差し替えないのかは
+[docs/REAL_JACK_COMPARISON.md](docs/REAL_JACK_COMPARISON.md)（`npm run compare:real-jack`）。
 > 実物で確かめる手順は [docs/VERIFICATION_PLAN.md](docs/VERIFICATION_PLAN.md) です。
 
 探索結果の構成はすべて `evidenceGrade: ASSUMPTION` です。
@@ -429,6 +455,7 @@ profile はこれを `absentTopologies` として**機械可読な「不在」�
 | `sensitivity.json` | 仮定パラメータの感度解析の生データ（→ [docs/SENSITIVITY.md](docs/SENSITIVITY.md)） |
 | `half_plug_topology_profile.v1.*.json` | 接点トポロジーの中立表現（variant ごと）。**音響係数ではありません** |
 | `topology_search_difference_signal.json` | 左右差分が残る構成の探索結果（`npm run search:topology`・約 10 分） |
+| `real_jack_comparison.json` | 実在部品の図面値との突き合わせ（`npm run compare:real-jack`）。**看板の結論が実在図面 1 件と食い違うことを記録しています** |
 
 `sensitivity.json` だけは `npm run artifacts` では作られません。**`npm run sensitivity`
 （単独・実行に 15 分ほど）**で生成します。二分法を何万回も回すため他の成果物より桁違いに重く、

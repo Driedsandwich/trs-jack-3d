@@ -1,0 +1,603 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-08-02",
+ "variantId": "TRS|JACK-TRRS",
+ "stepMm": 0.01,
+ "question": "4極ジャックの接点位置に一次資料が無いという未確認事項 (UNKNOWNS §5-2) を、実在部品の図面で埋められるか",
+ "referencePart": {
+  "partNumber": "PS000001",
+  "brand": "pro-SIGNAL (Premier Farnell 自社ブランド)",
+  "manufacturer": null,
+  "manufacturerNote": "実際の製造者は図面に記載が無い。商社の自社ブランド資料である",
+  "title": "3.5mm 4 Pole Audio Jack, SMT, IPX5/7",
+  "docDate": "2017-03-31 (V1.0)",
+  "url": "https://www.farnell.com/datasheets/2261829.pdf",
+  "accessed": "2026-08-02",
+  "whatMakesItRare": "SEC:A-A が 4極プラグを挿した状態の断面図で、\"* Reference plane\" から各接点へ引出線を引き、4 接点すべての軸位置が寸法記入されている。探索した 170 型番のうち、接点位置そのものが寸法記入されていたのはこの 1 件だけ",
+  "hasTolerances": false,
+  "representativeness": "この 1 部品にすぎない。4極ジャック一般を代表するものではない。またこの部品の接点位置以外の諸元 (パッド幅・ばね定数・端子配置) は図面に無く、本モデルはこの部品を再現していない"
+ },
+ "contactPositions": {
+  "unit": "mm",
+  "datum": "完全挿入時にプラグ肩が来る面 (図面の Reference plane と一致することを §2 の照合で確かめた)",
+  "assumed": {
+   "trrs.jack.contact.sleeve.axialCenter": 1.25,
+   "trrs.jack.contact.ring2.axialCenter": 4.35,
+   "trrs.jack.contact.ring1.axialCenter": 7.35,
+   "trrs.jack.contact.tip.axialCenter": 11.4
+  },
+  "drawing": {
+   "trrs.jack.contact.sleeve.axialCenter": 1.28,
+   "trrs.jack.contact.ring2.axialCenter": 4.4,
+   "trrs.jack.contact.ring1.axialCenter": 7.55,
+   "trrs.jack.contact.tip.axialCenter": 12.75
+  },
+  "deltaMm": {
+   "trrs.jack.contact.sleeve.axialCenter": 0.03,
+   "trrs.jack.contact.ring2.axialCenter": 0.05,
+   "trrs.jack.contact.ring1.axialCenter": 0.2,
+   "trrs.jack.contact.tip.axialCenter": 1.35
+  }
+ },
+ "scaleCheck": {
+  "method": "断面図を 800dpi で描画し、Reference plane を 0・12.75 の寸法線終端を基準に px/mm を求めて、絶縁帯 3 本の中心位置を目視で読み取った。自動計測ではないので精度は約 0.1mm",
+  "measuredFromDrawingMm": [
+   2.76,
+   5.79,
+   8.8
+  ],
+  "predictedByModelMm": [
+   2.85,
+   5.85,
+   8.85
+  ],
+  "note": "本モデルのプラグ導体境界は独立 2 社の図面から得た FACT。ここが一致するということは、断面図が縮尺どおりに描かれており、かつプラグが完全挿入の状態で描かれていることを意味する"
+ },
+ "result": {
+  "assumed": {
+   "fullInsertionOk": true,
+   "differenceWindows": [
+    {
+     "fromMm": 12.89,
+     "toMm": 13.11,
+     "widthMm": 0.23
+    }
+   ]
+  },
+  "drawing": {
+   "fullInsertionOk": true,
+   "differenceWindows": []
+  },
+  "verdict": "図面値では左右差分の区間が消える。看板の結論は、この 1 件の実在図面には支持されていない"
+ },
+ "whyItDisappears": {
+  "mechanism": "Tip 接点が 1.35mm 奥へ動くため、帰線が浮いている深さ帯 (〜13.16mm) に達しても Tip 接点がまだプラグ先端の円錐部にしか届かず、L が生きない。判定は DIFFERENCE_SIGNAL ではなく SILENT になる",
+  "thresholdTipAxialMm": {
+   "aliveUpTo": 12.6,
+   "deadFrom": 12.65,
+   "statement": "Tip 接点の軸位置がこのしきい値より浅ければ区間が出る。図面値 12.75 はしきい値の奥側にある"
+  },
+  "tipScan": [
+   {
+    "tipAxialMm": 10,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.05,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.1,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.15,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.2,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.25,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.3,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.35,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.4,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.45,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.5,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.55,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.6,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.65,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.7,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.75,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.8,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.85,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.9,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 10.95,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.05,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.1,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.15,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.2,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.25,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.3,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.35,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.4,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.45,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.5,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.55,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.6,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.65,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.7,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.75,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.8,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.85,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.9,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 11.95,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 12,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 12.05,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 12.1,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 12.15,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 12.2,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 12.25,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 12.3,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 12.35,
+    "fullInsertionOk": true,
+    "widthMm": 0.22
+   },
+   {
+    "tipAxialMm": 12.4,
+    "fullInsertionOk": true,
+    "widthMm": 0.21
+   },
+   {
+    "tipAxialMm": 12.45,
+    "fullInsertionOk": true,
+    "widthMm": 0.16
+   },
+   {
+    "tipAxialMm": 12.5,
+    "fullInsertionOk": true,
+    "widthMm": 0.11
+   },
+   {
+    "tipAxialMm": 12.55,
+    "fullInsertionOk": true,
+    "widthMm": 0.06
+   },
+   {
+    "tipAxialMm": 12.6,
+    "fullInsertionOk": true,
+    "widthMm": 0.01
+   },
+   {
+    "tipAxialMm": 12.65,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 12.7,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 12.75,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 12.8,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 12.85,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 12.9,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 12.95,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13.05,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13.1,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13.15,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13.2,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13.25,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13.3,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13.35,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13.4,
+    "fullInsertionOk": true,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13.45,
+    "fullInsertionOk": false,
+    "widthMm": 0
+   },
+   {
+    "tipAxialMm": 13.5,
+    "fullInsertionOk": false,
+    "widthMm": 0
+   }
+  ],
+  "recoveryAttempts": {
+   "note": "図面の 4 値を固定したまま、パッド幅と接触ドームの追従量を振って区間が戻るかを試した",
+   "grid": [
+    {
+     "padWidthMm": 0.3,
+     "complianceMm": 0.02,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.3,
+     "complianceMm": 0.05,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.3,
+     "complianceMm": 0.1,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.3,
+     "complianceMm": 0.15,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.4,
+     "complianceMm": 0.02,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.4,
+     "complianceMm": 0.05,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.4,
+     "complianceMm": 0.1,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.4,
+     "complianceMm": 0.15,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.5,
+     "complianceMm": 0.02,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.5,
+     "complianceMm": 0.05,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.5,
+     "complianceMm": 0.1,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.5,
+     "complianceMm": 0.15,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.7,
+     "complianceMm": 0.02,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.7,
+     "complianceMm": 0.05,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.7,
+     "complianceMm": 0.1,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.7,
+     "complianceMm": 0.15,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.9,
+     "complianceMm": 0.02,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.9,
+     "complianceMm": 0.05,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.9,
+     "complianceMm": 0.1,
+     "widthMm": 0
+    },
+    {
+     "padWidthMm": 0.9,
+     "complianceMm": 0.15,
+     "widthMm": 0
+    }
+   ],
+   "anyRecovered": false
+  },
+  "drawingIsNotArbitrary": "図面値 12.75 は s = 14 − 12.75 = 1.25mm、つまりプラグ先端の円錐が終わって外径が最大になる位置にあたる (本モデルの図面実測では円錐終端 s=1.296)。実在部品は Tip 導体に触れられる最も手前で当てている"
+ },
+ "decision": {
+  "chosen": "compare-only",
+  "rejected": [
+   "replace-assumed-values",
+   "add-new-variant"
+  ],
+  "reasoning": [
+   "差し替えない: 図面にあるのは接点の軸位置 4 件だけで、パッド幅・ばね・端子配置は無い。4 件だけ入れ替えると、残りが仮定のままなのに「実在部品の値」を名乗ることになる",
+   "variant を足さない: 同じ理由で、部品の形をした別物になる。公開済みの artifact と profile が参照している構成も静かに変わる",
+   "比較として持つ: いま確実に言えるのは「Tip 接点の軸位置がしきい値より浅いことが、看板の結論の必要条件である」ということ。これはしきい値と反例として記録するのが正確"
+  ]
+ },
+ "testerPredictions": {
+  "note": "4極プラグを 4極ジャックへ挿し、各端子が最初に導通する位置でプラグ肩とジャック前面のすき間を測る (docs/VERIFICATION_PLAN.md §2-2)。仮定値と図面値でどこに差が出るかを示す",
+  "variantId": "TRRS-CTIA|JACK-TRRS",
+  "assumed": {
+   "MIC": {
+    "firstContactDepthMm": 1.98,
+    "shoulderGapMm": 12.02
+   },
+   "L": {
+    "firstContactDepthMm": 11.96,
+    "shoulderGapMm": 2.04
+   },
+   "R": {
+    "firstContactDepthMm": 8.28,
+    "shoulderGapMm": 5.72
+   },
+   "GND": {
+    "firstContactDepthMm": 5.28,
+    "shoulderGapMm": 8.72
+   }
+  },
+  "drawing": {
+   "MIC": {
+    "firstContactDepthMm": 2.01,
+    "shoulderGapMm": 11.99
+   },
+   "L": {
+    "firstContactDepthMm": 13.31,
+    "shoulderGapMm": 0.69
+   },
+   "R": {
+    "firstContactDepthMm": 8.48,
+    "shoulderGapMm": 5.52
+   },
+   "GND": {
+    "firstContactDepthMm": 5.33,
+    "shoulderGapMm": 8.67
+   }
+  }
+ },
+ "limitations": [
+  "図面値に公差の記載が無い。実物がこの値ちょうどである保証は無い",
+  "PS000001 は 1 部品であり、4極ジャック一般を代表しない。別の部品では Tip 接点がもっと浅いかもしれない",
+  "本モデルの接点判定 (パッド幅・追従量) 自体も仮定を含む。図面値を入れても、モデル全体が実測になるわけではない",
+  "断面図の読み取りは人手 (画素実測)。図面そのものは再配布していない"
+ ]
+}

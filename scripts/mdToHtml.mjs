@@ -93,6 +93,7 @@ const TARGETS = [
   { md: 'docs/SENSITIVITY.md', html: 'docs/SENSITIVITY.html', title: '感度解析 — どの結論が揺れないか' },
   { md: 'docs/PUBLISH_AUDIT_20260731.md', html: 'docs/PUBLISH_AUDIT_20260731.html', title: '公開前監査 2026-07-31' },
   { md: 'docs/HALF_PLUG_ADAPTER.md', html: 'docs/HALF_PLUG_ADAPTER.html', title: 'Half-Plug Lab へ渡すもの — adapter 仕様' },
+  { md: 'docs/REAL_JACK_COMPARISON.md', html: 'docs/REAL_JACK_COMPARISON.html', title: '実在部品の図面と本モデルの仮定の突き合わせ' },
 ]
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
