@@ -394,6 +394,19 @@ describe('B. 文書に転記した artifact の値が一致している', () => 
     expect(md).toContain(`最大 ${worst.toFixed(1)} mm`)
   })
 
+  it('**docs/TEST_RESULTS.md のテスト件数が artifact と一致する**', () => {
+    // 2026-08-03 まで、テスト件数を README / UNKNOWNS / TEST_RESULTS の 3 か所へ
+    // 手で書き写していた (8 コミットで 24 回)。README と UNKNOWNS からは数を消し、
+    // 報告の内容そのものである TEST_RESULTS だけを artifact と突き合わせる。
+    const p = resolve(ROOT, 'artifacts/test_counts.json')
+    if (!existsSync(p)) return // npm run test:count を回していない環境では飛ばす
+    const c = JSON.parse(readFileSync(p, 'utf8')) as { total: number }
+    expect(text['docs/TEST_RESULTS.md']).toContain(`**${c.total} 件**`)
+    // 消したはずの 2 か所に数が戻っていないこと
+    expect(text['README.md']).not.toMatch(/単体テスト \(Vitest\) \d+ 件/)
+    expect(text['UNKNOWNS.md']).not.toMatch(/単体テスト \d+ 件/)
+  })
+
   it('「HTML 版を生成しています」と書いた文書は、実際に生成対象に入っている', () => {
     // 2026-08-02: HALF_PLUG_ADAPTER.md が冒頭でそう書きながら、
     // mdToHtml.mjs の対象に入っておらず HTML が存在しなかった。

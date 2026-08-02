@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>変更するときに読むもの</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">1. 見つかった 5 種類</a></li>
+    <li><a href="#s1">2. 守り方を選んだ基準 — 先に数えてから決める</a></li>
+    <li><a href="#s2">3. モデルを変えたら、どこが連動するか</a></li>
+    <li><a href="#s3">4. テスト件数だけは、ずっと手で直していました</a></li>
+    <li><a href="#s4">5. やってはいけないこと</a></li>
+  </ol>
+</nav>
+<h1>変更するときに読むもの</h1>
+<div class="note"><p>この文書の HTML 版（<code>docs/CONTRIBUTING.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
+<p>このリポジトリは「根拠のはっきりしない数値を出さない」を方針にしています。 そのため<strong>モデルを直すより、モデルを説明している場所を直すほうが手間がかかります。</strong></p>
+<p>2026-08-02〜03 に不整合を 5 種類・<strong>計 25 件</strong>見つけました。 <strong>5 種類とも根は 1 つで、「モデルを直したあと、それを説明している場所を全部は直せていない」</strong>です。 以下はその記録と、いま何が機械で守られているかの一覧です。</p>
+<hr>
+<h2 id="s0">1. 見つかった 5 種類</h2>
+<div class="tw"><table><thead><tr><th>種類</th><th class="num">件数</th><th>例</th><th>いまの守り方</th></tr></thead><tbody><tr><td><strong>(a) 文書の数値が artifact と食い違う</strong></td><td class="num">—</td><td>「±3 mm 動きます」（実際は非対称で最大 4.82 mm）／「37 件の仮定」（台帳のどの部分集合でもなかった）</td><td><strong>機械照合</strong>（<code>test/docs.test.ts</code> の 68 件。artifact から期待値を組み立てる）</td></tr><tr><td><strong>(b) 画面の文字列が古い</strong></td><td class="num"><strong>5</strong></td><td>4極ジャックの説明文が「Same Sky SJ3-35074A に準拠」のまま／ヘッダが構成モデルでも「実在する代表的な一例」と名乗る</td><td><strong>不変条件 6 件</strong>（<code>test/uiStrings.test.ts</code>）。台帳方式は採らない → §2</td></tr><tr><td><strong>(c) 逆向きの陳腐化</strong></td><td class="num"><strong>6</strong></td><td>「Ring1/Ring2 の境界は仮定」（07-31 に FACT へ解決済み）／「4極ジャックのブレーク接点は定義していません」（08-02 に定義済み）</td><td><strong>個別テスト 5 件</strong>。汎用の語句スキャンは採らない → §2</td></tr><tr><td><strong>(d) 根拠区分が実態より強い</strong></td><td class="num"><strong>12</strong></td><td>接点ばねの自由半径・ばね定数が DERIVED（実際は別メーカー資料への逆算）／<code>axisHeightFromPcb</code> が FACT（note 自身が「未確認」と書いていた）</td><td><strong>不変条件 3 件</strong>。とくに「接点まわりで DERIVED を名乗れるのは図面の幾何から出るものだけ」は許される 3 件を名指しで固定</td></tr><tr><td><strong>(e) 同一文書内で値が割れる</strong></td><td class="num"><strong>2</strong></td><td>README の不変量リストがすぐ下の注記と矛盾／REPORT が 8.06 と 8.05 を併記</td><td><strong>個別テスト 2 件</strong>。1 件しか出なかったので構造変更はしない → §2</td></tr></tbody></table></div>
+<div class="note"><p><strong>(a) だけ件数を書いていないのは、機械照合を入れる前に見つけた分を数え直していないからです。</strong></p><p>現在は 68 件の照合が入っており、変異テストで全件が落ちることを確認しています。</p></div>
+<hr>
+<h2 id="s1">2. 守り方を選んだ基準 — <strong>先に数えてから決める</strong></h2>
+<p>守り方を増やす前に、<strong>実際に何件あったかを数えます。</strong> このリポジトリでは、次の 3 回とも「数えたら、重い仕組みは要らなかった」になりました。</p>
+<div class="tw"><table><thead><tr><th>場面</th><th class="num">母集団</th><th class="num">実際のズレ</th><th>採った守り方</th></tr></thead><tbody><tr><td>画面の文字列</td><td class="num">398 件（JSON 238 + UI 直書き 160）</td><td class="num"><strong>5</strong></td><td>台帳ではなく<strong>不変条件 6 件</strong>。398 件の台帳は文言を直すたびに台帳も直すことになり、「台帳を通したから正しい」という誤った安心を生む</td></tr><tr><td>根拠区分の note 矛盾</td><td class="num">135 キー</td><td class="num"><strong>1</strong>（語句スキャンは 9 件ヒット＝<strong>誤検出 89 %</strong>）</td><td>語句スキャンは<strong>採らない</strong>。文脈（歴史的記述／同じ note 内の別の量）を見られないため恒久的なノイズになる</td></tr><tr><td>文書どうしの食い違い</td><td class="num">6 主張 × 7 文書＝該当 257 行</td><td class="num"><strong>1</strong></td><td>「1 つの主張は 1 か所に書いて他は参照する」への<strong>構造変更はしない</strong>。方法の違いを書き添えるだけ</td></tr></tbody></table></div>
+<p><strong>守らないという判断も記録します。</strong>そうしないと、同じ検討を次の人がやり直すことになります。</p>
+<hr>
+<h2 id="s2">3. モデルを変えたら、どこが連動するか</h2>
+<p>直近 8 コミットで <code>src/data/dimensions.json</code> と<strong>同時に変わったファイル</strong>の実測です。</p>
+<div class="tw"><table><thead><tr><th>連動先</th><th>誰が守っているか</th></tr></thead><tbody><tr><td><code>artifacts/verification_summary.json</code> の区分件数 → README / REPORT の根拠区分表</td><td><strong>機械照合</strong>（<code>docs.test.ts</code>）</td></tr><tr><td>「ジャック内部の寸法は N 件の仮定を含み」（README 2 か所）</td><td><strong>機械照合</strong>（<code>docs.test.ts</code>）</td></tr><tr><td><code>artifacts/half_plug_topology_profile.v1.*.json</code>（区分は接点から伝播する）</td><td><strong>機械照合</strong>（<code>halfPlugProfile.test.ts</code>）</td></tr><tr><td>接点まわりの区分</td><td><strong>不変条件</strong>（<code>uiStrings.test.ts</code>）</td></tr><tr><td>画面の variant 説明文・材質ラベル</td><td><strong>不変条件</strong>（<code>uiStrings.test.ts</code>）</td></tr><tr><td><strong>テスト件数</strong>（README / UNKNOWNS / <code>docs/TEST_RESULTS.md</code>）</td><td><strong>機械照合</strong>（<code>artifacts/test_counts.json</code> と突き合わせ。→ §4）</td></tr></tbody></table></div>
+<h3>手順</h3>
+<ol><li><code>src/data/*.json</code> を直す</li><li><code>npm run artifacts</code> — 走査結果と区分件数を作り直す</li><li><code>npm run export:half-plug:all</code> — profile を作り直す（区分が変わったときは必須）</li><li><code>npm run test</code> — <strong>ここで連動漏れが落ちます</strong></li><li><code>npm run test:count</code> — テスト件数の artifact を更新する</li><li><code>npm run docs:html</code> — HTML を作り直す</li></ol>
+<p><strong>接点位置や区分を変えたときは <code>npm run search:topology</code>（約 10 分）と <code>npm run sensitivity</code>（約 15 分）も必要です。</strong>どちらも走査水準に既定値を含むので、 既定値が動くと結果が変わります。</p>
+<hr>
+<h2 id="s3">4. テスト件数だけは、ずっと手で直していました</h2>
+<p>2026-08-03 までの 8 コミットすべてで、テスト件数を <strong>README / UNKNOWNS / <code>docs/TEST_RESULTS.md</code> の 3 か所</strong>手で直していました。<strong>24 回の手作業</strong>です。</p>
+<ul><li><strong>README と UNKNOWNS からは数を消しました。</strong>読者にとって「207 件」と「212 件」の違いに 意味はなく、手作業を増やすだけでした。</li><li><strong><code>docs/TEST_RESULTS.md</code> には残しました。</strong>そこでは件数そのものが報告の内容だからです。 代わりに <code>npm run test:count</code> が <code>artifacts/test_counts.json</code> を作り、 文書の数字と機械照合します。</li></ul>
+<hr>
+<h2 id="s4">5. やってはいけないこと</h2>
+<ul><li><strong>artifact の数字を書き換えてテストを通す。</strong>artifact はモデルの出力です。 文書側を直すか、モデルを直してください。</li><li><strong>「確認済み」「検証済み」と単独で書く。</strong>何をどう検証したかを添えてください （静的検査／単体テスト／実ブラウザ／実機はすべて別のものです）。</li><li><strong>解決した項目を「まだ仮定です」と言い続ける。</strong>逆向きも嘘です（→ §1 (c)）。</li><li><strong>合成量に、強いほうの入力の区分を付ける。</strong>弱いほうに合わせてください（→ §1 (d)）。</li></ul>
+</div>
+</body>
+</html>

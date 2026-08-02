@@ -5,6 +5,9 @@
 > 一番の狙いは、**プラグを途中まで挿したときに内部で何が起きているか**を、
 > 見た目の色替えではなく実際の幾何計算で見せることです。
 
+> **このリポジトリを変更する場合は [CONTRIBUTING.md](CONTRIBUTING.md) を先に読んでください。**
+> モデルを直すより、モデルを説明している場所を直すほうが手間がかかります。
+
 ### 使える用途／使えない用途
 
 **先にここを読んでください。**判断が分かれるのはこの 1 点だけです。
@@ -97,12 +100,13 @@ npm run dev
 
 | コマンド | 内容 |
 |---|---|
-| `npm run test` | 単体テスト (Vitest) 212 件 |
+| `npm run test` | 単体テスト (Vitest)。件数と内訳は [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) |
 | `npm run typecheck` | TypeScript 型検査 (`src` / `scripts` / `test`) |
 | `npm run build` | 本番ビルド |
 | `npm run artifacts` | `artifacts/` へ走査結果 JSON を生成 |
 | `npm run sensitivity` | 仮定パラメータの感度解析（**15 分ほどかかる。CI 向けではない**） |
 | `npm run docs:html` | `docs/*.md` から `docs/*.html` を生成 |
+| `npm run test:count` | テスト件数を `artifacts/test_counts.json` へ書き出す（文書と機械照合するため） |
 | `npm run export:half-plug -- --variant "TRS\|JACK-TRRS"` | 接点トポロジーを DSP 非依存の JSON として書き出す |
 | `npm run export:half-plug:all` | 3極×3極 と 3極×4極 の両方を書き出す |
 | `npm run search:topology -- --target DIFFERENCE_SIGNAL` | 目標トポロジーが成立する構成を探す（**約 10 分**） |
@@ -476,6 +480,7 @@ profile はこれを `absentTopologies` として**機械可読な「不在」�
 | `half_plug_topology_profile.v1.*.json` | 接点トポロジーの中立表現（variant ごと）。**音響係数ではありません** |
 | `topology_search_difference_signal.json` | 左右差分が残る構成の探索結果（`npm run search:topology`・約 10 分） |
 | `real_jack_comparison.json` | 実在部品の図面値との突き合わせ（`npm run compare:real-jack`）。**看板の結論が実在図面 1 件と食い違うことを記録しています** |
+| `test_counts.json` | テスト件数と内訳（`npm run test:count`）。文書の件数はこれと機械照合します |
 
 `sensitivity.json` だけは `npm run artifacts` では作られません。**`npm run sensitivity`
 （単独・実行に 15 分ほど）**で生成します。二分法を何万回も回すため他の成果物より桁違いに重く、

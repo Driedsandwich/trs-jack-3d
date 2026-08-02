@@ -1,0 +1,17 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-08-03",
+ "note": "npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。",
+ "total": 213,
+ "byFile": {
+  "contact.test.ts": 41,
+  "dimensions.test.ts": 16,
+  "docs.test.ts": 69,
+  "halfPlugProfile.test.ts": 18,
+  "realJackComparison.test.ts": 12,
+  "topologySearch.test.ts": 12,
+  "trrs.test.ts": 26,
+  "uiStrings.test.ts": 19
+ },
+ "allPassed": false
+}
