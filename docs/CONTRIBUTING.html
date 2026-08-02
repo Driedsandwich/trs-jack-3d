@@ -126,6 +126,10 @@
 
   npm run search:topology -- --target DIFFERENCE_SIGNAL
     topology_search_difference_signal.json: jack.contact.sleeve.padWidth が 0.9 → 0.92 に変わっている</code></pre>
+<h3>軽い成果物は「全部回す」で足ります</h3>
+<p><code>npm run artifacts</code> が作る 5 件（<code>events</code> / <code>contact_sweep</code> / <code>force_curve</code> / <code>variant_matrix</code> / <code>verification_summary</code>）と profile 2 件は、<strong>数秒でまとめて作り直せます。</strong> そのため入力の記録（重い 2 つの <code>shipped</code> / <code>inputs</code>）は<strong>持たせていません。</strong></p>
+<ul><li><strong>実測: 直近 14 コミットで、これらが古いまま残った例は 0 件</strong>でした</li><li>一括で回す入口があります → <strong><code>npm run artifacts:all</code></strong> （<code>artifacts</code> → <code>export:half-plug:all</code> → <code>compare:real-jack</code> → <code>test:count</code>）</li></ul>
+<div class="note"><p><strong>ただし「回し忘れても緑になる」穴が 1 つありました。</strong></p><p><code>docs.test.ts</code> は<strong>文書 ↔ artifact</strong> を見ており、<strong>artifact ↔ モデル</strong>を見るテストが</p><p>ありませんでした。古い artifact に文書が合っていれば、全部緑のまま公開値だけがずれます。</p><p>2026-08-03 に、代表値をモデルから計算し直して突き合わせるテストを 2 件足して塞ぎました。</p></div>
 <p>判定は<strong>成果物自身の記録</strong>で行います。<code>topology_search_*.json</code> は走査軸ごとに <code>shipped</code>（実行時の値）を、 <code>sensitivity.json</code> は <code>inputs</code>（走査に使った寸法値）を持っています。 現在のモデルと突き合わせるだけなので、<strong>走査軸が増えても勝手に追随します。</strong> 人がキーの一覧を保守しません。</p>
 <div class="note"><p>**2026-08-03 まで、ここには「接点位置や区分を変えたときは必要」と書いていました。</p><p>これは条件として足りていませんでした。**下の通し確認で、</p><p>帰線パッド幅を変えたときも両方の再実行が要ることが分かったためです。</p></div>
 <hr>
@@ -141,6 +145,11 @@
 <p><strong>手順は機能しました。</strong>連動漏れは手順 5 で捕まります。</p>
 <p><strong>ただし 1 つ穴がありました。</strong>B で変えたのは「接点位置」でも「区分」でもなく<strong>パッド幅</strong>ですが、 <code>search:topology</code> も <code>sensitivity</code> も<strong>パッド幅を走査軸に持っています</strong>。 当時の条件（「接点位置や区分を変えたときは必要」）からはそう読み取れませんでした。 そこで <code>npm run check:stale</code> を作り、条件を機械判定に置き換えました。</p>
 <div class="note"><p>検出器そのものも試しました。パッド幅を 0.92 にすると</p><p><strong>キー名と必要なコマンドを名指しで出す</strong>ことを確認し、戻すと消えることも確認しています。</p></div>
+<h3>2026-08-03 — <code>check:stale</code> を全成果物へ広げるか検討した</h3>
+<p><strong>広げませんでした。</strong>軽い成果物 7 件に入力の記録を持たせる設計も検討しましたが、</p>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>古いまま残った実績</td><td><strong>0 件</strong>（直近 14 コミットの実測）</td></tr><tr><td>作り直す手間</td><td><strong>数秒</strong>。しかも 1 コマンドでまとめて回せる</td></tr></tbody></table></div>
+<p>重い 2 つ（10〜15 分）とは事情が違います。代わりに <strong><code>npm run artifacts:all</code></strong> を用意し、 「困ったら全部回す」で足りる形にしました。</p>
+<p><strong>その代わり、本当の穴のほうを塞ぎました。</strong>回し忘れを検出する仕組みが無くても、 <code>artifact ↔ モデル</code> を突き合わせるテストがあれば、ずれたまま緑にはなりません。</p>
 <h2 id="s5">6. やってはいけないこと</h2>
 <ul><li><strong>artifact の数字を書き換えてテストを通す。</strong>artifact はモデルの出力です。 文書側を直すか、モデルを直してください。</li><li><strong>「確認済み」「検証済み」と単独で書く。</strong>何をどう検証したかを添えてください （静的検査／単体テスト／実ブラウザ／実機はすべて別のものです）。</li><li><strong>解決した項目を「まだ仮定です」と言い続ける。</strong>逆向きも嘘です（→ §1 (c)）。</li><li><strong>合成量に、強いほうの入力の区分を付ける。</strong>弱いほうに合わせてください（→ §1 (d)）。</li></ul>
 </div>

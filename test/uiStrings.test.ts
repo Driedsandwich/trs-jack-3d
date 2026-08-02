@@ -31,6 +31,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_FAULTS } from '../src/model/contact'
+import { extractEvents, sweep } from '../src/model/sweep'
 import {
   allVariantIds,
   getModel,
@@ -363,5 +365,57 @@ describe('重い成果物の陳腐化判定', () => {
     // 記録された値が、実在する寸法キーであること
     const dims = getModel('TRS|JACK-TRS').dims
     for (const k of Object.keys(a.inputs!)) expect({ k, exists: dims.entry(k) !== undefined }).toEqual({ k, exists: true })
+  })
+})
+
+/**
+ * **成果物がモデルより古くなっていないか。**
+ *
+ * 2026-08-03 に、判定の穴を見つけた。
+ *   - `docs.test.ts` … 文書 ↔ artifact
+ *   - `contact.test.ts` / `trrs.test.ts` … モデルの挙動
+ *   - **artifact ↔ モデルを見ているテストが 1 つも無かった。**
+ *
+ * つまり `npm run artifacts` を回し忘れると、**古い artifact に文書が合っている**ので
+ * すべて緑のまま、公開している数値だけが実際のモデルとずれる。
+ *
+ * git 履歴では一度も起きていない（`npm run artifacts` は数秒で終わり、習慣で回している）。
+ * それでも構造的には到達できるので、**代表値をモデルから計算し直して突き合わせる**。
+ * 重い成果物（探索・感度解析）は `npm run check:stale` が別に見ている。
+ */
+describe('成果物がモデルより古くなっていない', () => {
+  const art = (f: string) => resolve(ROOT, 'artifacts', f)
+
+  it('**events.json の橋絡区間が、いまのモデルから計算し直した値と一致する**', () => {
+    const p = art('events.json')
+    if (!existsSync(p)) return
+    const a = JSON.parse(readFileSync(p, 'utf8')) as {
+      stepMm: number
+      major: { kind: string; depthMm: number }[]
+    }
+    const m = getModel('TRS|JACK-TRS')
+    const rows = sweep(m, { stepMm: a.stepMm, faults: DEFAULT_FAULTS })
+    const events = extractEvents(m, rows)
+    // **存在しない kind を並べると null === null で素通りする。**
+    // 実際 2026-08-03 の初稿で BRIDGE_START / BRIDGE_END という実在しない名前を書き、
+    // 3 件中 2 件が空振りしていた (このリポジトリで 6 度目の同型)。まず実在を検査する。
+    const KINDS = ['FIRST_BRIDGE', 'FIRST_BREAK_OPEN', 'FIRST_ELECTRICAL_CONTACT', 'ALL_SIGNALS_CORRECT']
+    for (const kind of KINDS)
+      expect({ kind, inArtifact: a.major.some((e) => e.kind === kind) }).toEqual({ kind, inArtifact: true })
+
+    for (const kind of KINDS) {
+      const inArt = a.major.find((e) => e.kind === kind)!
+      const now = events.find((e) => e.kind === kind)
+      expect({ kind, model: now?.depthMm ?? null }).toEqual({ kind, model: inArt.depthMm })
+    }
+  }, 30_000)
+
+  it('**verification_summary.json の区分件数が、いまの台帳と一致する**', () => {
+    const p = art('verification_summary.json')
+    if (!existsSync(p)) return
+    const a = JSON.parse(readFileSync(p, 'utf8')) as { gradeCounts: Record<string, number> }
+    const counts: Record<string, number> = { FACT: 0, DERIVED: 0, ASSUMPTION: 0, UNKNOWN: 0 }
+    for (const v of Object.values(getModel('TRS|JACK-TRS').dims.all())) counts[v.grade]++
+    expect(a.gradeCounts).toEqual(counts)
   })
 })
