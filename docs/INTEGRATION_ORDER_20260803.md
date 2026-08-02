@@ -83,6 +83,11 @@ digest の対象は **22 ファイル**です（v0.1.0 時点）。
 | `lockfile` | 1 | `package-lock.json` |
 | `sensitivity-input` | 1 | `artifacts/sensitivity.json`（`spreadMm` の元データ。**入力として読んでいる**） |
 
+> **v0.1.1 で感度 artifact を variant 別にしました**（→ §5）。
+> 現在の入力は variant ごとに違い、3極は `sensitivity.json` と
+> `sensitivity.trs_jack_trs.json` の 2 件、4極は `sensitivity.trs_jack_trrs.json` の 1 件です。
+> そのため **`inputDigest` も variant ごとに違います。**
+
 **生成物自身は入りません。**入れると自己参照に戻ります。
 
 #### `profileId` も digest から作るようにした
@@ -243,11 +248,16 @@ Ring のブレーク接点にも帰線接点用の幅が付いていました。
 
 **`kind` が 1 回しか出ない事象にだけ幅を付けます。**
 
-| `spreadStatus` | 件数 | `spreadMm` |
+| `spreadStatus`（当時） | 件数 | `spreadMm` |
 |---|---:|---|
 | `MEASURED` | 7 | 値あり（その事象そのものを測ったもの） |
 | `NOT_EVENT_SPECIFIC` | 29 | `null`（集計しか無く、配れない） |
 | `NOT_MEASURED` | 0 | `null` |
+
+> **この 3 つの名前は v0.1.1 で改めました**（→ §5）。
+> `MEASURED` は実物測定と誤認されるためで、現在は
+> `MODEL_SWEEP_EVENT_SPECIFIC` / `MODEL_SWEEP_NOT_EVENT_SPECIFIC` / `NOT_ANALYZED` です。
+> 上の表は P0-3 を実施した時点の記録です。
 
 `kind` 単位の集計は捨てず、`sensitivitySummary.aggregateSpreadByKind` へ移しました。
 

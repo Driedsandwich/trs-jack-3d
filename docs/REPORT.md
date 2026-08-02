@@ -415,7 +415,8 @@ Lumberg は STEP モデルを登録不要で配布していますが、Legal Not
 | `docs/screenshots/` | 主要状態のスクリーンショット 19 枚 (うち 2 枚は iOS Safari) |
 | `artifacts/perf_real_gpu.json` | 実 GPU でのフレームレートと描画コスト |
 | `artifacts/touch_verification.json` | タッチ操作の検証 20 項目の結果 |
-| `artifacts/sensitivity.json` | 感度解析の生データ（`npm run sensitivity` で生成・15 分／CI 向けではない） |
+| `artifacts/sensitivity.json` | **3極の**感度解析の生データ（`npm run sensitivity` で生成・15 分／CI 向けではない） |
+| `artifacts/sensitivity.<variant>.json` | **variant ごとの**イベント深さの幅（`npm run sensitivity:events`）。profile はこちらだけを使う |
 | `test/` | テストコード 6 ファイル（173 件） |
 
 ---

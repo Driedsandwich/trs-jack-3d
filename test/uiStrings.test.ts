@@ -28,10 +28,11 @@
  *      (その境界は 2026-07-31 に FACT へ解決済み。**逆向きの陳腐化**)
  */
 
-// **`existsSync` を輸入しない。** 2026-08-03 まで 4 か所で
+// **`existsSync` を分岐に使わない。** 2026-08-03 まで 4 か所で
 // `if (!existsSync(p)) return` と書いており、成果物が消えると 3 件が黙って通った。
-// artifacts/ は 14 件とも git 管理下で「無い環境」は存在しない (→ CONTRIBUTING §7)。
-import { readFileSync } from 'node:fs'
+// artifacts/ は git 管理下で「無い環境」は存在しない (→ CONTRIBUTING §7)。
+// 下の「検査対象が実在するか」だけは、存在そのものを検査したいので使う。
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_FAULTS } from '../src/model/contact'
@@ -139,6 +140,51 @@ describe('画面に出る文字列', () => {
     }
     const bushing = mats.materials.find((x) => x.id === 'jack-bushing')!
     expect(bushing.label).toMatch(/1503 09/)
+  })
+})
+
+/**
+ * 公開物に社交辞令を書かない。
+ *
+ * 2026-08-03、公開した release note へ
+ * 「Half-Plug Lab 側の fixture import で発見されました。**報告に感謝します。**」と書いた。
+ *
+ * Half-Plug Lab はこのリポジトリの作者自身の別プロジェクトで、
+ * 監査文書はその作者が AI に生成させたものである。**その事実は分かっていた。**
+ * それでも「外部のラボが監査してくれた」と読める文を公開物へ入れた。
+ *
+ * release note を読むのは不特定多数である。
+ * **実態より大きく見せる書き方**は、このリポジトリが全編で禁じているものと同じ。
+ *
+ * 件数は 1 件（現在 0 件）。それでも検査を置くのは、
+ * **release notes と引き継ぎ文は今後も書く**からで、検査そのものは数行で済む。
+ */
+describe('公開物の文体', () => {
+  const PUBLIC_DOCS = [
+    'README.md',
+    'CHANGELOG.md',
+    'CONTRIBUTING.md',
+    'docs/HALF_PLUG_ADAPTER.md',
+    'docs/INTEGRATION_ORDER_20260803.md',
+    'docs/release/v0.1.0-notes.md',
+    'docs/release/v0.1.1-notes.md',
+  ]
+
+  it('**社交辞令を書いていない**（読者は不特定多数で、相手は AI セッションである）', () => {
+    const COURTESY = ['感謝します', 'ありがとうございま', 'お礼申し上げ', '幸いです', 'よろしくお願い']
+    const hits: string[] = []
+    for (const f of PUBLIC_DOCS) {
+      const src = readFileSync(resolve(ROOT, f), 'utf8')
+      for (const w of COURTESY) if (src.includes(w)) hits.push(`${f}: ${w}`)
+    }
+    expect(hits).toEqual([])
+  })
+
+  it('**検査対象の公開物が実在する**（列挙だけして 0 件を検査しない）', () => {
+    // ファイル名を打ち間違えると、上の検査は 1 文字も読まずに通る
+    for (const f of PUBLIC_DOCS)
+      expect({ f, exists: existsSync(resolve(ROOT, f)) }).toEqual({ f, exists: true })
+    expect(PUBLIC_DOCS.length).toBeGreaterThan(5)
   })
 })
 

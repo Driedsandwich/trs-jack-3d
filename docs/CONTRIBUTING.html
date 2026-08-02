@@ -179,6 +179,13 @@ scripts/searchTopology.ts(210,10): error TS2304: Cannot find name 'classifyFromE
 <p>意図的な違反 10 種で突き合わせると、<strong>5 種が素通り</strong>していました （現物の artifact に違反は 0 件だったので、誤った値は公開されていません）。</p>
 <p>いまは <code>ajv</code>（draft-07 の完全実装）に任せています → <code>npm run validate:profiles</code>。</p>
 <p><strong>制約を足したら、その制約が実際に弾くことを 1 回試してください。</strong> 「schema に書いた」と「schema が効いている」は別です。</p>
+<h3>たまに落ちる検査は、落ちない検査より悪い</h3>
+<p><strong>2026-08-03、<code>npm run test</code> が 3 回に 1 回落ちる状態を自分で作りました。</strong></p>
+<p><code>test/trrs.test.ts</code> の「どの組み合わせでも、Tip 導体を含む橋絡は起きない」が、 <strong>単独では 606 ms、全体では 5463 ms</strong> かかっており、vitest の既定 timeout 5000 ms を またいでいました。原因は同日に足した <code>test/sensitivityVariant.test.ts</code> が <code>npx vite-node</code> の子プロセスを並列に起こし、他のワーカーを遅くすることです。</p>
+<p><strong>このテストだけが、重いのに明示 timeout を持っていませんでした</strong>（近隣は <code>30_000</code>）。</p>
+<p><code>vitest.config.ts</code> に <code>testTimeout: 30_000</code> を置いて解消しました。</p>
+<div class="note"><p><strong>ここの timeout は性能を測っていません。</strong>ハングしたときに永久に止まらないための</p><p>保険です。負荷でばらつく値を合否に使うと、<strong>「たまに落ちるけど気にしないテスト」</strong>が</p><p>1 つ生まれます。それは空振りと同じ害です — どちらも検査を信用できなくします。</p></div>
+<p><code>vite.config.ts</code> ではなく <strong><code>vitest.config.ts</code></strong> が本物です （間違えて <code>vite.config.ts</code> に書き、型検査を壊しました）。</p>
 <h3>書くときの規則</h3>
 <ol><li><strong>成果物の有無で分岐しない。</strong><code>artifacts/</code> は git 管理下です。<code>existsSync</code> は使いません。 読めなければ落ちるべきです。</li><li><strong><code>?? []</code> / <code>?? null</code> で「引けなかった」を隠さない。</strong> 0 件と「引けなかった」が同じ値になる関数を書かない。<code>test/_must.ts</code> の <code>mustFind</code> を使えば、何を探して何があったかがメッセージに残ります。</li><li><strong>列挙した識別子は、実在を先に検査する。</strong> ```ts for (const kind of KINDS)                      // ← まず実在を見る expect({ kind, inArtifact: a.major.some((e) =&gt; e.kind === kind) }) .toEqual({ kind, inArtifact: true }) for (const kind of KINDS) { /* ここで値を比べる */ } ```</li><li><strong>「n 件を検査した」という主張そのものを検査する。</strong> <code>axesUsedPerVariant</code> が <code>{}</code> になると、「振った軸が効く」を 0 回検査したまま通ります。 前提が空でないことを <code>mustBeNonEmpty</code> で見ます。</li><li><strong><code>.find(...)!</code> を機械的に置き換えない。</strong>41 か所ありますが、あれは落ちます。 全部書き換えても守りは増えず、差分だけが増えます。</li></ol>
 <h3>機械が確かめること — <code>npm run check:vacuity</code></h3>

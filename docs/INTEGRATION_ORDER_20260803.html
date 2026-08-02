@@ -118,6 +118,7 @@
 <div class="tw"><table><thead><tr><th>したこと</th><th><code>generatedFromCommit</code></th><th><code>inputDigest</code></th></tr></thead><tbody><tr><td>寸法を 1 文字直した（未コミット）</td><td>変わらない</td><td><strong>変わる</strong></td></tr><tr><td>artifact だけ作り直してコミットした</td><td><strong>変わる</strong></td><td>変わらない</td></tr><tr><td>文書だけ直してコミットした</td><td><strong>変わる</strong></td><td>変わらない</td></tr></tbody></table></div>
 <p>digest の対象は <strong>22 ファイル</strong>です（v0.1.0 時点）。</p>
 <div class="tw"><table><thead><tr><th>role</th><th class="num">件数</th><th>中身</th></tr></thead><tbody><tr><td><code>schema</code></td><td class="num">1</td><td>profile の schema</td></tr><tr><td><code>generator</code></td><td class="num">2</td><td>exporter と provenance</td></tr><tr><td><code>model-data</code></td><td class="num">9</td><td><code>src/data/**</code></td></tr><tr><td><code>model-code</code></td><td class="num">8</td><td><code>src/model/**</code></td></tr><tr><td><code>lockfile</code></td><td class="num">1</td><td><code>package-lock.json</code></td></tr><tr><td><code>sensitivity-input</code></td><td class="num">1</td><td><code>artifacts/sensitivity.json</code>（<code>spreadMm</code> の元データ。<strong>入力として読んでいる</strong>）</td></tr></tbody></table></div>
+<div class="note"><p><strong>v0.1.1 で感度 artifact を variant 別にしました</strong>（→ §5）。</p><p>現在の入力は variant ごとに違い、3極は <code>sensitivity.json</code> と</p><p><code>sensitivity.trs_jack_trs.json</code> の 2 件、4極は <code>sensitivity.trs_jack_trrs.json</code> の 1 件です。</p><p>そのため <strong><code>inputDigest</code> も variant ごとに違います。</strong></p></div>
 <p><strong>生成物自身は入りません。</strong>入れると自己参照に戻ります。</p>
 <h4><code>profileId</code> も digest から作るようにした</h4>
 <p>旧 <code>trs-jack-3d:&lt;variant&gt;:&lt;revision 12桁&gt;</code> → 新 <code>trs-jack-3d:&lt;variant&gt;:&lt;inputDigest 12桁&gt;</code>。</p>
@@ -178,7 +179,8 @@ sweptParameters: [jack.contact.sleeve.axialCenter, jack.contact.sleeve.padWidth]
 <p>Ring のブレーク接点にも帰線接点用の幅が付いていました。</p>
 <h4>直し方</h4>
 <p><strong><code>kind</code> が 1 回しか出ない事象にだけ幅を付けます。</strong></p>
-<div class="tw"><table><thead><tr><th><code>spreadStatus</code></th><th class="num">件数</th><th><code>spreadMm</code></th></tr></thead><tbody><tr><td><code>MEASURED</code></td><td class="num">7</td><td>値あり（その事象そのものを測ったもの）</td></tr><tr><td><code>NOT_EVENT_SPECIFIC</code></td><td class="num">29</td><td><code>null</code>（集計しか無く、配れない）</td></tr><tr><td><code>NOT_MEASURED</code></td><td class="num">0</td><td><code>null</code></td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th><code>spreadStatus</code>（当時）</th><th class="num">件数</th><th><code>spreadMm</code></th></tr></thead><tbody><tr><td><code>MEASURED</code></td><td class="num">7</td><td>値あり（その事象そのものを測ったもの）</td></tr><tr><td><code>NOT_EVENT_SPECIFIC</code></td><td class="num">29</td><td><code>null</code>（集計しか無く、配れない）</td></tr><tr><td><code>NOT_MEASURED</code></td><td class="num">0</td><td><code>null</code></td></tr></tbody></table></div>
+<div class="note"><p><strong>この 3 つの名前は v0.1.1 で改めました</strong>（→ §5）。</p><p><code>MEASURED</code> は実物測定と誤認されるためで、現在は</p><p><code>MODEL_SWEEP_EVENT_SPECIFIC</code> / <code>MODEL_SWEEP_NOT_EVENT_SPECIFIC</code> / <code>NOT_ANALYZED</code> です。</p><p>上の表は P0-3 を実施した時点の記録です。</p></div>
 <p><code>kind</code> 単位の集計は捨てず、<code>sensitivitySummary.aggregateSpreadByKind</code> へ移しました。</p>
 <p><code>eventId</code> も導入しました。<code>label</code> の文言からは作りません。</p>
 <pre><code>STATE_CHANGE:JC_RING:BREAK_CLOSED-&gt;BREAK_OPEN#1</code></pre>

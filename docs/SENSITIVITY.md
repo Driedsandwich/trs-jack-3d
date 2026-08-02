@@ -4,6 +4,17 @@
 
 作成 2026-08-01 ／ 再現コマンド `npm run sensitivity`（15 分ほどかかります）／ 生データ `artifacts/sensitivity.json`
 
+> **この文書が扱うのは 3極（`TRS|JACK-TRS`）の解析です。**
+> `scripts/sensitivity.ts` は解析基準を 3極に固定しており、
+> プラトー間隔・Tip 橋絡しきい値・挿抜力はいずれも 3極の幾何に結びついています。
+>
+> **主要イベントの深さの幅だけは variant ごとに測り直しました**（2026-08-03・v0.1.1）。
+> `npm run sensitivity:events -- --variant "<id>"` →
+> `artifacts/sensitivity.<slug>.json`。
+> それ以前は 3極の幅が 4極 profile へも配られており、
+> 4極の `FIRST_BREAK_OPEN` は名目 8.48 mm なのに幅 8.06〜8.06 mm という、
+> **名目値が自分の幅の外にある**状態でした。
+
 このプロジェクトは**実物と突き合わせていません**（[VERIFICATION_PLAN.md](VERIFICATION_PLAN.md)）。
 その状態で「11.76 mm で橋絡する」と単一の数字を出すのは、意味が強すぎます。
 

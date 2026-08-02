@@ -101,6 +101,7 @@
 <h1>感度解析 — どの結論が揺れないか</h1>
 <div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
 <p>作成 2026-08-01 ／ 再現コマンド <code>npm run sensitivity</code>（15 分ほどかかります）／ 生データ <code>artifacts/sensitivity.json</code></p>
+<div class="note"><p><strong>この文書が扱うのは 3極（<code>TRS|JACK-TRS</code>）の解析です。</strong></p><p><code>scripts/sensitivity.ts</code> は解析基準を 3極に固定しており、</p><p>プラトー間隔・Tip 橋絡しきい値・挿抜力はいずれも 3極の幾何に結びついています。</p><p><strong>主要イベントの深さの幅だけは variant ごとに測り直しました</strong>（2026-08-03・v0.1.1）。</p><p><code>npm run sensitivity:events -- --variant "&lt;id&gt;"</code> →</p><p><code>artifacts/sensitivity.&lt;slug&gt;.json</code>。</p><p>それ以前は 3極の幅が 4極 profile へも配られており、</p><p>4極の <code>FIRST_BREAK_OPEN</code> は名目 8.48 mm なのに幅 8.06〜8.06 mm という、</p><p><strong>名目値が自分の幅の外にある</strong>状態でした。</p></div>
 <p>このプロジェクトは<strong>実物と突き合わせていません</strong>（<a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a>）。 その状態で「11.76 mm で橋絡する」と単一の数字を出すのは、意味が強すぎます。</p>
 <p>そこで、仮定として置いたパラメータを<strong>成立範囲いっぱいに振り</strong>、 何が不変で何が動くかを機械的に測りました。 <strong>結論は「仕組みは揺れない、深さの数字は揺れる」です。</strong></p>
 <div class="note"><p>## この文書は一度書き直しています</p><p>初版（2026-08-01 午前）には<strong>手法上の欠陥が 4 つ</strong>あり、独立した反証ですべて指摘されました。</p><p>結論そのものは破れませんでしたが、<strong>根拠の強さを実際より強く書いていました。</strong></p><p>何がどう間違っていたかは §7 に残します。読み飛ばさないでください。</p></div>
