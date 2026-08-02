@@ -1,0 +1,85 @@
+{
+ "schemaVersion": 1,
+ "generatedBy": "npm run sensitivity:events",
+ "variantId": "TRS|JACK-TRRS",
+ "analysisScope": "EVENT_DEPTH_SPREAD_ONLY",
+ "sweptParameters": [
+  "trrs.jack.contact.sleeve.axialCenter",
+  "trrs.jack.contact.narrowPadWidth"
+ ],
+ "generatedFromCommit": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
+ "generatedAt": "2026-08-02",
+ "basis": "MODEL_PARAMETER_SWEEP",
+ "note": "モデル内部の感度であって、実物のばらつきでも製造公差でもない。帰線接点の軸位置とパッド幅を同時に振り、完全挿入が成立する構成にわたって主要イベントの深さの最小・最大を集めたもの。",
+ "sweep": {
+  "axialRangeMm": [
+   0.45,
+   4.55
+  ],
+  "padRangeMm": [
+   0.01,
+   5
+  ],
+  "divisions": 30,
+  "stepMm": 0.02,
+  "configurationsTried": 961,
+  "configurationsUsable": 341,
+  "buildFailed": 0,
+  "fullInsertionNotOk": 620,
+  "shippedValues": {
+   "trrs.jack.contact.sleeve.axialCenter": 1.25,
+   "trrs.jack.contact.narrowPadWidth": 0.5
+  },
+  "shippedInsideSweptRange": true
+ },
+ "byKind": {
+  "FIRST_BREAK_OPEN": {
+   "minMm": 7.82,
+   "maxMm": 8.64,
+   "configs": 341,
+   "movesMm": 0.82
+  },
+  "FIRST_BRIDGE": {
+   "minMm": 9.02,
+   "maxMm": 13.12,
+   "configs": 341,
+   "movesMm": 4.1
+  },
+  "FIRST_ELECTRICAL_CONTACT": {
+   "minMm": 1.18,
+   "maxMm": 5.28,
+   "configs": 341,
+   "movesMm": 4.1
+  },
+  "FIRST_PHYSICAL_CONTACT": {
+   "minMm": 1.18,
+   "maxMm": 5.28,
+   "configs": 341,
+   "movesMm": 4.1
+  },
+  "FIRST_WRONG_SEGMENT": {
+   "minMm": 1.18,
+   "maxMm": 5.28,
+   "configs": 341,
+   "movesMm": 4.1
+  },
+  "FULL_INSERTION": {
+   "minMm": 14,
+   "maxMm": 14,
+   "configs": 341,
+   "movesMm": 0
+  },
+  "LAST_CONTACT_RELEASE": {
+   "minMm": 1.18,
+   "maxMm": 5.28,
+   "configs": 341,
+   "movesMm": 4.1
+  },
+  "STATE_CHANGE": {
+   "minMm": 1.18,
+   "maxMm": 13.96,
+   "configs": 9080,
+   "movesMm": 12.78
+  }
+ }
+}

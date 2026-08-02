@@ -81,13 +81,17 @@ if (!existsSync(sp)) {
 // 記録は目の前にあったのに使っていなかった。
 //
 // 重い成果物と違い profile は数秒で作り直せるが、**古いまま公開されるのは同じ害**である。
-const wanted = buildProvenance({
-  root: ROOT,
-  command: 'check:stale',
-  artifactDate: '1970-01-01', // digest に日付は入らない。何を入れても同じ
-  release: false,
-  allowRevisionOverride: false,
-}).inputDigest
+// **variant ごとに計算する。** 感度 artifact は variant 別なので、
+// 単一の digest と比べると必ず食い違う (P1-2)
+const wantedFor = (variantId: string) =>
+  buildProvenance({
+    root: ROOT,
+    variantSlug: variantId.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+    command: 'check:stale',
+    artifactDate: '1970-01-01', // digest に日付は入らない。何を入れても同じ
+    release: false,
+    allowRevisionOverride: false,
+  }).inputDigest
 
 for (const f of readdirSync(resolve(ROOT, 'artifacts')).filter((x) => x.startsWith('half_plug_topology_profile'))) {
   const a = JSON.parse(readFileSync(resolve(ROOT, 'artifacts', f), 'utf8'))
@@ -96,6 +100,7 @@ for (const f of readdirSync(resolve(ROOT, 'artifacts')).filter((x) => x.startsWi
     stale.push({ artifact: f, reason: 'provenance.inputDigest が無い', cmd: 'npm run export:half-plug:all' })
     continue
   }
+  const wanted = wantedFor(String(a.variantId))
   checked.push(`${f}: inputDigest ${String(got).slice(0, 12)}`)
   if (got !== wanted)
     stale.push({

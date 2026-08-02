@@ -252,11 +252,11 @@
           },
           "spreadStatus": {
             "enum": [
-              "MEASURED",
-              "NOT_MEASURED",
-              "NOT_EVENT_SPECIFIC"
+              "MODEL_SWEEP_EVENT_SPECIFIC",
+              "MODEL_SWEEP_NOT_EVENT_SPECIFIC",
+              "NOT_ANALYZED"
             ],
-            "description": "MEASURED = この事象そのものの幅を測った。NOT_MEASURED = 測っていない。NOT_EVENT_SPECIFIC = kind 単位の集計しか無く、この事象へ配れない (集計は sensitivitySummary.aggregateSpreadByKind にある)。**どれも「動かない」の意味ではない。**"
+            "description": "**モデルのパラメータを振った結果であって、実物の測定ではない。** MODEL_SWEEP_EVENT_SPECIFIC = この事象そのものの幅を走査で求めた。MODEL_SWEEP_NOT_EVENT_SPECIFIC = kind 単位の集計しか無く、この事象へ配れない (集計は sensitivitySummary.aggregateSpreadByKind)。NOT_ANALYZED = 解析していない。**どれも「動かない」の意味ではない。** 2026-08-03 まで MEASURED / NOT_MEASURED / NOT_EVENT_SPECIFIC という名前だったが、MEASURED は実物測定と誤認されるため改めた"
           },
           "spreadMm": {
             "type": [
@@ -322,6 +322,14 @@
             "number",
             "null"
           ]
+        },
+        "eventSpreadSource": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "event spread をどの artifact から取ったか。**variantId が profile と一致しなければ取り込まない (fail-closed)。** null は「この variant 固有の解析が無いので出していない」",
+          "additionalProperties": true
         },
         "aggregateSpreadByKind": {
           "type": [

@@ -62,6 +62,9 @@ function generatedAt(): string {
  */
 const provenance = buildProvenance({
   root: ROOT,
+  // **この variant の感度 artifact だけを入力にする (P1-2)。**
+  // 別 variant の感度を測り直しても、この profile の ID は変わらない
+  variantSlug: slug,
   // process.argv をそのまま書かない。呼び出し方 (export:half-plug:all 経由か直接か) で
   // 変わってしまい、byte-identical でなくなる。正規化した形を記録する
   command: `npm run export:half-plug -- --variant "${VARIANT}"${hasFlag('release') ? ' --release' : ''}`,
@@ -324,45 +327,94 @@ const jackInternal = Object.keys(dims).filter(
   (k) => /^(jack\.|trrs\.jack\.)/.test(k) && dims[k].grade === 'ASSUMPTION',
 ).length
 
-// 感度解析は別コマンド (15 分) なので、無ければ available:false で出す
+/**
+ * **variant 固有の感度だけを読む。fail-closed (統合フォローアップ P0-2)。**
+ *
+ * 2026-08-03 まで、variant を問わず単一の `artifacts/sensitivity.json` を読み、
+ * その `eventSpread.byKind` をどの profile へも配っていた。
+ * `sensitivity.ts` は解析基準を `TRS|JACK-TRS` に固定しているので、
+ * **TRS×TRRS profile に 3極の幅が付いていた。**
+ * FIRST_BREAK_OPEN は名目 8.48mm なのに幅 8.06〜8.06mm という、
+ * 名目値が自分の幅の外にある状態だった (Half-Plug 側の fixture import で発覚)。
+ *
+ * いまは `artifacts/sensitivity.<slug>.json` を読み、**variantId が一致しなければ捨てる。**
+ * 迷ったら出さない。誤った幅を配るより、幅が無いほうが害が小さい。
+ */
+let eventSpread: Record<string, { minMm: number; maxMm: number }> = {}
+let spreadSource: Record<string, unknown> | null = null
+let spreadRejectedBecause: string | null = null
+const SPREAD_FILE = `artifacts/sensitivity.${slug}.json`
+try {
+  const ev = JSON.parse(readFileSync(resolve(ROOT, SPREAD_FILE), 'utf8'))
+  if (ev.variantId !== String(VARIANT))
+    throw new Error(`variantId が ${ev.variantId} で、この profile の ${VARIANT} と違う`)
+  if (!ev.byKind || !Object.keys(ev.byKind).length) throw new Error('byKind が空')
+  eventSpread = ev.byKind
+  spreadSource = {
+    file: SPREAD_FILE,
+    variantId: ev.variantId,
+    analysisScope: ev.analysisScope ?? null,
+    basis: ev.basis ?? null,
+    sweptParameters: ev.sweptParameters ?? null,
+    generatedFromCommit: ev.generatedFromCommit ?? null,
+    configurationsUsable: ev.sweep?.configurationsUsable ?? null,
+    shippedInsideSweptRange: ev.sweep?.shippedInsideSweptRange ?? null,
+  }
+} catch (e) {
+  spreadRejectedBecause = `${SPREAD_FILE} を使えない: ${(e as Error).message}`
+}
+
+/**
+ * 3極の総合解析 (`artifacts/sensitivity.json`)。**3極 variant のときだけ使う。**
+ * プラトー間隔・Tip 橋絡しきい値・挿抜力はいずれも 3極の幾何に結びついており、
+ * 他の variant へ持ち出すと、まさに今回直した誤りをもう一度作ることになる。
+ */
 let sens: Record<string, unknown> = {
   available: false,
   bridgeDepthJointRangeMm: null,
   tipBridgeComplianceThreshold: null,
   tipBridgeWorstCornerThreshold: null,
-  notes: ['artifacts/sensitivity.json が無い。npm run sensitivity で生成する'],
+  aggregateSpreadByKind: null,
+  eventSpreadSource: spreadSource,
+  notes: [
+    spreadRejectedBecause ?? 'この variant 固有の総合感度解析はまだ無い。',
+    '**variant 固有の解析が無いので、感度情報は出していない (fail-closed)。**'
+      + '別 variant の値を流用するより、無いほうが害が小さい。',
+  ],
 }
-let eventSpread: Record<string, { minMm: number; maxMm: number }> = {}
 try {
+  if (String(VARIANT) !== 'TRS|JACK-TRS') throw new Error('3極以外では総合解析を使わない')
   const s = JSON.parse(readFileSync(resolve(ROOT, 'artifacts/sensitivity.json'), 'utf8'))
-  eventSpread = s.eventSpread?.byKind ?? {}
   sens = {
     available: true,
     bridgeDepthJointRangeMm: [s.bridgeDepthRange.joint.minMm, s.bridgeDepthRange.joint.maxMm],
     tipBridgeComplianceThreshold: s.tipBridge.complianceThreshold,
     tipBridgeWorstCornerThreshold: s.tipBridge.toleranceBox.worstCorner.tipThreshold,
     // kind 単位の集計は**ここに置く**。事象へは配らない (統合オーダー P0-3)
-    aggregateSpreadByKind: s.eventSpread?.byKind ?? null,
+    aggregateSpreadByKind: eventSpread,
+    eventSpreadSource: spreadSource,
     notes: [
-      'これはモデル内部の感度であって、実物のばらつきではない。',
+      'これはモデル内部の感度であって、実物のばらつきでも製造公差でもない。',
       'spreadMm が null の事象は「測っていない」であって「動かない」ではない。',
       'aggregateSpreadByKind は kind 単位の集計である。'
-        + 'STATE_CHANGE は 1 回の挿入で複数回起きるので、この幅を個々の事象へ当てはめてはならない。'
-        + '2026-08-03 まで当てはめており、Ring のブレーク接点に帰線接点用の幅が付いていた。',
+        + 'STATE_CHANGE は 1 回の挿入で複数回起きるので、この幅を個々の事象へ当てはめてはならない。',
+      'bridgeDepthJointRangeMm / tipBridge* は 3極 (TRS|JACK-TRS) の解析である。'
+        + '他の variant では出力しない。',
     ],
   }
 } catch {
-  /* 無ければ available:false のまま */
+  /* fail-closed のまま */
 }
 
 const intervals = buildIntervals(m)
 const rawEvents = extractEvents(m, sweep(m, { stepMm: STEP_MM }))
 
 /**
- * 感度解析が振った寸法。artifact の note に書かれている 2 本。
- * ここを直したら sensitivity.ts の `SWEPT_FOR_EVENT_SPREAD` も直す (同じ定数を 2 か所に置かない)。
+ * 感度解析が振った寸法。**artifact の記録から取る。**
+ * 2026-08-03 まで 3極のキーを直書きしており、4極 profile にも 3極のキーが載っていた。
+ * 直書きは、値が別 variant のものでも気付けない (今回の流入がまさにそれ)。
  */
-const SWEPT_FOR_EVENT_SPREAD = ['jack.contact.sleeve.axialCenter', 'jack.contact.sleeve.padWidth']
+const sweptForSpread = (spreadSource?.sweptParameters as string[] | null) ?? []
 
 /**
  * その kind が 1 回しか出ないか。**幅を事象へ配れるのはここが true のときだけ。**
@@ -407,13 +459,19 @@ const events = rawEvents.map((e) => {
     depthMm: +e.depthMm.toFixed(4),
     normalized: +(e.depthMm / m.fullDepthMm).toFixed(6),
     label: e.label,
-    spreadMm: eventSpecific ? { minMm: sp.minMm, maxMm: sp.maxMm, sweptParameters: SWEPT_FOR_EVENT_SPREAD } : null,
-    // null の理由を分ける。「動かない」ではない
+    spreadMm: eventSpecific ? { minMm: sp.minMm, maxMm: sp.maxMm, sweptParameters: sweptForSpread } : null,
+    /**
+     * null の理由を分ける。**「動かない」ではない。**
+     *
+     * 2026-08-03 に MEASURED という語をやめた。**実物測定と誤認される。**
+     * これはモデルのパラメータを振った結果であって、測定ではない
+     * (統合フォローアップ P1 の指摘。schema v2 送りにせず今回入れた)。
+     */
     spreadStatus: eventSpecific
-      ? 'MEASURED'
+      ? 'MODEL_SWEEP_EVENT_SPECIFIC'
       : sp === undefined
-        ? 'NOT_MEASURED'
-        : 'NOT_EVENT_SPECIFIC',
+        ? 'NOT_ANALYZED'
+        : 'MODEL_SWEEP_NOT_EVENT_SPECIFIC',
   }
 })
 

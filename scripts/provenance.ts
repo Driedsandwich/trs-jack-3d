@@ -79,7 +79,7 @@ function walk(root: string, dir: string): string[] {
  * `artifacts/sensitivity.json` だけは例外で、**入力として読んでいる**ので入れる
  * （events[].spreadMm の元データ）。感度解析を回し直せば digest が変わるのが正しい。
  */
-export function listInputs(root: string): InputFile[] {
+export function listInputs(root: string, variantSlug?: string): InputFile[] {
   const files: InputFile[] = []
   const add = (path: string, role: string) => {
     try {
@@ -94,7 +94,21 @@ export function listInputs(root: string): InputFile[] {
   for (const f of walk(root, 'src/data')) add(f, 'model-data')
   for (const f of walk(root, 'src/model')) add(f, 'model-code')
   add('package-lock.json', 'lockfile')
-  add('artifacts/sensitivity.json', 'sensitivity-input')
+  /**
+   * **感度 artifact は variant のものだけを入力にする（統合フォローアップ P1-2）。**
+   *
+   * 2026-08-03 まで、全 variant が単一の `artifacts/sensitivity.json` を入力にしていた。
+   * そのため **3極の感度を測り直しただけで 4極 profile の ID まで変わって**いた。
+   * 中身が変わっていないのに ID が変わるのは、受け手に無駄な引き直しをさせる。
+   *
+   * variantSlug を渡さない場合は、どの感度 artifact も入力にしない
+   * （check:stale のように variant を跨いで digest を比べる用途で使う）。
+   */
+  if (variantSlug) {
+    add(`artifacts/sensitivity.${variantSlug}.json`, 'sensitivity-input')
+    // 3極 profile は総合解析も使う (プラトー間隔・Tip 橋絡しきい値・挿抜力)
+    if (variantSlug === 'trs_jack_trs') add('artifacts/sensitivity.json', 'sensitivity-input')
+  }
   return files.sort((a, b) => a.path.localeCompare(b.path))
 }
 
@@ -135,6 +149,8 @@ export function assertReleaseAllowed(release: boolean, dirty: boolean, detail = 
 
 export interface ProvenanceOptions {
   root: string
+  /** 感度 artifact を variant 単位で入力に含めるためのスラグ */
+  variantSlug?: string
   command: string
   artifactDate: string
   release: boolean
@@ -144,7 +160,7 @@ export interface ProvenanceOptions {
 }
 
 export function buildProvenance(o: ProvenanceOptions): Provenance {
-  const inputFiles = listInputs(o.root)
+  const inputFiles = listInputs(o.root, o.variantSlug)
   const head = git(o.root, ['rev-parse', 'HEAD']) ?? 'UNKNOWN'
   const dirty = inputsAreDirty(o.root, inputFiles)
 

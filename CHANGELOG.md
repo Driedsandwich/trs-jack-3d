@@ -17,6 +17,69 @@
 
 ## [Unreleased]
 
+### 訂正 — TRS の感度解析が TRS×TRRS profile へ混入していた（統合フォローアップ P0-1〜P0-4）
+
+**Half-Plug Lab 側の fixture import で見つかった。**こちらの検査 45 本は 1 つも捕まえなかった。
+
+`scripts/sensitivity.ts` は解析基準を `TRS|JACK-TRS` に固定している。
+ところが exporter は variant を問わず単一の `artifacts/sensitivity.json` を読み、
+その `eventSpread.byKind` を**どの profile へも配っていた。**
+
+```
+TRS×TRS   FIRST_BREAK_OPEN  名目 8.06mm  幅 8.06〜8.06mm   一致
+TRS×TRRS  FIRST_BREAK_OPEN  名目 8.48mm  幅 8.06〜8.06mm   **名目値が幅の外**
+```
+
+名目値が自分の幅の外にあるのは、その幅が別のモデルのものだからである。
+
+**2026-08-03 の P0-3 修正は浅かった。**「kind 単位の集計を事象へ配るな」は直したが、
+「**別 variant の解析を流用するな**」は見落としていた。同じ根の、より深い層である。
+
+#### 直したこと
+
+- `scripts/sensitivityEvents.ts` を新設し、**variant ごとに** event spread を測る
+  （`artifacts/sensitivity.<slug>.json`）。`variantId` / `analysisScope` /
+  `sweptParameters` / `generatedFromCommit` を記録する
+- exporter は **`variantId` が profile と一致しなければ取り込まない（fail-closed）**。
+  一致しなければ `spreadMm: null` / `spreadStatus: NOT_ANALYZED` / `available: false`
+- 3極の総合解析（プラトー間隔・Tip 橋絡しきい値・挿抜力）は**3極 variant でのみ**出力する
+- `sweptParameters` を直書きせず artifact の記録から取る
+  （直書きだと、値が別 variant のものでも気付けない）
+- **`inputDigest` を variant 別にした**（P1-2）。3極の感度を測り直しただけで
+  4極 profile の ID まで変わっていた
+
+実測: TRS×TRRS の `FIRST_BREAK_OPEN` の幅は **7.82〜8.64 mm**（3極は 8.06〜8.06）。
+名目 8.48 はこの中に入る。振った寸法も `trrs.jack.contact.*` になった。
+
+**破壊的変更**: `spreadStatus` を改名した。`MEASURED` は実物測定と誤認される。
+
+| 旧 | 新 |
+|---|---|
+| `MEASURED` | `MODEL_SWEEP_EVENT_SPECIFIC` |
+| `NOT_EVENT_SPECIFIC` | `MODEL_SWEEP_NOT_EVENT_SPECIFIC` |
+| `NOT_MEASURED` | `NOT_ANALYZED` |
+
+### 追加 — 記録された値どうしの整合を検査する（11 件）
+
+**候補 12 件を変異させたところ、11 件が素通りした。**
+意味規則を 45 本書いていたが、構造（一意性・連続性・存在）ばかりで、
+**値どうしの整合をほとんど見ていなかった。**
+
+追加したもの:
+
+- **`spreadStatus` が幅を持つなら、名目値がその幅の中にある**（今回の欠陥そのもの）
+- `normalizedEnd` が mm と合う（`normalizedStart` しか見ていなかった。単なる非対称）
+- 事象の `normalized` が `depthMm` と合う／深さ順に並ぶ／範囲内にある
+- 区間の `evidenceGrade` がその区間の接点の最弱と一致する
+- `assumptionSummary.counts` が台帳と一致する
+- `absentTopologies.searched` が実際に現れたクラスを覆っている
+- **`inputFiles[].sha256` が実ファイルと一致する**（provenance の話は全部これに乗っているのに、
+  一度も検査していなかった）
+
+見送ったもの: `contacts` と `terminalToPlugNet` の突き合わせ（ブレーク接点を含む
+回路グラフ経由なので単純な同一性にならず、誤検出になる）、
+`stepMm` と区間幅の関係（丸めで脆い）。
+
 ### 訂正 — 自前の schema 検証器が `pattern` を実装していなかった（統合オーダー P0-6）
 
 2026-08-03 まで JSON Schema の検証を自前で書いていた。実装していたのは

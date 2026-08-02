@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "generatedAt": "2026-08-02",
  "note": "npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。byFile は npm run check:vacuity の下限としても使う。件数が減る変更は理由を書く。",
- "total": 249,
+ "total": 258,
  "byFile": {
   "contact.test.ts": 41,
   "dimensions.test.ts": 16,
@@ -10,6 +10,7 @@
   "halfPlugProfile.test.ts": 23,
   "provenance.test.ts": 8,
   "realJackComparison.test.ts": 12,
+  "sensitivityVariant.test.ts": 9,
   "topology.test.ts": 15,
   "topologySearch.test.ts": 16,
   "trrs.test.ts": 26,

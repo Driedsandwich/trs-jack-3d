@@ -97,9 +97,17 @@ describe('P0-1 provenance の受入試験', () => {
         f,
         isArtifactOutput: false,
       })
-    // 生成物のディレクトリを丸ごと入力にしていないこと
-    const fromArtifacts = files.filter((f) => f.startsWith('artifacts/'))
-    expect(fromArtifacts).toEqual(['artifacts/sensitivity.json'])
+    // 生成物のディレクトリを丸ごと入力にしていないこと。
+    // **感度 artifact は variant 別になった** (統合フォローアップ P1-2)。
+    // variantSlug を渡さない listInputs は、どの感度 artifact も入力にしない
+    expect(files.filter((f) => f.startsWith('artifacts/'))).toEqual([])
+    expect(listInputs(ROOT, 'trs_jack_trs').map((f) => f.path).filter((f) => f.startsWith('artifacts/'))).toEqual([
+      'artifacts/sensitivity.json',
+      'artifacts/sensitivity.trs_jack_trs.json',
+    ])
+    expect(listInputs(ROOT, 'trs_jack_trrs').map((f) => f.path).filter((f) => f.startsWith('artifacts/'))).toEqual([
+      'artifacts/sensitivity.trs_jack_trrs.json',
+    ])
   })
 
   it('2. **入力を 1 文字変えると inputDigest が変わる**', () => {

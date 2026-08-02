@@ -277,7 +277,8 @@ describe('Half-Plug Topology Profile v1', () => {
         expect({ kind: e.kind, spread: e.spreadMm, status: e.spreadStatus }).toEqual({
           kind: e.kind,
           spread: null,
-          status: 'NOT_EVENT_SPECIFIC',
+          // 2026-08-03 に MEASURED / NOT_EVENT_SPECIFIC から改名 (実物測定と誤認されるため)
+          status: 'MODEL_SWEEP_NOT_EVENT_SPECIFIC',
         })
     // 集計そのものは profile 直下に残っている (捨てていない)
     expect(profile.sensitivitySummary.aggregateSpreadByKind).toBeTruthy()

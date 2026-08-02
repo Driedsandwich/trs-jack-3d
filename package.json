@@ -13,6 +13,8 @@
     "test:watch": "vitest",
     "artifacts": "vite-node scripts/generateArtifacts.ts",
     "sensitivity": "vite-node scripts/sensitivity.ts",
+    "sensitivity:events": "vite-node scripts/sensitivityEvents.ts",
+    "sensitivity:events:all": "npm run sensitivity:events -- --variant \"TRS|JACK-TRS\" && npm run sensitivity:events -- --variant \"TRS|JACK-TRRS\"",
     "inspect": "vite-node scripts/inspect.ts",
     "typecheck": "tsc -b",
     "screenshots": "node scripts/screenshots.mjs",

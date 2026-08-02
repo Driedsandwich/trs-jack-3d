@@ -107,7 +107,7 @@
 <h2 id="s0">0. 先に — この profile は DSP 係数ではありません</h2>
 <p>渡しているのは「<strong>どの端子がどの導体につながっているか</strong>」という電気的な接続だけです。 音に関する項目（<code>acousticAnnotation</code>）は<strong>参考分類</strong>であって、 フィルタ係数でもゲインでもクロストーク量でもありません。</p>
 <p><strong>やってはいけない変換</strong>（統合オーダー §2 の禁止事項）:</p>
-<div class="tw"><table><thead><tr><th>してはいけないこと</th><th>なぜ</th></tr></thead><tbody><tr><td><code>topologyClass</code> を係数へ直接写像する</td><td>分類であって量ではない</td></tr><tr><td><code>quality</code> を接触抵抗 Ω やゲインへ換算する</td><td>相対スコアで、Ω に換算していない（profile に含めてもいません）</td></tr><tr><td>1 機種の <code>nominalStartMm</code> を一般的な「挿入深度」として使う</td><td><code>normalized</code> を併記しているのでそちらを使う</td></tr><tr><td><strong><code>ground-open-differential</code> を自動的に L−R 係数へ変換する</strong></td><td>§2 を参照</td></tr><tr><td>未実測なのに「実物と同じ」と表示する</td><td>全 profile が <code>verifiedPhysical: false</code></td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>してはいけないこと</th><th>なぜ</th></tr></thead><tbody><tr><td><code>topologyClass</code> を係数へ直接写像する</td><td>分類であって量ではない</td></tr><tr><td><code>quality</code> を接触抵抗 Ω やゲインへ換算する</td><td>相対スコアで、Ω に換算していない（profile に含めてもいません）</td></tr><tr><td>1 機種の <code>nominalStartMm</code> を一般的な「挿入深度」として使う</td><td>§4-1 を読むこと。<code>normalized</code> も万能ではない</td></tr><tr><td><strong><code>ground-open-differential</code> を自動的に L−R 係数へ変換する</strong></td><td>§2 を参照</td></tr><tr><td>未実測なのに「実物と同じ」と表示する</td><td>全 profile が <code>verifiedPhysical: false</code></td></tr></tbody></table></div>
 <hr>
 <h2 id="s1">1. 渡す profile は 2 つあります</h2>
 <div class="tw"><table><thead><tr><th>ファイル</th><th>中身</th><th>左右差分</th></tr></thead><tbody><tr><td><code>half_plug_topology_profile.v1.trs_jack_trs.json</code></td><td>3極プラグ × 3極ジャック（Lumberg 実部品）</td><td><strong>現れない</strong></td></tr><tr><td><code>half_plug_topology_profile.v1.trs_jack_trrs.json</code></td><td>3極プラグ × <strong>4極ジャック</strong></td><td><strong>現れる</strong>（<code>IV028</code> / 13.30〜13.52 mm）</td></tr></tbody></table></div>
@@ -116,8 +116,13 @@
 <hr>
 <h2 id="s2">2. 初期マッピング</h2>
 <p><strong>1 対 1 ではありません。</strong>同じ <code>topologyClass</code> でも、<code>stabilityOverlay</code> と <code>electricalRisk</code> の組み合わせで扱いが変わります。</p>
-<div class="tw"><table><thead><tr><th>profile の <code>topologyClass</code></th><th>Half-Plug の状態</th><th>備考</th></tr></thead><tbody><tr><td><code>fully-seated</code></td><td>Normal / seated</td><td>通常再生</td></tr><tr><td><code>no-path</code></td><td>Silent</td><td>導通経路が無い</td></tr><tr><td><code>one-sided</code></td><td>One-sided contact</td><td>片チャンネルのみ</td></tr><tr><td><strong><code>ground-open-differential</code></strong></td><td><strong>Floating return（本命）</strong></td><td><strong>§2-1 を必ず読むこと</strong></td></tr><tr><td><code>ground-open-nondifferential</code></td><td>Silent 相当</td><td>帰線が浮くが左右が同一節点。差分は生じない</td></tr><tr><td><code>signal-to-return-short</code></td><td>Miscontact / protection-dependent</td><td><strong>過渡音を作らないこと</strong>（§2-2）</td></tr><tr><td><code>on-insulator</code></td><td>Open / fragmented</td><td>絶縁帯上</td></tr><tr><td><code>wrong-conductor</code></td><td>Miscontact</td><td>誤った導体</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>profile の <code>topologyClass</code></th><th>Half-Plug の状態</th><th>備考</th></tr></thead><tbody><tr><td><code>fully-seated</code></td><td>Normal / seated</td><td>通常再生。<strong>機械的な完全挿入ではない</strong>（下記）</td></tr><tr><td><code>no-path</code></td><td>Silent</td><td>導通経路が無い</td></tr><tr><td><code>one-sided</code></td><td>One-sided contact</td><td>片チャンネルのみ</td></tr><tr><td><strong><code>ground-open-differential</code></strong></td><td><strong>Floating return（本命）</strong></td><td><strong>§2-1 を必ず読むこと</strong></td></tr><tr><td><code>ground-open-nondifferential</code></td><td>Silent 相当</td><td>帰線が浮くが左右が同一節点。差分は生じない</td></tr><tr><td><code>signal-to-return-short</code></td><td>Miscontact / protection-dependent</td><td><strong>過渡音を作らないこと</strong>（§2-2）</td></tr><tr><td><code>on-insulator</code></td><td>Open / fragmented</td><td>絶縁帯上</td></tr><tr><td><code>wrong-conductor</code></td><td>Miscontact</td><td>誤った導体</td></tr></tbody></table></div>
 <p><code>stabilityOverlay: "intermittent"</code> は<strong>基底トポロジーと直交する重ね合わせ</strong>です。 状態を別物に置き換えるのではなく、その状態の上に不安定性を乗せてください。</p>
+<h3>2-0. <code>fully-seated</code> は「肩が当たった」という意味ではありません</h3>
+<p>TRS×TRRS profile では <code>fully-seated</code> が <strong>13.52 mm から</strong>始まりますが、 機械的な完全挿入は <strong>14 mm</strong> です。</p>
+<p>このクラスが意味するのは <code>reasonCode</code> のとおり <strong><code>ALL_EXPECTED_FUNCTIONS_MATCH</code></strong>（機器が期待する全機能が正しい導体に届いた）だけで、 <strong>プラグの肩がジャックへ当たったことではありません。</strong></p>
+<p>UI で「物理的に完全に挿さっている」と表示しないでください。 機械的な完了を見たい場合は <code>nominalEndMm === fullInsertionDepthMm</code> で判定します。</p>
+<div class="note"><p>Schema v1 の間は名前を変えません。v2 で <code>electrically-normal</code> などへの</p><p>改名を検討します（統合フォローアップ §6-1）。</p></div>
 <h3>2-1. <code>ground-open-differential</code> を自動で L−R 係数にしないでください</h3>
 <p>この状態は「帰線が浮き、L と R が別々の導体に届いている」という<strong>電気的な接続の記述</strong>です。 そこから何 dB 落ちて、どういう周波数特性になるかは、<strong>このモデルは一切計算していません</strong>。</p>
 <ul><li>ドライバのインピーダンス、アンプの出力段、保護回路のどれもモデル化していません</li><li><code>audibleHypothesis</code>（「音量が落ち、左右の差分成分が残る」）は <strong>回路構成からの定性的な推測</strong>であって、実測ではありません</li><li><code>confidence: "low"</code> が付いています</li></ul>
@@ -166,6 +171,11 @@ physicalClaimStatus      未実測なら "unverified"</code></pre>
 <p>代わりに <strong><code>provenance.inputDigest</code></strong> を使ってください。 <strong>入力ファイルの中身だけ</strong>から作った sha256 で、生成物自身は含みません。</p>
 <div class="tw"><table><thead><tr><th>したこと</th><th><code>generatedFromCommit</code></th><th><code>inputDigest</code></th></tr></thead><tbody><tr><td>寸法を 1 文字直した</td><td>変わらない（未コミットなら）</td><td><strong>変わる</strong></td></tr><tr><td>artifact だけ作り直してコミットした</td><td><strong>変わる</strong></td><td>変わらない</td></tr><tr><td>文書だけ直してコミットした</td><td><strong>変わる</strong></td><td>変わらない</td></tr></tbody></table></div>
 <p><code>provenance.inputFiles[]</code> に path と sha256 が入っているので、 <strong>受け取り側で digest を再計算して検算できます</strong>（作り方は <code>inputDigestScope</code> にあります）。</p>
+<h3>4-1. <code>normalized</code> は profile 内の相対座標です</h3>
+<p><strong>「機種横断では normalized を使う」と書いていましたが、これは強すぎました。</strong></p>
+<p><code>normalized</code> は <code>depthMm / fullInsertionDepthMm</code> にすぎません。 <strong>profile が違えば、同じ <code>normalized</code> が同じ電気状態を指す保証はありません。</strong> 接点位置が変われば、同じ 0.95 でも別のトポロジーになります。</p>
+<p>使ってよいのは次の 2 つです。</p>
+<p>| ✅ | 同一 profile 内での UI 位置 | | ✅ | profile 更新時に、<code>topologyClass</code> と併用して候補区間を引き直すとき | | ❌ | 別 profile の <code>normalized</code> と直接比べて「同じ状態」とみなす |</p>
 <h3><code>workingTreeDirty</code> と <code>artifactKind</code> を見てください</h3>
 <div class="tw"><table><thead><tr><th><code>artifactKind</code></th><th>意味</th></tr></thead><tbody><tr><td><code>local</code></td><td>手元で生成したもの。<strong>リポジトリにコミットされている profile はこちらです</strong></td></tr><tr><td><code>release</code></td><td>clean な入力から <code>--release</code> で生成した配布物</td></tr></tbody></table></div>
 <p><strong><code>workingTreeDirty: true</code> の artifact を正本として取り込まないでください。</strong> 入力に未コミットの変更がある状態で作られたもので、その入力は他の誰も再現できません。 <code>--release</code> は dirty な入力からの生成を拒否します。</p>
@@ -181,9 +191,21 @@ physicalClaimStatus      未実測なら "unverified"</code></pre>
 <h3>⚠ <code>events[].spreadMm</code> の意味が変わりました（2026-08-03）</h3>
 <p>2026-08-02 版までの <code>spreadMm</code> は、<strong>感度解析の <code>kind</code> 単位の集計をそのまま各事象へ複製していました。</strong> <code>STATE_CHANGE</code> は 1 回の挿入で 29 件出るので、29 件すべてに同じ <code>−0.88〜14 mm</code> が付き、 たとえば Ring のブレーク接点にも帰線接点用の幅が付いていました。<strong>下流では誤情報です。</strong></p>
 <p>現在は <code>spreadStatus</code> で 3 つを区別します。</p>
-<div class="tw"><table><thead><tr><th><code>spreadStatus</code></th><th><code>spreadMm</code></th><th>意味</th></tr></thead><tbody><tr><td><code>MEASURED</code></td><td>値あり</td><td><strong>その事象そのものを測った幅。</strong> その <code>kind</code> が 1 回しか出ない事象だけ</td></tr><tr><td><code>NOT_EVENT_SPECIFIC</code></td><td><code>null</code></td><td><code>kind</code> 単位の集計しか無く、この事象へは配れない</td></tr><tr><td><code>NOT_MEASURED</code></td><td><code>null</code></td><td>測っていない</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th><code>spreadStatus</code></th><th><code>spreadMm</code></th><th>意味</th></tr></thead><tbody><tr><td><code>MODEL_SWEEP_EVENT_SPECIFIC</code></td><td>値あり</td><td><strong>その事象そのものを走査で求めた幅</strong></td></tr><tr><td><code>MODEL_SWEEP_NOT_EVENT_SPECIFIC</code></td><td><code>null</code></td><td><code>kind</code> 単位の集計しか無く、この事象へは配れない</td></tr><tr><td><code>NOT_ANALYZED</code></td><td><code>null</code></td><td>解析していない</td></tr></tbody></table></div>
 <p><strong>どれも「動かない」の意味ではありません。</strong> <code>kind</code> 単位の集計は捨てず、<code>sensitivitySummary.aggregateSpreadByKind</code> に残してあります。 そちらを個々の事象へ当てはめないでください。</p>
-<div class="note"><p>2026-08-02 版の profile を取り込み済みの場合、<code>events[].spreadMm</code> は読み捨ててください。</p></div>
+<h3>⚠ <code>spreadStatus</code> の語を変えました（v0.1.1・<strong>破壊的変更</strong>）</h3>
+<div class="tw"><table><thead><tr><th>旧（v0.1.0）</th><th>新（v0.1.1）</th></tr></thead><tbody><tr><td><code>MEASURED</code></td><td><strong><code>MODEL_SWEEP_EVENT_SPECIFIC</code></strong></td></tr><tr><td><code>NOT_EVENT_SPECIFIC</code></td><td><strong><code>MODEL_SWEEP_NOT_EVENT_SPECIFIC</code></strong></td></tr><tr><td><code>NOT_MEASURED</code></td><td><strong><code>NOT_ANALYZED</code></strong></td></tr></tbody></table></div>
+<p><strong><code>MEASURED</code> は実物の測定と誤認されます。</strong>実際にはモデルのパラメータを振った結果です。 <code>sensitivitySummary.basis</code> にも <code>MODEL_PARAMETER_SWEEP</code> と書いてあります。</p>
+<p>移行は次のとおりです。</p>
+<pre><code>if (s === 'MEASURED')            -&gt; 'MODEL_SWEEP_EVENT_SPECIFIC'
+if (s === 'NOT_EVENT_SPECIFIC')  -&gt; 'MODEL_SWEEP_NOT_EVENT_SPECIFIC'
+if (s === 'NOT_MEASURED')        -&gt; 'NOT_ANALYZED'</code></pre>
+<h3>⚠ v0.1.0 の TRS×TRRS の感度情報は誤りでした</h3>
+<p><strong>v0.1.0 では、TRS×TRRS profile に 3極モデルの感度が入っていました。</strong></p>
+<p><code>FIRST_BREAK_OPEN</code> は名目 8.48 mm なのに、付いていた幅は 8.06〜8.06 mm（3極の値）でした。 <strong>名目値が自分の幅の外にある</strong>という、あり得ない状態です。</p>
+<p>v0.1.1 では variant ごとに感度を測り直し、 <strong><code>variantId</code> が profile と一致しない感度 artifact は取り込みません（fail-closed）。</strong></p>
+<div class="tw"><table><thead><tr><th></th><th>v0.1.0</th><th>v0.1.1</th></tr></thead><tbody><tr><td>TRS×TRRS の <code>FIRST_BREAK_OPEN</code> の幅</td><td>8.06〜8.06（3極の値）</td><td><strong>7.82〜8.64</strong>（4極を測り直した値）</td></tr><tr><td>振った寸法</td><td><code>jack.contact.sleeve.*</code>（3極のキー）</td><td>**<code>trrs.jack.contact.*</code>**</td></tr><tr><td><code>bridgeDepthJointRangeMm</code> 等</td><td>3極の値が入っていた</td><td><strong><code>null</code></strong>（3極の解析なので出さない）</td></tr></tbody></table></div>
+<div class="note"><p>**v0.1.0 を取り込み済みの場合、<code>events[].spreadMm</code> と <code>sensitivitySummary</code> は</p><p>読み捨てて、v0.1.1 を取り直してください。**区間・<code>electricalTopology</code>・provenance には</p><p>影響していません。</p></div>
 <hr>
 <h2 id="s5">5. 深さの窓が 0.2 mm しかない件</h2>
 <p>本命の区間は <strong>0.22 mm 幅</strong>で、挿入ストローク 14 mm の <strong>1.6 %</strong> です。</p>
@@ -196,7 +218,8 @@ physicalClaimStatus      未実測なら "unverified"</code></pre>
 <h2 id="s6">6. 受け取り側で必ず確認してほしいこと</h2>
 <ul class="chk"><li><input type="checkbox" disabled> <code>modelLimitations.verifiedPhysical</code> が <code>false</code> であること（現状すべて false）</li><li><input type="checkbox" disabled> <code>dataLicense.attribution</code> を表示または同梱すること（CC BY 4.0）</li><li><input type="checkbox" disabled> <strong><code>provenance.inputDigest</code> を固定して参照すること</strong>（<code>sourceRevision</code> でも <code>main</code> でもない。→ §4）</li><li><input type="checkbox" disabled> <strong><code>provenance.workingTreeDirty</code> が <code>false</code></strong> の artifact だけを正本にすること</li></ul>
 <p>（リポジトリにコミットされている profile は <code>true</code> です。release asset を待ってください）</p>
-<ul class="chk"><li><input type="checkbox" disabled> <code>schemaVersion</code> が 1 であること。<strong>項目・型・意味の</strong>破壊的変更だけを v2 へ上げます</li><li><input type="checkbox" disabled> <strong><code>intervalId</code> を単独で保存していないこと</strong>（§4 の警告。数値データの変更で指す先が変わります）</li><li><input type="checkbox" disabled> <code>breakStates</code> を読むこと（4極側は 2026-08-02 から <code>BRK_TRRS_RING</code> / <code>BRK_TRRS_TIP</code> が入ります）</li><li><input type="checkbox" disabled> <code>absentTopologies.absent</code> を読み、<strong>無い状態を UI に足さないこと</strong></li></ul>
+<ul class="chk"><li><input type="checkbox" disabled> <code>schemaVersion</code> が 1 であること。<strong>項目・型・意味の</strong>破壊的変更だけを v2 へ上げます</li><li><input type="checkbox" disabled> <strong><code>intervalId</code> を単独で保存していないこと</strong>（§4 の警告。数値データの変更で指す先が変わります）</li><li><input type="checkbox" disabled> <code>breakStates</code> を読むこと（4極側は 2026-08-02 から <code>BRK_TRRS_RING</code> / <code>BRK_TRRS_TIP</code> が入ります）</li><li><input type="checkbox" disabled> <code>absentTopologies.absent</code> を読み、<strong>無い状態を UI に足さないこと</strong></li><li><input type="checkbox" disabled> <code>sensitivitySummary.eventSpreadSource.variantId</code> が profile の <code>variantId</code> と一致すること</li></ul>
+<p>（一致しないものは取り込まない。v0.1.0 ではここが食い違っていました）</p>
 </div>
 </body>
 </html>

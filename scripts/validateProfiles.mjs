@@ -26,11 +26,13 @@
  */
 
 import Ajv from 'ajv'
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
+const sha256File = (p) => createHash('sha256').update(readFileSync(p)).digest('hex')
 
 // strict:false は schema の `description` 等の注釈を許すため。検証の厳しさは落ちない
 const ajv = new Ajv({ allErrors: true, strict: false })
@@ -92,12 +94,43 @@ const SEMANTIC = {
       if (iv[iv.length - 1].nominalEndMm !== a.fullInsertionDepthMm)
         errs.push(`最後の区間が完全挿入深度で終わっていない (${iv[iv.length - 1].nominalEndMm} ≠ ${a.fullInsertionDepthMm})`)
     }
+    // **2026-08-03 追加分。** それまで「記録された値どうしが矛盾しないか」を
+    // ほとんど見ていなかった。候補 12 件を変異させて実測したところ **11 件が素通り**した。
+    // 構造 (一意性・連続性・存在) は見ていたが、値どうしの整合を見ていなかった。
     for (const x of iv) {
       if (x.nominalEndMm <= x.nominalStartMm) errs.push(`${x.intervalId}: 幅が 0 以下`)
-      const n = x.nominalStartMm / a.fullInsertionDepthMm
-      if (Math.abs(x.normalizedStart - n) > 1e-5)
-        errs.push(`${x.intervalId}: normalizedStart が mm と合わない (${x.normalizedStart} ≠ ${n.toFixed(6)})`)
+      // normalized は Start と End の両方を見る。**Start だけ見ていた** (非対称なのは単なる抜け)
+      for (const [k, mm] of [['normalizedStart', x.nominalStartMm], ['normalizedEnd', x.nominalEndMm]]) {
+        const n = mm / a.fullInsertionDepthMm
+        if (Math.abs(x[k] - n) > 1e-5) errs.push(`${x.intervalId}: ${k} が mm と合わない (${x[k]} ≠ ${n.toFixed(6)})`)
+      }
+      // 区間の evidenceGrade は、その区間の接点のうち最も弱いものでなければならない。
+      // **合成量は弱いほうへ合わせる**というこのリポジトリの規則そのもの
+      const ORDER = ['FACT', 'DERIVED', 'ASSUMPTION', 'UNKNOWN']
+      const weakest = (x.contacts ?? []).reduce(
+        (acc, c) => (ORDER.indexOf(c.evidenceGrade) > ORDER.indexOf(acc) ? c.evidenceGrade : acc),
+        'FACT',
+      )
+      if (x.contacts?.length && x.evidenceGrade !== weakest)
+        errs.push(`${x.intervalId}: evidenceGrade が ${x.evidenceGrade} だが、接点の最弱は ${weakest}`)
     }
+
+    // --- 事象の座標が自己整合か ---
+    let prev = -Infinity
+    for (const e of a.events ?? []) {
+      const n = e.depthMm / a.fullInsertionDepthMm
+      if (Math.abs(e.normalized - n) > 1e-5)
+        errs.push(`${e.eventId}: normalized が depthMm と合わない (${e.normalized} ≠ ${n.toFixed(6)})`)
+      if (e.depthMm < 0 || e.depthMm > a.fullInsertionDepthMm)
+        errs.push(`${e.eventId}: depthMm ${e.depthMm} が 0〜${a.fullInsertionDepthMm} の外`)
+      if (e.depthMm < prev) errs.push(`${e.eventId}: events が深さ順に並んでいない (${prev} の後に ${e.depthMm})`)
+      prev = e.depthMm
+    }
+
+    // --- 「探した」と言っているクラスの一覧が、実際に現れたものを覆っているか ---
+    for (const t of new Set(iv.map((x) => x.electricalTopology?.topologyClass)))
+      if (t && !(a.absentTopologies?.searched ?? []).includes(t))
+        errs.push(`区間に現れている ${t} が absentTopologies.searched に無い（探索対象の記録漏れ）`)
     // --- intervalId が一意か ---
     const ivIds = iv.map((x) => x.intervalId)
     if (new Set(ivIds).size !== ivIds.length) errs.push('intervalId が重複している')
@@ -113,11 +146,28 @@ const SEMANTIC = {
       if (e.eventId.includes(e.label)) errs.push(`eventId に label の文言が入っている: ${e.eventId}`)
 
     // --- spreadMm と spreadStatus が矛盾していないか ---
+    const HAS_SPREAD = new Set(['MEASURED', 'MODEL_SWEEP_EVENT_SPECIFIC'])
     for (const e of a.events ?? []) {
-      if (e.spreadStatus === 'MEASURED' && e.spreadMm === null)
-        errs.push(`${e.eventId}: MEASURED なのに spreadMm が null`)
-      if (e.spreadStatus !== 'MEASURED' && e.spreadMm !== null)
+      if (HAS_SPREAD.has(e.spreadStatus) && e.spreadMm === null)
+        errs.push(`${e.eventId}: ${e.spreadStatus} なのに spreadMm が null`)
+      if (!HAS_SPREAD.has(e.spreadStatus) && e.spreadMm !== null)
         errs.push(`${e.eventId}: ${e.spreadStatus} なのに spreadMm がある`)
+
+      // **名目値は自分の幅の中に無ければならない (統合フォローアップ P0-3)。**
+      //
+      // 2026-08-03 の Half-Plug 側 fixture import で見つかった。
+      // TRS×TRRS profile の FIRST_BREAK_OPEN は名目 8.48mm なのに、
+      // 付いていた幅は 8.06〜8.06mm だった。**自分の幅の外にある。**
+      // 原因は感度解析が TRS|JACK-TRS 固定で、その結果を variant を問わず
+      // 配っていたこと。幅が本当にその variant のものなら、名目値は必ず幅に入る。
+      //
+      // 意味規則を 45 本書いておきながら、この基本的な自己整合を落としていた。
+      if (HAS_SPREAD.has(e.spreadStatus) && e.spreadMm)
+        if (e.depthMm < e.spreadMm.minMm || e.depthMm > e.spreadMm.maxMm)
+          errs.push(
+            `${e.eventId}: 名目値 ${e.depthMm} が自分の幅 ${e.spreadMm.minMm}〜${e.spreadMm.maxMm} の外にある`
+              + `（別 variant の解析を流用した疑い）`,
+          )
     }
 
     // --- provenance ---
@@ -138,8 +188,35 @@ const SEMANTIC = {
       for (const f of p.inputFiles ?? [])
         if (f.path.includes('half_plug_topology_profile'))
           errs.push(`生成物自身が入力に入っている: ${f.path}`)
+
+      // **inputFiles の sha256 が実ファイルと一致するか。**
+      // provenance の話は全部これに乗っている。ここが嘘なら inputDigest は無意味で、
+      // 受け手の再計算も無意味になる。**それを一度も検査していなかった。**
+      // 手元にファイルがある場合だけ見る (release asset を受け取った側では原理的に見られない)
+      let mismatched = 0
+      for (const f of p.inputFiles ?? []) {
+        const abs = resolve(ROOT, f.path)
+        if (!existsSync(abs)) continue
+        if (sha256File(abs) !== f.sha256) {
+          mismatched++
+          if (mismatched <= 3) errs.push(`inputFiles の sha256 が実ファイルと違う: ${f.path}`)
+        }
+      }
+      if (mismatched > 3) errs.push(`inputFiles の sha256 不一致は他に ${mismatched - 3} 件`)
       if (p.workingTreeDirty === true && p.artifactKind === 'release')
         errs.push('dirty な入力から release artifact が作られている')
+    }
+
+    // --- 根拠件数が台帳と一致するか (テストにはあったが検証器には無かった) ---
+    try {
+      const dims = read('src/data/dimensions.json').entries
+      const counts = { FACT: 0, DERIVED: 0, ASSUMPTION: 0, UNKNOWN: 0 }
+      for (const v of Object.values(dims)) counts[v.grade]++
+      for (const [g, n] of Object.entries(counts))
+        if ((a.assumptionSummary?.counts ?? {})[g] !== n)
+          errs.push(`assumptionSummary.counts.${g} が台帳と違う (${a.assumptionSummary?.counts?.[g]} ≠ ${n})`)
+    } catch {
+      /* 台帳が読めない環境 (release asset だけ受け取った側) では見ない */
     }
 
     // --- 主張の一貫性 ---

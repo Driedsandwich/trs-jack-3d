@@ -24,7 +24,7 @@
 |---|---|
 | `topologyClass` を係数へ直接写像する | 分類であって量ではない |
 | `quality` を接触抵抗 Ω やゲインへ換算する | 相対スコアで、Ω に換算していない（profile に含めてもいません） |
-| 1 機種の `nominalStartMm` を一般的な「挿入深度」として使う | `normalized` を併記しているのでそちらを使う |
+| 1 機種の `nominalStartMm` を一般的な「挿入深度」として使う | §4-1 を読むこと。`normalized` も万能ではない |
 | **`ground-open-differential` を自動的に L−R 係数へ変換する** | §2 を参照 |
 | 未実測なのに「実物と同じ」と表示する | 全 profile が `verifiedPhysical: false` |
 
@@ -53,7 +53,7 @@ npm run export:half-plug -- --variant "TRS|JACK-TRRS"
 
 | profile の `topologyClass` | Half-Plug の状態 | 備考 |
 |---|---|---|
-| `fully-seated` | Normal / seated | 通常再生 |
+| `fully-seated` | Normal / seated | 通常再生。**機械的な完全挿入ではない**（下記） |
 | `no-path` | Silent | 導通経路が無い |
 | `one-sided` | One-sided contact | 片チャンネルのみ |
 | **`ground-open-differential`** | **Floating return（本命）** | **§2-1 を必ず読むこと** |
@@ -64,6 +64,21 @@ npm run export:half-plug -- --variant "TRS|JACK-TRRS"
 
 `stabilityOverlay: "intermittent"` は**基底トポロジーと直交する重ね合わせ**です。
 状態を別物に置き換えるのではなく、その状態の上に不安定性を乗せてください。
+
+### 2-0. `fully-seated` は「肩が当たった」という意味ではありません
+
+TRS×TRRS profile では `fully-seated` が **13.52 mm から**始まりますが、
+機械的な完全挿入は **14 mm** です。
+
+このクラスが意味するのは `reasonCode` のとおり
+**`ALL_EXPECTED_FUNCTIONS_MATCH`**（機器が期待する全機能が正しい導体に届いた）だけで、
+**プラグの肩がジャックへ当たったことではありません。**
+
+UI で「物理的に完全に挿さっている」と表示しないでください。
+機械的な完了を見たい場合は `nominalEndMm === fullInsertionDepthMm` で判定します。
+
+> Schema v1 の間は名前を変えません。v2 で `electrically-normal` などへの
+> 改名を検討します（統合フォローアップ §6-1）。
 
 ### 2-1. `ground-open-differential` を自動で L−R 係数にしないでください
 
@@ -201,6 +216,20 @@ physicalClaimStatus      未実測なら "unverified"
 `provenance.inputFiles[]` に path と sha256 が入っているので、
 **受け取り側で digest を再計算して検算できます**（作り方は `inputDigestScope` にあります）。
 
+### 4-1. `normalized` は profile 内の相対座標です
+
+**「機種横断では normalized を使う」と書いていましたが、これは強すぎました。**
+
+`normalized` は `depthMm / fullInsertionDepthMm` にすぎません。
+**profile が違えば、同じ `normalized` が同じ電気状態を指す保証はありません。**
+接点位置が変われば、同じ 0.95 でも別のトポロジーになります。
+
+使ってよいのは次の 2 つです。
+
+| ✅ | 同一 profile 内での UI 位置 |
+| ✅ | profile 更新時に、`topologyClass` と併用して候補区間を引き直すとき |
+| ❌ | 別 profile の `normalized` と直接比べて「同じ状態」とみなす |
+
 ### `workingTreeDirty` と `artifactKind` を見てください
 
 | `artifactKind` | 意味 |
@@ -261,15 +290,52 @@ physicalClaimStatus      未実測なら "unverified"
 
 | `spreadStatus` | `spreadMm` | 意味 |
 |---|---|---|
-| `MEASURED` | 値あり | **その事象そのものを測った幅。** その `kind` が 1 回しか出ない事象だけ |
-| `NOT_EVENT_SPECIFIC` | `null` | `kind` 単位の集計しか無く、この事象へは配れない |
-| `NOT_MEASURED` | `null` | 測っていない |
+| `MODEL_SWEEP_EVENT_SPECIFIC` | 値あり | **その事象そのものを走査で求めた幅** |
+| `MODEL_SWEEP_NOT_EVENT_SPECIFIC` | `null` | `kind` 単位の集計しか無く、この事象へは配れない |
+| `NOT_ANALYZED` | `null` | 解析していない |
 
 **どれも「動かない」の意味ではありません。**
 `kind` 単位の集計は捨てず、`sensitivitySummary.aggregateSpreadByKind` に残してあります。
 そちらを個々の事象へ当てはめないでください。
 
-> 2026-08-02 版の profile を取り込み済みの場合、`events[].spreadMm` は読み捨ててください。
+### ⚠ `spreadStatus` の語を変えました（v0.1.1・**破壊的変更**）
+
+| 旧（v0.1.0） | 新（v0.1.1） |
+|---|---|
+| `MEASURED` | **`MODEL_SWEEP_EVENT_SPECIFIC`** |
+| `NOT_EVENT_SPECIFIC` | **`MODEL_SWEEP_NOT_EVENT_SPECIFIC`** |
+| `NOT_MEASURED` | **`NOT_ANALYZED`** |
+
+**`MEASURED` は実物の測定と誤認されます。**実際にはモデルのパラメータを振った結果です。
+`sensitivitySummary.basis` にも `MODEL_PARAMETER_SWEEP` と書いてあります。
+
+移行は次のとおりです。
+
+```
+if (s === 'MEASURED')            -> 'MODEL_SWEEP_EVENT_SPECIFIC'
+if (s === 'NOT_EVENT_SPECIFIC')  -> 'MODEL_SWEEP_NOT_EVENT_SPECIFIC'
+if (s === 'NOT_MEASURED')        -> 'NOT_ANALYZED'
+```
+
+### ⚠ v0.1.0 の TRS×TRRS の感度情報は誤りでした
+
+**v0.1.0 では、TRS×TRRS profile に 3極モデルの感度が入っていました。**
+
+`FIRST_BREAK_OPEN` は名目 8.48 mm なのに、付いていた幅は 8.06〜8.06 mm（3極の値）でした。
+**名目値が自分の幅の外にある**という、あり得ない状態です。
+
+v0.1.1 では variant ごとに感度を測り直し、
+**`variantId` が profile と一致しない感度 artifact は取り込みません（fail-closed）。**
+
+| | v0.1.0 | v0.1.1 |
+|---|---|---|
+| TRS×TRRS の `FIRST_BREAK_OPEN` の幅 | 8.06〜8.06（3極の値） | **7.82〜8.64**（4極を測り直した値） |
+| 振った寸法 | `jack.contact.sleeve.*`（3極のキー） | **`trrs.jack.contact.*`** |
+| `bridgeDepthJointRangeMm` 等 | 3極の値が入っていた | **`null`**（3極の解析なので出さない） |
+
+> **v0.1.0 を取り込み済みの場合、`events[].spreadMm` と `sensitivitySummary` は
+> 読み捨てて、v0.1.1 を取り直してください。**区間・`electricalTopology`・provenance には
+> 影響していません。
 
 ---
 
@@ -310,3 +376,5 @@ Half-Plug は音を DSP で再現するものなので、プラグを物理的�
 - [ ] **`intervalId` を単独で保存していないこと**（§4 の警告。数値データの変更で指す先が変わります）
 - [ ] `breakStates` を読むこと（4極側は 2026-08-02 から `BRK_TRRS_RING` / `BRK_TRRS_TIP` が入ります）
 - [ ] `absentTopologies.absent` を読み、**無い状態を UI に足さないこと**
+- [ ] `sensitivitySummary.eventSpreadSource.variantId` が profile の `variantId` と一致すること
+      （一致しないものは取り込まない。v0.1.0 ではここが食い違っていました）

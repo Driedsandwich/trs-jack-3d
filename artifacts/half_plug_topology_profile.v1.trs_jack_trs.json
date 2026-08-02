@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRS:bba0e6dc73a4",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:ea318f0c5b6c",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -35,21 +35,26 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "9e284d169a7e5cd1107d71f76685bde99a1099ae",
+ "sourceRevision": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
  "generatedAt": "2026-08-02",
  "provenance": {
   "generatorVersion": 3,
-  "generatedFromCommit": "9e284d169a7e5cd1107d71f76685bde99a1099ae",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
+  "workingTreeDirty": true,
   "revisionOverride": false,
   "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "bba0e6dc73a4273c7178ede2eaeb40cb518fcf6c9c0c7679d24f15a9a6d821a0",
+  "inputDigest": "ea318f0c5b6c8cc3b4d6d13f506ad7f425fc5709b4fafc537e44c976a38268c3",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.json",
     "sha256": "79086a32df36d0397a201a8be4701f3f24c1ff9417ef01ff78b05a6f407e2f3b",
+    "role": "sensitivity-input"
+   },
+   {
+    "path": "artifacts/sensitivity.trs_jack_trs.json",
+    "sha256": "c0cf0a295d5c66f797bbc226cb0130f77ad8c27ca6dceb0483174ed6a0a167a1",
     "role": "sensitivity-input"
    },
    {
@@ -59,17 +64,17 @@
    },
    {
     "path": "schemas/half-plug-topology-profile.v1.schema.json",
-    "sha256": "ba4d6bca95397d5adb32e1cbe9593644cc4a23a463914d1724b16abfd9700289",
+    "sha256": "57a10fc69c698c971a73122db3557803009877748d91491568d8b20094fa0b59",
     "role": "schema"
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "944017f2d5a56dc696fe4f0a6b58dc73e33fe33253abaf8d490459dd59c47002",
+    "sha256": "8794051aeb0a773893c4c17cc47c809b3209bbd369b36e560abc503469bd72b8",
     "role": "generator"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "f2fdd33fedff7090ce4688d5b9cd71aa8157f46e0cb4da987b12b0f95c2836d1",
+    "sha256": "f8d51176ac5e10f865c7effc5f288bcb4dcb7940748aeaa4facacaad4bc01663",
     "role": "generator"
    },
    {
@@ -3178,7 +3183,7 @@
      "jack.contact.sleeve.padWidth"
     ]
    },
-   "spreadStatus": "MEASURED"
+   "spreadStatus": "MODEL_SWEEP_EVENT_SPECIFIC"
   },
   {
    "eventId": "LAST_CONTACT_RELEASE",
@@ -3195,7 +3200,7 @@
      "jack.contact.sleeve.padWidth"
     ]
    },
-   "spreadStatus": "MEASURED"
+   "spreadStatus": "MODEL_SWEEP_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_SLEEVE:OPEN->INSULATED#1",
@@ -3210,7 +3215,7 @@
    "normalized": 0.28,
    "label": "JC_SLEEVE: OPEN → INSULATED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "FIRST_ELECTRICAL_CONTACT",
@@ -3227,7 +3232,7 @@
      "jack.contact.sleeve.padWidth"
     ]
    },
-   "spreadStatus": "MEASURED"
+   "spreadStatus": "MODEL_SWEEP_EVENT_SPECIFIC"
   },
   {
    "eventId": "FIRST_WRONG_SEGMENT",
@@ -3244,7 +3249,7 @@
      "jack.contact.sleeve.padWidth"
     ]
    },
-   "spreadStatus": "MEASURED"
+   "spreadStatus": "MODEL_SWEEP_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_SLEEVE:INSULATED->WRONG_SEGMENT#1",
@@ -3259,7 +3264,7 @@
    "normalized": 0.281429,
    "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_SLEEVE:WRONG_SEGMENT->INSULATED#1",
@@ -3274,7 +3279,7 @@
    "normalized": 0.451429,
    "label": "JC_SLEEVE: WRONG_SEGMENT → INSULATED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_SLEEVE:INSULATED->OPEN#1",
@@ -3289,7 +3294,7 @@
    "normalized": 0.452857,
    "label": "JC_SLEEVE: INSULATED → OPEN",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_SLEEVE:OPEN->INSULATED#2",
@@ -3304,7 +3309,7 @@
    "normalized": 0.501429,
    "label": "JC_SLEEVE: OPEN → INSULATED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_SLEEVE:INSULATED->WRONG_SEGMENT#2",
@@ -3319,7 +3324,7 @@
    "normalized": 0.502857,
    "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:OPEN->INSULATED#1",
@@ -3334,7 +3339,7 @@
    "normalized": 0.571429,
    "label": "JC_RING: OPEN → INSULATED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:INSULATED->WRONG_SEGMENT#1",
@@ -3349,7 +3354,7 @@
    "normalized": 0.572857,
    "label": "JC_RING: INSULATED → WRONG_SEGMENT",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "FIRST_BREAK_OPEN",
@@ -3366,7 +3371,7 @@
      "jack.contact.sleeve.padWidth"
     ]
    },
-   "spreadStatus": "MEASURED"
+   "spreadStatus": "MODEL_SWEEP_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:BREAK_CLOSED->BREAK_OPEN#1",
@@ -3381,7 +3386,7 @@
    "normalized": 0.575714,
    "label": "JC_RING ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_SLEEVE:WRONG_SEGMENT->INSULATED#2",
@@ -3396,7 +3401,7 @@
    "normalized": 0.59,
    "label": "JC_SLEEVE: WRONG_SEGMENT → INSULATED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_SLEEVE:INSULATED->WRONG_SEGMENT#3",
@@ -3411,7 +3416,7 @@
    "normalized": 0.591429,
    "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:BREAK_OPEN->BREAK_CLOSED#1",
@@ -3426,7 +3431,7 @@
    "normalized": 0.674286,
    "label": "JC_RING ブレーク接点: BREAK_OPEN → BREAK_CLOSED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:WRONG_SEGMENT->INSULATED#1",
@@ -3441,7 +3446,7 @@
    "normalized": 0.717143,
    "label": "JC_RING: WRONG_SEGMENT → INSULATED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:INSULATED->OPEN#1",
@@ -3456,7 +3461,7 @@
    "normalized": 0.718571,
    "label": "JC_RING: INSULATED → OPEN",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:OPEN->INSULATED#2",
@@ -3471,7 +3476,7 @@
    "normalized": 0.792857,
    "label": "JC_RING: OPEN → INSULATED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:INSULATED->WRONG_SEGMENT#2",
@@ -3486,7 +3491,7 @@
    "normalized": 0.794286,
    "label": "JC_RING: INSULATED → WRONG_SEGMENT",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:BREAK_CLOSED->BREAK_OPEN#2",
@@ -3501,7 +3506,7 @@
    "normalized": 0.802857,
    "label": "JC_RING ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "FIRST_BRIDGE",
@@ -3518,7 +3523,7 @@
      "jack.contact.sleeve.padWidth"
     ]
    },
-   "spreadStatus": "MEASURED"
+   "spreadStatus": "MODEL_SWEEP_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_SLEEVE:WRONG_SEGMENT->BRIDGED#1",
@@ -3533,7 +3538,7 @@
    "normalized": 0.841429,
    "label": "JC_SLEEVE: WRONG_SEGMENT → BRIDGED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_SLEEVE:BRIDGED->CLOSED#1",
@@ -3548,7 +3553,7 @@
    "normalized": 0.854286,
    "label": "JC_SLEEVE: BRIDGED → CLOSED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_TIP:OPEN->TOUCH_UNSTABLE#1",
@@ -3563,7 +3568,7 @@
    "normalized": 0.854286,
    "label": "JC_TIP: OPEN → TOUCH_UNSTABLE",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_TIP:BREAK_CLOSED->BREAK_OPEN#1",
@@ -3578,7 +3583,7 @@
    "normalized": 0.858571,
    "label": "JC_TIP ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:WRONG_SEGMENT->INSULATED#2",
@@ -3593,7 +3598,7 @@
    "normalized": 0.87,
    "label": "JC_RING: WRONG_SEGMENT → INSULATED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_TIP:TOUCH_UNSTABLE->CLOSED#1",
@@ -3608,7 +3613,7 @@
    "normalized": 0.87,
    "label": "JC_TIP: TOUCH_UNSTABLE → CLOSED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "ALL_SIGNALS_CORRECT",
@@ -3625,7 +3630,7 @@
      "jack.contact.sleeve.padWidth"
     ]
    },
-   "spreadStatus": "MEASURED"
+   "spreadStatus": "MODEL_SWEEP_EVENT_SPECIFIC"
   },
   {
    "eventId": "STATE_CHANGE:JC_RING:INSULATED->CLOSED#1",
@@ -3640,7 +3645,7 @@
    "normalized": 0.881429,
    "label": "JC_RING: INSULATED → CLOSED",
    "spreadMm": null,
-   "spreadStatus": "NOT_EVENT_SPECIFIC"
+   "spreadStatus": "MODEL_SWEEP_NOT_EVENT_SPECIFIC"
   },
   {
    "eventId": "FULL_INSERTION",
@@ -3657,7 +3662,7 @@
      "jack.contact.sleeve.padWidth"
     ]
    },
-   "spreadStatus": "MEASURED"
+   "spreadStatus": "MODEL_SWEEP_EVENT_SPECIFIC"
   }
  ],
  "sensitivitySummary": {
@@ -3669,11 +3674,47 @@
   "tipBridgeComplianceThreshold": 0.153752,
   "tipBridgeWorstCornerThreshold": 0.118875,
   "aggregateSpreadByKind": {
+   "ALL_SIGNALS_CORRECT": {
+    "minMm": 12.34,
+    "maxMm": 14,
+    "configs": 869,
+    "movesMm": 1.66
+   },
+   "FIRST_BREAK_OPEN": {
+    "minMm": 8.06,
+    "maxMm": 8.06,
+    "configs": 869,
+    "movesMm": 0
+   },
+   "FIRST_BRIDGE": {
+    "minMm": 6.98,
+    "maxMm": 13.14,
+    "configs": 714,
+    "movesMm": 6.16
+   },
+   "FIRST_ELECTRICAL_CONTACT": {
+    "minMm": -0.86,
+    "maxMm": 8.02,
+    "configs": 869,
+    "movesMm": 8.88
+   },
    "FIRST_PHYSICAL_CONTACT": {
     "minMm": -0.88,
     "maxMm": 5.72,
     "configs": 869,
     "movesMm": 6.6
+   },
+   "FIRST_WRONG_SEGMENT": {
+    "minMm": -0.86,
+    "maxMm": 8.02,
+    "configs": 869,
+    "movesMm": 8.88
+   },
+   "FULL_INSERTION": {
+    "minMm": 14,
+    "maxMm": 14,
+    "configs": 869,
+    "movesMm": 0
    },
    "LAST_CONTACT_RELEASE": {
     "minMm": -0.88,
@@ -3686,48 +3727,26 @@
     "maxMm": 14,
     "configs": 17082,
     "movesMm": 14.88
-   },
-   "FIRST_ELECTRICAL_CONTACT": {
-    "minMm": -0.86,
-    "maxMm": 8.02,
-    "configs": 869,
-    "movesMm": 8.88
-   },
-   "FIRST_WRONG_SEGMENT": {
-    "minMm": -0.86,
-    "maxMm": 8.02,
-    "configs": 869,
-    "movesMm": 8.88
-   },
-   "FIRST_BREAK_OPEN": {
-    "minMm": 8.06,
-    "maxMm": 8.06,
-    "configs": 869,
-    "movesMm": 0
-   },
-   "ALL_SIGNALS_CORRECT": {
-    "minMm": 12.34,
-    "maxMm": 14,
-    "configs": 869,
-    "movesMm": 1.66
-   },
-   "FULL_INSERTION": {
-    "minMm": 14,
-    "maxMm": 14,
-    "configs": 869,
-    "movesMm": 0
-   },
-   "FIRST_BRIDGE": {
-    "minMm": 6.98,
-    "maxMm": 13.14,
-    "configs": 714,
-    "movesMm": 6.16
    }
   },
+  "eventSpreadSource": {
+   "file": "artifacts/sensitivity.trs_jack_trs.json",
+   "variantId": "TRS|JACK-TRS",
+   "analysisScope": "EVENT_DEPTH_SPREAD_ONLY",
+   "basis": "MODEL_PARAMETER_SWEEP",
+   "sweptParameters": [
+    "jack.contact.sleeve.axialCenter",
+    "jack.contact.sleeve.padWidth"
+   ],
+   "generatedFromCommit": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
+   "configurationsUsable": 869,
+   "shippedInsideSweptRange": true
+  },
   "notes": [
-   "これはモデル内部の感度であって、実物のばらつきではない。",
+   "これはモデル内部の感度であって、実物のばらつきでも製造公差でもない。",
    "spreadMm が null の事象は「測っていない」であって「動かない」ではない。",
-   "aggregateSpreadByKind は kind 単位の集計である。STATE_CHANGE は 1 回の挿入で複数回起きるので、この幅を個々の事象へ当てはめてはならない。2026-08-03 まで当てはめており、Ring のブレーク接点に帰線接点用の幅が付いていた。"
+   "aggregateSpreadByKind は kind 単位の集計である。STATE_CHANGE は 1 回の挿入で複数回起きるので、この幅を個々の事象へ当てはめてはならない。",
+   "bridgeDepthJointRangeMm / tipBridge* は 3極 (TRS|JACK-TRS) の解析である。他の variant では出力しない。"
   ]
  }
 }
