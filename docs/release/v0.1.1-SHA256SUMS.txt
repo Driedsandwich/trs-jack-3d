@@ -1,0 +1,25 @@
+# trs-jack-3d v0.1.1 — release asset の sha256
+#
+# **固定には inputDigest を使ってください。**
+# ファイル単位の sha256 は「この配布物が改変されていないか」を見るためのものです。
+#
+# **v0.1.1 から inputDigest は variant ごとに違います。**
+# 感度 artifact を variant 別にしたため、片方を測り直しても
+# もう片方の profile ID は変わりません。
+#
+# TRS|JACK-TRS   inputDigest = ea318f0c5b6c8cc3b4d6d13f506ad7f425fc5709b4fafc537e44c976a38268c3
+#                profileId   = trs-jack-3d:TRS|JACK-TRS:ea318f0c5b6c
+# TRS|JACK-TRRS  inputDigest = 49b2ef8d7a13eae15a161dff1382b948cd780deee0333ab669d6e2c88a9935db
+#                profileId   = trs-jack-3d:TRS|JACK-TRRS:49b2ef8d7a13
+#
+# generatedFromCommit = eeda5f1c28b9223430606de61dbbb1f9f8f19d2a
+#
+# 検算: shasum -a 256 -c SHA256SUMS
+8a519b0c4fc3c732cbb51894987d1308a09b32b445f6b934759eed6c3b6735ce  half_plug_topology_profile.v1.trs_jack_trrs.json
+6c3335bca4e92cce63931263dfd0c7cef18cb2a91a1b36038ab80a06f7c6301e  half_plug_topology_profile.v1.trs_jack_trs.json
+57a10fc69c698c971a73122db3557803009877748d91491568d8b20094fa0b59  half-plug-topology-profile.v1.schema.json
+24d85873781f23c9f81da25676cbf98c2b9ea5a0de90a81275f936e5f4a93be4  real-jack-comparison.v1.schema.json
+29116b394ce438fe5efdd93f7d3a1c012b7545b2d46c738401d77ae0e687a979  sensitivity.trs_jack_trrs.json
+c0cf0a295d5c66f797bbc226cb0130f77ad8c27ca6dceb0483174ed6a0a167a1  sensitivity.trs_jack_trs.json
+1ca962dfc0fc1ecbfbb35240006e76305bc93e588aaf71b1dd6513e4979ed40d  test-counts.v1.schema.json
+d7904318a00cd842b9d780bd84fd0e40fd8634a4dc6844ed1c7ec6fa9eff9c4f  topology-search.v1.schema.json
