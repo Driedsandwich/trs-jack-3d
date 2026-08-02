@@ -6,37 +6,98 @@
 
 ## 0-1. 対応状況（2026-08-03 追記・trs-jack-3d 側）
 
-**優先 1〜3 を実装しました。4 以降は未着手です。**v0.1.1 の asset は上書きしていません。
+**優先 1〜4 を実装しました。5 以降は未着手です。**v0.1.1 の asset は上書きしていません。
 
 | | 項目 | 状態 |
 |---|---|---|
 | 1 | sensitivity artifact の provenance | **実装** — profile と同型。`inputSettings` を新設し、**variant 別 digest** にした |
-| 2 | sensitivity artifact 専用 Schema | **実装** — `schemas/event-sensitivity.v1.schema.json`。`validate:profiles` は 5 件 → **7 件** |
+| 2 | sensitivity artifact 専用 Schema | **実装** — `schemas/event-sensitivity.v1.schema.json`。`validate:profiles` は 5 件 → **8 件**（項目 4 の 1 件を含む） |
 | 3 | 感度 availability の分離 | **実装** — `eventSpreadAvailable` / `globalSummaryAvailable` / `basis` を追加。`available` は別名として残置 |
-| 4〜8 | 多軸ロバストネス以降 | 未着手 |
+| 4 | 目標トポロジーの多軸ロバストネス | **実装** — `artifacts/topology-robustness.trs_jack_trrs.json` / `schemas/topology-robustness.v1.schema.json`。8 軸を同時走査（5,184 構成） |
+| 5〜8 | Schema versioning 以降 | 未着手 |
+
+### 項目 4 の結果
+
+| | |
+|---|---|
+| 走査 | **5,184 構成**（成立 3,920 / 完全挿入不成立 1,264 / 組めず 0） |
+| 目標が現れた構成 | **2,300**（成立の 58.7%。**実物で起きる確率ではない**） |
+| 区間幅 | 最小 0.02 / 中央 0.24 / 最大 0.86 mm |
+| 無改造の構成 | 13.30〜13.52 mm（profile の IV028 と一致することを機械照合） |
+| **目標が消える単独水準** | **0 件** — どの軸のどの水準でも、他を組み替えれば目標は現れる |
+| PS000001 の図面値 | **目標なし（反対証拠を保持）** |
+
+**「0 件」を「どの軸も効かない」と読ませないため、水準ごとの出現率も出しています。**
+
+| 軸 | 水準ごとの出現率 |
+|---|---|
+| `trrs.jack.contact.tip.axialCenterDelta` | -1: 70% / 0: 71% / +1: 71% / **+2: 24%** |
+| `trrs.jack.contact.ring1.axialCenterDelta` | -1: 74% / 0: 73% / **+1: 34%** |
+| `trrs.jack.contact.ring2.axialCenterDelta` | -0.5: 42% / 0: 52% / +0.5: 92% |
+| `plug.ringBandShift` | -0.3: 70% / 0: 61% / **+0.2: 45%** |
+| `trrs.jack.contact.narrowPadWidth` | 0.2: 63% / 0.35: 64% / 0.5: 62% / **0.65: 47%** |
+| `beamOffset` | 0: 57% / 0.65: 63% / 1.3: 53% |
+| `trrs.jack.contact.sleeve.axialCenter` | 1.25: 59% / 3.0: 58% |
+| `model.conduction.minOverlap` | 0.01: 59% / 0.02: 59% |
+
+`evidenceGrade` は **`ASSUMPTION` のまま**です（頑健性を測っても仮定は事実になりません）。
+機械で固定してあります。
+
+### 項目 4 で見つかったこと — **`beamOffset` はモデルに繋がっていませんでした**
+
+オーダーが名指しした軸ですが、`trrs.jack.contact.beamOffset` を**単独で上書きしてもモデルは 1mm も動きません。**
+接点位置は「端子位置 − beamOffset」を**計算済みの別項目**として持っており、
+`beamOffset` 自身はどこからも読まれていないためです。
+
+素直にキーを振ると「**beamOffset は結論に影響しない**」という誤った結論が出ます。
+3 接点を連動させる複合軸として実装し、単独キーが効かないことをテストで固定しました。
+
+なお `docs/HALF_PLUG_ADAPTER.md` と `src/data/dimensions.json` が主張していた数値
+（b=0 で 13.30〜13.52 / b=1.3 で 11.98〜12.20）は**実測と一致しました。**
+主張は正しく、繋がり方だけが名前から想像されるものと違っていました。
+
+### 軸として採らなかったもの（理由つき）
+
+| 候補 | 採否 | 理由（実測） |
+|---|---|---|
+| `jack.break.*.openDeflection` | **採らない** | **4極ジャックはブレーク接点を持たない**（4 接点すべて `break: null`）。値を 0.005〜1.0 まで振ってもトポロジー列は不変 |
+| プラグ導体境界の個別キー | **採らない** | 境界が連鎖しており（`tip.end = ins1.start` …）、1 つだけ動かすと組み立てが失敗する。**複合軸 `plug.ringBandShift` として採用** |
+| `trrs.jack.contact.rootOffset` | 採らない | 全水準でトポロジー列が不変 |
+| `model.contact.complianceMm` | 採らない | 同上 |
 
 **版の扱い**: 今回は**追加のみ**で、enum の値も項目の意味も変えていないため `schemaVersion` は 1 のままです。
 変わったことは `provenance.generatorVersion` が **3 → 4** になったことで機械可読になります。
 語の改名（項目 6〜8）は引き続き Schema v2 送りです。
 
-**やったが、オーダーに書かれていなかったこと**を 3 つ挙げます。
+**やったが、オーダーに書かれていなかったこと**を 4 つ挙げます。
 
 1. **`inputSettings` に値そのものを記録した。** 「先頭に setting 行を置く」と説明だけ書いても、
    その中身が分からなければ**第三者は digest を再計算できません**。再計算できない digest は provenance の役に立ちません。
 2. **`inputDigest` を作り直して一致するかの検査を新設した。** これまで digest の**形**（sha256 らしいか）しか見ておらず、
    **その値が inputFiles から本当に導けるか**を profile 側も含めて一度も検査していませんでした。
-3. **`check:stale` を感度 artifact へ広げた。** provenance を足しただけでは何も守れず、
+3. **`check:stale` を感度 artifact と頑健性 artifact へ広げた。** provenance を足しただけでは何も守れず、
    現在の入力と突き合わせて初めて意味が出ます。profile 側で同じ穴が実際に開いていました。
+4. **走査軸が効くことを実行時に検査する仕組みを入れた**（項目 4）。既存の探索は接点座標の変化だけを見ており、
+   閾値やプラグ側の軸には効きません。トポロジー列そのものを比べる形にしたところ、**`beamOffset` がこれで落ちました。**
 
 **見つかった食い違いが 1 件あります。**`docs/HALF_PLUG_ADAPTER.md` は v0.1.1 の時点で
 `sensitivitySummary.basis` を約束していましたが、**profile にその項目はありませんでした**（読むと `undefined`）。
 文書と artifact を突き合わせる検査が `sensitivitySummary` に無かったためです。項目 3 の実装で実在するようになりました。
 
 **次の release で必要な作業**（今回は release を作らないので未実施）:
-`schemas/event-sensitivity.v1.schema.json` を release asset と `SHA256SUMS` に含めること。
 
-検査はすべて変異させて確認しました。**意味規則 23 件・テスト 8 件を壊して、狙った検査が鳴ることを確かめています**
-（rc≠0 だけでは別の検査に助けられている可能性があるため、artifact ごとの節と、その検査だけが持つ文言で照合）。
+| 追加するもの | 理由 |
+|---|---|
+| `schemas/event-sensitivity.v1.schema.json` | 感度 artifact を受け手が検証できるようにする（項目 2） |
+| `schemas/topology-robustness.v1.schema.json` | 頑健性 artifact を受け手が検証できるようにする（項目 4） |
+| `artifacts/topology-robustness.trs_jack_trrs.json` | `IV028` の扱いを決めるための根拠そのもの |
+
+いずれも `SHA256SUMS` にも入れること。
+
+検査はすべて変異させて確認しました。**意味規則 50 件・テスト 21 件を壊して、狙った検査が鳴ることを確かめています**
+（項目 1〜3 で意味規則 23・テスト 8、項目 4 で意味規則 27・テスト 13）。
+rc≠0 だけでは別の検査に助けられている可能性があるため、**artifact ごとの節と、その検査だけが持つ文言**で照合しています。
+等価変異は 0 件です。
 
 ---
 

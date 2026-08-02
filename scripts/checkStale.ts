@@ -16,12 +16,13 @@
  *   - topology_search_*.json … searchSpace.axesByJack[*].shipped
  *   - sensitivity.json       … inputs（schemaVersion 5 から）
  *   - sensitivity.<slug>.json … provenance.inputDigest（2026-08-03 追加）
+ *   - topology-robustness.<slug>.json … provenance.inputDigest（2026-08-03 追加）
  *   キーの一覧を人が保守しないので、走査軸が増えても勝手に追随する。
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { buildProvenance, listSensitivityInputs } from './provenance'
+import { buildProvenance, listRobustnessInputs, listSensitivityInputs } from './provenance'
 
 const ROOT = process.cwd()
 const dims = JSON.parse(readFileSync(resolve(ROOT, 'src/data/dimensions.json'), 'utf8')).entries as Record<
@@ -100,6 +101,33 @@ for (const f of readdirSync(resolve(ROOT, 'artifacts')).filter((x) => /^sensitiv
       artifact: f,
       reason: `入力が変わっている (記録 ${String(got).slice(0, 12)} → 現在 ${wanted.slice(0, 12)})`,
       cmd: `npm run sensitivity:events -- --variant "${a.variantId}"`,
+    })
+}
+
+// --- 2c. 目標トポロジーの頑健性 artifact ------------------------------------
+// 約 12 分かかる重い成果物。古いまま残ると「この仮定でも目標は残る」が嘘になる。
+for (const f of readdirSync(resolve(ROOT, 'artifacts')).filter((x) => /^topology-robustness\./.test(x))) {
+  const a = JSON.parse(readFileSync(resolve(ROOT, 'artifacts', f), 'utf8'))
+  const got = a.provenance?.inputDigest
+  if (!got) {
+    stale.push({ artifact: f, reason: 'provenance.inputDigest が無い', cmd: 'npm run search:robustness' })
+    continue
+  }
+  const wanted = buildProvenance({
+    root: ROOT,
+    inputs: listRobustnessInputs(ROOT),
+    settings: a.provenance.inputSettings,
+    command: 'check:stale',
+    artifactDate: '1970-01-01',
+    release: false,
+    allowRevisionOverride: false,
+  }).inputDigest
+  checked.push(`${f}: inputDigest ${String(got).slice(0, 12)}`)
+  if (got !== wanted)
+    stale.push({
+      artifact: f,
+      reason: `入力が変わっている (記録 ${String(got).slice(0, 12)} → 現在 ${wanted.slice(0, 12)})`,
+      cmd: 'npm run search:robustness',
     })
 }
 

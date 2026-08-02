@@ -78,10 +78,10 @@ describe('Half-Plug Topology Profile v1', () => {
   it('**1d. `npm run validate:profiles` が全成果物で通る**', () => {
     // schema 検証と意味検証を、テストスイートの一部としても回す。
     // 別コマンドにしか無いと「回し忘れても緑」になる (→ CONTRIBUTING §7)。
-    // 対象は profile 2 件 / 探索 / 実部品比較 / テスト件数 / 感度 2 件 の 7 件
-    // (感度 2 件は 2026-08-03 の非阻害フォローアップ P1-2 で追加)
+    // 対象は profile 2 件 / 探索 / 実部品比較 / テスト件数 / 感度 2 件 / 頑健性 の 8 件
+    // (感度 2 件は P1-2、頑健性は P1-4。いずれも 2026-08-03 の非阻害フォローアップ)
     const out = execFileSync('node', ['scripts/validateProfiles.mjs'], { cwd: ROOT, encoding: 'utf8' })
-    expect(out).toMatch(/7 件すべてが schema と意味規則の両方に適合しています/)
+    expect(out).toMatch(/8 件すべてが schema と意味規則の両方に適合しています/)
   }, 30_000)
 
   it('**1c. `pattern` 制約が実際に効いている**', () => {

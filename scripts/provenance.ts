@@ -132,6 +132,19 @@ export function listInputs(root: string, variantSlug?: string): InputFile[] {
  * profile 側は感度 artifact を入力として読むので入れて正しいが、向きが逆である。
  */
 export function listSensitivityInputs(root: string): InputFile[] {
+  return listGeneratorInputs(root, 'schemas/event-sensitivity.v1.schema.json', 'scripts/sensitivityEvents.ts')
+}
+
+/**
+ * 目標トポロジーの頑健性 artifact の入力（非阻害フォローアップ P1-4）。
+ * 感度 artifact と同じ形。schema と生成器だけが違う。
+ */
+export function listRobustnessInputs(root: string): InputFile[] {
+  return listGeneratorInputs(root, 'schemas/topology-robustness.v1.schema.json', 'scripts/searchTopologyRobustness.ts')
+}
+
+/** モデルを振って作る artifact の共通入力。**出力先は絶対に入れない** */
+function listGeneratorInputs(root: string, schemaPath: string, generatorPath: string): InputFile[] {
   const files: InputFile[] = []
   const add = (path: string, role: string) => {
     try {
@@ -140,8 +153,8 @@ export function listSensitivityInputs(root: string): InputFile[] {
       // 読めないものは記録しない
     }
   }
-  add('schemas/event-sensitivity.v1.schema.json', 'schema')
-  add('scripts/sensitivityEvents.ts', 'generator')
+  add(schemaPath, 'schema')
+  add(generatorPath, 'generator')
   add('scripts/provenance.ts', 'generator')
   for (const f of walk(root, 'src/data')) add(f, 'model-data')
   for (const f of walk(root, 'src/model')) add(f, 'model-code')

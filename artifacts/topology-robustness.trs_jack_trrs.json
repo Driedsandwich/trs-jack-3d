@@ -1,0 +1,697 @@
+{
+ "schemaVersion": 1,
+ "generatedBy": "npm run search:robustness",
+ "variantId": "TRS|JACK-TRRS",
+ "targetTopologyClass": "ground-open-differential",
+ "basis": "MODEL_PARAMETER_SWEEP",
+ "generatedFromCommit": "6e72f2eead0102c1a51a0140df3404020a7594db",
+ "provenance": {
+  "generatorVersion": 4,
+  "generatedFromCommit": "6e72f2eead0102c1a51a0140df3404020a7594db",
+  "workingTreeDirty": true,
+  "revisionOverride": false,
+  "artifactKind": "local",
+  "inputDigestAlgorithm": "sha256",
+  "inputDigest": "c73fe2ba93a10d2c41c994739de108e1538dc50bb81205a28c7871e9aad43445",
+  "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 4 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
+  "inputSettings": {
+   "variantId": "TRS|JACK-TRRS",
+   "targetTopologyClass": "ground-open-differential",
+   "stepMm": "0.02",
+   "axes": "beamOffset[0|0.65|1.3];trrs.jack.contact.tip.axialCenterDelta[-1|0|1|2];trrs.jack.contact.ring1.axialCenterDelta[-1|0|1];trrs.jack.contact.ring2.axialCenterDelta[-0.5|0|0.5];plug.ringBandShift[-0.3|0|0.2];trrs.jack.contact.narrowPadWidth[0.2|0.35|0.5|0.65];trrs.jack.contact.sleeve.axialCenter[1.25|3];model.conduction.minOverlap[0.01|0.02]"
+  },
+  "inputFiles": [
+   {
+    "path": "package-lock.json",
+    "sha256": "5a62467e286df6334967859b48449b633b61148930934f32b3b1b66849f11589",
+    "role": "lockfile"
+   },
+   {
+    "path": "schemas/topology-robustness.v1.schema.json",
+    "sha256": "853a19f3234f2bf91d9c4519f5439c8cf5888391b1125d87b7ea97300e1bd776",
+    "role": "schema"
+   },
+   {
+    "path": "scripts/provenance.ts",
+    "sha256": "28ed8b12f9df0fe1f30338d5f0e35382d0e7702097981d4e76f098db1a2e3ad9",
+    "role": "generator"
+   },
+   {
+    "path": "scripts/searchTopologyRobustness.ts",
+    "sha256": "4901a5956852e1ecc3147603f3cd50d2b0402915b4ae9091d7ba21a964a3485b",
+    "role": "generator"
+   },
+   {
+    "path": "src/data/dimensions.json",
+    "sha256": "318f0bb993030e0ebe936e21adb2ea4e952f5e0a7a18709e4227bc8a1e56dee7",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/faultPresets.json",
+    "sha256": "ee586e1bf7e15b55398e148612b9ef6ad4b1f98a849d455d477b1c65a97f70ff",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/index.ts",
+    "sha256": "1c2922b6698713f72c241b6f49809e3654ee909ddd94116cad6f90a57f124dd4",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/jackContacts.json",
+    "sha256": "52e255dfbb3d0344b1aa922ac8092518395ed441c9ce69dcf7274434a19349db",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/jackContacts.trrs.json",
+    "sha256": "f5443dcdda800abef9b928fde166f1930393f2e85c59b50851906d910e0d8e8f",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/materials.json",
+    "sha256": "709bd006cc055bd44058c40f6ca8011c81e04ce3e795297e6edfeeebadb7889c",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/plugSegments.json",
+    "sha256": "7d51e6f5a5a3961fca92039e217bf631a78e779a7fe1847078e3dd42a2347102",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/plugSegments.trrs.json",
+    "sha256": "f5715e080d34a29fd93ab4f0a5e4bdc14d47cf77a5bc199c3b5ce8b7fb509ce2",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/sourceReferences.json",
+    "sha256": "b21590bdb56f65343c99512fad0ecd72b2c9200ed234b12f8428843dfa8f40de",
+    "role": "model-data"
+   },
+   {
+    "path": "src/model/circuit.ts",
+    "sha256": "bfc407f8921aaf230cc736c6a368f9490d59f0da9acca16dabfbc9ba49ca3025",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/contact.ts",
+    "sha256": "e4a4e78b14fd2f7d1c0148a968617d4eb9c8395ed1f08b4e3eae355d31a4ae67",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/engine.ts",
+    "sha256": "7ecd30ba22d3b587f8782c7469e1c9cfedcb6fc5b098436e0e75b902c0b938aa",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/force.ts",
+    "sha256": "1f6bc966eba29a27091d7d55afc278a365396aa690302b0492d3a5734e9974c1",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/resolve.ts",
+    "sha256": "73e197830e9c0b5f7e46ffedba781f3689fd8e21fbc73ad63cea955075d1a7cb",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/sweep.ts",
+    "sha256": "bb88036fd8d757e652b66f36861b3b72a4abc6e9fd0f501761c785ff0a5472a4",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/topology.ts",
+    "sha256": "85594e701a195a574238853bcdf3bc5e421a9f860703443ee7ae123e953de478",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/types.ts",
+    "sha256": "9f4770aad4e05cdf0f3f2a4e3ad4a91992a76b91dac8cbf5a0df4975b3131e70",
+    "role": "model-code"
+   }
+  ],
+  "command": "npm run search:robustness",
+  "artifactDate": "2026-08-02"
+ },
+ "generatedAt": "2026-08-02",
+ "stepMm": 0.02,
+ "sweptParameters": [
+  "beamOffset",
+  "trrs.jack.contact.tip.axialCenterDelta",
+  "trrs.jack.contact.ring1.axialCenterDelta",
+  "trrs.jack.contact.ring2.axialCenterDelta",
+  "plug.ringBandShift",
+  "trrs.jack.contact.narrowPadWidth",
+  "trrs.jack.contact.sleeve.axialCenter",
+  "model.conduction.minOverlap"
+ ],
+ "parameterRanges": {
+  "beamOffset": {
+   "keys": [
+    "trrs.jack.contact.tip.axialCenter",
+    "trrs.jack.contact.ring1.axialCenter",
+    "trrs.jack.contact.ring2.axialCenter"
+   ],
+   "levels": [
+    0,
+    0.65,
+    1.3
+   ],
+   "shipped": 0,
+   "unit": "mm",
+   "meaning": "接点が端子より何 mm 手前にあるか。3 接点をまとめて手前へずらす。4極ジャックの接点位置に残る唯一の仮定",
+   "compound": true
+  },
+  "trrs.jack.contact.tip.axialCenterDelta": {
+   "keys": [
+    "trrs.jack.contact.tip.axialCenter"
+   ],
+   "levels": [
+    -1,
+    0,
+    1,
+    2
+   ],
+   "shipped": 0,
+   "unit": "mm",
+   "meaning": "tip 接点を端子位置から独立にずらす分。端子位置は図面記載 (FACT) だが、接点位置は図面に無い (ASSUMPTION)",
+   "compound": false
+  },
+  "trrs.jack.contact.ring1.axialCenterDelta": {
+   "keys": [
+    "trrs.jack.contact.ring1.axialCenter"
+   ],
+   "levels": [
+    -1,
+    0,
+    1
+   ],
+   "shipped": 0,
+   "unit": "mm",
+   "meaning": "ring1 接点を端子位置から独立にずらす分。端子位置は図面記載 (FACT) だが、接点位置は図面に無い (ASSUMPTION)",
+   "compound": false
+  },
+  "trrs.jack.contact.ring2.axialCenterDelta": {
+   "keys": [
+    "trrs.jack.contact.ring2.axialCenter"
+   ],
+   "levels": [
+    -0.5,
+    0,
+    0.5
+   ],
+   "shipped": 0,
+   "unit": "mm",
+   "meaning": "ring2 接点を端子位置から独立にずらす分。端子位置は図面記載 (FACT) だが、接点位置は図面に無い (ASSUMPTION)",
+   "compound": false
+  },
+  "plug.ringBandShift": {
+   "keys": [
+    "plug.ins1.end",
+    "plug.ring.start",
+    "plug.ring.end",
+    "plug.ins2.start"
+   ],
+   "levels": [
+    -0.3,
+    0,
+    0.2
+   ],
+   "shipped": 0,
+   "unit": "mm",
+   "meaning": "プラグの Ring 帯（絶縁帯に挟まれた区間）を丸ごと軸方向へずらす分。導体境界は連鎖しているので個別には動かせない",
+   "compound": true
+  },
+  "trrs.jack.contact.narrowPadWidth": {
+   "keys": [
+    "trrs.jack.contact.narrowPadWidth"
+   ],
+   "levels": [
+    0.2,
+    0.35,
+    0.5,
+    0.65
+   ],
+   "shipped": 0.5,
+   "unit": "mm",
+   "meaning": "4極ジャックの接点パッド幅。狭いほど区間が広がる",
+   "compound": false
+  },
+  "trrs.jack.contact.sleeve.axialCenter": {
+   "keys": [
+    "trrs.jack.contact.sleeve.axialCenter"
+   ],
+   "levels": [
+    1.25,
+    3
+   ],
+   "shipped": 1.25,
+   "unit": "mm",
+   "meaning": "Sleeve 接点の軸位置",
+   "compound": false
+  },
+  "model.conduction.minOverlap": {
+   "keys": [
+    "model.conduction.minOverlap"
+   ],
+   "levels": [
+    0.01,
+    0.02
+   ],
+   "shipped": 0.01,
+   "unit": "mm",
+   "meaning": "導通と見なす最小の重なり。幾何ではなくモデルの閾値",
+   "compound": false
+  }
+ },
+ "searchRangeBasis": [
+  "beamOffset 0〜1.3mm は、完全挿入でばね 3 本が対応導体にパッド全幅で乗る条件から出した成立範囲そのもの。",
+  "接点の独立ずらし ±1〜2mm は、端子間隔 (2.76〜3.8mm) より狭く、隣の導体へ移るかどうかを跨ぐ幅として選んだ。",
+  "プラグ Ring 帯のずらし -0.3〜+0.2mm は、導体境界の連鎖が破れず組み立てが成立する範囲。",
+  "パッド幅 0.2〜0.65mm は探索用の下限 0.3mm を跨ぐように取った。**製造可能性の判定ではない。**",
+  "**どれも任意である。**範囲を広げれば割合は下がり、狭めれば上がる。割合そのものに意味を持たせないこと。"
+ ],
+ "configurationsTotal": 5184,
+ "configurationsUsable": 3920,
+ "configurationsWithTarget": 2300,
+ "configurationsBuildFailed": 0,
+ "configurationsFullInsertionNotOk": 1264,
+ "presenceFractionWithinConstructedSweep": 0.586735,
+ "intervalWidthMm": {
+  "min": 0.02,
+  "median": 0.24,
+  "max": 0.86
+ },
+ "presenceByLevel": {
+  "beamOffset": [
+   {
+    "level": 0,
+    "isShipped": true,
+    "configurationsUsable": 1184,
+    "configurationsWithTarget": 672,
+    "presenceFraction": 0.5676,
+    "medianIntervalWidthMm": 0.24
+   },
+   {
+    "level": 0.65,
+    "isShipped": false,
+    "configurationsUsable": 1680,
+    "configurationsWithTarget": 1064,
+    "presenceFraction": 0.6333,
+    "medianIntervalWidthMm": 0.24
+   },
+   {
+    "level": 1.3,
+    "isShipped": false,
+    "configurationsUsable": 1056,
+    "configurationsWithTarget": 564,
+    "presenceFraction": 0.5341,
+    "medianIntervalWidthMm": 0.24
+   }
+  ],
+  "trrs.jack.contact.tip.axialCenterDelta": [
+   {
+    "level": -1,
+    "isShipped": false,
+    "configurationsUsable": 908,
+    "configurationsWithTarget": 634,
+    "presenceFraction": 0.6982,
+    "medianIntervalWidthMm": 0.24
+   },
+   {
+    "level": 0,
+    "isShipped": true,
+    "configurationsUsable": 1004,
+    "configurationsWithTarget": 714,
+    "presenceFraction": 0.7112,
+    "medianIntervalWidthMm": 0.32
+   },
+   {
+    "level": 1,
+    "isShipped": false,
+    "configurationsUsable": 1004,
+    "configurationsWithTarget": 712,
+    "presenceFraction": 0.7092,
+    "medianIntervalWidthMm": 0.22
+   },
+   {
+    "level": 2,
+    "isShipped": false,
+    "configurationsUsable": 1004,
+    "configurationsWithTarget": 240,
+    "presenceFraction": 0.239,
+    "medianIntervalWidthMm": 0.16
+   }
+  ],
+  "trrs.jack.contact.ring1.axialCenterDelta": [
+   {
+    "level": -1,
+    "isShipped": false,
+    "configurationsUsable": 944,
+    "configurationsWithTarget": 696,
+    "presenceFraction": 0.7373,
+    "medianIntervalWidthMm": 0.3
+   },
+   {
+    "level": 0,
+    "isShipped": true,
+    "configurationsUsable": 1520,
+    "configurationsWithTarget": 1108,
+    "presenceFraction": 0.7289,
+    "medianIntervalWidthMm": 0.24
+   },
+   {
+    "level": 1,
+    "isShipped": false,
+    "configurationsUsable": 1456,
+    "configurationsWithTarget": 496,
+    "presenceFraction": 0.3407,
+    "medianIntervalWidthMm": 0.08
+   }
+  ],
+  "trrs.jack.contact.ring2.axialCenterDelta": [
+   {
+    "level": -0.5,
+    "isShipped": false,
+    "configurationsUsable": 1456,
+    "configurationsWithTarget": 612,
+    "presenceFraction": 0.4203,
+    "medianIntervalWidthMm": 0.22
+   },
+   {
+    "level": 0,
+    "isShipped": true,
+    "configurationsUsable": 1456,
+    "configurationsWithTarget": 760,
+    "presenceFraction": 0.522,
+    "medianIntervalWidthMm": 0.32
+   },
+   {
+    "level": 0.5,
+    "isShipped": false,
+    "configurationsUsable": 1008,
+    "configurationsWithTarget": 928,
+    "presenceFraction": 0.9206,
+    "medianIntervalWidthMm": 0.24
+   }
+  ],
+  "plug.ringBandShift": [
+   {
+    "level": -0.3,
+    "isShipped": false,
+    "configurationsUsable": 1248,
+    "configurationsWithTarget": 872,
+    "presenceFraction": 0.6987,
+    "medianIntervalWidthMm": 0.4
+   },
+   {
+    "level": 0,
+    "isShipped": true,
+    "configurationsUsable": 1392,
+    "configurationsWithTarget": 846,
+    "presenceFraction": 0.6078,
+    "medianIntervalWidthMm": 0.24
+   },
+   {
+    "level": 0.2,
+    "isShipped": false,
+    "configurationsUsable": 1280,
+    "configurationsWithTarget": 582,
+    "presenceFraction": 0.4547,
+    "medianIntervalWidthMm": 0.06
+   }
+  ],
+  "trrs.jack.contact.narrowPadWidth": [
+   {
+    "level": 0.2,
+    "isShipped": false,
+    "configurationsUsable": 904,
+    "configurationsWithTarget": 570,
+    "presenceFraction": 0.6305,
+    "medianIntervalWidthMm": 0.34
+   },
+   {
+    "level": 0.35,
+    "isShipped": false,
+    "configurationsUsable": 952,
+    "configurationsWithTarget": 610,
+    "presenceFraction": 0.6408,
+    "medianIntervalWidthMm": 0.22
+   },
+   {
+    "level": 0.5,
+    "isShipped": true,
+    "configurationsUsable": 984,
+    "configurationsWithTarget": 609,
+    "presenceFraction": 0.6189,
+    "medianIntervalWidthMm": 0.16
+   },
+   {
+    "level": 0.65,
+    "isShipped": false,
+    "configurationsUsable": 1080,
+    "configurationsWithTarget": 511,
+    "presenceFraction": 0.4731,
+    "medianIntervalWidthMm": 0.08
+   }
+  ],
+  "trrs.jack.contact.sleeve.axialCenter": [
+   {
+    "level": 1.25,
+    "isShipped": true,
+    "configurationsUsable": 1960,
+    "configurationsWithTarget": 1160,
+    "presenceFraction": 0.5918,
+    "medianIntervalWidthMm": 0.24
+   },
+   {
+    "level": 3,
+    "isShipped": false,
+    "configurationsUsable": 1960,
+    "configurationsWithTarget": 1140,
+    "presenceFraction": 0.5816,
+    "medianIntervalWidthMm": 0.24
+   }
+  ],
+  "model.conduction.minOverlap": [
+   {
+    "level": 0.01,
+    "isShipped": true,
+    "configurationsUsable": 1960,
+    "configurationsWithTarget": 1151,
+    "presenceFraction": 0.5872,
+    "medianIntervalWidthMm": 0.22
+   },
+   {
+    "level": 0.02,
+    "isShipped": false,
+    "configurationsUsable": 1960,
+    "configurationsWithTarget": 1149,
+    "presenceFraction": 0.5862,
+    "medianIntervalWidthMm": 0.24
+   }
+  ]
+ },
+ "nominalConfiguration": {
+  "label": "既定値のまま（軸を 1 つも動かしていない）",
+  "targetPresent": true,
+  "windows": [
+   {
+    "fromMm": 13.3,
+    "toMm": 13.5,
+    "widthMm": 0.22
+   }
+  ],
+  "note": "**「市販品でそうなる」という意味ではない。**このモデルの入力値を 1 つも変えていない、というだけ"
+ },
+ "necessaryConditions": [],
+ "counterExamples": [
+  {
+   "kind": "REAL_PART_DRAWING",
+   "label": "pro-SIGNAL PS000001 の断面図から読んだ接点位置",
+   "overrides": {
+    "trrs.jack.contact.sleeve.axialCenter": 1.28,
+    "trrs.jack.contact.ring2.axialCenter": 4.4,
+    "trrs.jack.contact.ring1.axialCenter": 7.55,
+    "trrs.jack.contact.tip.axialCenter": 12.75
+   },
+   "targetPresent": false,
+   "windows": [],
+   "fullInsertionOk": true,
+   "note": "**実在部品の一次資料であり、構成した仮定より重い。**この値では目標が消える。PS000001 は SMT・IPX5/7 の 1 部品にすぎず 4極ジャック一般を代表しないが、「反対証拠が実在する」という事実は消えない"
+  },
+  {
+   "kind": "MODEL_SWEEP_ABSENT",
+   "label": "走査した構成のうち目標が現れなかったもの",
+   "overrides": {
+    "beamOffset": 0,
+    "trrs.jack.contact.tip.axialCenterDelta": -1,
+    "trrs.jack.contact.ring1.axialCenterDelta": -1,
+    "trrs.jack.contact.ring2.axialCenterDelta": -0.5,
+    "plug.ringBandShift": 0.2,
+    "trrs.jack.contact.narrowPadWidth": 0.65,
+    "trrs.jack.contact.sleeve.axialCenter": 1.25,
+    "model.conduction.minOverlap": 0.01
+   },
+   "targetPresent": false,
+   "windows": [],
+   "fullInsertionOk": true,
+   "note": "構成した仮定であり、実在部品の主張ではない"
+  },
+  {
+   "kind": "MODEL_SWEEP_ABSENT",
+   "label": "走査した構成のうち目標が現れなかったもの",
+   "overrides": {
+    "beamOffset": 0,
+    "trrs.jack.contact.tip.axialCenterDelta": 1,
+    "trrs.jack.contact.ring1.axialCenterDelta": 1,
+    "trrs.jack.contact.ring2.axialCenterDelta": -0.5,
+    "plug.ringBandShift": 0,
+    "trrs.jack.contact.narrowPadWidth": 0.5,
+    "trrs.jack.contact.sleeve.axialCenter": 3,
+    "model.conduction.minOverlap": 0.01
+   },
+   "targetPresent": false,
+   "windows": [],
+   "fullInsertionOk": true,
+   "note": "構成した仮定であり、実在部品の主張ではない"
+  },
+  {
+   "kind": "MODEL_SWEEP_ABSENT",
+   "label": "走査した構成のうち目標が現れなかったもの",
+   "overrides": {
+    "beamOffset": 0,
+    "trrs.jack.contact.tip.axialCenterDelta": 2,
+    "trrs.jack.contact.ring1.axialCenterDelta": 0,
+    "trrs.jack.contact.ring2.axialCenterDelta": 0,
+    "plug.ringBandShift": 0,
+    "trrs.jack.contact.narrowPadWidth": 0.35,
+    "trrs.jack.contact.sleeve.axialCenter": 1.25,
+    "model.conduction.minOverlap": 0.01
+   },
+   "targetPresent": false,
+   "windows": [],
+   "fullInsertionOk": true,
+   "note": "構成した仮定であり、実在部品の主張ではない"
+  },
+  {
+   "kind": "MODEL_SWEEP_ABSENT",
+   "label": "走査した構成のうち目標が現れなかったもの",
+   "overrides": {
+    "beamOffset": 0.65,
+    "trrs.jack.contact.tip.axialCenterDelta": -1,
+    "trrs.jack.contact.ring1.axialCenterDelta": 1,
+    "trrs.jack.contact.ring2.axialCenterDelta": 0,
+    "plug.ringBandShift": 0.2,
+    "trrs.jack.contact.narrowPadWidth": 0.35,
+    "trrs.jack.contact.sleeve.axialCenter": 3,
+    "model.conduction.minOverlap": 0.01
+   },
+   "targetPresent": false,
+   "windows": [],
+   "fullInsertionOk": true,
+   "note": "構成した仮定であり、実在部品の主張ではない"
+  },
+  {
+   "kind": "MODEL_SWEEP_ABSENT",
+   "label": "走査した構成のうち目標が現れなかったもの",
+   "overrides": {
+    "beamOffset": 0.65,
+    "trrs.jack.contact.tip.axialCenterDelta": 1,
+    "trrs.jack.contact.ring1.axialCenterDelta": 1,
+    "trrs.jack.contact.ring2.axialCenterDelta": 0,
+    "plug.ringBandShift": 0,
+    "trrs.jack.contact.narrowPadWidth": 0.5,
+    "trrs.jack.contact.sleeve.axialCenter": 1.25,
+    "model.conduction.minOverlap": 0.01
+   },
+   "targetPresent": false,
+   "windows": [],
+   "fullInsertionOk": true,
+   "note": "構成した仮定であり、実在部品の主張ではない"
+  },
+  {
+   "kind": "MODEL_SWEEP_ABSENT",
+   "label": "走査した構成のうち目標が現れなかったもの",
+   "overrides": {
+    "beamOffset": 0.65,
+    "trrs.jack.contact.tip.axialCenterDelta": 2,
+    "trrs.jack.contact.ring1.axialCenterDelta": 0,
+    "trrs.jack.contact.ring2.axialCenterDelta": 0,
+    "plug.ringBandShift": 0.2,
+    "trrs.jack.contact.narrowPadWidth": 0.2,
+    "trrs.jack.contact.sleeve.axialCenter": 3,
+    "model.conduction.minOverlap": 0.01
+   },
+   "targetPresent": false,
+   "windows": [],
+   "fullInsertionOk": true,
+   "note": "構成した仮定であり、実在部品の主張ではない"
+  },
+  {
+   "kind": "MODEL_SWEEP_ABSENT",
+   "label": "走査した構成のうち目標が現れなかったもの",
+   "overrides": {
+    "beamOffset": 1.3,
+    "trrs.jack.contact.tip.axialCenterDelta": -1,
+    "trrs.jack.contact.ring1.axialCenterDelta": 1,
+    "trrs.jack.contact.ring2.axialCenterDelta": 0.5,
+    "plug.ringBandShift": 0.2,
+    "trrs.jack.contact.narrowPadWidth": 0.65,
+    "trrs.jack.contact.sleeve.axialCenter": 3,
+    "model.conduction.minOverlap": 0.01
+   },
+   "targetPresent": false,
+   "windows": [],
+   "fullInsertionOk": true,
+   "note": "構成した仮定であり、実在部品の主張ではない"
+  },
+  {
+   "kind": "MODEL_SWEEP_ABSENT",
+   "label": "走査した構成のうち目標が現れなかったもの",
+   "overrides": {
+    "beamOffset": 1.3,
+    "trrs.jack.contact.tip.axialCenterDelta": 1,
+    "trrs.jack.contact.ring1.axialCenterDelta": 1,
+    "trrs.jack.contact.ring2.axialCenterDelta": 0,
+    "plug.ringBandShift": 0.2,
+    "trrs.jack.contact.narrowPadWidth": 0.65,
+    "trrs.jack.contact.sleeve.axialCenter": 3,
+    "model.conduction.minOverlap": 0.01
+   },
+   "targetPresent": false,
+   "windows": [],
+   "fullInsertionOk": true,
+   "note": "構成した仮定であり、実在部品の主張ではない"
+  }
+ ],
+ "counterExampleSampling": {
+  "absentConfigurationsTotal": 1620,
+  "modelSweepSamplesListed": 8,
+  "omitted": 1612,
+  "note": "目標が現れなかった成立構成は等間隔で抜いた代表のみを載せている。**全件ではない。**内訳は presenceByLevel を見ること"
+ },
+ "sourceEvidenceBoundary": {
+  "fact": [
+   "4極ジャックの端子位置 4.74 / 7.50 / 11.30mm — Lumberg 1503 28 の基板レイアウト図の記載値",
+   "3極プラグの導体境界 — Lumberg 1532 10 の図面記載寸法からの演算"
+  ],
+  "assumption": [
+   "接点位置そのもの — 1503 28 に断面図が無く、接点がどこにあるかは図面に書かれていない",
+   "beamOffset — 一次資料なし。採用値 0 は「接点は端子の真上」という最小の仮定",
+   "パッド幅 0.5mm — 一次資料なし",
+   "model.conduction.minOverlap 0.01mm — モデルの閾値であって部品の性質ではない"
+  ],
+  "notMeasured": [
+   "導通の実測",
+   "音響の実測",
+   "実物の分解・断面観察"
+  ]
+ },
+ "physicalProbabilityClaim": false,
+ "empiricalEvidence": null,
+ "notes": [
+  "**これは実物の確率ではない。**presenceFractionWithinConstructedSweep は、ここで構成した走査空間の中で目標が現れた割合にすぎない。走査範囲の取り方は任意である (searchRangeBasis)。",
+  "**イベント深さの幅 (artifacts/sensitivity.*.json) とは別の量である。**あちらは「イベントが何 mm で起きるか」の幅、こちらは「目標トポロジーがそもそも存在するか」。深さの幅が安定していても、存在が仮定に依存することはありうる。",
+  "目標が 0 件でも正常な結果として保存する。「探したが無かった」は「探していない」とは違う。",
+  "necessaryConditions は走査した水準の中での話であり、連続的な境界を求めたものではない (boundaryResolved: false)。",
+  "実物の導通測定を得たら empiricalEvidence へ入れる。**model sweep と同じ項目に混ぜない。**"
+ ]
+}

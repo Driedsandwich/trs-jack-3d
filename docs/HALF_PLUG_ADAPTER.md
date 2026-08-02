@@ -315,6 +315,30 @@ physicalClaimStatus      未実測なら "unverified"
 > 次の release から実在します。**この文書と artifact の食い違いは、
 > 文書と artifact を突き合わせる検査が `sensitivitySummary` に無かったために起きました。**
 
+### 目標トポロジーの頑健性は、別の artifact にあります（次の release から）
+
+`artifacts/topology-robustness.trs_jack_trrs.json`。
+
+**`spreadMm` を「この状態が起きる確率」や「頑健性」として読まないでください。**
+あちらは「イベントが**何 mm で**起きるか」の幅で、こちらは「**そもそも存在するか**」です。
+
+| | 値 |
+|---|---|
+| 走査 | 8 軸・5,184 構成（Tip 位置・beam offset・他接点位置・プラグ導体境界・パッド幅・導通閾値） |
+| 目標が現れた構成 | 成立 3,920 のうち **2,300**（58.7%） |
+| 区間幅 | 最小 0.02 / 中央 0.24 / 最大 0.86 mm |
+| 目標が消える単独水準 | **0 件**（他を組み替えれば現れる） |
+| PS000001 の図面値 | **目標なし** |
+
+> **58.7% は実物で起きる確率ではありません。**この構成空間の中での割合であり、
+> 走査範囲の取り方は任意です（`searchRangeBasis` に根拠と任意性を書いてあります）。
+> `physicalProbabilityClaim: false` を artifact 自身が持っています。
+
+「消える単独水準が 0 件」を「どの仮定も効かない」と読まないでください。
+効いている軸は `presenceByLevel` に出ます（Tip を +2mm ずらすと 71% → **24%**）。
+
+`IV028` の `evidenceGrade` は **`ASSUMPTION` のまま**です。頑健性を測っても仮定は事実になりません。
+
 ### 感度の「有無」は 2 つに分かれます（次の release から）
 
 `sensitivitySummary.available` は **global summary があるかどうかだけ**を表します。

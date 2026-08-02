@@ -51,6 +51,7 @@
 | 「ジャック内部の寸法は N 件の仮定を含み」（README 2 か所） | **機械照合**（`docs.test.ts`） |
 | `artifacts/half_plug_topology_profile.v1.*.json`（区分は接点から伝播する） | **機械照合**（`halfPlugProfile.test.ts`） |
 | `artifacts/sensitivity.trs_jack_*.json`（走査軸に載っている寸法を変えたとき） | **機械判定**（`check:stale` が `provenance.inputDigest` で照合。→ 下） |
+| `artifacts/topology-robustness.trs_jack_trrs.json`（接点位置・プラグ導体境界を変えたとき） | **機械判定**（同上） |
 | 接点まわりの区分 | **不変条件**（`uiStrings.test.ts`） |
 | 画面の variant 説明文・材質ラベル | **不変条件**（`uiStrings.test.ts`） |
 | **テスト件数**（README / UNKNOWNS / `docs/TEST_RESULTS.md`） | **機械照合**（`artifacts/test_counts.json` と突き合わせ。→ §4） |
@@ -64,8 +65,8 @@
 5. `npm run test` — **ここで連動漏れが落ちます**
 6. `npm run test:count` — テスト件数の artifact を更新する
 7. **`npm run check:vacuity`** — 空振りしているテストが無いかを機械が判定します（→ §7）
-8. **`npm run validate:profiles`** — 成果物 7 件を schema と意味規則で検証します
-   （2026-08-03 に感度 artifact 2 件を追加。それまで schema が無く、受け手が独自に構造検査を書いていました）
+8. **`npm run validate:profiles`** — 成果物 8 件を schema と意味規則で検証します
+   （2026-08-03 に感度 artifact 2 件と頑健性 artifact 1 件を追加。それまで schema が無く、受け手が独自に構造検査を書いていました）
 9. `npm run docs:html` — HTML を作り直す
 
 > **`npm run verify:provenance` は手順に入れません。**
@@ -75,7 +76,8 @@
 
 ### 重い成果物（10〜15 分）は、必要かどうかを機械に訊く
 
-`npm run search:topology`（約 10 分）と `npm run sensitivity`（約 15 分）は毎回は回せません。
+`npm run search:topology`（約 10 分）、`npm run sensitivity`（約 15 分）、
+`npm run search:robustness`（5,184 構成。1 構成 137ms の実測から約 12 分の見積り）は毎回は回せません。
 かといって回し忘れると**成果物だけが古い値のまま残ります。**
 
 **条件を覚えないでください。`npm run check:stale` が判定します。**

@@ -84,6 +84,12 @@ const TARGETS = [
     schema: 'schemas/event-sensitivity.v1.schema.json',
     semantic: 'sensitivity',
   },
+  // 目標トポロジーの頑健性 (非阻害フォローアップ P1-4)
+  {
+    artifact: 'artifacts/topology-robustness.trs_jack_trrs.json',
+    schema: 'schemas/topology-robustness.v1.schema.json',
+    semantic: 'robustness',
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -442,6 +448,132 @@ const SEMANTIC = {
       }
       if (e.spreadMm.minMm !== b.minMm || e.spreadMm.maxMm !== b.maxMm)
         errs.push(`profile の ${e.eventId} の幅 ${e.spreadMm.minMm}〜${e.spreadMm.maxMm} が byKind の ${b.minMm}〜${b.maxMm} と違う`)
+    }
+  },
+
+  /**
+   * 目標トポロジーの頑健性（非阻害フォローアップ P1-4）。
+   *
+   * この artifact は「どの仮定を動かしても目標が残るか」を主張する。
+   * **数え間違いや切り捨てがあると、頑健さを過大にも過小にも見せられる。**
+   * 数の内訳と、載せた件数・落とした件数を機械で突き合わせる。
+   */
+  robustness(a, errs) {
+    // --- 構成の数が合うか ---
+    const accounted = a.configurationsUsable + a.configurationsBuildFailed + a.configurationsFullInsertionNotOk
+    if (accounted !== a.configurationsTotal)
+      errs.push(`構成の内訳が合わない (成立+組めず+不成立 = ${accounted} ≠ 走査 ${a.configurationsTotal})`)
+    if (a.configurationsWithTarget > a.configurationsUsable)
+      errs.push(`目標ありの構成 ${a.configurationsWithTarget} が成立構成 ${a.configurationsUsable} を超えている`)
+    const frac = +(a.configurationsWithTarget / a.configurationsUsable).toFixed(6)
+    if (Math.abs(a.presenceFractionWithinConstructedSweep - frac) > 1e-6)
+      errs.push(`presenceFraction が件数と合わない (${a.presenceFractionWithinConstructedSweep} ≠ ${frac})`)
+
+    // --- 軸の記録 ---
+    const axisNames = Object.keys(a.parameterRanges ?? {})
+    if (JSON.stringify([...(a.sweptParameters ?? [])].sort()) !== JSON.stringify([...axisNames].sort()))
+      errs.push('sweptParameters と parameterRanges のキーが一致しない')
+    for (const [name, r] of Object.entries(a.parameterRanges ?? {})) {
+      // **既定値が水準に無いと「無改造で成立するか」を一度も評価しないまま報告してしまう**
+      if (!r.levels.includes(r.shipped))
+        errs.push(`${name}: 既定値 ${r.shipped} が水準 ${r.levels.join('/')} に入っていない`)
+      if (r.compound !== (r.keys.length > 1))
+        errs.push(`${name}: compound (${r.compound}) が keys の本数 ${r.keys.length} と食い違う`)
+    }
+
+    // --- 水準ごとの内訳が総数と合うか ---
+    for (const [name, levels] of Object.entries(a.presenceByLevel ?? {})) {
+      const range = a.parameterRanges?.[name]
+      if (!range) {
+        errs.push(`presenceByLevel に parameterRanges の無い軸 ${name} がある`)
+        continue
+      }
+      if (JSON.stringify(levels.map((x) => x.level)) !== JSON.stringify(range.levels))
+        errs.push(`${name}: presenceByLevel の水準が parameterRanges と違う`)
+      const sumUsable = levels.reduce((s, x) => s + x.configurationsUsable, 0)
+      if (sumUsable !== a.configurationsUsable)
+        errs.push(`${name}: 水準ごとの成立数の合計 ${sumUsable} が全体 ${a.configurationsUsable} と違う`)
+      const sumHit = levels.reduce((s, x) => s + x.configurationsWithTarget, 0)
+      if (sumHit !== a.configurationsWithTarget)
+        errs.push(`${name}: 水準ごとの目標ありの合計 ${sumHit} が全体 ${a.configurationsWithTarget} と違う`)
+      for (const x of levels)
+        if (x.configurationsWithTarget > x.configurationsUsable)
+          errs.push(`${name} の水準 ${x.level}: 目標あり ${x.configurationsWithTarget} が成立 ${x.configurationsUsable} を超えている`)
+    }
+
+    // --- 区間幅 ---
+    const w = a.intervalWidthMm ?? {}
+    if (a.configurationsWithTarget === 0) {
+      if (w.min !== null || w.median !== null || w.max !== null)
+        errs.push('目標が 0 件なのに区間幅が入っている')
+    } else {
+      if (w.min === null || w.median === null || w.max === null)
+        errs.push('目標があるのに区間幅が null')
+      else if (!(w.min <= w.median && w.median <= w.max))
+        errs.push(`区間幅の順序が壊れている (${w.min} / ${w.median} / ${w.max})`)
+    }
+
+    /**
+     * --- necessaryConditions が内訳と矛盾しないか ---
+     *
+     * **「その水準では一度も現れない」と書いたなら、内訳もそうなっているはず。**
+     * ここを見ないと、書き手の主張と数字が食い違ったまま公開できてしまう。
+     */
+    for (const c of a.necessaryConditions ?? []) {
+      const levels = a.presenceByLevel?.[c.parameter]
+      if (!levels) {
+        errs.push(`necessaryConditions の軸 ${c.parameter} が presenceByLevel に無い`)
+        continue
+      }
+      for (const lv of c.levelsWhereTargetNeverAppears) {
+        const row = levels.find((x) => x.level === lv)
+        if (!row) errs.push(`${c.parameter}: 水準 ${lv} が presenceByLevel に無い`)
+        else if (row.configurationsWithTarget !== 0)
+          errs.push(`${c.parameter}: 水準 ${lv} を「一度も現れない」としているが、内訳では ${row.configurationsWithTarget} 件現れている`)
+      }
+    }
+    // 逆向き。内訳が 0 件なのに条件として書かれていない軸は取りこぼし
+    for (const [name, levels] of Object.entries(a.presenceByLevel ?? {}))
+      for (const x of levels)
+        if (x.configurationsUsable > 0 && x.configurationsWithTarget === 0) {
+          const listed = (a.necessaryConditions ?? []).some(
+            (c) => c.parameter === name && c.levelsWhereTargetNeverAppears.includes(x.level),
+          )
+          if (!listed) errs.push(`${name} の水準 ${x.level} は目標が 0 件なのに necessaryConditions に無い`)
+        }
+
+    // --- 反対証拠を落としていないか ---
+    const real = (a.counterExamples ?? []).filter((c) => c.kind === 'REAL_PART_DRAWING')
+    if (!real.length)
+      errs.push('実在部品の図面による反対証拠 (REAL_PART_DRAWING) が 1 件も無い。構成した仮定より重い証拠を落としてはならない')
+    const s = a.counterExampleSampling ?? {}
+    if (s.absentConfigurationsTotal !== a.configurationsUsable - a.configurationsWithTarget)
+      errs.push(`目標なしの構成数 ${s.absentConfigurationsTotal} が 成立-目標あり (${a.configurationsUsable - a.configurationsWithTarget}) と違う`)
+    if (s.modelSweepSamplesListed + s.omitted !== s.absentConfigurationsTotal)
+      errs.push(`載せた ${s.modelSweepSamplesListed} + 落とした ${s.omitted} が 目標なし総数 ${s.absentConfigurationsTotal} と合わない`)
+    const listedSweep = (a.counterExamples ?? []).filter((c) => c.kind === 'MODEL_SWEEP_ABSENT').length
+    if (listedSweep !== s.modelSweepSamplesListed)
+      errs.push(`counterExamples に載っている走査例 ${listedSweep} 件が modelSweepSamplesListed ${s.modelSweepSamplesListed} と違う`)
+    for (const c of a.counterExamples ?? [])
+      if (c.targetPresent === true) errs.push(`${c.label}: 反対証拠なのに targetPresent が true`)
+
+    // --- 主張の境界 ---
+    if (a.physicalProbabilityClaim !== false) errs.push('physicalProbabilityClaim が false でない')
+    if (a.empiricalEvidence !== null) {
+      // 実測を入れるなら profile の verifiedPhysical も動くはず。片方だけ動かせない
+      const prof = existsSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json'))
+        ? read('artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json')
+        : null
+      if (prof && prof.modelLimitations?.verifiedPhysical === false)
+        errs.push('empiricalEvidence が入っているのに profile の verifiedPhysical が false のまま')
+    }
+
+    // --- provenance。**自分自身を入力にしていないこと** ---
+    checkProvenance(a.provenance, 'artifacts/topology-robustness', errs)
+    const setAxes = a.provenance?.inputSettings?.axes
+    if (setAxes !== undefined) {
+      const want = axisNames.map((n) => `${n}[${a.parameterRanges[n].levels.join('|')}]`).join(';')
+      if (setAxes !== want) errs.push('軸の定義が provenance.inputSettings.axes と違う')
     }
   },
 }
