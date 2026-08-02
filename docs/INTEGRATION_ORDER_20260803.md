@@ -640,6 +640,30 @@ variant 名が含まれることを求めますが、TRS variant は後方互換
 `artifacts/sensitivity.json`（variant 名なし）も入力に残しています。
 **profile 側の既知の限界**として記録します。
 
+### 4-5. 下流側の統合結果（2026-08-03・実測で確認）
+
+v0.1.1 は **production byte import 成功**、判定は `ADOPT_FOR_STATIC_MECHANISM_INTEGRATION`。
+§4-4 の A・B は下流側で修正済みで、**自己申告ではなく手元の変異検査で確認しました。**
+
+| 確認 | 方法 | 結果 |
+|---|---|---|
+| 配布 zip の同一性 | `shasum -a 256` | 一致（2,543,898 bytes） |
+| A. variant 別 `inputDigest` | コード実測 | 修正済み。`profileId` の導出検査も追加されている |
+| B. 汚染検出が生きているか | **汚染を1件仕込んで実行** | `SENSITIVITY_NOMINAL_OUTSIDE_EVENT_RANGE` で **production import 自体が停止**（fail-closed に強化） |
+
+**こちらの記述の誤りが 1 件見つかりました。**引き継ぎ文にテスト件数を **260** と書いていましたが、
+v0.1.1 tag の `test_counts.json` は **258** です。260 はその後の main の値で、
+**tag と main を混ぜて数えていました**（v0.1.0 = 249 / v0.1.1 = 258 / main = 260）。
+
+下流から指摘された他の 3 点も、すべてこちらで再確認して事実と一致しました。
+
+- `v0.1.1` tag の `package.json` は `version: 0.1.0` のまま
+- sensitivity artifact の `generatedFromCommit` は `ba2ad6cc`（release commit `eeda5f1c` より前）
+- sensitivity artifact 専用の schema は release に含まれていない（schema は 4 件で、いずれも別対象）
+
+次の作業は [NONBLOCKING_FOLLOWUP_ORDER_20260803.md](NONBLOCKING_FOLLOWUP_ORDER_20260803.md) にあります。
+**統合の停止線ではありません**（v0.1.1 asset は上書きしない方針も一致）。
+
 ---
 
 ## 5. 採用が見送られた要求はありません
