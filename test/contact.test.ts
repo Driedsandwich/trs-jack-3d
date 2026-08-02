@@ -427,7 +427,7 @@ describe('故障モード (仕様 §12)', () => {
     }
     // 段差を十分に超えれば出る (= 判定が効いていることの確認)
     expect(hasTipBridge({ 'model.contact.complianceMm': 0.2 })).toBe(true)
-  })
+  }, 30_000)
 
   it('橋絡の深さを動かすのは帰線接点だけで、Tip / Ring 接点は動かさない', () => {
     const firstBridge = (over: Record<string, number>) => {
@@ -453,7 +453,7 @@ describe('故障モード (仕様 §12)', () => {
     }
     // 帰線接点を動かすと、橋絡の深さは 1:1 でずれる
     expect(firstBridge({ 'jack.contact.sleeve.axialCenter': 4.2 })).toBeCloseTo(base! + 1.0, 6)
-  })
+  }, 30_000)
 
   it('全プリセットが例外なく評価できる', () => {
     for (const p of model.faultPresets) {

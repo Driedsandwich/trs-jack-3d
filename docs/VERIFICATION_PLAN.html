@@ -93,11 +93,12 @@
     <li><a href="#s1">1-1. プラグ 1 個とノギスだけで決まること — 最初にこれをやってください</a></li>
     <li><a href="#s2">1-2. 決着実験 — 橋絡がどこで起きるか</a></li>
     <li><a href="#s3">2. 深さをどう決めるか</a></li>
-    <li><a href="#s4">3. 必要なもの</a></li>
-    <li><a href="#s5">4. 合否の基準</a></li>
-    <li><a href="#s6">5. 測った後どうするか</a></li>
-    <li><a href="#s7">6. この実験で分からないこと</a></li>
-    <li><a href="#s8">7. 進め方</a></li>
+    <li><a href="#s4">2-2. 4極ジャックの接点位置を測る — いま最も効く測定</a></li>
+    <li><a href="#s5">3. 必要なもの</a></li>
+    <li><a href="#s6">4. 合否の基準</a></li>
+    <li><a href="#s7">5. 測った後どうするか</a></li>
+    <li><a href="#s8">6. この実験で分からないこと</a></li>
+    <li><a href="#s9">7. 進め方</a></li>
   </ol>
 </nav>
 <h1>実物との突き合わせ計画</h1>
@@ -194,7 +195,30 @@
 <ol><li>ジャックを動かないように固定する（万力・両面テープ・ブレッドボードなど）</li><li>テスターを導通ブザーにして、ピン2とピン4に当てる（クリップ付きが楽）</li><li>プラグをごくゆっくり押し込む</li><li>ブザーが切れた（または鳴った）瞬間に手を止める</li><li>その状態でプラグ肩とジャック前面のすき間をノギスで測る</li><li>深さ = 14.00 − すき間 を記録する</li><li>一度完全に抜いて、<strong>3回繰り返す</strong>（ばらつきを見るため）</li><li>ピン3とピン5でも同じことをする</li></ol>
 <p>プラグは指で押すと傾きます。まっすぐ入るよう、指先で軸を支えてください。</p>
 <hr>
-<h2 id="s4">3. 必要なもの</h2>
+<h2 id="s4">2-2. 4極ジャックの接点位置を測る — <strong>いま最も効く測定</strong></h2>
+<div class="note"><p><strong>2026-08-02 追加。</strong> このプロジェクトで最も重い未確認事項は</p><p><strong>4極ジャックの接点位置</strong>（<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-2）になりました。</p><p>一次図面が 1 つも無く、4 件とも仮定のままです。</p><p>しかも**看板の結論（3極プラグを 4極ジャックへ半挿しにすると左右差分が残る）が</p><p>そこに丸ごと乗っています。**</p></div>
+<h3>内部は見えませんが、電気的には測れます</h3>
+<p>接点位置そのものはジャックの中なのでノギスでは測れません。 しかし<strong>各端子が「最初に導通する深さ」</strong>は外から測れて、そこから位置が逆算できます。</p>
+<p>モデルの予測は次のとおりです（4極プラグを使う場合）。</p>
+<div class="tw"><table><thead><tr><th>端子の役割</th><th class="num">最初に導通する深さ</th><th class="num"><strong>肩とジャック前面のすき間</strong></th></tr></thead><tbody><tr><td>MIC</td><td class="num">1.98 mm</td><td class="num"><strong>12.02 mm</strong></td></tr><tr><td>GND</td><td class="num">5.28 mm</td><td class="num"><strong>8.72 mm</strong></td></tr><tr><td>R</td><td class="num">8.28 mm</td><td class="num"><strong>5.72 mm</strong></td></tr><tr><td>L</td><td class="num">11.96 mm</td><td class="num"><strong>2.04 mm</strong></td></tr></tbody></table></div>
+<p><strong>4 つが 3 mm 以上ずつ離れています。</strong>ノギスの分解能（0.01 mm）に対して十分な間隔があり、 測り分けられます。</p>
+<h3>用意するもの</h3>
+<ul><li><strong>4極ジャック</strong>（測りたいもの。スマホ用の 3.5 mm ジャック部品など）</li><li><strong>4極プラグ</strong>（CTIA 配列のもの。市販の 4極ケーブルを切って使ってよい）</li><li>テスター（導通ブザー付き）／ デジタルノギス</li></ul>
+<h3>手順</h3>
+<ol><li><strong>ジャックの端子番号を、そのジャックのデータシートで確認する。</strong> 4極ジャックの端子配列はメーカーごとに違います。<strong>推測しないでください。</strong> データシートが無い場合は、完全挿入した状態で各端子とプラグ各導体の導通を測り、 どの端子がどの導体に対応するかを先に確定させます。</li><li>プラグの 4 導体それぞれにリード線を出す（切ったケーブルの被覆を剥くのが早い）。</li><li>プラグをゆっくり挿しながら、<strong>各端子とプラグ導体の導通が最初に成立する位置</strong>で止める。</li><li>その状態で<strong>プラグ肩とジャック前面のすき間</strong>をノギスで測る。</li><li>4 端子ぶん繰り返す。<strong>各 3 回</strong>測ってください（挿入方向のみ。抜去は別途）。</li></ol>
+<h3>記録</h3>
+<p><code>docs/measurements/TEMPLATE.md</code> の測定1・2 と同じ形式で、次を残してください。</p>
+<pre><code>端子番号 / 役割 / 対応するプラグ導体 / 最初の導通時のすき間（3 回）/ ノギスの分解能
+使ったジャックの型番とロット / 4極プラグの型番</code></pre>
+<h3>何が決まるか</h3>
+<p>深さから接点の軸位置を逆算できます（<code>npm run fit:contacts</code> の 4極版は未実装ですが、 <code>すき間 = 14 − 深さ</code>、<code>接点位置 ≒ 深さ − プラグ導体の前端</code> で手計算できます）。</p>
+<p>これが決まると:</p>
+<ul><li><a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-2 が <strong>ASSUMPTION → 実測</strong>になります</li><li>看板の結論の<strong>深さ 12.90〜13.12 mm</strong> が、仮定ではなく実測に基づく値になります</li><li><code>topology_search</code> の 4極側の結果が、実在部品の話として読めるようになります</li></ul>
+<div class="note"><p><strong>「合わなかった」結果も同じ価値があります。</strong>モデルの予測（上の表）は</p><p>測る前に公開してあるので、<strong>後出しで合わせることはできません。</strong></p><p>大きくずれたら、それは仮定が間違っていた証拠として記録します。</p></div>
+<h3>この測定でも分からないこと</h3>
+<ul><li>接点の<strong>円周方向</strong>の位置（軸方向しか出ません）</li><li>ばね定数・押付力（導通の有無しか見ないため）</li><li>4極ジャックにブレーク接点があるかどうか（<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-3）</li></ul>
+<hr>
+<h2 id="s5">3. 必要なもの</h2>
 <h3>本体（欧州から取り寄せ）</h3>
 <div class="tw"><table><thead><tr><th>品目</th><th>型番</th><th class="num">数</th><th>在庫（2026-08-01 メーカーサイト調べ）</th></tr></thead><tbody><tr><td>ジャック</td><td>Lumberg <strong>1503 09</strong></td><td class="num">2</td><td>Farnell GB 1,873 ／ Arrow DE 1,000 ／ Bürklin DE 529 ／ TME PL 431</td></tr><tr><td>プラグ</td><td>Lumberg <strong>1532 10</strong></td><td class="num">1</td><td>Lumberg DE 1,200 ／ Bürklin DE 501 ／ Arrow DE 38</td></tr></tbody></table></div>
 <div class="note"><p><strong>プラグの方が探しにくい。</strong> 1532 10 は TME / Farnell / RS の検索に出てきません</p><p>（同じ 1532 系でも 02 / 04 / 05 / 06 しか並びません）。</p><p>メーカー自身のページには在庫が出ているので、**Bürklin か Arrow、あるいは</p><p>Lumberg への直接問い合わせ**が確実です。</p></div>
@@ -216,14 +240,14 @@
 <h3>予備を買うか</h3>
 <p>ジャックは<strong>2個</strong>買うことを勧めます。1個は測定用、1個は必要になったとき切断して 内部を直接見るためです。単価が安いので、選択肢を残しておく価値があります。</p>
 <hr>
-<h2 id="s5">4. 合否の基準</h2>
+<h2 id="s6">4. 合否の基準</h2>
 <p>「だいたい合っていた」で終わらせないために、先に線を引いておきます。</p>
 <div class="tw"><table><thead><tr><th>予測とのずれ</th><th>判定</th><th>やること</th></tr></thead><tbody><tr><td><strong>0.3 mm 以内</strong></td><td>モデルは実測と整合</td><td><code>dimensions.json</code> の note に実測日と実測値を追記。grade は DERIVED のまま（実測で裏付いたと明記）</td></tr><tr><td><strong>0.3〜1.0 mm</strong></td><td>位置がずれている</td><td>逆算した軸位置へ更新し、grade を ASSUMPTION → DERIVED に上げる</td></tr><tr><td><strong>1.0 mm 超</strong>、または再閉が起きない</td><td>構造の仮定が違う</td><td>軸位置だけの問題ではない。パッド幅・自由半径・プラグ外形のどれが効いているか切り分ける</td></tr></tbody></table></div>
 <p>0.3 mm という線は、<strong>測定側の誤差の見積り</strong>から決めています。 ノギスの読み ±0.02 mm、切り替わり位置の判断 ±0.1 mm、プラグの傾きによる影響 ±0.1 mm 程度を 足し合わせると 0.2 mm 強になるので、その外側に置きました。</p>
 <h3>定性的な合否（数字より重い）</h3>
 <ul><li><strong>Ring ブレーク接点の「再閉」が起きるか</strong> — 起きなければ、プラグ先端の逆テーパの解釈か Ring 接点の自由半径が違います。数値のずれより重大です</li><li><strong>開閉の回数</strong> — 予測は「開・閉・開」の3回。回数が違えば構造の理解が違います</li><li><strong>ピン1が最初に触れる相手がプラグ Tip か</strong> — 帰線用の接点が左信号に触れるという予測。 ここが違うと接点の並び順の理解が違います</li><li><strong>第1絶縁帯で Tip↔Ring が短絡しないか</strong> — §1-2 の決着実験。鳴ってしまったら、 接触判定の修正そのものが間違っていたことになります。<strong>深さの一致より重い判定です</strong></li></ul>
 <hr>
-<h2 id="s6">5. 測った後どうするか</h2>
+<h2 id="s7">5. 測った後どうするか</h2>
 <p>逆算の道具を用意してあります。<strong>測った深さを渡すと、その深さになる接点位置を計算します。</strong></p>
 <pre><code>npm run fit:contacts -- 8.4 12.3 4.1</code></pre>
 <p>引数の順は「Ring ブレーク開放 / Tip ブレーク開放 / Sleeve 接点が Tip に触れ始める」の深さ（mm）です。</p>
@@ -237,14 +261,14 @@
 <p><strong>§1-1（ノギス）だけは経路が違います。</strong> 逆算は要りません。</p>
 <ol><li><code>plug.bodyRadius</code> と <code>plug.insulatorRadius</code> の <code>value</code> を実測値へ、<code>tolerance</code> を 実測のばらつき（3 回測った幅）へ置き換える</li><li><strong><code>npm run sensitivity</code> を流し直す</strong>（15 分）。この 2 つの <code>tolerance</code> が振り幅の正本なので、 公差の箱と最悪コーナーが自動で実測ベースに変わります</li><li><a href="SENSITIVITY.md">SENSITIVITY.md</a> §6-1、<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §4-1b、 <a href="../ASSUMPTIONS.md">ASSUMPTIONS.md</a> A-2、<a href="REPORT.md">REPORT.md</a> §2-3 の数字を差し替える</li><li><code>plug.insulatorRadius</code> の grade を <strong>DERIVED → FACT</strong>（実測）へ上げ、 <a href="../SOURCES.md">SOURCES.md</a> §5 に実測日と方法を追記する</li></ol>
 <hr>
-<h2 id="s7">6. この実験で分からないこと</h2>
+<h2 id="s8">6. この実験で分からないこと</h2>
 <p>正直に書いておきます。</p>
 <ul><li><strong>接点ばねの形そのもの</strong>（板厚・梁の長さ・曲げ方）は分かりません。分かるのは 「どの深さで切り替わるか」から逆算した<strong>接触点の軸位置</strong>だけです。 形を知るには切断するしかありません（だから予備を買う）</li><li><strong>押付力（N）</strong> は測れません。ばね定数は依然として仮定のままです</li><li><strong>接触抵抗の絶対値</strong> は、この方法では意味のある精度で出ません。 導通ブザーが鳴るかどうかしか見ていないためです</li><li><strong>4極（TRRS）側の仮定</strong> は、この実験では一切検証されません。別部品が必要です</li><li><strong>接触ドームの追従量そのもの</strong>（0.05 mm と仮定）は測れません。決着実験で分かるのは 「0.118 mm より小さいかどうか」だけで、その中のどこかは決まりません</li></ul>
 <p>つまりこの実験で ASSUMPTION から降ろせるのは「接点の軸位置3つ」と、 間接的に「プラグ外形の解釈」です。37件の仮定のうち片付くのは数件で、 残りは残ります。それでも、<strong>一番効く数件</strong>です。</p>
 <hr>
-<h2 id="s8">7. 進め方</h2>
+<h2 id="s9">7. 進め方</h2>
 <p><strong>メンテナはこの手順を実施しません</strong>（冒頭の方針）。以下は測ってくださる方への順序です。</p>
-<div class="tw"><table><thead><tr><th>段階</th><th>内容</th><th>誰が</th></tr></thead><tbody><tr><td>1</td><td>部品を用意する（プラグ 1 個だけでも §1-1 は成立する）</td><td>測る人</td></tr><tr><td>2</td><td><strong>§1-1 のノギス測定（プラグ 1 個・30 秒）</strong></td><td>測る人</td></tr><tr><td>3</td><td>余力があれば §1-2 の導通試験、§2 の深さ測定</td><td>測る人</td></tr><tr><td>4</td><td>結果を Issue か PR で共有（生の読み・3 回分・使った器具）</td><td>測る人</td></tr><tr><td>5</td><td>台帳への反映、感度解析の再実行、文書の更新</td><td>メンテナ</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>段階</th><th>内容</th><th>誰が</th></tr></thead><tbody><tr><td>1</td><td>部品を用意する（プラグ 1 個だけでも §1-1 は成立する）</td><td>測る人</td></tr><tr><td>2</td><td><strong>§1-1 のノギス測定（プラグ 1 個・30 秒）</strong></td><td>測る人</td></tr><tr><td>2b</td><td><strong>§2-2 の 4極ジャック測定</strong> ← いま最も効く。4極ジャック＋4極プラグ＋テスター</td><td>測る人</td></tr><tr><td>3</td><td>余力があれば §1-2 の導通試験、§2 の深さ測定</td><td>測る人</td></tr><tr><td>4</td><td>結果を Issue か PR で共有（生の読み・3 回分・使った器具）</td><td>測る人</td></tr><tr><td>5</td><td>台帳への反映、感度解析の再実行、文書の更新</td><td>メンテナ</td></tr></tbody></table></div>
 <p><strong>段階 2 を段階 3 より先に置いているのは意図的です。</strong> §1-1 はプラグ 1 個とノギスだけででき、 はんだ付けも LED 回路も要りません。しかも §1-2 の導通試験の結果を解釈するには、 先に実物の段差を知っている必要があります（§1-2 冒頭）。 <strong>一番安い測定が、一番効きます。§1-1 だけでも十分に価値があります。</strong></p>
 <h3>提供していただく場合</h3>
 <ul><li><strong>生の読みをそのまま</strong>ください。平均や補正はこちらで行います（<code>docs/measurements/TEMPLATE.md</code>）。</li><li><strong>「合わなかった」結果も同じくらい有用です。</strong> このモデルは反証されうる形で 数値を公開してあります。合わない報告は、モデルが間違っている証拠として扱います。</li><li>器具の分解能と、測った個体のロットが分かれば添えてください。</li><li><strong>§1-1 だけ、1 回だけでも構いません。</strong></li></ul>
