@@ -85,13 +85,14 @@ npm run dev
 
 | コマンド | 内容 |
 |---|---|
-| `npm run test` | 単体テスト (Vitest) 166 件 |
+| `npm run test` | 単体テスト (Vitest) 172 件 |
 | `npm run typecheck` | TypeScript 型検査 (`src` / `scripts` / `test`) |
 | `npm run build` | 本番ビルド |
 | `npm run artifacts` | `artifacts/` へ走査結果 JSON を生成 |
 | `npm run sensitivity` | 仮定パラメータの感度解析（**15 分ほどかかる。CI 向けではない**） |
 | `npm run docs:html` | `docs/*.md` から `docs/*.html` を生成 |
-| `npm run export:half-plug` | 接点トポロジーを DSP 非依存の JSON として書き出す（→ [連携](#half-plug-lab-との連携)） |
+| `npm run export:half-plug -- --variant "TRS\|JACK-TRRS"` | 接点トポロジーを DSP 非依存の JSON として書き出す |
+| `npm run export:half-plug:all` | 3極×3極 と 3極×4極 の両方を書き出す |
 | `npm run search:topology -- --target DIFFERENCE_SIGNAL` | 目標トポロジーが成立する構成を探す（**約 10 分**） |
 | `npm run screenshots` | 実ブラウザ (Playwright) で UI を操作し、`docs/screenshots/` へ画像を保存 |
 | `npm run perf` | 実 GPU (headed Chrome) でフレームレートと描画コストを測定 |
@@ -400,6 +401,7 @@ profile はこれを `absentTopologies` として**機械可読な「不在」�
 - 第三者資料（図面・CAD）の扱い → [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 - 検証結果 → [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md)
 - **仮定を振ったときに何が動くか → [docs/SENSITIVITY.md](docs/SENSITIVITY.md)**
+- **Half-Plug Lab へ渡す仕様 → [docs/HALF_PLUG_ADAPTER.md](docs/HALF_PLUG_ADAPTER.md)**
 - **実物との突き合わせ計画 → [docs/VERIFICATION_PLAN.md](docs/VERIFICATION_PLAN.md)**（**実測してくださる方を募集中**。メンテナ自身は実施しません）
 
 **重要**: 外形寸法はメーカー公開図面に基づきますが、**ジャック内部の接点ばねの寸法は
@@ -425,7 +427,7 @@ profile はこれを `absentTopologies` として**機械可読な「不在」�
 | `perf_real_gpu.json` | 実 GPU (Apple M5) でのフレームレートと描画コスト |
 | `touch_verification.json` | タッチ操作の検証 20 項目の結果 |
 | `sensitivity.json` | 仮定パラメータの感度解析の生データ（→ [docs/SENSITIVITY.md](docs/SENSITIVITY.md)） |
-| `half_plug_topology_profile.v1.json` | 接点トポロジーの中立表現（`npm run export:half-plug`）。**音響係数ではありません** |
+| `half_plug_topology_profile.v1.*.json` | 接点トポロジーの中立表現（variant ごと）。**音響係数ではありません** |
 | `topology_search_difference_signal.json` | 左右差分が残る構成の探索結果（`npm run search:topology`・約 10 分） |
 
 `sensitivity.json` だけは `npm run artifacts` では作られません。**`npm run sensitivity`

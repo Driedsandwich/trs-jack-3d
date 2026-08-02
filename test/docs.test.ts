@@ -41,6 +41,7 @@ const ui = json('artifacts/ui_verification.json')
 const touch = json('artifacts/touch_verification.json')
 
 const DOCS = [
+  'docs/HALF_PLUG_ADAPTER.md',
   'README.md',
   'ASSUMPTIONS.md',
   'UNKNOWNS.md',
@@ -391,6 +392,26 @@ describe('B. 文書に転記した artifact の値が一致している', () => 
     )
     const worst = Math.max(11.78 - j.minMm, j.maxMm - 11.78, 8.06 - Math.min(...breaks), Math.max(...breaks) - 8.06)
     expect(md).toContain(`最大 ${worst.toFixed(1)} mm`)
+  })
+
+  it('HALF_PLUG_ADAPTER の本命区間が profile と一致する', () => {
+    // 手で書いた区間の数字が、生成物とずれないようにする
+    const prof = json('artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json')
+    const iv = prof.intervals.find(
+      (x: { acousticAnnotation: { topologyClass: string } }) =>
+        x.acousticAnnotation.topologyClass === 'ground-open-differential',
+    )
+    expect(iv).toBeTruthy()
+    const md = text['docs/HALF_PLUG_ADAPTER.md']
+    expect(md).toContain(iv.intervalId)
+    expect(md).toContain(iv.nominalStartMm.toFixed(2))
+    expect(md).toContain(iv.nominalEndMm.toFixed(2))
+    expect(md).toContain(iv.normalizedStart.toFixed(4))
+    expect(md).toContain(iv.normalizedEnd.toFixed(4))
+    // 窓の幅とストローク比
+    const w = iv.nominalEndMm - iv.nominalStartMm
+    expect(md).toContain(`${w.toFixed(2)} mm 幅`)
+    expect(md).toContain(`${((100 * w) / prof.fullInsertionDepthMm).toFixed(1)} %`)
   })
 
   it('README 末尾の仮定件数が台帳と一致する', () => {

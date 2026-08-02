@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRS:ba2eb0ba91c0",
- "variantId": "TRS|JACK-TRS",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:862bfc567659",
+ "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
   "label": "Lumberg 1532 10",
@@ -9,10 +9,10 @@
   "manufacturerPartNumber": "1532 10"
  },
  "jack": {
-  "id": "JACK-TRS",
-  "label": "Lumberg 1503 09",
-  "poles": 3,
-  "manufacturerPartNumber": "1503 09"
+  "id": "JACK-TRRS",
+  "label": "4極ジャック (接点位置は全て仮定)",
+  "poles": 4,
+  "manufacturerPartNumber": null
  },
  "plugBasis": {
   "source": "メーカー公開データシートの図面 (07/2025 改訂) と、その図面実測",
@@ -20,11 +20,11 @@
   "note": "外形は図面どおり。導体境界は記載寸法からの演算。絶縁帯の縮径のみ図面実測 (φ3.20〜3.22)。"
  },
  "jackBasis": {
-  "source": "メーカー公開データシートの外形・基板レイアウト・回路記号",
+  "source": "一次資料なし",
   "evidenceGrade": "ASSUMPTION",
-  "note": "外形は図面どおりだが、内部の接点ばね寸法は一次資料に無く、全て仮定である。"
+  "note": "**4極ジャックは接点位置を含めて全て仮定である。** 図面もデータシートも入手できていない。この profile の深さの数字は、仮定した接点位置の帰結でしかない。"
  },
- "sourceRevision": "ba2eb0ba91c0d9b12df15bdea86e0b48373a517e",
+ "sourceRevision": "862bfc567659dc5ccdc9167dfadd7a9383f48689",
  "generatedAt": "2026-08-02",
  "fullInsertionDepthMm": 14,
  "stepMm": 0.02,
@@ -66,12 +66,14 @@
    "signal-to-return-short",
    "on-insulator",
    "wrong-conductor",
-   "ground-open"
+   "ground-open-differential",
+   "ground-open-nondifferential"
   ],
   "absent": [
+   "one-sided",
    "on-insulator",
    "wrong-conductor",
-   "ground-open"
+   "ground-open-nondifferential"
   ],
   "note": "absent に ground-open が入っている場合、この既定モデルでは共通帰線断が一度も起きない。表示上だけ足してはならない。"
  },
@@ -79,13 +81,21 @@
   {
    "intervalId": "IV000",
    "nominalStartMm": 0,
-   "nominalEndMm": 3.92,
+   "nominalEndMm": 1.98,
    "normalizedStart": 0,
-   "normalizedEnd": 0.28,
+   "normalizedEnd": 0.141429,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -93,7 +103,7 @@
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -101,7 +111,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -111,52 +121,46 @@
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
+    "P1": [],
+    "P2": [],
+    "P3": [],
+    "P4": []
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": false,
@@ -185,22 +189,32 @@
   },
   {
    "intervalId": "IV001",
-   "nominalStartMm": 3.92,
-   "nominalEndMm": 3.94,
-   "normalizedStart": 0.28,
-   "normalizedEnd": 0.281429,
+   "nominalStartMm": 1.98,
+   "nominalEndMm": 4.38,
+   "normalizedStart": 0.141429,
+   "normalizedEnd": 0.312857,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
-     "state": "INSULATED",
-     "connectedNets": [],
+     "terminalId": "P1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
      "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -208,7 +222,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -218,55 +232,56 @@
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
+     "PLUG:TIP",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
+    "P1": [
+     "TIP"
+    ],
+    "P2": [],
+    "P3": [],
+    "P4": []
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
-    "anyWrongSegment": false,
+    "anyWrongSegment": true,
     "anyUnstable": false
    },
    "acousticAnnotation": {
@@ -292,24 +307,30 @@
   },
   {
    "intervalId": "IV002",
-   "nominalStartMm": 3.94,
-   "nominalEndMm": 6.32,
-   "normalizedStart": 0.281429,
-   "normalizedEnd": 0.451429,
+   "nominalStartMm": 4.38,
+   "nominalEndMm": 5.08,
+   "normalizedStart": 0.312857,
+   "normalizedEnd": 0.362857,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
-     "state": "WRONG_SEGMENT",
-     "connectedNets": [
-      "TIP"
-     ],
-     "physicallyTouching": true,
+     "terminalId": "P1",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
      "evidenceGrade": "ASSUMPTION"
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -317,7 +338,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -327,69 +348,56 @@
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
-     "PLUG:TIP"
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
-     "PLUG:TIP",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
-     "TIP"
-    ],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
+    "P1": [],
+    "P2": [],
+    "P3": [],
+    "P4": []
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
-    "anyWrongSegment": true,
+    "anyWrongSegment": false,
     "anyUnstable": false
    },
    "acousticAnnotation": {
-    "topologyClass": "signal-to-return-short",
-    "audibleHypothesis": null,
-    "electricalRisk": "short-circuit",
-    "confidence": "low",
+    "topologyClass": "no-path",
+    "audibleHypothesis": "無音",
+    "electricalRisk": "none",
+    "confidence": "medium",
     "stabilityOverlay": null
    },
    "evidenceGrade": "ASSUMPTION",
@@ -408,22 +416,32 @@
   },
   {
    "intervalId": "IV003",
-   "nominalStartMm": 6.32,
-   "nominalEndMm": 6.34,
-   "normalizedStart": 0.451429,
-   "normalizedEnd": 0.452857,
+   "nominalStartMm": 5.08,
+   "nominalEndMm": 5.28,
+   "normalizedStart": 0.362857,
+   "normalizedEnd": 0.377143,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
-     "state": "INSULATED",
-     "connectedNets": [],
+     "terminalId": "P1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
      "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -431,7 +449,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -441,55 +459,56 @@
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
+     "PLUG:TIP",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
+    "P1": [
+     "TIP"
+    ],
+    "P2": [],
+    "P3": [],
+    "P4": []
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
-    "anyWrongSegment": false,
+    "anyWrongSegment": true,
     "anyUnstable": false
    },
    "acousticAnnotation": {
@@ -515,22 +534,34 @@
   },
   {
    "intervalId": "IV004",
-   "nominalStartMm": 6.34,
-   "nominalEndMm": 7.02,
-   "normalizedStart": 0.452857,
-   "normalizedEnd": 0.501429,
+   "nominalStartMm": 5.28,
+   "nominalEndMm": 6.32,
+   "normalizedStart": 0.377143,
+   "normalizedEnd": 0.451429,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
-     "state": "OPEN",
-     "connectedNets": [],
-     "physicallyTouching": false,
+     "terminalId": "P1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -538,7 +569,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -548,62 +579,67 @@
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
+     "PLUG:TIP",
+     "SPRING:JC_RING2",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P3"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
+    "P1": [
+     "TIP"
+    ],
+    "P2": [],
+    "P3": [],
+    "P4": [
+     "TIP"
+    ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
-    "anyWrongSegment": false,
+    "anyWrongSegment": true,
     "anyUnstable": false
    },
    "acousticAnnotation": {
-    "topologyClass": "no-path",
-    "audibleHypothesis": "無音",
-    "electricalRisk": "none",
-    "confidence": "medium",
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
     "stabilityOverlay": null
    },
    "evidenceGrade": "ASSUMPTION",
@@ -622,22 +658,34 @@
   },
   {
    "intervalId": "IV005",
-   "nominalStartMm": 7.02,
-   "nominalEndMm": 7.04,
-   "normalizedStart": 0.501429,
-   "normalizedEnd": 0.502857,
+   "nominalStartMm": 6.32,
+   "nominalEndMm": 7.28,
+   "normalizedStart": 0.451429,
+   "normalizedEnd": 0.52,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
-     "state": "INSULATED",
-     "connectedNets": [],
+     "terminalId": "P1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
      "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -645,7 +693,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -655,55 +703,181 @@
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
+     "PLUG:RING",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P3"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
+    "P1": [
+     "RING"
+    ],
+    "P2": [],
+    "P3": [],
+    "P4": [
+     "TIP"
+    ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
-    "anyWrongSegment": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV006",
+   "nominalStartMm": 7.28,
+   "nominalEndMm": 8.28,
+   "normalizedStart": 0.52,
+   "normalizedEnd": 0.591429,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "P1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "P3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "P2",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:P2"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:RING",
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:P2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "P1": [
+     "RING"
+    ],
+    "P2": [],
+    "P3": [],
+    "P4": []
+   },
+   "breakStates": {},
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
     "anyUnstable": false
    },
    "acousticAnnotation": {
@@ -728,131 +902,33 @@
    }
   },
   {
-   "intervalId": "IV006",
-   "nominalStartMm": 7.04,
-   "nominalEndMm": 8,
-   "normalizedStart": 0.502857,
-   "normalizedEnd": 0.571429,
-   "contacts": [
-    {
-     "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
-     "state": "WRONG_SEGMENT",
-     "connectedNets": [
-      "TIP"
-     ],
-     "physicallyTouching": true,
-     "evidenceGrade": "ASSUMPTION"
-    },
-    {
-     "contactId": "JC_RING",
-     "terminalId": "T2",
-     "state": "OPEN",
-     "connectedNets": [],
-     "physicallyTouching": false,
-     "evidenceGrade": "ASSUMPTION"
-    },
-    {
-     "contactId": "JC_TIP",
-     "terminalId": "T3",
-     "state": "OPEN",
-     "connectedNets": [],
-     "physicallyTouching": false,
-     "evidenceGrade": "ASSUMPTION"
-    }
-   ],
-   "circuitEdges": [
-    [
-     "SPRING:JC_RING",
-     "TERM:T2"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
-     "PLUG:TIP"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
-     "TERM:T1"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
-    ]
-   ],
-   "circuitNets": [
-    [
-     "PLUG:TIP",
-     "SPRING:JC_SLEEVE",
-     "TERM:T1"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
-    ]
-   ],
-   "terminalToPlugNet": {
-    "T1": [
-     "TIP"
-    ],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
-   },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
-   "mechanicalFlags": {
-    "anyBridged": false,
-    "anyWrongSegment": true,
-    "anyUnstable": false
-   },
-   "acousticAnnotation": {
-    "topologyClass": "signal-to-return-short",
-    "audibleHypothesis": null,
-    "electricalRisk": "short-circuit",
-    "confidence": "low",
-    "stabilityOverlay": null
-   },
-   "evidenceGrade": "ASSUMPTION",
-   "uncertainty": {
-    "boundaryResolutionMm": 0.02,
-    "systematicShiftMm": 1,
-    "notes": [
-     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
-     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
-    ]
-   },
-   "safetyFlags": {
-    "shortsSignalToReturn": false,
-    "shortsSignalToSignal": false
-   }
-  },
-  {
    "intervalId": "IV007",
-   "nominalStartMm": 8,
-   "nominalEndMm": 8.02,
-   "normalizedStart": 0.571429,
-   "normalizedEnd": 0.572857,
+   "nominalStartMm": 8.28,
+   "nominalEndMm": 8.38,
+   "normalizedStart": 0.591429,
+   "normalizedEnd": 0.598571,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "P3",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "TIP"
@@ -861,16 +937,8 @@
      "evidenceGrade": "ASSUMPTION"
     },
     {
-     "contactId": "JC_RING",
-     "terminalId": "T2",
-     "state": "INSULATED",
-     "connectedNets": [],
-     "physicallyTouching": true,
-     "evidenceGrade": "ASSUMPTION"
-    },
-    {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -880,69 +948,70 @@
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "TERM:T2"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
      "PLUG:TIP"
     ],
     [
+     "SPRING:JC_RING",
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ],
+    [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
-     "PLUG:TIP",
+     "PLUG:RING",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
+     "PLUG:TIP",
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
+    "P1": [
+     "RING"
+    ],
+    "P2": [],
+    "P3": [
      "TIP"
     ],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
+    "P4": []
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": true,
     "anyUnstable": false
    },
    "acousticAnnotation": {
-    "topologyClass": "signal-to-return-short",
-    "audibleHypothesis": null,
-    "electricalRisk": "short-circuit",
-    "confidence": "low",
+    "topologyClass": "no-path",
+    "audibleHypothesis": "無音",
+    "electricalRisk": "none",
+    "confidence": "medium",
     "stabilityOverlay": null
    },
    "evidenceGrade": "ASSUMPTION",
@@ -961,14 +1030,24 @@
   },
   {
    "intervalId": "IV008",
-   "nominalStartMm": 8.02,
-   "nominalEndMm": 8.06,
-   "normalizedStart": 0.572857,
-   "normalizedEnd": 0.575714,
+   "nominalStartMm": 8.38,
+   "nominalEndMm": 9.4,
+   "normalizedStart": 0.598571,
+   "normalizedEnd": 0.671429,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "TIP"
@@ -978,7 +1057,7 @@
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "TIP"
@@ -988,7 +1067,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -1002,61 +1081,60 @@
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
+     "SPRING:JC_RING2",
      "PLUG:TIP"
     ],
     [
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ],
+    [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
-     "PLUG:TIP",
-     "SPRING:JC_RING",
+     "PLUG:RING",
      "SPRING:JC_SLEEVE",
-     "TERM:T1",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "SPRING:JC_RING2",
+     "TERM:P3",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
+    "P1": [
+     "RING"
+    ],
+    "P2": [],
+    "P3": [
      "TIP"
     ],
-    "T3": [],
-    "T5": [],
-    "T2": [
-     "TIP"
-    ],
-    "T4": [
+    "P4": [
      "TIP"
     ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": true,
@@ -1085,138 +1163,24 @@
   },
   {
    "intervalId": "IV009",
-   "nominalStartMm": 8.06,
-   "nominalEndMm": 8.26,
-   "normalizedStart": 0.575714,
-   "normalizedEnd": 0.59,
+   "nominalStartMm": 9.4,
+   "nominalEndMm": 9.62,
+   "normalizedStart": 0.671429,
+   "normalizedEnd": 0.687143,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
-      "TIP"
+      "RING"
      ],
      "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
-     "contactId": "JC_RING",
-     "terminalId": "T2",
-     "state": "WRONG_SEGMENT",
-     "connectedNets": [
-      "TIP"
-     ],
-     "physicallyTouching": true,
-     "evidenceGrade": "ASSUMPTION"
-    },
-    {
-     "contactId": "JC_TIP",
-     "terminalId": "T3",
-     "state": "OPEN",
-     "connectedNets": [],
-     "physicallyTouching": false,
-     "evidenceGrade": "ASSUMPTION"
-    }
-   ],
-   "circuitEdges": [
-    [
-     "SPRING:JC_RING",
-     "PLUG:TIP"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T2"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
-     "PLUG:TIP"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
-     "TERM:T1"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
-    ]
-   ],
-   "circuitNets": [
-    [
-     "PLUG:TIP",
-     "SPRING:JC_RING",
-     "SPRING:JC_SLEEVE",
-     "TERM:T1",
-     "TERM:T2"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
-    ],
-    [
-     "TERM:T4"
-    ]
-   ],
-   "terminalToPlugNet": {
-    "T1": [
-     "TIP"
-    ],
-    "T3": [],
-    "T5": [],
-    "T2": [
-     "TIP"
-    ],
-    "T4": []
-   },
-   "breakStates": {
-    "BRK_RING": "BREAK_OPEN",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
-   "mechanicalFlags": {
-    "anyBridged": false,
-    "anyWrongSegment": true,
-    "anyUnstable": false
-   },
-   "acousticAnnotation": {
-    "topologyClass": "signal-to-return-short",
-    "audibleHypothesis": null,
-    "electricalRisk": "short-circuit",
-    "confidence": "low",
-    "stabilityOverlay": null
-   },
-   "evidenceGrade": "ASSUMPTION",
-   "uncertainty": {
-    "boundaryResolutionMm": 0.02,
-    "systematicShiftMm": 1,
-    "notes": [
-     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
-     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
-    ]
-   },
-   "safetyFlags": {
-    "shortsSignalToReturn": false,
-    "shortsSignalToSignal": false
-   }
-  },
-  {
-   "intervalId": "IV010",
-   "nominalStartMm": 8.26,
-   "nominalEndMm": 8.28,
-   "normalizedStart": 0.59,
-   "normalizedEnd": 0.591429,
-   "contacts": [
-    {
-     "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "INSULATED",
      "connectedNets": [],
      "physicallyTouching": true,
@@ -1224,7 +1188,7 @@
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "TIP"
@@ -1234,7 +1198,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -1248,57 +1212,56 @@
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
+     "PLUG:RING",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "PLUG:TIP",
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [],
-    "T3": [],
-    "T5": [],
-    "T2": [
+    "P1": [
+     "RING"
+    ],
+    "P2": [],
+    "P3": [
      "TIP"
     ],
-    "T4": []
+    "P4": []
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_OPEN",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": true,
@@ -1326,15 +1289,25 @@
    }
   },
   {
-   "intervalId": "IV011",
-   "nominalStartMm": 8.28,
-   "nominalEndMm": 9.44,
-   "normalizedStart": 0.591429,
-   "normalizedEnd": 0.674286,
+   "intervalId": "IV010",
+   "nominalStartMm": 9.62,
+   "nominalEndMm": 9.82,
+   "normalizedStart": 0.687143,
+   "normalizedEnd": 0.701429,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "RING"
@@ -1344,7 +1317,7 @@
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "TIP"
@@ -1354,7 +1327,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -1368,11 +1341,15 @@
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
@@ -1380,52 +1357,44 @@
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
      "PLUG:RING",
+     "SPRING:JC_RING2",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "PLUG:TIP",
      "SPRING:JC_RING",
-     "TERM:T2"
-    ],
-    [
-     "TERM:T4"
+     "TERM:P3"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
+    "P1": [
      "RING"
     ],
-    "T3": [],
-    "T5": [],
-    "T2": [
+    "P2": [],
+    "P3": [
      "TIP"
     ],
-    "T4": []
+    "P4": [
+     "RING"
+    ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_OPEN",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": true,
@@ -1453,15 +1422,26 @@
    }
   },
   {
-   "intervalId": "IV012",
-   "nominalStartMm": 9.44,
-   "nominalEndMm": 10.04,
-   "normalizedStart": 0.674286,
-   "normalizedEnd": 0.717143,
+   "intervalId": "IV011",
+   "nominalStartMm": 9.82,
+   "nominalEndMm": 10,
+   "normalizedStart": 0.701429,
+   "normalizedEnd": 0.714286,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
+     "state": "BRIDGED",
+     "connectedNets": [
+      "RING",
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "RING"
@@ -1471,7 +1451,7 @@
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "TIP"
@@ -1481,7 +1461,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -1495,11 +1475,15 @@
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
@@ -1507,52 +1491,187 @@
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
      "PLUG:RING",
+     "PLUG:SLEEVE",
+     "SPRING:JC_RING2",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "PLUG:TIP",
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P3"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
-     "RING"
+    "P1": [
+     "RING",
+     "SLEEVE"
     ],
-    "T3": [],
-    "T5": [],
-    "T2": [
+    "P2": [],
+    "P3": [
      "TIP"
     ],
-    "T4": [
-     "TIP"
+    "P4": [
+     "RING",
+     "SLEEVE"
     ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
+   "breakStates": {},
+   "mechanicalFlags": {
+    "anyBridged": true,
+    "anyWrongSegment": true,
+    "anyUnstable": false
    },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": true,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV012",
+   "nominalStartMm": 10,
+   "nominalEndMm": 10.28,
+   "normalizedStart": 0.714286,
+   "normalizedEnd": 0.734286,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "P1",
+     "state": "CLOSED",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "P3",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "P2",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:P2"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:SLEEVE",
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:P2"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "TERM:P3"
+    ],
+    [
+     "PLUG:RING",
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "P1": [
+     "SLEEVE"
+    ],
+    "P2": [],
+    "P3": [
+     "TIP"
+    ],
+    "P4": [
+     "RING"
+    ]
+   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": true,
@@ -1581,14 +1700,24 @@
   },
   {
    "intervalId": "IV013",
-   "nominalStartMm": 10.04,
-   "nominalEndMm": 10.06,
-   "normalizedStart": 0.717143,
-   "normalizedEnd": 0.718571,
+   "nominalStartMm": 10.28,
+   "nominalEndMm": 11.38,
+   "normalizedStart": 0.734286,
+   "normalizedEnd": 0.812857,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
+     "state": "CLOSED",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "RING"
@@ -1598,15 +1727,15 @@
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
-     "state": "INSULATED",
+     "terminalId": "P3",
+     "state": "OPEN",
      "connectedNets": [],
-     "physicallyTouching": true,
+     "physicallyTouching": false,
      "evidenceGrade": "ASSUMPTION"
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -1616,59 +1745,60 @@
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
+     "SPRING:JC_RING2",
      "PLUG:RING"
     ],
     [
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ],
+    [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
-     "PLUG:RING",
+     "PLUG:SLEEVE",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P3"
+    ],
+    [
+     "PLUG:RING",
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
-     "RING"
+    "P1": [
+     "SLEEVE"
     ],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
+    "P2": [],
+    "P3": [],
+    "P4": [
+     "RING"
+    ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": true,
@@ -1697,14 +1827,24 @@
   },
   {
    "intervalId": "IV014",
-   "nominalStartMm": 10.06,
-   "nominalEndMm": 11.1,
-   "normalizedStart": 0.718571,
-   "normalizedEnd": 0.792857,
+   "nominalStartMm": 11.38,
+   "nominalEndMm": 11.96,
+   "normalizedStart": 0.812857,
+   "normalizedEnd": 0.854286,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
+     "state": "CLOSED",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "RING"
@@ -1714,15 +1854,17 @@
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
-     "state": "OPEN",
-     "connectedNets": [],
-     "physicallyTouching": false,
+     "terminalId": "P3",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "OPEN",
      "connectedNets": [],
      "physicallyTouching": false,
@@ -1732,59 +1874,67 @@
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "PLUG:TIP"
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T4"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_SLEEVE",
+     "SPRING:JC_RING2",
      "PLUG:RING"
     ],
     [
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ],
+    [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
-     "PLUG:RING",
+     "PLUG:SLEEVE",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
+     "PLUG:TIP",
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "TERM:P3"
+    ],
+    [
+     "PLUG:RING",
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
-     "RING"
+    "P1": [
+     "SLEEVE"
     ],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
+    "P2": [],
+    "P3": [
+     "TIP"
+    ],
+    "P4": [
+     "RING"
+    ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": true,
@@ -1813,14 +1963,24 @@
   },
   {
    "intervalId": "IV015",
-   "nominalStartMm": 11.1,
-   "nominalEndMm": 11.12,
-   "normalizedStart": 0.792857,
-   "normalizedEnd": 0.794286,
+   "nominalStartMm": 11.96,
+   "nominalEndMm": 12.18,
+   "normalizedStart": 0.854286,
+   "normalizedEnd": 0.87,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
+     "state": "CLOSED",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "RING"
@@ -1830,88 +1990,104 @@
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
-     "state": "INSULATED",
-     "connectedNets": [],
+     "terminalId": "P3",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
      "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
-     "state": "OPEN",
-     "connectedNets": [],
-     "physicallyTouching": false,
+     "terminalId": "P2",
+     "state": "TOUCH_UNSTABLE",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     }
    ],
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "PLUG:TIP"
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T4"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_SLEEVE",
+     "SPRING:JC_RING2",
      "PLUG:RING"
     ],
     [
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ],
+    [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
+     "PLUG:TIP"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
-     "PLUG:RING",
+     "PLUG:SLEEVE",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
-     "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
-    ],
-    [
+     "PLUG:TIP",
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "SPRING:JC_TIP",
+     "TERM:P2",
+     "TERM:P3"
+    ],
+    [
+     "PLUG:RING",
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
-     "RING"
+    "P1": [
+     "SLEEVE"
     ],
-    "T3": [],
-    "T5": [],
-    "T2": [],
-    "T4": []
+    "P2": [
+     "TIP"
+    ],
+    "P3": [
+     "TIP"
+    ],
+    "P4": [
+     "RING"
+    ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": true,
-    "anyUnstable": false
+    "anyUnstable": true
    },
    "acousticAnnotation": {
     "topologyClass": "signal-to-return-short",
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
-    "stabilityOverlay": null
+    "stabilityOverlay": "intermittent"
    },
    "evidenceGrade": "ASSUMPTION",
    "uncertainty": {
@@ -1929,14 +2105,24 @@
   },
   {
    "intervalId": "IV016",
-   "nominalStartMm": 11.12,
-   "nominalEndMm": 11.24,
-   "normalizedStart": 0.794286,
-   "normalizedEnd": 0.802857,
+   "nominalStartMm": 12.18,
+   "nominalEndMm": 12.4,
+   "normalizedStart": 0.87,
+   "normalizedEnd": 0.885714,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
+     "state": "CLOSED",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "RING"
@@ -1946,7 +2132,7 @@
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "TIP"
@@ -1956,10 +2142,12 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
-     "state": "OPEN",
-     "connectedNets": [],
-     "physicallyTouching": false,
+     "terminalId": "P2",
+     "state": "CLOSED",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     }
    ],
@@ -1970,64 +2158,67 @@
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
+     "SPRING:JC_RING2",
      "PLUG:RING"
     ],
     [
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ],
+    [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
+     "PLUG:TIP"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
-     "PLUG:RING",
+     "PLUG:SLEEVE",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P1"
     ],
     [
      "PLUG:TIP",
      "SPRING:JC_RING",
-     "TERM:T2",
-     "TERM:T4"
+     "SPRING:JC_TIP",
+     "TERM:P2",
+     "TERM:P3"
+    ],
+    [
+     "PLUG:RING",
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
+    "P1": [
+     "SLEEVE"
+    ],
+    "P2": [
+     "TIP"
+    ],
+    "P3": [
+     "TIP"
+    ],
+    "P4": [
      "RING"
-    ],
-    "T3": [],
-    "T5": [],
-    "T2": [
-     "TIP"
-    ],
-    "T4": [
-     "TIP"
     ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_CLOSED",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": true,
@@ -2056,14 +2247,24 @@
   },
   {
    "intervalId": "IV017",
-   "nominalStartMm": 11.24,
-   "nominalEndMm": 11.78,
-   "normalizedStart": 0.802857,
-   "normalizedEnd": 0.841429,
+   "nominalStartMm": 12.4,
+   "nominalEndMm": 12.62,
+   "normalizedStart": 0.885714,
+   "normalizedEnd": 0.901429,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
+     "state": "CLOSED",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
       "RING"
@@ -2073,88 +2274,87 @@
     },
     {
      "contactId": "JC_RING",
-     "terminalId": "T2",
-     "state": "WRONG_SEGMENT",
-     "connectedNets": [
-      "TIP"
-     ],
+     "terminalId": "P3",
+     "state": "INSULATED",
+     "connectedNets": [],
      "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
-     "state": "OPEN",
-     "connectedNets": [],
-     "physicallyTouching": false,
+     "terminalId": "P2",
+     "state": "CLOSED",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     }
    ],
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "PLUG:TIP"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T2"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
+     "SPRING:JC_RING2",
      "PLUG:RING"
     ],
     [
+     "SPRING:JC_RING2",
+     "TERM:P4"
+    ],
+    [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
+     "PLUG:TIP"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
-     "PLUG:RING",
+     "PLUG:SLEEVE",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P1"
     ],
     [
      "PLUG:TIP",
-     "SPRING:JC_RING",
-     "TERM:T2"
+     "SPRING:JC_TIP",
+     "TERM:P2"
     ],
     [
-     "TERM:T4"
+     "SPRING:JC_RING",
+     "TERM:P3"
+    ],
+    [
+     "PLUG:RING",
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
-     "RING"
+    "P1": [
+     "SLEEVE"
     ],
-    "T3": [],
-    "T5": [],
-    "T2": [
+    "P2": [
      "TIP"
     ],
-    "T4": []
+    "P3": [],
+    "P4": [
+     "RING"
+    ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_OPEN",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
     "anyWrongSegment": true,
@@ -2183,57 +2383,68 @@
   },
   {
    "intervalId": "IV018",
-   "nominalStartMm": 11.78,
-   "nominalEndMm": 11.96,
-   "normalizedStart": 0.841429,
-   "normalizedEnd": 0.854286,
+   "nominalStartMm": 12.62,
+   "nominalEndMm": 12.9,
+   "normalizedStart": 0.901429,
+   "normalizedEnd": 0.921429,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
-     "state": "BRIDGED",
+     "terminalId": "P1",
+     "state": "CLOSED",
      "connectedNets": [
-      "RING",
       "SLEEVE"
      ],
      "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
-     "contactId": "JC_RING",
-     "terminalId": "T2",
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
      "state": "WRONG_SEGMENT",
      "connectedNets": [
-      "TIP"
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "P3",
+     "state": "CLOSED",
+     "connectedNets": [
+      "RING"
      ],
      "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
-     "state": "OPEN",
-     "connectedNets": [],
-     "physicallyTouching": false,
+     "terminalId": "P2",
+     "state": "CLOSED",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     }
    ],
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "PLUG:TIP"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T2"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
      "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
@@ -2241,56 +2452,53 @@
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
+     "PLUG:TIP"
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
-     "PLUG:RING",
      "PLUG:SLEEVE",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P1"
     ],
     [
      "PLUG:TIP",
-     "SPRING:JC_RING",
-     "TERM:T2"
+     "SPRING:JC_TIP",
+     "TERM:P2"
     ],
     [
-     "TERM:T4"
+     "PLUG:RING",
+     "SPRING:JC_RING",
+     "SPRING:JC_RING2",
+     "TERM:P3",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
-     "RING",
+    "P1": [
      "SLEEVE"
     ],
-    "T3": [],
-    "T5": [],
-    "T2": [
+    "P2": [
      "TIP"
     ],
-    "T4": []
+    "P3": [
+     "RING"
+    ],
+    "P4": [
+     "RING"
+    ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_OPEN",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
-    "anyBridged": true,
+    "anyBridged": false,
     "anyWrongSegment": true,
     "anyUnstable": false
    },
@@ -2311,20 +2519,20 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": true,
+    "shortsSignalToReturn": false,
     "shortsSignalToSignal": false
    }
   },
   {
    "intervalId": "IV019",
-   "nominalStartMm": 11.96,
-   "nominalEndMm": 12.02,
-   "normalizedStart": 0.854286,
-   "normalizedEnd": 0.858571,
+   "nominalStartMm": 12.9,
+   "nominalEndMm": 13.12,
+   "normalizedStart": 0.921429,
+   "normalizedEnd": 0.937143,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
      "state": "CLOSED",
      "connectedNets": [
       "SLEEVE"
@@ -2333,19 +2541,27 @@
      "evidenceGrade": "ASSUMPTION"
     },
     {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
+     "state": "INSULATED",
+     "connectedNets": [],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
      "contactId": "JC_RING",
-     "terminalId": "T2",
-     "state": "WRONG_SEGMENT",
+     "terminalId": "P3",
+     "state": "CLOSED",
      "connectedNets": [
-      "TIP"
+      "RING"
      ],
      "physicallyTouching": true,
      "evidenceGrade": "ASSUMPTION"
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
-     "state": "TOUCH_UNSTABLE",
+     "terminalId": "P2",
+     "state": "CLOSED",
      "connectedNets": [
       "TIP"
      ],
@@ -2356,15 +2572,15 @@
    "circuitEdges": [
     [
      "SPRING:JC_RING",
-     "PLUG:TIP"
+     "PLUG:RING"
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
@@ -2372,7 +2588,7 @@
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
@@ -2380,61 +2596,54 @@
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
      "PLUG:SLEEVE",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "PLUG:TIP",
-     "SPRING:JC_RING",
      "SPRING:JC_TIP",
-     "TERM:T2",
-     "TERM:T3",
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
-     "TERM:T4"
+     "PLUG:RING",
+     "SPRING:JC_RING",
+     "TERM:P3"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
+    "P1": [
      "SLEEVE"
     ],
-    "T3": [
+    "P2": [
      "TIP"
     ],
-    "T5": [
-     "TIP"
+    "P3": [
+     "RING"
     ],
-    "T2": [
-     "TIP"
-    ],
-    "T4": []
+    "P4": []
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_OPEN",
-    "BRK_TIP": "BREAK_CLOSED"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
-    "anyWrongSegment": true,
-    "anyUnstable": true
+    "anyWrongSegment": false,
+    "anyUnstable": false
    },
    "acousticAnnotation": {
-    "topologyClass": "signal-to-return-short",
-    "audibleHypothesis": null,
-    "electricalRisk": "short-circuit",
+    "topologyClass": "ground-open-differential",
+    "audibleHypothesis": "音量が落ち、左右の差分成分が残る",
+    "electricalRisk": "none",
     "confidence": "low",
-    "stabilityOverlay": "intermittent"
+    "stabilityOverlay": null
    },
    "evidenceGrade": "ASSUMPTION",
    "uncertainty": {
@@ -2452,278 +2661,14 @@
   },
   {
    "intervalId": "IV020",
-   "nominalStartMm": 12.02,
-   "nominalEndMm": 12.18,
-   "normalizedStart": 0.858571,
-   "normalizedEnd": 0.87,
-   "contacts": [
-    {
-     "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
-     "state": "CLOSED",
-     "connectedNets": [
-      "SLEEVE"
-     ],
-     "physicallyTouching": true,
-     "evidenceGrade": "ASSUMPTION"
-    },
-    {
-     "contactId": "JC_RING",
-     "terminalId": "T2",
-     "state": "WRONG_SEGMENT",
-     "connectedNets": [
-      "TIP"
-     ],
-     "physicallyTouching": true,
-     "evidenceGrade": "ASSUMPTION"
-    },
-    {
-     "contactId": "JC_TIP",
-     "terminalId": "T3",
-     "state": "TOUCH_UNSTABLE",
-     "connectedNets": [
-      "TIP"
-     ],
-     "physicallyTouching": true,
-     "evidenceGrade": "ASSUMPTION"
-    }
-   ],
-   "circuitEdges": [
-    [
-     "SPRING:JC_RING",
-     "PLUG:TIP"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T2"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
-     "PLUG:SLEEVE"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
-     "TERM:T1"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "PLUG:TIP"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
-    ]
-   ],
-   "circuitNets": [
-    [
-     "PLUG:SLEEVE",
-     "SPRING:JC_SLEEVE",
-     "TERM:T1"
-    ],
-    [
-     "PLUG:TIP",
-     "SPRING:JC_RING",
-     "SPRING:JC_TIP",
-     "TERM:T2",
-     "TERM:T3"
-    ],
-    [
-     "TERM:T5"
-    ],
-    [
-     "TERM:T4"
-    ]
-   ],
-   "terminalToPlugNet": {
-    "T1": [
-     "SLEEVE"
-    ],
-    "T3": [
-     "TIP"
-    ],
-    "T5": [],
-    "T2": [
-     "TIP"
-    ],
-    "T4": []
-   },
-   "breakStates": {
-    "BRK_RING": "BREAK_OPEN",
-    "BRK_TIP": "BREAK_OPEN"
-   },
-   "mechanicalFlags": {
-    "anyBridged": false,
-    "anyWrongSegment": true,
-    "anyUnstable": true
-   },
-   "acousticAnnotation": {
-    "topologyClass": "signal-to-return-short",
-    "audibleHypothesis": null,
-    "electricalRisk": "short-circuit",
-    "confidence": "low",
-    "stabilityOverlay": "intermittent"
-   },
-   "evidenceGrade": "ASSUMPTION",
-   "uncertainty": {
-    "boundaryResolutionMm": 0.02,
-    "systematicShiftMm": 1,
-    "notes": [
-     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
-     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
-    ]
-   },
-   "safetyFlags": {
-    "shortsSignalToReturn": false,
-    "shortsSignalToSignal": false
-   }
-  },
-  {
-   "intervalId": "IV021",
-   "nominalStartMm": 12.18,
-   "nominalEndMm": 12.34,
-   "normalizedStart": 0.87,
-   "normalizedEnd": 0.881429,
-   "contacts": [
-    {
-     "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
-     "state": "CLOSED",
-     "connectedNets": [
-      "SLEEVE"
-     ],
-     "physicallyTouching": true,
-     "evidenceGrade": "ASSUMPTION"
-    },
-    {
-     "contactId": "JC_RING",
-     "terminalId": "T2",
-     "state": "INSULATED",
-     "connectedNets": [],
-     "physicallyTouching": true,
-     "evidenceGrade": "ASSUMPTION"
-    },
-    {
-     "contactId": "JC_TIP",
-     "terminalId": "T3",
-     "state": "CLOSED",
-     "connectedNets": [
-      "TIP"
-     ],
-     "physicallyTouching": true,
-     "evidenceGrade": "ASSUMPTION"
-    }
-   ],
-   "circuitEdges": [
-    [
-     "SPRING:JC_RING",
-     "TERM:T2"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T4"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
-     "PLUG:SLEEVE"
-    ],
-    [
-     "SPRING:JC_SLEEVE",
-     "TERM:T1"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "PLUG:TIP"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
-    ]
-   ],
-   "circuitNets": [
-    [
-     "PLUG:SLEEVE",
-     "SPRING:JC_SLEEVE",
-     "TERM:T1"
-    ],
-    [
-     "PLUG:TIP",
-     "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "TERM:T5"
-    ],
-    [
-     "SPRING:JC_RING",
-     "TERM:T2"
-    ],
-    [
-     "TERM:T4"
-    ]
-   ],
-   "terminalToPlugNet": {
-    "T1": [
-     "SLEEVE"
-    ],
-    "T3": [
-     "TIP"
-    ],
-    "T5": [],
-    "T2": [],
-    "T4": []
-   },
-   "breakStates": {
-    "BRK_RING": "BREAK_OPEN",
-    "BRK_TIP": "BREAK_OPEN"
-   },
-   "mechanicalFlags": {
-    "anyBridged": false,
-    "anyWrongSegment": false,
-    "anyUnstable": false
-   },
-   "acousticAnnotation": {
-    "topologyClass": "one-sided",
-    "audibleHypothesis": "左のみ",
-    "electricalRisk": "none",
-    "confidence": "medium",
-    "stabilityOverlay": null
-   },
-   "evidenceGrade": "ASSUMPTION",
-   "uncertainty": {
-    "boundaryResolutionMm": 0.02,
-    "systematicShiftMm": 1,
-    "notes": [
-     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
-     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
-    ]
-   },
-   "safetyFlags": {
-    "shortsSignalToReturn": false,
-    "shortsSignalToSignal": false
-   }
-  },
-  {
-   "intervalId": "IV022",
-   "nominalStartMm": 12.34,
+   "nominalStartMm": 13.12,
    "nominalEndMm": 14,
-   "normalizedStart": 0.881429,
+   "normalizedStart": 0.937143,
    "normalizedEnd": 1,
    "contacts": [
     {
      "contactId": "JC_SLEEVE",
-     "terminalId": "T1",
+     "terminalId": "P1",
      "state": "CLOSED",
      "connectedNets": [
       "SLEEVE"
@@ -2732,8 +2677,18 @@
      "evidenceGrade": "ASSUMPTION"
     },
     {
+     "contactId": "JC_RING2",
+     "terminalId": "P4",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
      "contactId": "JC_RING",
-     "terminalId": "T2",
+     "terminalId": "P3",
      "state": "CLOSED",
      "connectedNets": [
       "RING"
@@ -2743,7 +2698,7 @@
     },
     {
      "contactId": "JC_TIP",
-     "terminalId": "T3",
+     "terminalId": "P2",
      "state": "CLOSED",
      "connectedNets": [
       "TIP"
@@ -2759,11 +2714,15 @@
     ],
     [
      "SPRING:JC_RING",
-     "TERM:T2"
+     "TERM:P3"
     ],
     [
-     "SPRING:JC_RING",
-     "TERM:T4"
+     "SPRING:JC_RING2",
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_RING2",
+     "TERM:P4"
     ],
     [
      "SPRING:JC_SLEEVE",
@@ -2771,7 +2730,7 @@
     ],
     [
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1"
     ],
     [
      "SPRING:JC_TIP",
@@ -2779,56 +2738,46 @@
     ],
     [
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "SPRING:JC_TIP",
-     "TERM:T5"
+     "TERM:P2"
     ]
    ],
    "circuitNets": [
     [
      "PLUG:SLEEVE",
+     "SPRING:JC_RING2",
      "SPRING:JC_SLEEVE",
-     "TERM:T1"
+     "TERM:P1",
+     "TERM:P4"
     ],
     [
      "PLUG:TIP",
      "SPRING:JC_TIP",
-     "TERM:T3"
-    ],
-    [
-     "TERM:T5"
+     "TERM:P2"
     ],
     [
      "PLUG:RING",
      "SPRING:JC_RING",
-     "TERM:T2"
-    ],
-    [
-     "TERM:T4"
+     "TERM:P3"
     ]
    ],
    "terminalToPlugNet": {
-    "T1": [
+    "P1": [
      "SLEEVE"
     ],
-    "T3": [
+    "P2": [
      "TIP"
     ],
-    "T5": [],
-    "T2": [
+    "P3": [
      "RING"
     ],
-    "T4": []
+    "P4": [
+     "SLEEVE"
+    ]
    },
-   "breakStates": {
-    "BRK_RING": "BREAK_OPEN",
-    "BRK_TIP": "BREAK_OPEN"
-   },
+   "breakStates": {},
    "mechanicalFlags": {
     "anyBridged": false,
-    "anyWrongSegment": false,
+    "anyWrongSegment": true,
     "anyUnstable": false
    },
    "acousticAnnotation": {
@@ -2856,8 +2805,8 @@
  "events": [
   {
    "kind": "FIRST_PHYSICAL_CONTACT",
-   "depthMm": 3.92,
-   "normalized": 0.28,
+   "depthMm": 1.98,
+   "normalized": 0.141429,
    "label": "最初の物理接触",
    "spreadMm": {
     "minMm": -0.88,
@@ -2869,37 +2818,9 @@
    }
   },
   {
-   "kind": "LAST_CONTACT_RELEASE",
-   "depthMm": 3.92,
-   "normalized": 0.28,
-   "label": "抜去時に最後の接点が離れる位置",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 5.72,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "STATE_CHANGE",
-   "depthMm": 3.92,
-   "normalized": 0.28,
-   "label": "JC_SLEEVE: OPEN → INSULATED",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 14,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
    "kind": "FIRST_ELECTRICAL_CONTACT",
-   "depthMm": 3.94,
-   "normalized": 0.281429,
+   "depthMm": 1.98,
+   "normalized": 0.141429,
    "label": "最初の電気接触",
    "spreadMm": {
     "minMm": -0.86,
@@ -2912,8 +2833,8 @@
   },
   {
    "kind": "FIRST_WRONG_SEGMENT",
-   "depthMm": 3.94,
-   "normalized": 0.281429,
+   "depthMm": 1.98,
+   "normalized": 0.141429,
    "label": "最初の誤セグメント接触",
    "spreadMm": {
     "minMm": -0.86,
@@ -2925,10 +2846,24 @@
    }
   },
   {
+   "kind": "LAST_CONTACT_RELEASE",
+   "depthMm": 1.98,
+   "normalized": 0.141429,
+   "label": "抜去時に最後の接点が離れる位置",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 5.72,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
    "kind": "STATE_CHANGE",
-   "depthMm": 3.94,
-   "normalized": 0.281429,
-   "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
+   "depthMm": 1.98,
+   "normalized": 0.141429,
+   "label": "JC_SLEEVE: OPEN → WRONG_SEGMENT",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,
@@ -2940,9 +2875,9 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 6.32,
-   "normalized": 0.451429,
-   "label": "JC_SLEEVE: WRONG_SEGMENT → INSULATED",
+   "depthMm": 4.38,
+   "normalized": 0.312857,
+   "label": "JC_SLEEVE: WRONG_SEGMENT → OPEN",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,
@@ -2954,9 +2889,9 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 6.34,
-   "normalized": 0.452857,
-   "label": "JC_SLEEVE: INSULATED → OPEN",
+   "depthMm": 5.08,
+   "normalized": 0.362857,
+   "label": "JC_SLEEVE: OPEN → WRONG_SEGMENT",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,
@@ -2968,9 +2903,9 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 7.02,
-   "normalized": 0.501429,
-   "label": "JC_SLEEVE: OPEN → INSULATED",
+   "depthMm": 5.28,
+   "normalized": 0.377143,
+   "label": "JC_RING2: OPEN → WRONG_SEGMENT",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,
@@ -2982,79 +2917,9 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 7.04,
-   "normalized": 0.502857,
-   "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 14,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "STATE_CHANGE",
-   "depthMm": 8,
-   "normalized": 0.571429,
-   "label": "JC_RING: OPEN → INSULATED",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 14,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "STATE_CHANGE",
-   "depthMm": 8.02,
-   "normalized": 0.572857,
-   "label": "JC_RING: INSULATED → WRONG_SEGMENT",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 14,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "FIRST_BREAK_OPEN",
-   "depthMm": 8.06,
-   "normalized": 0.575714,
-   "label": "最初のブレーク接点開放",
-   "spreadMm": {
-    "minMm": 8.06,
-    "maxMm": 8.06,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "STATE_CHANGE",
-   "depthMm": 8.06,
-   "normalized": 0.575714,
-   "label": "JC_RING ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 14,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "STATE_CHANGE",
-   "depthMm": 8.26,
-   "normalized": 0.59,
-   "label": "JC_SLEEVE: WRONG_SEGMENT → INSULATED",
+   "depthMm": 7.28,
+   "normalized": 0.52,
+   "label": "JC_RING2: WRONG_SEGMENT → OPEN",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,
@@ -3068,7 +2933,7 @@
    "kind": "STATE_CHANGE",
    "depthMm": 8.28,
    "normalized": 0.591429,
-   "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
+   "label": "JC_RING: OPEN → WRONG_SEGMENT",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,
@@ -3080,9 +2945,9 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 9.44,
-   "normalized": 0.674286,
-   "label": "JC_RING ブレーク接点: BREAK_OPEN → BREAK_CLOSED",
+   "depthMm": 8.38,
+   "normalized": 0.598571,
+   "label": "JC_RING2: OPEN → WRONG_SEGMENT",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,
@@ -3094,9 +2959,9 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 10.04,
-   "normalized": 0.717143,
-   "label": "JC_RING: WRONG_SEGMENT → INSULATED",
+   "depthMm": 9.4,
+   "normalized": 0.671429,
+   "label": "JC_RING2: WRONG_SEGMENT → INSULATED",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,
@@ -3108,51 +2973,9 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 10.06,
-   "normalized": 0.718571,
-   "label": "JC_RING: INSULATED → OPEN",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 14,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "STATE_CHANGE",
-   "depthMm": 11.1,
-   "normalized": 0.792857,
-   "label": "JC_RING: OPEN → INSULATED",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 14,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "STATE_CHANGE",
-   "depthMm": 11.12,
-   "normalized": 0.794286,
-   "label": "JC_RING: INSULATED → WRONG_SEGMENT",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 14,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "STATE_CHANGE",
-   "depthMm": 11.24,
-   "normalized": 0.802857,
-   "label": "JC_RING ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
+   "depthMm": 9.62,
+   "normalized": 0.687143,
+   "label": "JC_RING2: INSULATED → WRONG_SEGMENT",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,
@@ -3164,8 +2987,8 @@
   },
   {
    "kind": "FIRST_BRIDGE",
-   "depthMm": 11.78,
-   "normalized": 0.841429,
+   "depthMm": 9.82,
+   "normalized": 0.701429,
    "label": "最初の橋絡 (短絡)",
    "spreadMm": {
     "minMm": 6.98,
@@ -3178,8 +3001,8 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 11.78,
-   "normalized": 0.841429,
+   "depthMm": 9.82,
+   "normalized": 0.701429,
    "label": "JC_SLEEVE: WRONG_SEGMENT → BRIDGED",
    "spreadMm": {
     "minMm": -0.88,
@@ -3192,9 +3015,37 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 11.96,
-   "normalized": 0.854286,
+   "depthMm": 10,
+   "normalized": 0.714286,
    "label": "JC_SLEEVE: BRIDGED → CLOSED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 10.28,
+   "normalized": 0.734286,
+   "label": "JC_RING: WRONG_SEGMENT → OPEN",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.38,
+   "normalized": 0.812857,
+   "label": "JC_RING: OPEN → WRONG_SEGMENT",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,
@@ -3220,34 +3071,6 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 12.02,
-   "normalized": 0.858571,
-   "label": "JC_TIP ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 14,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "STATE_CHANGE",
-   "depthMm": 12.18,
-   "normalized": 0.87,
-   "label": "JC_RING: WRONG_SEGMENT → INSULATED",
-   "spreadMm": {
-    "minMm": -0.88,
-    "maxMm": 14,
-    "sweptParameters": [
-     "jack.contact.sleeve.axialCenter",
-     "jack.contact.sleeve.padWidth"
-    ]
-   }
-  },
-  {
-   "kind": "STATE_CHANGE",
    "depthMm": 12.18,
    "normalized": 0.87,
    "label": "JC_TIP: TOUCH_UNSTABLE → CLOSED",
@@ -3261,12 +3084,12 @@
    }
   },
   {
-   "kind": "ALL_SIGNALS_CORRECT",
-   "depthMm": 12.34,
-   "normalized": 0.881429,
-   "label": "全接点が正規接続",
+   "kind": "STATE_CHANGE",
+   "depthMm": 12.4,
+   "normalized": 0.885714,
+   "label": "JC_RING: WRONG_SEGMENT → INSULATED",
    "spreadMm": {
-    "minMm": 12.34,
+    "minMm": -0.88,
     "maxMm": 14,
     "sweptParameters": [
      "jack.contact.sleeve.axialCenter",
@@ -3276,9 +3099,37 @@
   },
   {
    "kind": "STATE_CHANGE",
-   "depthMm": 12.34,
-   "normalized": 0.881429,
+   "depthMm": 12.62,
+   "normalized": 0.901429,
    "label": "JC_RING: INSULATED → CLOSED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 12.9,
+   "normalized": 0.921429,
+   "label": "JC_RING2: WRONG_SEGMENT → INSULATED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 13.12,
+   "normalized": 0.937143,
+   "label": "JC_RING2: INSULATED → WRONG_SEGMENT",
    "spreadMm": {
     "minMm": -0.88,
     "maxMm": 14,

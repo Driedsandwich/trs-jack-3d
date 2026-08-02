@@ -22,7 +22,8 @@
     "predict:probe": "vite-node scripts/predictProbe.ts",
     "fit:contacts": "vite-node scripts/fitContacts.ts",
     "export:half-plug": "vite-node scripts/exportHalfPlugProfile.ts",
-    "search:topology": "vite-node scripts/searchTopology.ts"
+    "search:topology": "vite-node scripts/searchTopology.ts",
+    "export:half-plug:all": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" && npm run export:half-plug -- --variant \"TRS|JACK-TRRS\""
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

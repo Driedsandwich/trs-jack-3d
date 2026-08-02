@@ -1,0 +1,3321 @@
+{
+ "schemaVersion": 1,
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:862bfc567659",
+ "variantId": "TRS|JACK-TRS",
+ "plug": {
+  "id": "PLUG-TRS",
+  "label": "Lumberg 1532 10",
+  "poles": 3,
+  "manufacturerPartNumber": "1532 10"
+ },
+ "jack": {
+  "id": "JACK-TRS",
+  "label": "Lumberg 1503 09",
+  "poles": 3,
+  "manufacturerPartNumber": "1503 09"
+ },
+ "plugBasis": {
+  "source": "メーカー公開データシートの図面 (07/2025 改訂) と、その図面実測",
+  "evidenceGrade": "DERIVED",
+  "note": "外形は図面どおり。導体境界は記載寸法からの演算。絶縁帯の縮径のみ図面実測 (φ3.20〜3.22)。"
+ },
+ "jackBasis": {
+  "source": "メーカー公開データシートの外形・基板レイアウト・回路記号",
+  "evidenceGrade": "ASSUMPTION",
+  "note": "外形は図面どおりだが、内部の接点ばね寸法は一次資料に無く、全て仮定である。"
+ },
+ "sourceRevision": "862bfc567659dc5ccdc9167dfadd7a9383f48689",
+ "generatedAt": "2026-08-02",
+ "fullInsertionDepthMm": 14,
+ "stepMm": 0.02,
+ "coordinateSystem": {
+  "depthOrigin": "ジャック前面基準面 (ローレットナット前面)。プラグ先端がここにあるとき depth = 0",
+  "depthDirection": "正が挿入方向",
+  "normalized": "depthMm / fullInsertionDepthMm。0 = 先端が前面、1 = 完全挿入"
+ },
+ "dataLicense": {
+  "code": "MIT",
+  "data": "CC BY 4.0",
+  "attribution": "trs-jack-3d (https://github.com/Driedsandwich/trs-jack-3d) — CC BY 4.0"
+ },
+ "modelLimitations": {
+  "verifiedPhysical": false,
+  "physicalVerificationRef": null,
+  "notes": [
+   "実物と突き合わせた検証をしていない。ジャック内部の接点寸法は全て仮定である。",
+   "この profile は Lumberg 1532 10 × 1503 09 の 1 組についてのものであり、3.5mm ジャック全般を代表しない。",
+   "acousticAnnotation は参考分類であって DSP 係数ではない。フィルタ係数・ゲイン・クロストーク量へ直接変換してはならない。",
+   "quality を接触抵抗 Ω へ換算してはならない。相対スコアであって物理量ではない。",
+   "nominalStartMm は 1 機種の実寸であり、一般的な「挿入深度」ではない。機種横断では normalized を使うこと。"
+  ]
+ },
+ "assumptionSummary": {
+  "counts": {
+   "FACT": 48,
+   "DERIVED": 39,
+   "ASSUMPTION": 41,
+   "UNKNOWN": 0
+  },
+  "jackInternalAssumptions": 20
+ },
+ "absentTopologies": {
+  "searched": [
+   "fully-seated",
+   "no-path",
+   "one-sided",
+   "signal-to-return-short",
+   "on-insulator",
+   "wrong-conductor",
+   "ground-open-differential",
+   "ground-open-nondifferential"
+  ],
+  "absent": [
+   "on-insulator",
+   "wrong-conductor",
+   "ground-open-differential",
+   "ground-open-nondifferential"
+  ],
+  "note": "absent に ground-open が入っている場合、この既定モデルでは共通帰線断が一度も起きない。表示上だけ足してはならない。"
+ },
+ "intervals": [
+  {
+   "intervalId": "IV000",
+   "nominalStartMm": 0,
+   "nominalEndMm": 3.92,
+   "normalizedStart": 0,
+   "normalizedEnd": 0.28,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": false,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "no-path",
+    "audibleHypothesis": "無音",
+    "electricalRisk": "none",
+    "confidence": "medium",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV001",
+   "nominalStartMm": 3.92,
+   "nominalEndMm": 3.94,
+   "normalizedStart": 0.28,
+   "normalizedEnd": 0.281429,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "INSULATED",
+     "connectedNets": [],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": false,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "no-path",
+    "audibleHypothesis": "無音",
+    "electricalRisk": "none",
+    "confidence": "medium",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV002",
+   "nominalStartMm": 3.94,
+   "nominalEndMm": 6.32,
+   "normalizedStart": 0.281429,
+   "normalizedEnd": 0.451429,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:TIP",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "TIP"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV003",
+   "nominalStartMm": 6.32,
+   "nominalEndMm": 6.34,
+   "normalizedStart": 0.451429,
+   "normalizedEnd": 0.452857,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "INSULATED",
+     "connectedNets": [],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": false,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "no-path",
+    "audibleHypothesis": "無音",
+    "electricalRisk": "none",
+    "confidence": "medium",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV004",
+   "nominalStartMm": 6.34,
+   "nominalEndMm": 7.02,
+   "normalizedStart": 0.452857,
+   "normalizedEnd": 0.501429,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": false,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "no-path",
+    "audibleHypothesis": "無音",
+    "electricalRisk": "none",
+    "confidence": "medium",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV005",
+   "nominalStartMm": 7.02,
+   "nominalEndMm": 7.04,
+   "normalizedStart": 0.501429,
+   "normalizedEnd": 0.502857,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "INSULATED",
+     "connectedNets": [],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": false,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "no-path",
+    "audibleHypothesis": "無音",
+    "electricalRisk": "none",
+    "confidence": "medium",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV006",
+   "nominalStartMm": 7.04,
+   "nominalEndMm": 8,
+   "normalizedStart": 0.502857,
+   "normalizedEnd": 0.571429,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:TIP",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "TIP"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV007",
+   "nominalStartMm": 8,
+   "nominalEndMm": 8.02,
+   "normalizedStart": 0.571429,
+   "normalizedEnd": 0.572857,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "INSULATED",
+     "connectedNets": [],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:TIP",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "TIP"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV008",
+   "nominalStartMm": 8.02,
+   "nominalEndMm": 8.06,
+   "normalizedStart": 0.572857,
+   "normalizedEnd": 0.575714,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1",
+     "TERM:T2",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "TIP"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [
+     "TIP"
+    ],
+    "T4": [
+     "TIP"
+    ]
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV009",
+   "nominalStartMm": 8.06,
+   "nominalEndMm": 8.26,
+   "normalizedStart": 0.575714,
+   "normalizedEnd": 0.59,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "TIP"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [
+     "TIP"
+    ],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_OPEN",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV010",
+   "nominalStartMm": 8.26,
+   "nominalEndMm": 8.28,
+   "normalizedStart": 0.59,
+   "normalizedEnd": 0.591429,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "INSULATED",
+     "connectedNets": [],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [],
+    "T3": [],
+    "T5": [],
+    "T2": [
+     "TIP"
+    ],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_OPEN",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "no-path",
+    "audibleHypothesis": "無音",
+    "electricalRisk": "none",
+    "confidence": "medium",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV011",
+   "nominalStartMm": 8.28,
+   "nominalEndMm": 9.44,
+   "normalizedStart": 0.591429,
+   "normalizedEnd": 0.674286,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:RING",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "RING"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [
+     "TIP"
+    ],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_OPEN",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV012",
+   "nominalStartMm": 9.44,
+   "nominalEndMm": 10.04,
+   "normalizedStart": 0.674286,
+   "normalizedEnd": 0.717143,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:RING",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "RING"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [
+     "TIP"
+    ],
+    "T4": [
+     "TIP"
+    ]
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV013",
+   "nominalStartMm": 10.04,
+   "nominalEndMm": 10.06,
+   "normalizedStart": 0.717143,
+   "normalizedEnd": 0.718571,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "INSULATED",
+     "connectedNets": [],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:RING",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "RING"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV014",
+   "nominalStartMm": 10.06,
+   "nominalEndMm": 11.1,
+   "normalizedStart": 0.718571,
+   "normalizedEnd": 0.792857,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:RING",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "RING"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV015",
+   "nominalStartMm": 11.1,
+   "nominalEndMm": 11.12,
+   "normalizedStart": 0.792857,
+   "normalizedEnd": 0.794286,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "INSULATED",
+     "connectedNets": [],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:RING",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "RING"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV016",
+   "nominalStartMm": 11.12,
+   "nominalEndMm": 11.24,
+   "normalizedStart": 0.794286,
+   "normalizedEnd": 0.802857,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:RING",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "TERM:T2",
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "RING"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [
+     "TIP"
+    ],
+    "T4": [
+     "TIP"
+    ]
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_CLOSED",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV017",
+   "nominalStartMm": 11.24,
+   "nominalEndMm": 11.78,
+   "normalizedStart": 0.802857,
+   "normalizedEnd": 0.841429,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:RING",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "RING"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [
+     "TIP"
+    ],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_OPEN",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV018",
+   "nominalStartMm": 11.78,
+   "nominalEndMm": 11.96,
+   "normalizedStart": 0.841429,
+   "normalizedEnd": 0.854286,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "BRIDGED",
+     "connectedNets": [
+      "RING",
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "OPEN",
+     "connectedNets": [],
+     "physicallyTouching": false,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:RING",
+     "PLUG:SLEEVE",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "RING",
+     "SLEEVE"
+    ],
+    "T3": [],
+    "T5": [],
+    "T2": [
+     "TIP"
+    ],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_OPEN",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": true,
+    "anyWrongSegment": true,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": true,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV019",
+   "nominalStartMm": 11.96,
+   "nominalEndMm": 12.02,
+   "normalizedStart": 0.854286,
+   "normalizedEnd": 0.858571,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "CLOSED",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "TOUCH_UNSTABLE",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:SLEEVE",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "SPRING:JC_TIP",
+     "TERM:T2",
+     "TERM:T3",
+     "TERM:T5"
+    ],
+    [
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "SLEEVE"
+    ],
+    "T3": [
+     "TIP"
+    ],
+    "T5": [
+     "TIP"
+    ],
+    "T2": [
+     "TIP"
+    ],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_OPEN",
+    "BRK_TIP": "BREAK_CLOSED"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": true
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": "intermittent"
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV020",
+   "nominalStartMm": 12.02,
+   "nominalEndMm": 12.18,
+   "normalizedStart": 0.858571,
+   "normalizedEnd": 0.87,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "CLOSED",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "WRONG_SEGMENT",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "TOUCH_UNSTABLE",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:SLEEVE",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_RING",
+     "SPRING:JC_TIP",
+     "TERM:T2",
+     "TERM:T3"
+    ],
+    [
+     "TERM:T5"
+    ],
+    [
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "SLEEVE"
+    ],
+    "T3": [
+     "TIP"
+    ],
+    "T5": [],
+    "T2": [
+     "TIP"
+    ],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_OPEN",
+    "BRK_TIP": "BREAK_OPEN"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": true,
+    "anyUnstable": true
+   },
+   "acousticAnnotation": {
+    "topologyClass": "signal-to-return-short",
+    "audibleHypothesis": null,
+    "electricalRisk": "short-circuit",
+    "confidence": "low",
+    "stabilityOverlay": "intermittent"
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV021",
+   "nominalStartMm": 12.18,
+   "nominalEndMm": 12.34,
+   "normalizedStart": 0.87,
+   "normalizedEnd": 0.881429,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "CLOSED",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "INSULATED",
+     "connectedNets": [],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "CLOSED",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:SLEEVE",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "TERM:T5"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "SLEEVE"
+    ],
+    "T3": [
+     "TIP"
+    ],
+    "T5": [],
+    "T2": [],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_OPEN",
+    "BRK_TIP": "BREAK_OPEN"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": false,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "one-sided",
+    "audibleHypothesis": "左のみ",
+    "electricalRisk": "none",
+    "confidence": "medium",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  },
+  {
+   "intervalId": "IV022",
+   "nominalStartMm": 12.34,
+   "nominalEndMm": 14,
+   "normalizedStart": 0.881429,
+   "normalizedEnd": 1,
+   "contacts": [
+    {
+     "contactId": "JC_SLEEVE",
+     "terminalId": "T1",
+     "state": "CLOSED",
+     "connectedNets": [
+      "SLEEVE"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_RING",
+     "terminalId": "T2",
+     "state": "CLOSED",
+     "connectedNets": [
+      "RING"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    },
+    {
+     "contactId": "JC_TIP",
+     "terminalId": "T3",
+     "state": "CLOSED",
+     "connectedNets": [
+      "TIP"
+     ],
+     "physicallyTouching": true,
+     "evidenceGrade": "ASSUMPTION"
+    }
+   ],
+   "circuitEdges": [
+    [
+     "SPRING:JC_RING",
+     "PLUG:RING"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "SPRING:JC_RING",
+     "TERM:T4"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "PLUG:SLEEVE"
+    ],
+    [
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "PLUG:TIP"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "SPRING:JC_TIP",
+     "TERM:T5"
+    ]
+   ],
+   "circuitNets": [
+    [
+     "PLUG:SLEEVE",
+     "SPRING:JC_SLEEVE",
+     "TERM:T1"
+    ],
+    [
+     "PLUG:TIP",
+     "SPRING:JC_TIP",
+     "TERM:T3"
+    ],
+    [
+     "TERM:T5"
+    ],
+    [
+     "PLUG:RING",
+     "SPRING:JC_RING",
+     "TERM:T2"
+    ],
+    [
+     "TERM:T4"
+    ]
+   ],
+   "terminalToPlugNet": {
+    "T1": [
+     "SLEEVE"
+    ],
+    "T3": [
+     "TIP"
+    ],
+    "T5": [],
+    "T2": [
+     "RING"
+    ],
+    "T4": []
+   },
+   "breakStates": {
+    "BRK_RING": "BREAK_OPEN",
+    "BRK_TIP": "BREAK_OPEN"
+   },
+   "mechanicalFlags": {
+    "anyBridged": false,
+    "anyWrongSegment": false,
+    "anyUnstable": false
+   },
+   "acousticAnnotation": {
+    "topologyClass": "fully-seated",
+    "audibleHypothesis": "正常",
+    "electricalRisk": "none",
+    "confidence": "high",
+    "stabilityOverlay": null
+   },
+   "evidenceGrade": "ASSUMPTION",
+   "uncertainty": {
+    "boundaryResolutionMm": 0.02,
+    "systematicShiftMm": 1,
+    "notes": [
+     "区間境界は走査刻みの倍数でしか表せない。実際の切り替わりは刻みの間にある。",
+     "帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。"
+    ]
+   },
+   "safetyFlags": {
+    "shortsSignalToReturn": false,
+    "shortsSignalToSignal": false
+   }
+  }
+ ],
+ "events": [
+  {
+   "kind": "FIRST_PHYSICAL_CONTACT",
+   "depthMm": 3.92,
+   "normalized": 0.28,
+   "label": "最初の物理接触",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 5.72,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "LAST_CONTACT_RELEASE",
+   "depthMm": 3.92,
+   "normalized": 0.28,
+   "label": "抜去時に最後の接点が離れる位置",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 5.72,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 3.92,
+   "normalized": 0.28,
+   "label": "JC_SLEEVE: OPEN → INSULATED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "FIRST_ELECTRICAL_CONTACT",
+   "depthMm": 3.94,
+   "normalized": 0.281429,
+   "label": "最初の電気接触",
+   "spreadMm": {
+    "minMm": -0.86,
+    "maxMm": 8.02,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "FIRST_WRONG_SEGMENT",
+   "depthMm": 3.94,
+   "normalized": 0.281429,
+   "label": "最初の誤セグメント接触",
+   "spreadMm": {
+    "minMm": -0.86,
+    "maxMm": 8.02,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 3.94,
+   "normalized": 0.281429,
+   "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 6.32,
+   "normalized": 0.451429,
+   "label": "JC_SLEEVE: WRONG_SEGMENT → INSULATED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 6.34,
+   "normalized": 0.452857,
+   "label": "JC_SLEEVE: INSULATED → OPEN",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 7.02,
+   "normalized": 0.501429,
+   "label": "JC_SLEEVE: OPEN → INSULATED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 7.04,
+   "normalized": 0.502857,
+   "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 8,
+   "normalized": 0.571429,
+   "label": "JC_RING: OPEN → INSULATED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 8.02,
+   "normalized": 0.572857,
+   "label": "JC_RING: INSULATED → WRONG_SEGMENT",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "FIRST_BREAK_OPEN",
+   "depthMm": 8.06,
+   "normalized": 0.575714,
+   "label": "最初のブレーク接点開放",
+   "spreadMm": {
+    "minMm": 8.06,
+    "maxMm": 8.06,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 8.06,
+   "normalized": 0.575714,
+   "label": "JC_RING ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 8.26,
+   "normalized": 0.59,
+   "label": "JC_SLEEVE: WRONG_SEGMENT → INSULATED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 8.28,
+   "normalized": 0.591429,
+   "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 9.44,
+   "normalized": 0.674286,
+   "label": "JC_RING ブレーク接点: BREAK_OPEN → BREAK_CLOSED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 10.04,
+   "normalized": 0.717143,
+   "label": "JC_RING: WRONG_SEGMENT → INSULATED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 10.06,
+   "normalized": 0.718571,
+   "label": "JC_RING: INSULATED → OPEN",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.1,
+   "normalized": 0.792857,
+   "label": "JC_RING: OPEN → INSULATED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.12,
+   "normalized": 0.794286,
+   "label": "JC_RING: INSULATED → WRONG_SEGMENT",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.24,
+   "normalized": 0.802857,
+   "label": "JC_RING ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "FIRST_BRIDGE",
+   "depthMm": 11.78,
+   "normalized": 0.841429,
+   "label": "最初の橋絡 (短絡)",
+   "spreadMm": {
+    "minMm": 6.98,
+    "maxMm": 13.14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.78,
+   "normalized": 0.841429,
+   "label": "JC_SLEEVE: WRONG_SEGMENT → BRIDGED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.96,
+   "normalized": 0.854286,
+   "label": "JC_SLEEVE: BRIDGED → CLOSED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 11.96,
+   "normalized": 0.854286,
+   "label": "JC_TIP: OPEN → TOUCH_UNSTABLE",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 12.02,
+   "normalized": 0.858571,
+   "label": "JC_TIP ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 12.18,
+   "normalized": 0.87,
+   "label": "JC_RING: WRONG_SEGMENT → INSULATED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 12.18,
+   "normalized": 0.87,
+   "label": "JC_TIP: TOUCH_UNSTABLE → CLOSED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "ALL_SIGNALS_CORRECT",
+   "depthMm": 12.34,
+   "normalized": 0.881429,
+   "label": "全接点が正規接続",
+   "spreadMm": {
+    "minMm": 12.34,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "STATE_CHANGE",
+   "depthMm": 12.34,
+   "normalized": 0.881429,
+   "label": "JC_RING: INSULATED → CLOSED",
+   "spreadMm": {
+    "minMm": -0.88,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  },
+  {
+   "kind": "FULL_INSERTION",
+   "depthMm": 14,
+   "normalized": 1,
+   "label": "完全挿入",
+   "spreadMm": {
+    "minMm": 14,
+    "maxMm": 14,
+    "sweptParameters": [
+     "jack.contact.sleeve.axialCenter",
+     "jack.contact.sleeve.padWidth"
+    ]
+   }
+  }
+ ],
+ "sensitivitySummary": {
+  "available": true,
+  "bridgeDepthJointRangeMm": [
+   6.96,
+   13.1392
+  ],
+  "tipBridgeComplianceThreshold": 0.153752,
+  "tipBridgeWorstCornerThreshold": 0.118875,
+  "notes": [
+   "これはモデル内部の感度であって、実物のばらつきではない。",
+   "spreadMm が null の事象は「測っていない」であって「動かない」ではない。"
+  ]
+ }
+}

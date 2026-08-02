@@ -15,7 +15,17 @@ const ROOT = resolve(__dirname, '..')
 const json = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 
 const schema = json('schemas/half-plug-topology-profile.v1.schema.json')
-const profile = json('artifacts/half_plug_topology_profile.v1.json')
+
+// variant ごとに profile を出すので、**全部を検査する**。
+// 1 つだけ見て通すと、追加した variant が壊れていても気づけない。
+const PROFILES = [
+  ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v1.trs_jack_trs.json'],
+  ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json'],
+] as const
+const profiles = PROFILES.map(([id, path]) => [id, json(path)] as const)
+/** 既定 variant。個別の主張はこちらで見る */
+const profile = profiles[0][1]
+const trrsProfile = profiles[1][1]
 
 // ---------------------------------------------------------------------------
 // 最小限の JSON Schema 検証
@@ -76,8 +86,9 @@ function validate(value: unknown, node: Record<string, unknown>, path = '$'): st
 
 describe('Half-Plug Topology Profile v1', () => {
   // 1. JSON Schema validation
-  it('1. schema に適合する', () => {
-    expect(validate(profile, schema)).toEqual([])
+  it.each(profiles.map(([id]) => id))('1. schema に適合する (%s)', (id) => {
+    const p = profiles.find(([x]) => x === id)![1]
+    expect(validate(p, schema)).toEqual([])
   })
 
   it('1b. 検証器そのものが働く (壊した profile を弾ける)', () => {
@@ -160,12 +171,46 @@ describe('Half-Plug Topology Profile v1', () => {
   })
 
   // 9. 既定 TRS で存在しない音響状態を捏造しない
-  it('9. 存在しないトポロジーを「無い」と記録している', () => {
-    expect(profile.absentTopologies.searched).toContain('ground-open')
-    // この既定モデルでは共通帰線断は起きない。起きないことを記録するのが正しい
-    const present = new Set(profile.intervals.map((x: { acousticAnnotation: { topologyClass: string } }) => x.acousticAnnotation.topologyClass))
-    for (const t of profile.absentTopologies.absent) expect(present.has(t)).toBe(false)
-    for (const t of present) expect(profile.absentTopologies.absent).not.toContain(t)
+  it.each(profiles.map(([id]) => id))('9. 存在しないトポロジーを「無い」と記録している (%s)', (id) => {
+    const p = profiles.find(([x]) => x === id)![1]
+    // 帰線断は「差分になる/ならない」で分けている。両方とも探索対象に入れる
+    expect(p.absentTopologies.searched).toContain('ground-open-differential')
+    expect(p.absentTopologies.searched).toContain('ground-open-nondifferential')
+    const present = new Set(
+      p.intervals.map((x: { acousticAnnotation: { topologyClass: string } }) => x.acousticAnnotation.topologyClass),
+    )
+    for (const t of p.absentTopologies.absent) expect(present.has(t)).toBe(false)
+    for (const t of present) expect(p.absentTopologies.absent).not.toContain(t)
+  })
+
+  it('3極×3極では左右差分が現れず、3極×4極では現れる（取り違えていない）', () => {
+    const cls = (p: { intervals: { acousticAnnotation: { topologyClass: string } }[] }) =>
+      new Set(p.intervals.map((x) => x.acousticAnnotation.topologyClass))
+    expect(cls(profile).has('ground-open-differential')).toBe(false)
+    expect(profile.absentTopologies.absent).toContain('ground-open-differential')
+    expect(cls(trrsProfile).has('ground-open-differential')).toBe(true)
+  })
+
+  it('3極プラグ × 4極ジャックの profile が、左右差分の区間を持っている', () => {
+    // **無改造で成立する唯一の構成。** これが消えたら気づけるようにする
+    const iv = trrsProfile.intervals.filter(
+      (x: { acousticAnnotation: { topologyClass: string } }) =>
+        x.acousticAnnotation.topologyClass === 'ground-open-differential',
+    )
+    expect(iv.length).toBeGreaterThan(0)
+    for (const x of iv) {
+      // 帰線が浮くだけで、信号どうしの短絡ではない
+      expect(x.safetyFlags.shortsSignalToSignal).toBe(false)
+      expect(x.safetyFlags.shortsSignalToReturn).toBe(false)
+      // 4極ジャックの接点位置は全て仮定なので ASSUMPTION 以外になりえない
+      expect(x.evidenceGrade).toBe('ASSUMPTION')
+    }
+  })
+
+  it('4極ジャックの profile は、根拠が仮定であることを明示している', () => {
+    expect(trrsProfile.jackBasis.evidenceGrade).toBe('ASSUMPTION')
+    expect(trrsProfile.jackBasis.note).toMatch(/接点位置を含めて全て仮定/)
+    expect(trrsProfile.modelLimitations.verifiedPhysical).toBe(false)
   })
 
   // 10. CC BY 対象データの帰属情報を保持

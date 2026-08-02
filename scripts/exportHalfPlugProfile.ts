@@ -28,8 +28,19 @@ import { extractEvents, sweep } from '../src/model/sweep'
 import type { TrsModel } from '../src/model/engine'
 
 const ROOT = resolve(process.cwd())
-const V3 = 'TRS|JACK-TRS' as const
 const STEP_MM = 0.02
+
+// --- 引数 ---------------------------------------------------------------
+// 既定は 3極×3極。ただし **無改造で左右差分が残るのは 3極プラグ × 4極ジャック**
+// なので (docs/SENSITIVITY.md / topology_search)、そちらも出せるようにする。
+const argv = process.argv.slice(2)
+const argOf = (name: string, dflt: string) => {
+  const i = argv.indexOf(`--${name}`)
+  return i >= 0 && argv[i + 1] ? argv[i + 1] : dflt
+}
+const VARIANT = argOf('variant', 'TRS|JACK-TRS') as Parameters<typeof getModel>[0]
+/** ファイル名に使える形へ。variant ごとに別ファイルにする */
+const slug = String(VARIANT).toLowerCase().replace(/[^a-z0-9]+/g, '_')
 
 // ---------------------------------------------------------------------------
 // 再現可能な入力
@@ -201,7 +212,16 @@ function buildIntervals(m: TrsModel) {
 
 // ---------------------------------------------------------------------------
 
-const m = getModel(V3)
+const UNKNOWN_PART = { id: 'UNKNOWN', label: '不明', poles: 3, manufacturerPartNumber: null }
+const PARTS: Record<string, { id: string; label: string; poles: number; manufacturerPartNumber: string | null }> = {
+  'TRS': { id: 'PLUG-TRS', label: 'Lumberg 1532 10', poles: 3, manufacturerPartNumber: '1532 10' },
+  'TRRS-CTIA': { id: 'PLUG-TRRS-CTIA', label: '4極 CTIA プラグ (構成)', poles: 4, manufacturerPartNumber: null },
+  'TRRS-OMTP': { id: 'PLUG-TRRS-OMTP', label: '4極 OMTP プラグ (構成)', poles: 4, manufacturerPartNumber: null },
+  'JACK-TRS': { id: 'JACK-TRS', label: 'Lumberg 1503 09', poles: 3, manufacturerPartNumber: '1503 09' },
+  'JACK-TRRS': { id: 'JACK-TRRS', label: '4極ジャック (接点位置は全て仮定)', poles: 4, manufacturerPartNumber: null },
+}
+
+const m = getModel(VARIANT)
 const dims = JSON.parse(readFileSync(resolve(ROOT, 'src/data/dimensions.json'), 'utf8')).entries as Record<
   string,
   { grade: Grade }
@@ -258,20 +278,28 @@ const events = extractEvents(m, sweep(m, { stepMm: STEP_MM })).map((e) => {
 
 const profile = {
   schemaVersion: 1 as const,
-  profileId: `trs-jack-3d:${V3}:${sourceRevision().slice(0, 12)}`,
-  variantId: V3,
-  plug: { id: 'PLUG-TRS', label: 'Lumberg 1532 10', poles: 3, manufacturerPartNumber: '1532 10' },
-  jack: { id: 'JACK-TRS', label: 'Lumberg 1503 09', poles: 3, manufacturerPartNumber: '1503 09' },
+  profileId: `trs-jack-3d:${VARIANT}:${sourceRevision().slice(0, 12)}`,
+  variantId: VARIANT,
+  plug: PARTS[String(VARIANT).split('|')[0]] ?? UNKNOWN_PART,
+  jack: PARTS[String(VARIANT).split('|')[1]] ?? UNKNOWN_PART,
   plugBasis: {
     source: 'メーカー公開データシートの図面 (07/2025 改訂) と、その図面実測',
     evidenceGrade: 'DERIVED' as const,
     note: '外形は図面どおり。導体境界は記載寸法からの演算。絶縁帯の縮径のみ図面実測 (φ3.20〜3.22)。',
   },
-  jackBasis: {
-    source: 'メーカー公開データシートの外形・基板レイアウト・回路記号',
-    evidenceGrade: 'ASSUMPTION' as const,
-    note: '外形は図面どおりだが、内部の接点ばね寸法は一次資料に無く、全て仮定である。',
-  },
+  jackBasis: String(VARIANT).endsWith('JACK-TRRS')
+    ? {
+        source: '一次資料なし',
+        evidenceGrade: 'ASSUMPTION' as const,
+        note:
+          '**4極ジャックは接点位置を含めて全て仮定である。** 図面もデータシートも入手できていない。' +
+          'この profile の深さの数字は、仮定した接点位置の帰結でしかない。',
+      }
+    : {
+        source: 'メーカー公開データシートの外形・基板レイアウト・回路記号',
+        evidenceGrade: 'ASSUMPTION' as const,
+        note: '外形は図面どおりだが、内部の接点ばね寸法は一次資料に無く、全て仮定である。',
+      },
   sourceRevision: sourceRevision(),
   generatedAt: generatedAt(),
   fullInsertionDepthMm: m.fullDepthMm,
@@ -317,11 +345,12 @@ const profile = {
 
 const OUT = resolve(ROOT, 'artifacts')
 mkdirSync(OUT, { recursive: true })
-writeFileSync(resolve(OUT, 'half_plug_topology_profile.v1.json'), JSON.stringify(profile, null, 1) + '\n')
+writeFileSync(resolve(OUT, `half_plug_topology_profile.v1.${slug}.json`), JSON.stringify(profile, null, 1) + '\n')
 
 const codes = new Set(intervals.map((i) => (i.acousticAnnotation as Annotation).topologyClass))
+console.log(`\n  ${VARIANT}`)
 console.log(`  区間 ${intervals.length} / イベント ${events.length}`)
 console.log(`  現れたトポロジー: ${[...codes].sort().join(', ')}`)
 console.log(`  共通帰線断: ${[...codes].some((c) => /ground-open/.test(c)) ? '存在する' : '**この既定モデルには存在しない**'}`)
 console.log(`  sourceRevision: ${profile.sourceRevision} / generatedAt: ${profile.generatedAt}`)
-console.log('  artifacts/half_plug_topology_profile.v1.json を書き出した')
+console.log(`  artifacts/half_plug_topology_profile.v1.${slug}.json を書き出した`)

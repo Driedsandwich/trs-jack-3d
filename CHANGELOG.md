@@ -22,6 +22,12 @@
 
 ### 追加
 
+- **`docs/HALF_PLUG_ADAPTER.md`**: Half-Plug 側 adapter へ渡す仕様。
+  初期マッピング（1 対 1 ではない）、`ground-open-differential` を自動で
+  L−R 係数へ変換してはいけない理由、本命区間 `IV019`、
+  0.2 mm の窓は機構ではなく UI で解く、を明記。
+- **profile を variant ごとに出せるようにした**（`--variant`）。
+  無改造で左右差分が残るのは `TRS|JACK-TRRS` だけなので、そちらも成果物に加えた。
 - **判定の分離**: 帰線が浮いた状態を 2 つに分けた。
   `DIFFERENCE_SIGNAL`（L と R が別導体 → 左右差分が残る）と
   `GROUND_OPEN`（L と R が同じ導体 → 差分にならずほぼ無音）。
