@@ -32,7 +32,10 @@ const argOf = (name: string, dflt: string) => {
   const i = argv.indexOf(`--${name}`)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : dflt
 }
-const TARGET = argOf('target', 'GROUND_OPEN')
+// 既定は本命の DIFFERENCE_SIGNAL。
+// 2026-08-02 に GROUND_OPEN の意味を「帰線が浮くが差分にならない方」へ狭めたので、
+// 既定を GROUND_OPEN のままにすると、引数なしの実行が本命でない方を探してしまう。
+const TARGET = argOf('target', 'DIFFERENCE_SIGNAL')
 const COARSE = Number(argOf('step', '0.05'))
 
 // --- 探索空間 -----------------------------------------------------------

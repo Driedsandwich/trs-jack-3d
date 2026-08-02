@@ -39,6 +39,7 @@
   **4極 CTIA × 4極ジャックでは 0 件。**
 - **Half-Plug 連携用の中立エクスポート契約**（`schemas/half-plug-topology-profile.v1.schema.json` /
   `scripts/exportHalfPlugProfile.ts` / `artifacts/half_plug_topology_profile.v1.json`）。
+  ※このファイル名は後日 variant 別（`...v1.trs_jack_trs.json` 等）へ変わりました。
   接点トポロジーを DSP から独立した JSON として出す。
   **音響係数ではありません** — `acousticAnnotation` は参考分類です。
 - `CHANGELOG.md`（このファイル）

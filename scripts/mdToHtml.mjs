@@ -92,6 +92,7 @@ const TARGETS = [
   { md: 'docs/TEST_RESULTS.md', html: 'docs/TEST_RESULTS.html', title: '検証結果' },
   { md: 'docs/SENSITIVITY.md', html: 'docs/SENSITIVITY.html', title: '感度解析 — どの結論が揺れないか' },
   { md: 'docs/PUBLISH_AUDIT_20260731.md', html: 'docs/PUBLISH_AUDIT_20260731.html', title: '公開前監査 2026-07-31' },
+  { md: 'docs/HALF_PLUG_ADAPTER.md', html: 'docs/HALF_PLUG_ADAPTER.html', title: 'Half-Plug Lab へ渡すもの — adapter 仕様' },
 ]
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

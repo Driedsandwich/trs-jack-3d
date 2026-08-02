@@ -24,7 +24,7 @@
  * 数字の正本は artifacts/*.json であって、Markdown ではない。
  */
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -392,6 +392,24 @@ describe('B. 文書に転記した artifact の値が一致している', () => 
     )
     const worst = Math.max(11.78 - j.minMm, j.maxMm - 11.78, 8.06 - Math.min(...breaks), Math.max(...breaks) - 8.06)
     expect(md).toContain(`最大 ${worst.toFixed(1)} mm`)
+  })
+
+  it('「HTML 版を生成しています」と書いた文書は、実際に生成対象に入っている', () => {
+    // 2026-08-02: HALF_PLUG_ADAPTER.md が冒頭でそう書きながら、
+    // mdToHtml.mjs の対象に入っておらず HTML が存在しなかった。
+    // 文書が自分について嘘をついている状態は、この企画で最も避けたい形。
+    const gen = readFileSync(resolve(ROOT, 'scripts/mdToHtml.mjs'), 'utf8')
+    const claiming = readdirSync(resolve(ROOT, 'docs'))
+      .filter((f) => f.endsWith('.md'))
+      .filter((f) => readFileSync(resolve(ROOT, 'docs', f), 'utf8').includes('npm run docs:html'))
+    expect(claiming.length).toBeGreaterThan(0)
+    for (const f of claiming) {
+      expect({ f, inTargets: gen.includes(`docs/${f}`) }).toEqual({ f, inTargets: true })
+      expect({ f, htmlExists: existsSync(resolve(ROOT, 'docs', f.replace(/\.md$/, '.html'))) }).toEqual({
+        f,
+        htmlExists: true,
+      })
+    }
   })
 
   it('HALF_PLUG_ADAPTER の本命区間が profile と一致する', () => {

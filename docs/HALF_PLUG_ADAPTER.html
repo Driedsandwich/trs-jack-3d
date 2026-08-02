@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Half-Plug Lab へ渡すもの — adapter 仕様</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">0. 先に — この profile は DSP 係数ではありません</a></li>
+    <li><a href="#s1">1. 渡す profile は 2 つあります</a></li>
+    <li><a href="#s2">2. 初期マッピング</a></li>
+    <li><a href="#s3">3. 本命の区間</a></li>
+    <li><a href="#s4">4. プリセットへ持たせるメタデータ</a></li>
+    <li><a href="#s5">5. 深さの窓が 0.2 mm しかない件</a></li>
+    <li><a href="#s6">6. 受け取り側で必ず確認してほしいこと</a></li>
+  </ol>
+</nav>
+<h1>Half-Plug Lab へ渡すもの — adapter 仕様</h1>
+<div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
+<p>作成 2026-08-02 ／ 対象 <code>Half-Plug Topology Profile v1</code></p>
+<p>統合オーダー §4 が Half-Plug 側へ求めている <code>integrations/trs-jack-3d/</code> の 初期マッピングを、<strong>現在のコード体系で</strong>書き起こしたものです。</p>
+<p>このリポジトリは Half-Plug Lab 側を持っていないので、ここに置いた仕様を 向こうで実装してもらう形になります。</p>
+<hr>
+<h2 id="s0">0. 先に — この profile は DSP 係数ではありません</h2>
+<p>渡しているのは「<strong>どの端子がどの導体につながっているか</strong>」という電気的な接続だけです。 音に関する項目（<code>acousticAnnotation</code>）は<strong>参考分類</strong>であって、 フィルタ係数でもゲインでもクロストーク量でもありません。</p>
+<p><strong>やってはいけない変換</strong>（統合オーダー §2 の禁止事項）:</p>
+<div class="tw"><table><thead><tr><th>してはいけないこと</th><th>なぜ</th></tr></thead><tbody><tr><td><code>topologyClass</code> を係数へ直接写像する</td><td>分類であって量ではない</td></tr><tr><td><code>quality</code> を接触抵抗 Ω やゲインへ換算する</td><td>相対スコアで、Ω に換算していない（profile に含めてもいません）</td></tr><tr><td>1 機種の <code>nominalStartMm</code> を一般的な「挿入深度」として使う</td><td><code>normalized</code> を併記しているのでそちらを使う</td></tr><tr><td><strong><code>ground-open-differential</code> を自動的に L−R 係数へ変換する</strong></td><td>§2 を参照</td></tr><tr><td>未実測なのに「実物と同じ」と表示する</td><td>全 profile が <code>verifiedPhysical: false</code></td></tr></tbody></table></div>
+<hr>
+<h2 id="s1">1. 渡す profile は 2 つあります</h2>
+<div class="tw"><table><thead><tr><th>ファイル</th><th>中身</th><th>左右差分</th></tr></thead><tbody><tr><td><code>half_plug_topology_profile.v1.trs_jack_trs.json</code></td><td>3極プラグ × 3極ジャック（Lumberg 実部品）</td><td><strong>現れない</strong></td></tr><tr><td><code>half_plug_topology_profile.v1.trs_jack_trrs.json</code></td><td>3極プラグ × <strong>4極ジャック</strong></td><td><strong>現れる</strong>（<code>IV019</code> / 12.90〜13.12 mm）</td></tr></tbody></table></div>
+<p><strong>再現したい音が出るのは後者だけです。</strong>前者は「出ない」ことを <code>absentTopologies</code> に記録した反証として持っています。</p>
+<pre><code>npm run export:half-plug -- --variant "TRS|JACK-TRRS"</code></pre>
+<hr>
+<h2 id="s2">2. 初期マッピング</h2>
+<p><strong>1 対 1 ではありません。</strong>同じ <code>topologyClass</code> でも、<code>stabilityOverlay</code> と <code>electricalRisk</code> の組み合わせで扱いが変わります。</p>
+<div class="tw"><table><thead><tr><th>profile の <code>topologyClass</code></th><th>Half-Plug の状態</th><th>備考</th></tr></thead><tbody><tr><td><code>fully-seated</code></td><td>Normal / seated</td><td>通常再生</td></tr><tr><td><code>no-path</code></td><td>Silent</td><td>導通経路が無い</td></tr><tr><td><code>one-sided</code></td><td>One-sided contact</td><td>片チャンネルのみ</td></tr><tr><td><strong><code>ground-open-differential</code></strong></td><td><strong>Floating return（本命）</strong></td><td><strong>§2-1 を必ず読むこと</strong></td></tr><tr><td><code>ground-open-nondifferential</code></td><td>Silent 相当</td><td>帰線が浮くが左右が同一節点。差分は生じない</td></tr><tr><td><code>signal-to-return-short</code></td><td>Miscontact / protection-dependent</td><td><strong>過渡音を作らないこと</strong>（§2-2）</td></tr><tr><td><code>on-insulator</code></td><td>Open / fragmented</td><td>絶縁帯上</td></tr><tr><td><code>wrong-conductor</code></td><td>Miscontact</td><td>誤った導体</td></tr></tbody></table></div>
+<p><code>stabilityOverlay: "intermittent"</code> は<strong>基底トポロジーと直交する重ね合わせ</strong>です。 状態を別物に置き換えるのではなく、その状態の上に不安定性を乗せてください。</p>
+<h3>2-1. <code>ground-open-differential</code> を自動で L−R 係数にしないでください</h3>
+<p>この状態は「帰線が浮き、L と R が別々の導体に届いている」という<strong>電気的な接続の記述</strong>です。 そこから何 dB 落ちて、どういう周波数特性になるかは、<strong>このモデルは一切計算していません</strong>。</p>
+<ul><li>ドライバのインピーダンス、アンプの出力段、保護回路のどれもモデル化していません</li><li><code>audibleHypothesis</code>（「音量が落ち、左右の差分成分が残る」）は <strong>回路構成からの定性的な推測</strong>であって、実測ではありません</li><li><code>confidence: "low"</code> が付いています</li></ul>
+<p>3 帯域行列や 4 経路 FIR は、<strong>実測 profile ID を介して別管理</strong>してください （統合オーダー §4）。トポロジーはどの実測 profile を選ぶかの<strong>索引</strong>であって、 係数そのものではありません。</p>
+<h3>2-2. <code>signal-to-return-short</code> で過渡音を作らないでください</h3>
+<p>電気的には出力短絡に近い状態で、実機の挙動はアンプの保護動作に依存します。 <code>electricalRisk: "short-circuit"</code> が付いており、<code>audibleHypothesis</code> は <strong><code>null</code></strong> です （断定できないので空にしてあります）。</p>
+<p>安全な DSP 表現（減衰・mono 化・mute など）へ写像し、 <strong>クラックルやポップのような過渡音を生成しないでください。</strong></p>
+<hr>
+<h2 id="s3">3. 本命の区間</h2>
+<p><code>half_plug_topology_profile.v1.trs_jack_trrs.json</code> の <code>IV019</code>:</p>
+<pre><code>nominalStartMm  12.90      normalizedStart  0.9214
+nominalEndMm    13.12      normalizedEnd    0.9371
+topologyClass   ground-open-differential
+evidenceGrade   ASSUMPTION
+safetyFlags     shortsSignalToReturn: false / shortsSignalToSignal: false</code></pre>
+<p>端子の状態:</p>
+<div class="tw"><table><thead><tr><th>端子</th><th>届いている導体</th></tr></thead><tbody><tr><td>L</td><td>Tip</td></tr><tr><td>R</td><td>Ring</td></tr><tr><td><strong>GND</strong></td><td><strong>なし（浮いている）</strong></td></tr></tbody></table></div>
+<p>4極ジャックの帰線接点が、3極プラグの絶縁帯にちょうど落ちるためです。</p>
+<h3>この区間の根拠は弱いです</h3>
+<p><strong>4極ジャックの接点位置は一次資料がなく、4 件とも仮定です</strong> （<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-2）。したがって:</p>
+<ul><li><strong>現象が起きること</strong>は仮定の振り方に対して頑健です （完全挿入が壊れない 432 構成のうち 162 件 = 38 % で成立）</li><li><strong>深さ 12.90〜13.12 mm という数字</strong>は、仮定した接点位置に完全に依存します</li></ul>
+<p><code>normalized</code>（0.9214〜0.9371）で扱うほうが、機種差に対しては幾分ましですが、 <strong>それも同じ仮定の上に乗っています。</strong></p>
+<hr>
+<h2 id="s4">4. プリセットへ持たせるメタデータ</h2>
+<p>統合オーダー §4 のとおり、Half-Plug 側のプリセットには次を持たせてください。</p>
+<pre><code>mechanismProfileRef      どの profile ファイルか
+topologyIntervalId       IV019 など
+geometryRevision         profile の sourceRevision
+calibrationProfileId     実測した音響 profile（別管理）
+evidenceGrade            profile の interval から引き継ぐ
+physicalClaimStatus      未実測なら "unverified"</code></pre>
+<p><strong><code>evidenceGrade</code> と <code>physicalClaimStatus</code> を落とさないでください。</strong> 落とすと、UI で「実物と同じ」と読める表示になってしまいます。</p>
+<hr>
+<h2 id="s5">5. 深さの窓が 0.2 mm しかない件</h2>
+<p>本命の区間は <strong>0.22 mm 幅</strong>で、挿入ストローク 14 mm の <strong>1.6 %</strong> です。</p>
+<p><strong>これは Half-Plug 側で解くべき課題であって、機構の問題ではありません。</strong> Half-Plug は音を DSP で再現するものなので、プラグを物理的にその深さで 保持する必要はありません。深さは UI 上のパラメータです。</p>
+<p>したがって扱いは次のようになります。</p>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>❌ しなくてよい</td><td>プラグを 0.2 mm 精度で保持する機構を作る</td></tr><tr><td>✅ すべきこと</td><td><strong>区間を直接選べるようにする</strong>（連続スライダーだけにしない）</td></tr></tbody></table></div>
+<p>連続スライダーだけを置くと、<strong>ストロークの 1.6 % を狙って合わせる操作</strong>になり、 本命の状態にほとんど当たりません。<code>intervals[]</code> は区間の列なので、 <strong>区間そのものを選択肢として提示する</strong>のが素直です。</p>
+<div class="note"><p>物理的に再現しようとする場合は別の話で、0.2 mm を保つのは容易ではありません。</p><p>ただしその場合、4極ジャックの接点位置が仮定である以上、</p><p><strong>狙うべき深さがそもそも分かりません。</strong>先に実測が要ります</p><p>（<a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a>）。</p></div>
+<hr>
+<h2 id="s6">6. 受け取り側で必ず確認してほしいこと</h2>
+<ul class="chk"><li><input type="checkbox" disabled> <code>modelLimitations.verifiedPhysical</code> が <code>false</code> であること（現状すべて false）</li><li><input type="checkbox" disabled> <code>dataLicense.attribution</code> を表示または同梱すること（CC BY 4.0）</li><li><input type="checkbox" disabled> <code>sourceRevision</code> を固定して参照すること（<code>main</code> を追わない）</li><li><input type="checkbox" disabled> <code>schemaVersion</code> が 1 であること。破壊的変更は v2 へ上げます</li><li><input type="checkbox" disabled> <code>absentTopologies.absent</code> を読み、<strong>無い状態を UI に足さないこと</strong></li></ul>
+</div>
+</body>
+</html>
