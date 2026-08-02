@@ -19,21 +19,93 @@ Half-Plug Lab 側から受けた監査オーダーへの対応記録です。
 
 | | P0 | 状態 |
 |---|---|---|
+| ✅ | **P0-1** artifact provenance | **完了**（受入試験 7 項目・→ §1） |
 | ✅ | **P0-2** TRRS の basis / limitations | **完了** |
 | ✅ | **P0-3** `events[].spreadMm` を event 固有に | **完了** |
 | ✅ | **P0-7**（一部）`DERIVED 39` の是正・adapter 文書の更新 | **完了** |
-| ⬜ | **P0-1** artifact provenance | 未着手（→ §2） |
 | ⬜ | **P0-4** 電気トポロジー分類の一本化 | 未着手（→ §2） |
 | ⬜ | **P0-5** 探索結果の表現を弱める | 未着手（→ §2） |
 | ⏸ | **P0-6** Draft-07 の完全検証（Ajv） | **依存追加の承認待ち**（→ §3） |
 | ⏸ | **P0-8** immutable release | **tag / push の承認待ち**（→ §3） |
 
-**この状態で Half-Plug Lab へ artifact を投入しないでください。**
-オーダー §8 の最優先 3 件のうち P0-1 が残っています。
+**オーダー §8 の最優先 3 件（P0-1 / P0-2 / P0-3）は揃いました。**
+ただし、**リポジトリにコミットされている profile は `artifactKind: "local"` /
+`workingTreeDirty: true`** です（開発中に生成しているため）。
+Half-Plug Lab 側が正本にできるのは、clean な入力から `--release` で作った
+release asset だけです。それは P0-8（承認待ち）で作ります。
 
 ---
 
 ## 1. 完了した項目
+
+### P0-1 — artifact provenance
+
+**指摘の核心は「revision では固定できない」ことでした。**
+監査時の HEAD は `ba58b4c`、コミット済み profile は `sourceRevision: 5adf454` で、
+その間にモデルデータが変わっていました。
+
+かといって `sourceRevision === HEAD` を要求してはいけない、ともオーダーは書いています。
+**artifact を含めてコミットすると HEAD が変わるので、自己参照になります。**
+生成した瞬間に正しかった値が、コミットした瞬間に「古い」と判定されてしまいます。
+
+#### 入力そのものを指紋にした
+
+`provenance.inputDigest` は**入力ファイルの中身だけ**から作る sha256 です。
+
+| したこと | `generatedFromCommit` | `inputDigest` |
+|---|---|---|
+| 寸法を 1 文字直した（未コミット） | 変わらない | **変わる** |
+| artifact だけ作り直してコミットした | **変わる** | 変わらない |
+| 文書だけ直してコミットした | **変わる** | 変わらない |
+
+digest の対象は **21 ファイル**です。
+
+| role | 件数 | 中身 |
+|---|---:|---|
+| `schema` | 1 | profile の schema |
+| `generator` | 2 | exporter と provenance |
+| `model-data` | 9 | `src/data/**` |
+| `model-code` | 7 | `src/model/**` |
+| `lockfile` | 1 | `package-lock.json` |
+| `sensitivity-input` | 1 | `artifacts/sensitivity.json`（`spreadMm` の元データ。**入力として読んでいる**） |
+
+**生成物自身は入りません。**入れると自己参照に戻ります。
+
+#### `profileId` も digest から作るようにした
+
+旧 `trs-jack-3d:<variant>:<revision 12桁>` → 新 `trs-jack-3d:<variant>:<inputDigest 12桁>`。
+
+revision 版は、**中身が同じでもコミットのたびに ID が変わり**、
+逆に**寸法を直しても未コミットなら ID が変わりません**でした。どちらも誤りです。
+
+#### `SOURCE_REVISION` の素通しを廃止した
+
+2026-08-03 まで、環境変数があれば無条件でそれを書いていました。
+古い値を渡したまま「その改訂から作った」と名乗れます。
+実際の HEAD と食い違っていて `--unsafe-revision-override` も無ければ、**止めます。**
+
+#### 受入試験 7 項目
+
+| | 受入条件 | どこ | 変異試験 |
+|---|---|---|---|
+| 1 | clean checkout から生成 | `npm run verify:provenance`（実走）＋ 規則は単体テスト | ✅ |
+| 2 | 入力 1 文字変更で `inputDigest` が変わる | `test/provenance.test.ts` | ✅ |
+| 3 | artifact だけの再コミットでは変わらない | 同上 | ✅ |
+| 4 | dirty tree で release モードが失敗 | 同上 | ✅ |
+| 5 | 同一入力・同一日で byte-identical | 同上（実際に 2 回生成して比較） | ✅ |
+| 6 | 根拠件数と生成元データの件数が一致 | 同上 | ✅ |
+| 7 | stale な `SOURCE_REVISION` で失敗 | 同上 | ✅ |
+
+**7 項目すべて、検査を壊すと落ちることを変異試験で確かめました**
+（生成物を入力に混ぜる／digest が中身を見ないようにする／release 判定を骨抜きにする／
+出力へ現在時刻を混ぜる／台帳の区分を 1 件変える／食い違う revision を素通しにする）。
+
+> **項目 1 だけスイートに入れていません。**
+> 開発中は入力を直している最中なので作業ツリーが汚れており、
+> 「clean なら dirty=false」を実物で確かめられるのはコミット後だけです。
+> **作業ツリーの状態で成否が変わるテストをスイートに入れると、
+> 「落ちていても気にしない」テストが 1 つ生まれます。**
+> それは空振りと同じくらい悪いので（→ CONTRIBUTING §7）、別コマンドにしました。
 
 ### P0-2 — TRRS profile の basis が陳腐化していた
 
@@ -147,9 +219,12 @@ STATE_CHANGE:JC_RING:BREAK_CLOSED->BREAK_OPEN#1
 
 | | 内容 | なぜ今回やらなかったか |
 |---|---|---|
-| **P0-1** | provenance（`inputDigest` / `workingTreeDirty` / `inputFiles[]`） | **最優先。** 単独で 1 回ぶんの作業量があり、P0-2/P0-3 で profile の中身が変わる前にやると作り直しになる。順序として後 |
 | **P0-4** | `classifyElectricalTopology()` を model core へ置き、4 か所を統一 | `searchTopology.ts` の説明文が旧実装のまま（`predictAcoustic` の判定順で L/R が同導体でも `GROUND_OPEN` になる、という記述）。実装は 08-02 に直っており、**説明だけが古い**。分類の重複解消と同時に直す |
-| **P0-5** | `realizablePadWidth` → `passesPadWidthHeuristic` 等の改名 | 改名は `searchTopology.ts` の出力キーを変えるので、**`npm run search:topology`（約 10 分）の再実行が要る**。P0-1 の provenance 実装と同じ回に走らせるのが効率的 |
+| **P0-5** | `realizablePadWidth` → `passesPadWidthHeuristic` 等の改名 | 改名は `searchTopology.ts` の出力キーを変えるので、**`npm run search:topology`（約 10 分）の再実行が要る**。P0-4 と同じ回に走らせるのが効率的 |
+
+**P0-4 と P0-5 は同じ回にやるのが効率的です。**どちらも `searchTopology.ts` を触り、
+P0-5 は探索の再実行を伴います。P0-4 の分類統一で探索結果が変わる可能性もあるので、
+**先に P0-4、続けて P0-5、最後に 1 回だけ再走**という順序になります。
 
 **P0-4 について 1 点補足**: オーダーは「`searchTopology.ts` の説明が旧実装を前提にしている」と
 指摘しています。現在の木で確認したところ、そのとおりでした（`scripts/searchTopology.ts:130-140`）。

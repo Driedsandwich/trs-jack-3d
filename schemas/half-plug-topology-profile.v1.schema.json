@@ -12,6 +12,7 @@
     "jack",
     "plugBasis",
     "jackBasis",
+    "provenance",
     "sourceRevision",
     "generatedAt",
     "fullInsertionDepthMm",
@@ -50,9 +51,12 @@
     "jackBasis": {
       "$ref": "#/definitions/basis"
     },
+    "provenance": {
+      "$ref": "#/definitions/provenance"
+    },
     "sourceRevision": {
       "type": "string",
-      "description": "生成元の git commit。取得できなければ UNKNOWN"
+      "description": "生成元 source commit。取得できなければ UNKNOWN。**これで固定しないでください。** artifact を含めてコミットすると HEAD が変わるため、生成時点で正しかった値がコミット後に「古い」ように見えます。固定には provenance.inputDigest を使ってください"
     },
     "generatedAt": {
       "type": "string",
@@ -404,6 +408,103 @@
             "string",
             "null"
           ]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "description": "何から作られたか。**`generatedFromCommit` ではなく `inputDigest` で固定してください。** artifact を含めてコミットすると HEAD は変わりますが、入力は変わっていないので `inputDigest` は変わりません",
+      "required": [
+        "generatorVersion",
+        "generatedFromCommit",
+        "workingTreeDirty",
+        "revisionOverride",
+        "artifactKind",
+        "inputDigestAlgorithm",
+        "inputDigest",
+        "inputDigestScope",
+        "inputFiles",
+        "command",
+        "artifactDate"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generatorVersion": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "生成器の版。出力の形を変えたときだけ上がる。データが変わっただけでは上がらない (それは inputDigest が表す)"
+        },
+        "generatedFromCommit": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{40}|UNKNOWN)$",
+          "description": "生成時点の HEAD。**参考値。** 一致を要求してはならない"
+        },
+        "workingTreeDirty": {
+          "type": "boolean",
+          "description": "**入力ファイルに**未コミットの変更があったか。true の artifact は release asset にできない。artifact 自身の変更は見ない"
+        },
+        "revisionOverride": {
+          "type": "boolean",
+          "description": "SOURCE_REVISION による上書きが使われたか。通常モードでは常に false"
+        },
+        "artifactKind": {
+          "enum": [
+            "local",
+            "release"
+          ],
+          "description": "local = 手元で生成 (リポジトリにコミットされているものはこちら)。release = clean な入力から --release で生成した配布物"
+        },
+        "inputDigestAlgorithm": {
+          "const": "sha256"
+        },
+        "inputDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "inputDigestScope": {
+          "type": "string",
+          "description": "digest の作り方。第三者が同じ値を再計算できるように書く"
+        },
+        "inputFiles": {
+          "type": "array",
+          "minItems": 1,
+          "description": "digest の対象。**生成される artifact 自身は含まない** (含めると自己参照になる)",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "sha256",
+              "role"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "role": {
+                "enum": [
+                  "schema",
+                  "generator",
+                  "model-data",
+                  "model-code",
+                  "lockfile",
+                  "sensitivity-input"
+                ]
+              }
+            }
+          }
+        },
+        "command": {
+          "type": "string",
+          "description": "再生成に使うコマンド。呼び出し経路によらない正規形"
+        },
+        "artifactDate": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
         }
       }
     },

@@ -172,11 +172,45 @@ safetyFlags     shortsSignalToReturn: false / shortsSignalToSignal: false
 ```
 mechanismProfileRef      どの profile ファイルか
 topologyIntervalId       IV028 など（**単独では意味を持たない。下の警告を読むこと**）
-geometryRevision         profile の sourceRevision
+geometryInputDigest      profile の provenance.inputDigest ← **固定はこれで行う**
+generatedFromCommit      profile の provenance.generatedFromCommit（参考値）
 calibrationProfileId     実測した音響 profile（別管理）
 evidenceGrade            profile の interval から引き継ぐ
 physicalClaimStatus      未実測なら "unverified"
 ```
+
+### ⚠ `sourceRevision` で固定しないでください（2026-08-03）
+
+`sourceRevision` は残していますが、意味を**「生成元 source commit」**と定義し直し、
+**一致の要求はしません。**
+
+理由は自己参照です。**artifact を含めてコミットすると HEAD が変わります。**
+生成した瞬間に正しかった `sourceRevision` が、コミットした瞬間に「古い」と判定されます。
+監査（2026-08-03）で指摘された `sourceRevision: 5adf454` と HEAD `ba58b4c` の食い違いも、
+半分はこれが原因でした。
+
+代わりに **`provenance.inputDigest`** を使ってください。
+**入力ファイルの中身だけ**から作った sha256 で、生成物自身は含みません。
+
+| したこと | `generatedFromCommit` | `inputDigest` |
+|---|---|---|
+| 寸法を 1 文字直した | 変わらない（未コミットなら） | **変わる** |
+| artifact だけ作り直してコミットした | **変わる** | 変わらない |
+| 文書だけ直してコミットした | **変わる** | 変わらない |
+
+`provenance.inputFiles[]` に path と sha256 が入っているので、
+**受け取り側で digest を再計算して検算できます**（作り方は `inputDigestScope` にあります）。
+
+### `workingTreeDirty` と `artifactKind` を見てください
+
+| `artifactKind` | 意味 |
+|---|---|
+| `local` | 手元で生成したもの。**リポジトリにコミットされている profile はこちらです** |
+| `release` | clean な入力から `--release` で生成した配布物 |
+
+**`workingTreeDirty: true` の artifact を正本として取り込まないでください。**
+入力に未コミットの変更がある状態で作られたもので、その入力は他の誰も再現できません。
+`--release` は dirty な入力からの生成を拒否します。
 
 **`evidenceGrade` と `physicalClaimStatus` を落とさないでください。**
 落とすと、UI で「実物と同じ」と読める表示になってしまいます。
@@ -198,9 +232,17 @@ physicalClaimStatus      未実測なら "unverified"
 
 | | |
 |---|---|
-| ✅ 保存する | `profileId`（`trs-jack-3d:<variant>:<revision>` の形。改訂が埋め込まれている）と `intervalId` を**セットで** |
+| ✅ 保存する | `profileId`（`trs-jack-3d:<variant>:<inputDigest 12桁>` の形）と `intervalId` を**セットで** |
 | ✅ 再解決する | `profileId` が違ったら、`acousticAnnotation.topologyClass` と `normalizedStart/End` で引き直す |
 | ❌ しない | `intervalId` だけを保存して、新しい profile へそのまま当てる |
+
+> **`profileId` の作り方が変わりました（2026-08-03）。**
+> 旧: `trs-jack-3d:<variant>:<revision 12桁>` ／ 新: `trs-jack-3d:<variant>:<inputDigest 12桁>`
+>
+> revision を使うと、**artifact を含めてコミットするたびに ID が変わりました。**
+> 中身は同じなのに「別の profile」に見えるので、引き直しが繰り返されます。
+> 逆に、寸法を直しても commit していなければ ID が変わりませんでした。
+> `inputDigest` は「何から作ったか」なので、**変わるべきときにだけ変わります。**
 
 **`events[].eventId` も同じ扱いです。**`eventId` は
 `STATE_CHANGE:JC_RING:BREAK_CLOSED->BREAK_OPEN#1` のように、
@@ -261,7 +303,9 @@ Half-Plug は音を DSP で再現するものなので、プラグを物理的�
 
 - [ ] `modelLimitations.verifiedPhysical` が `false` であること（現状すべて false）
 - [ ] `dataLicense.attribution` を表示または同梱すること（CC BY 4.0）
-- [ ] `sourceRevision` を固定して参照すること（`main` を追わない）
+- [ ] **`provenance.inputDigest` を固定して参照すること**（`sourceRevision` でも `main` でもない。→ §4）
+- [ ] **`provenance.workingTreeDirty` が `false`** の artifact だけを正本にすること
+      （リポジトリにコミットされている profile は `true` です。release asset を待ってください）
 - [ ] `schemaVersion` が 1 であること。**項目・型・意味の**破壊的変更だけを v2 へ上げます
 - [ ] **`intervalId` を単独で保存していないこと**（§4 の警告。数値データの変更で指す先が変わります）
 - [ ] `breakStates` を読むこと（4極側は 2026-08-02 から `BRK_TRRS_RING` / `BRK_TRRS_TIP` が入ります）

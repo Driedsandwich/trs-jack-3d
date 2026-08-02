@@ -19,13 +19,13 @@
  *   乱数も現在時刻も使わない。
  */
 
-import { execSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { relative, resolve } from 'node:path'
 import { getModel } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import { extractEvents, sweep } from '../src/model/sweep'
 import type { TrsModel } from '../src/model/engine'
+import { buildProvenance } from './provenance'
 
 const ROOT = resolve(process.cwd())
 const STEP_MM = 0.02
@@ -38,27 +38,40 @@ const argOf = (name: string, dflt: string) => {
   const i = argv.indexOf(`--${name}`)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : dflt
 }
+const hasFlag = (name: string) => argv.includes(`--${name}`)
 const VARIANT = argOf('variant', 'TRS|JACK-TRS') as Parameters<typeof getModel>[0]
 /** ファイル名に使える形へ。variant ごとに別ファイルにする */
 const slug = String(VARIANT).toLowerCase().replace(/[^a-z0-9]+/g, '_')
 
 // ---------------------------------------------------------------------------
-// 再現可能な入力
+// 再現可能な入力 (統合オーダー P0-1)
 // ---------------------------------------------------------------------------
-
-function sourceRevision(): string {
-  if (process.env.SOURCE_REVISION) return process.env.SOURCE_REVISION
-  try {
-    return execSync('git rev-parse HEAD', { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
-  } catch {
-    return 'UNKNOWN'
-  }
-}
 
 /** ARTIFACT_DATE で固定できる。既存 artifact と同じ規約 */
 function generatedAt(): string {
   return process.env.ARTIFACT_DATE ?? new Date().toISOString().slice(0, 10)
 }
+
+/**
+ * **`SOURCE_REVISION` の素通しは廃止した。**
+ *
+ * 2026-08-03 まで、環境変数があれば無条件でそれを `sourceRevision` に書いていた。
+ * 古い値を渡したまま「その改訂から作った」と名乗れてしまう。
+ * 実際の HEAD と食い違っていて `--unsafe-revision-override` も無ければ、止める。
+ */
+const provenance = buildProvenance({
+  root: ROOT,
+  // process.argv をそのまま書かない。呼び出し方 (export:half-plug:all 経由か直接か) で
+  // 変わってしまい、byte-identical でなくなる。正規化した形を記録する
+  command: `npm run export:half-plug -- --variant "${VARIANT}"${hasFlag('release') ? ' --release' : ''}`,
+  artifactDate: generatedAt(),
+  release: hasFlag('release'),
+  allowRevisionOverride: hasFlag('unsafe-revision-override'),
+  envRevision: process.env.SOURCE_REVISION,
+})
+
+/** 後方互換のために残す。意味は「生成元 source commit」（一致は要求しない） */
+const sourceRevision = () => provenance.generatedFromCommit
 
 // ---------------------------------------------------------------------------
 // 音響コードの整理 (統合オーダー P1「音響コード体系の整理」の先取り)
@@ -402,7 +415,18 @@ if (dupIds.length)
 
 const profile = {
   schemaVersion: 1 as const,
-  profileId: `trs-jack-3d:${VARIANT}:${sourceRevision().slice(0, 12)}`,
+  /**
+   * **revision ではなく inputDigest で作る (2026-08-03 変更)。**
+   *
+   * 旧: `trs-jack-3d:<variant>:<revision 12桁>`
+   * 新: `trs-jack-3d:<variant>:<inputDigest 12桁>`
+   *
+   * revision を使うと、**artifact を含めてコミットするたびに ID が変わる**。
+   * 中身は同じなのに「別の profile」に見えるので、受け手が引き直しを繰り返す。
+   * 逆に、寸法を直しても commit していなければ ID が変わらない。どちらも誤りだった。
+   * inputDigest は「何から作ったか」なので、変わるべきときにだけ変わる。
+   */
+  profileId: `trs-jack-3d:${VARIANT}:${provenance.inputDigest.slice(0, 12)}`,
   variantId: VARIANT,
   plug: PARTS[String(VARIANT).split('|')[0]] ?? UNKNOWN_PART,
   jack: PARTS[String(VARIANT).split('|')[1]] ?? UNKNOWN_PART,
@@ -412,8 +436,11 @@ const profile = {
     note: '外形は図面どおり。導体境界は記載寸法からの演算。絶縁帯の縮径のみ図面実測 (φ3.20〜3.22)。',
   },
   jackBasis: jackBasis(),
+  // 残すが、意味を「生成元 source commit」と定義し直した。**一致の要求はしない。**
+  // 固定に使うのは provenance.inputDigest のほう
   sourceRevision: sourceRevision(),
   generatedAt: generatedAt(),
+  provenance,
   fullInsertionDepthMm: m.fullDepthMm,
   stepMm: STEP_MM,
   coordinateSystem: {
@@ -459,14 +486,18 @@ const profile = {
   sensitivitySummary: sens,
 }
 
-const OUT = resolve(ROOT, 'artifacts')
-mkdirSync(OUT, { recursive: true })
-writeFileSync(resolve(OUT, `half_plug_topology_profile.v1.${slug}.json`), JSON.stringify(profile, null, 1) + '\n')
+// --out で書き出し先を変えられる。**byte-identical の確認に要る。**
+// artifacts/ へ 2 回書いて比べると、比較の途中で作業ツリーが汚れてしまう
+const OUT_DIR = argOf('out', resolve(ROOT, 'artifacts'))
+mkdirSync(OUT_DIR, { recursive: true })
+const OUT_PATH = resolve(OUT_DIR, `half_plug_topology_profile.v1.${slug}.json`)
+writeFileSync(OUT_PATH, JSON.stringify(profile, null, 1) + '\n')
 
 const codes = new Set(intervals.map((i) => (i.acousticAnnotation as Annotation).topologyClass))
 console.log(`\n  ${VARIANT}`)
 console.log(`  区間 ${intervals.length} / イベント ${events.length}`)
 console.log(`  現れたトポロジー: ${[...codes].sort().join(', ')}`)
 console.log(`  共通帰線断: ${[...codes].some((c) => /ground-open/.test(c)) ? '存在する' : '**この既定モデルには存在しない**'}`)
+console.log(`  inputDigest: ${provenance.inputDigest.slice(0, 12)} / dirty: ${provenance.workingTreeDirty} / ${provenance.artifactKind}`)
 console.log(`  sourceRevision: ${profile.sourceRevision} / generatedAt: ${profile.generatedAt}`)
-console.log(`  artifacts/half_plug_topology_profile.v1.${slug}.json を書き出した`)
+console.log(`  ${relative(ROOT, OUT_PATH)} を書き出した`)

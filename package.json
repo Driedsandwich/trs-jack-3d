@@ -20,6 +20,7 @@
     "test:count": "node scripts/testCount.mjs",
     "check:stale": "node scripts/checkStale.mjs",
     "check:vacuity": "node scripts/checkVacuity.mjs",
+    "verify:provenance": "node scripts/verifyProvenance.mjs",
     "artifacts:all": "npm run artifacts && npm run export:half-plug:all && npm run compare:real-jack && npm run test:count",
     "perf": "node scripts/perf.mjs",
     "touch": "node scripts/touch.mjs",

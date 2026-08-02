@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRS:dd05267d4410",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:91a0e62a4eca",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -35,8 +35,127 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "dd05267d4410af19f73b494d383906a1c4df0f65",
+ "sourceRevision": "829c7ba533de8d1660d636a476f5bc667409f465",
  "generatedAt": "2026-08-02",
+ "provenance": {
+  "generatorVersion": 3,
+  "generatedFromCommit": "829c7ba533de8d1660d636a476f5bc667409f465",
+  "workingTreeDirty": true,
+  "revisionOverride": false,
+  "artifactKind": "local",
+  "inputDigestAlgorithm": "sha256",
+  "inputDigest": "91a0e62a4ecab29d1a7ee71a2c920ed4c83467cf7b4e5d55ea1d359945ca3bae",
+  "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
+  "inputFiles": [
+   {
+    "path": "artifacts/sensitivity.json",
+    "sha256": "79086a32df36d0397a201a8be4701f3f24c1ff9417ef01ff78b05a6f407e2f3b",
+    "role": "sensitivity-input"
+   },
+   {
+    "path": "package-lock.json",
+    "sha256": "9fe8e04bd9967f37ac64fa7387c17c2b14780f04df95dc6bdd272e52568bea44",
+    "role": "lockfile"
+   },
+   {
+    "path": "schemas/half-plug-topology-profile.v1.schema.json",
+    "sha256": "99f4036cdcb6ada9b2278fed882d8becd96fa2bffe754fb564ab51a1193bfc20",
+    "role": "schema"
+   },
+   {
+    "path": "scripts/exportHalfPlugProfile.ts",
+    "sha256": "b7c6b3d1f66f51cb0843f7ac257931e9704b5d2e22d70cb05aa45b262fec655a",
+    "role": "generator"
+   },
+   {
+    "path": "scripts/provenance.ts",
+    "sha256": "75e5c4df1398190e89dc3227795daf7c13ed994cbfc45e508a9238883b994fff",
+    "role": "generator"
+   },
+   {
+    "path": "src/data/dimensions.json",
+    "sha256": "318f0bb993030e0ebe936e21adb2ea4e952f5e0a7a18709e4227bc8a1e56dee7",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/faultPresets.json",
+    "sha256": "ee586e1bf7e15b55398e148612b9ef6ad4b1f98a849d455d477b1c65a97f70ff",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/index.ts",
+    "sha256": "1c2922b6698713f72c241b6f49809e3654ee909ddd94116cad6f90a57f124dd4",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/jackContacts.json",
+    "sha256": "52e255dfbb3d0344b1aa922ac8092518395ed441c9ce69dcf7274434a19349db",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/jackContacts.trrs.json",
+    "sha256": "f5443dcdda800abef9b928fde166f1930393f2e85c59b50851906d910e0d8e8f",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/materials.json",
+    "sha256": "709bd006cc055bd44058c40f6ca8011c81e04ce3e795297e6edfeeebadb7889c",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/plugSegments.json",
+    "sha256": "7d51e6f5a5a3961fca92039e217bf631a78e779a7fe1847078e3dd42a2347102",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/plugSegments.trrs.json",
+    "sha256": "f5715e080d34a29fd93ab4f0a5e4bdc14d47cf77a5bc199c3b5ce8b7fb509ce2",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/sourceReferences.json",
+    "sha256": "b21590bdb56f65343c99512fad0ecd72b2c9200ed234b12f8428843dfa8f40de",
+    "role": "model-data"
+   },
+   {
+    "path": "src/model/circuit.ts",
+    "sha256": "1bdcff279c4e249ca000e4f65728e986a0a554ab83249616f3e9b2b9c43bfd38",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/contact.ts",
+    "sha256": "e4a4e78b14fd2f7d1c0148a968617d4eb9c8395ed1f08b4e3eae355d31a4ae67",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/engine.ts",
+    "sha256": "7ecd30ba22d3b587f8782c7469e1c9cfedcb6fc5b098436e0e75b902c0b938aa",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/force.ts",
+    "sha256": "1f6bc966eba29a27091d7d55afc278a365396aa690302b0492d3a5734e9974c1",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/resolve.ts",
+    "sha256": "73e197830e9c0b5f7e46ffedba781f3689fd8e21fbc73ad63cea955075d1a7cb",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/sweep.ts",
+    "sha256": "bb88036fd8d757e652b66f36861b3b72a4abc6e9fd0f501761c785ff0a5472a4",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/types.ts",
+    "sha256": "9f4770aad4e05cdf0f3f2a4e3ad4a91992a76b91dac8cbf5a0df4975b3131e70",
+    "role": "model-code"
+   }
+  ],
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\"",
+  "artifactDate": "2026-08-02"
+ },
  "fullInsertionDepthMm": 14,
  "stepMm": 0.02,
  "coordinateSystem": {

@@ -17,6 +17,41 @@
 
 ## [Unreleased]
 
+### 追加 — artifact provenance（統合オーダー P0-1）
+
+profile に「何から作られたか」を残した。**`sourceRevision` では固定できなかった。**
+
+監査時の HEAD は `ba58b4c`、コミット済み profile は `sourceRevision: 5adf454` で、
+その間にモデルデータが変わっていた。かといって `sourceRevision === HEAD` は要求できない。
+**artifact を含めてコミットすると HEAD が変わるので自己参照になる**（生成した瞬間に
+正しかった値が、コミットした瞬間に「古い」と判定される）。
+
+そこで**入力ファイルの中身だけ**を指紋にした（`provenance.inputDigest`、21 ファイル）。
+
+| したこと | `generatedFromCommit` | `inputDigest` |
+|---|---|---|
+| 寸法を 1 文字直した（未コミット） | 変わらない | **変わる** |
+| artifact だけ作り直してコミットした | **変わる** | 変わらない |
+
+**破壊的変更**: `profileId` の作り方を
+`trs-jack-3d:<variant>:<revision 12桁>` から
+`trs-jack-3d:<variant>:<inputDigest 12桁>` へ変えた。
+revision 版は中身が同じでもコミットのたびに ID が変わり、
+逆に寸法を直しても未コミットなら ID が変わらなかった。どちらも誤りだった。
+
+- `SOURCE_REVISION` の素通しを廃止（実際の HEAD と食い違えば止まる。
+  意図する場合だけ `--unsafe-revision-override`）
+- `--release` は入力が dirty なら生成を拒否する
+- `workingTreeDirty` は**入力ファイルだけ**を見る（木全体を見ると、artifact を
+  書き出した直後は必ず dirty になり、clean な入力からでも release を作れなくなる）
+- 受入試験 7 項目を `test/provenance.test.ts` と `npm run verify:provenance` に置き、
+  **7 項目すべて変異試験で落ちることを確かめた**
+
+> **リポジトリにコミットされている profile は `artifactKind: "local"` /
+> `workingTreeDirty: true`** である（開発中に生成しているため）。
+> 正本にできるのは clean な入力から `--release` で作った release asset だけで、
+> それは P0-8（承認待ち）で作る。
+
 ### 訂正 — 公開済み profile の 4極ジャック根拠が古かった（統合オーダー P0-2）
 
 2026-08-02 に 4極ジャックを Lumberg 1503 28 ベースへ組み直したとき、

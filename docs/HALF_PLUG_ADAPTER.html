@@ -155,17 +155,28 @@ safetyFlags     shortsSignalToReturn: false / shortsSignalToSignal: false</code>
 <p>統合オーダー §4 のとおり、Half-Plug 側のプリセットには次を持たせてください。</p>
 <pre><code>mechanismProfileRef      どの profile ファイルか
 topologyIntervalId       IV028 など（**単独では意味を持たない。下の警告を読むこと**）
-geometryRevision         profile の sourceRevision
+geometryInputDigest      profile の provenance.inputDigest ← **固定はこれで行う**
+generatedFromCommit      profile の provenance.generatedFromCommit（参考値）
 calibrationProfileId     実測した音響 profile（別管理）
 evidenceGrade            profile の interval から引き継ぐ
 physicalClaimStatus      未実測なら "unverified"</code></pre>
+<h3>⚠ <code>sourceRevision</code> で固定しないでください（2026-08-03）</h3>
+<p><code>sourceRevision</code> は残していますが、意味を<strong>「生成元 source commit」</strong>と定義し直し、 <strong>一致の要求はしません。</strong></p>
+<p>理由は自己参照です。<strong>artifact を含めてコミットすると HEAD が変わります。</strong> 生成した瞬間に正しかった <code>sourceRevision</code> が、コミットした瞬間に「古い」と判定されます。 監査（2026-08-03）で指摘された <code>sourceRevision: 5adf454</code> と HEAD <code>ba58b4c</code> の食い違いも、 半分はこれが原因でした。</p>
+<p>代わりに <strong><code>provenance.inputDigest</code></strong> を使ってください。 <strong>入力ファイルの中身だけ</strong>から作った sha256 で、生成物自身は含みません。</p>
+<div class="tw"><table><thead><tr><th>したこと</th><th><code>generatedFromCommit</code></th><th><code>inputDigest</code></th></tr></thead><tbody><tr><td>寸法を 1 文字直した</td><td>変わらない（未コミットなら）</td><td><strong>変わる</strong></td></tr><tr><td>artifact だけ作り直してコミットした</td><td><strong>変わる</strong></td><td>変わらない</td></tr><tr><td>文書だけ直してコミットした</td><td><strong>変わる</strong></td><td>変わらない</td></tr></tbody></table></div>
+<p><code>provenance.inputFiles[]</code> に path と sha256 が入っているので、 <strong>受け取り側で digest を再計算して検算できます</strong>（作り方は <code>inputDigestScope</code> にあります）。</p>
+<h3><code>workingTreeDirty</code> と <code>artifactKind</code> を見てください</h3>
+<div class="tw"><table><thead><tr><th><code>artifactKind</code></th><th>意味</th></tr></thead><tbody><tr><td><code>local</code></td><td>手元で生成したもの。<strong>リポジトリにコミットされている profile はこちらです</strong></td></tr><tr><td><code>release</code></td><td>clean な入力から <code>--release</code> で生成した配布物</td></tr></tbody></table></div>
+<p><strong><code>workingTreeDirty: true</code> の artifact を正本として取り込まないでください。</strong> 入力に未コミットの変更がある状態で作られたもので、その入力は他の誰も再現できません。 <code>--release</code> は dirty な入力からの生成を拒否します。</p>
 <p><strong><code>evidenceGrade</code> と <code>physicalClaimStatus</code> を落とさないでください。</strong> 落とすと、UI で「実物と同じ」と読める表示になってしまいます。</p>
 <h3>⚠ <code>intervalId</code> を単独の鍵として保存しないでください</h3>
 <p><code>IV001</code>, <code>IV002</code>, … は<strong>区間の並び順から機械的に振った番号</strong>で、 <strong>モデルが変わると同じ番号が別の状態を指します。</strong></p>
 <p>2026-08-02 の 4極ジャック組み直しで、実際にこれが起きました。</p>
 <div class="tw"><table><thead><tr><th></th><th>旧</th><th>新</th></tr></thead><tbody><tr><td>本命の区間</td><td><code>IV019</code> / 12.90〜13.12 mm</td><td><strong><code>IV028</code></strong> / 13.30〜13.52 mm</td></tr><tr><td>区間の総数</td><td>21</td><td><strong>30</strong></td></tr></tbody></table></div>
 <p><strong><code>schemaVersion</code> は 1 のままです。</strong>項目も型も意味も変えていないためで、 変わったのは<strong>データ</strong>です。版で守るのではなく、次のように参照してください。</p>
-<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>✅ 保存する</td><td><code>profileId</code>（<code>trs-jack-3d:&lt;variant&gt;:&lt;revision&gt;</code> の形。改訂が埋め込まれている）と <code>intervalId</code> を<strong>セットで</strong></td></tr><tr><td>✅ 再解決する</td><td><code>profileId</code> が違ったら、<code>acousticAnnotation.topologyClass</code> と <code>normalizedStart/End</code> で引き直す</td></tr><tr><td>❌ しない</td><td><code>intervalId</code> だけを保存して、新しい profile へそのまま当てる</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>✅ 保存する</td><td><code>profileId</code>（<code>trs-jack-3d:&lt;variant&gt;:&lt;inputDigest 12桁&gt;</code> の形）と <code>intervalId</code> を<strong>セットで</strong></td></tr><tr><td>✅ 再解決する</td><td><code>profileId</code> が違ったら、<code>acousticAnnotation.topologyClass</code> と <code>normalizedStart/End</code> で引き直す</td></tr><tr><td>❌ しない</td><td><code>intervalId</code> だけを保存して、新しい profile へそのまま当てる</td></tr></tbody></table></div>
+<div class="note"><p><strong><code>profileId</code> の作り方が変わりました（2026-08-03）。</strong></p><p>旧: <code>trs-jack-3d:&lt;variant&gt;:&lt;revision 12桁&gt;</code> ／ 新: <code>trs-jack-3d:&lt;variant&gt;:&lt;inputDigest 12桁&gt;</code></p><p>revision を使うと、<strong>artifact を含めてコミットするたびに ID が変わりました。</strong></p><p>中身は同じなのに「別の profile」に見えるので、引き直しが繰り返されます。</p><p>逆に、寸法を直しても commit していなければ ID が変わりませんでした。</p><p><code>inputDigest</code> は「何から作ったか」なので、<strong>変わるべきときにだけ変わります。</strong></p></div>
 <p><strong><code>events[].eventId</code> も同じ扱いです。</strong><code>eventId</code> は <code>STATE_CHANGE:JC_RING:BREAK_CLOSED-&gt;BREAK_OPEN#1</code> のように、 <strong>何がどの状態からどの状態へ変わったか</strong>で作ってあります（<code>label</code> の文言からは作りません。 文言を直しただけで ID が変わらないようにするためです）。 末尾の <code>#n</code> は同じ遷移が挿入中に複数回起きるための連番で、 <strong>手前に事象が増えると後ろがずれます。</strong><code>profileId</code> とセットで保存してください。</p>
 <h3>⚠ <code>events[].spreadMm</code> の意味が変わりました（2026-08-03）</h3>
 <p>2026-08-02 版までの <code>spreadMm</code> は、<strong>感度解析の <code>kind</code> 単位の集計をそのまま各事象へ複製していました。</strong> <code>STATE_CHANGE</code> は 1 回の挿入で 29 件出るので、29 件すべてに同じ <code>−0.88〜14 mm</code> が付き、 たとえば Ring のブレーク接点にも帰線接点用の幅が付いていました。<strong>下流では誤情報です。</strong></p>
@@ -183,7 +194,9 @@ physicalClaimStatus      未実測なら "unverified"</code></pre>
 <div class="note"><p>物理的に再現しようとする場合は別の話で、0.2 mm を保つのは容易ではありません。</p><p>ただしその場合、4極ジャックの接点位置が仮定である以上、</p><p><strong>狙うべき深さがそもそも分かりません。</strong>先に実測が要ります</p><p>（<a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a>）。</p></div>
 <hr>
 <h2 id="s6">6. 受け取り側で必ず確認してほしいこと</h2>
-<ul class="chk"><li><input type="checkbox" disabled> <code>modelLimitations.verifiedPhysical</code> が <code>false</code> であること（現状すべて false）</li><li><input type="checkbox" disabled> <code>dataLicense.attribution</code> を表示または同梱すること（CC BY 4.0）</li><li><input type="checkbox" disabled> <code>sourceRevision</code> を固定して参照すること（<code>main</code> を追わない）</li><li><input type="checkbox" disabled> <code>schemaVersion</code> が 1 であること。<strong>項目・型・意味の</strong>破壊的変更だけを v2 へ上げます</li><li><input type="checkbox" disabled> <strong><code>intervalId</code> を単独で保存していないこと</strong>（§4 の警告。数値データの変更で指す先が変わります）</li><li><input type="checkbox" disabled> <code>breakStates</code> を読むこと（4極側は 2026-08-02 から <code>BRK_TRRS_RING</code> / <code>BRK_TRRS_TIP</code> が入ります）</li><li><input type="checkbox" disabled> <code>absentTopologies.absent</code> を読み、<strong>無い状態を UI に足さないこと</strong></li></ul>
+<ul class="chk"><li><input type="checkbox" disabled> <code>modelLimitations.verifiedPhysical</code> が <code>false</code> であること（現状すべて false）</li><li><input type="checkbox" disabled> <code>dataLicense.attribution</code> を表示または同梱すること（CC BY 4.0）</li><li><input type="checkbox" disabled> <strong><code>provenance.inputDigest</code> を固定して参照すること</strong>（<code>sourceRevision</code> でも <code>main</code> でもない。→ §4）</li><li><input type="checkbox" disabled> <strong><code>provenance.workingTreeDirty</code> が <code>false</code></strong> の artifact だけを正本にすること</li></ul>
+<p>（リポジトリにコミットされている profile は <code>true</code> です。release asset を待ってください）</p>
+<ul class="chk"><li><input type="checkbox" disabled> <code>schemaVersion</code> が 1 であること。<strong>項目・型・意味の</strong>破壊的変更だけを v2 へ上げます</li><li><input type="checkbox" disabled> <strong><code>intervalId</code> を単独で保存していないこと</strong>（§4 の警告。数値データの変更で指す先が変わります）</li><li><input type="checkbox" disabled> <code>breakStates</code> を読むこと（4極側は 2026-08-02 から <code>BRK_TRRS_RING</code> / <code>BRK_TRRS_TIP</code> が入ります）</li><li><input type="checkbox" disabled> <code>absentTopologies.absent</code> を読み、<strong>無い状態を UI に足さないこと</strong></li></ul>
 </div>
 </body>
 </html>

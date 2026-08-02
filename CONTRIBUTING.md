@@ -62,7 +62,13 @@
 4. **`npm run check:stale`** — 重い成果物の再実行が要るかを**機械が判定します**（→ 下）
 5. `npm run test` — **ここで連動漏れが落ちます**
 6. `npm run test:count` — テスト件数の artifact を更新する
-7. `npm run docs:html` — HTML を作り直す
+7. **`npm run check:vacuity`** — 空振りしているテストが無いかを機械が判定します（→ §7）
+8. `npm run docs:html` — HTML を作り直す
+
+> **`npm run verify:provenance` は手順に入れません。**
+> これは clean checkout から生成して provenance を確かめるもので、
+> **開発中は必ず落ちます**（入力を直している最中なので作業ツリーが汚れている）。
+> 回すのは release を作る前だけです（→ §9・P0-8）。
 
 ### 重い成果物（10〜15 分）は、必要かどうかを機械に訊く
 

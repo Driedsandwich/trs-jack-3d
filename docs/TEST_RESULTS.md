@@ -23,7 +23,7 @@
 | 種別 | コマンド | 結果 |
 |---|---|---|
 | 型検査 | `npm run typecheck` | **エラー 0**（`src` / `scripts` / `test`） |
-| 単体テスト | `npm run test` | **220 件**（内訳は `artifacts/test_counts.json`。`npm run test:count` で更新） |
+| 単体テスト | `npm run test` | **228 件**（内訳は `artifacts/test_counts.json`。`npm run test:count` で更新） |
 | 空振り検査 | `npm run check:vacuity` | skip 0 件・件数の減少なし（→ [CONTRIBUTING §7](CONTRIBUTING.html)） |
 | 実ブラウザ検証 | `npm run screenshots` | **27 件すべて成功**、コンソールエラー 0 |
 | 本番ビルド | `npm run build` | **成功**（1,356 kB / gzip 388 kB・2026-08-01 実測） |
