@@ -29,10 +29,14 @@ Half-Plug Lab 側から受けた監査オーダーへの対応記録です。
 | ⏸ | **P0-8** immutable release | **tag / push の承認待ち**（→ §3） |
 
 **残るのは P0-8 だけです。**それは承認事項です。
-ただし、**リポジトリにコミットされている profile は `artifactKind: "local"` /
-`workingTreeDirty: true`** です（開発中に生成しているため）。
-Half-Plug Lab 側が正本にできるのは、clean な入力から `--release` で作った
-release asset だけです。それは P0-8（承認待ち）で作ります。
+
+完了条件は 2026-08-03 に 1 回通しで実測しました（→ §4）。
+**17 項目のうち 15 が PASS、1 が一部、1 が未確認**です。
+未確認の 1 件（Half-Plug fixture import）は相手側の作業で、こちらから実行できません。
+
+コミット済み profile は `artifactKind: "local"` / `workingTreeDirty: false` /
+`inputDigest: bba0e6dc73a4` です。Half-Plug Lab 側が正本にできるのは、
+clean な入力から `--release` で作った release asset だけで、それは P0-8 で作ります。
 
 ---
 
@@ -447,7 +451,86 @@ npm run check:stale / npm run check:vacuity
 
 ---
 
-## 4. 採用が見送られた要求はありません
+## 4. 完了条件の実測（2026-08-03・`6f69bcb`）
+
+release を作る前に、オーダー §7 の完了条件を 1 回通しで確かめました。
+**clean checkout に `npm ci` した状態**で実行しています（node_modules の共有なし）。
+
+### 4-1. コマンド — 8 件すべて exit 0
+
+`npm ci` を実際に走らせたのは初めてです。**lockfile だけで再現できました**
+（162 packages / audited 163 / found 0 vulnerabilities）。ajv 追加後の lock は壊れていません。
+
+| コマンド | exit | 結果 |
+|---|---:|---|
+| `npm ci` | 0 | 162 packages・脆弱性 0 |
+| `npm run typecheck` | 0 | `tsc -b`。エラー 0 |
+| `npm run test` | 0 | **249 件すべて通過** |
+| `npm run build` | 0 | 602 modules |
+| `npm run validate:profiles` | 0 | 5 件すべて適合 |
+| `npm run verify:provenance` | 0 | clean checkout からの生成を確認 |
+| `npm run check:stale` | 0 | 整合 |
+| `npm run check:vacuity` | 0 | skip 0・件数の減少なし |
+
+### 4-2. 1 回目の通し確認で、欠陥が 3 件出ました
+
+**8 コマンドとも exit 0 でした。**それでも出力を読むと問題がありました。
+**「通った」と「正しい」は別**という、このリポジトリで繰り返している形です。
+
+| | 欠陥 | どうなっていたか |
+|---|---|---|
+| **A** | コミット済み profile が入力より古い | 記録 `8c081c579ec9` / 現在の入力 `bba0e6dc73a4` |
+| **B** | コミット済み profile が `workingTreeDirty: true` | 入力が未コミットのまま生成していた |
+| **C** | `verify:provenance` が A を誤診 | clean な木なのに「未コミット変更がある（開発中は正常）」と表示し **exit 0** |
+
+**A の原因は ajv です。**`package-lock.json` は `inputDigest` の対象なので、
+dev 依存を 1 つ足しただけで profile を作り直す必要がありました。
+
+**そして A を検出する仕組みがありませんでした。**
+profile は `provenance.inputDigest` に「何から作ったか」を記録しているのに、
+**現在の入力と突き合わせる検査がどこにも無かった**のです。記録は目の前にありました。
+
+3 件とも直しました（`9e284d1` / `6f69bcb`）。
+
+- `check:stale` が profile の `inputDigest` も見るようにした
+  （digest の計算を写さないため `checkStale.mjs` を `.ts` へ変えて `provenance.ts` を import。
+  同じ判定を 2 か所に書かない → P0-4 の教訓）
+- `verify:provenance` が「入力が汚れている」と「artifact が古い」を区別し、
+  後者では**失敗する**ようにした
+- profile を clean な入力から作り直した
+
+### 4-3. 完了条件 17 項目
+
+| | 条件 | 結果 | 実測値 |
+|---|---|---|---|
+| 1 | full JSON Schema validation | **PASS** | ajv draft-07 / 5 成果物 |
+| 2 | semantic validation | **PASS** | 意味規則 45 本 / 5 成果物 |
+| 3 | byte-identical regeneration | **PASS** | 2 回生成して sha256 一致（`8311eb37…`） |
+| 4 | input digest 一致 | **PASS** | `bba0e6dc73a4`。clean checkout の再生成と一致 |
+| 5 | dirty tree 拒否 | **PASS** | `assertReleaseAllowed`。骨抜きにすると落ちることを変異試験で確認 |
+| 6 | stale revision 拒否 | **PASS** | 食い違う `SOURCE_REVISION` で例外。素通しに戻すと落ちる |
+| 7 | variant 別 basis 正確 | **PASS** | 探索 3 variant / profile の `detail` 7 項目 |
+| 8 | current artifact に旧 TRRS 説明なし | **PASS** | 3 語を検索 / 残存 0 件 |
+| 9 | event spread が event 固有または null | **PASS** | 矛盾 0 / 複数回出る kind に幅が付いた事象 0 |
+| 10 | classifier・search・exporter の parity | **PASS** | **全 53 区間**を再計算 / 不一致 0 |
+| 11 | heuristic が manufacturability claim でない | **PASS** | `manufacturingVerified: false` / `source: null` |
+| 12 | README・adapter・artifact・tests が整合 | **PASS** | `docs.test.ts` 69 件 / 相対リンク 179・壊れ 0 |
+| 13 | TRS で差分候補不存在を維持 | **PASS** | 区間に出現せず、`absentTopologies` に記録あり |
+| 14 | TRS×TRRS 候補を ASSUMPTION として維持 | **PASS** | 該当 1 区間・`evidenceGrade: ASSUMPTION` |
+| 15 | PS000001 反対証拠を維持 | **PASS** | 図面値 0 件 / Lumberg 1 件 / 探索側にも `counterEvidence` |
+| 16 | release asset hash を生成 | **一部** | 生成できることは確認（`--release` で作り sha256 を取得）。**配布物そのものは未作成** |
+| 17 | Half-Plug fixture import | **未確認** | **相手側の作業**。こちらから実行できない |
+
+**16 と 17 が埋まらない理由**は種類が違います。
+
+- **16** は P0-8 そのものです。仕組みは動きますが、tag / Release を作る操作は承認事項なので
+  実行していません。
+- **17** は Half-Plug Lab 側で profile を読み込む試験です。**こちらのリポジトリからは
+  実行できません。**「未確認」であって「失敗した」ではありません。
+
+---
+
+## 5. 採用が見送られた要求はありません
 
 オーダーが「変更しない」と定めた項目
 （都合よく差分信号を発生させる形状の追加／反対証拠の削除／`verifiedPhysical` の昇格／
