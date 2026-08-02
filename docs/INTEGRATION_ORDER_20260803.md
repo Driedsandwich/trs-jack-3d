@@ -31,11 +31,13 @@ Half-Plug Lab 側から受けた監査オーダーへの対応記録です。
 **P0-1〜P0-8 がすべて完了しました。**
 [v0.1.0](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.1.0) を公開しています。
 
-> **⚠ v0.1.0 に known issue があります（2026-08-03 追記）。**
-> TRS モデルの感度解析値が TRS×TRRS profile へ混入していました。
-> Half-Plug Lab 側の fixture import で発見され、**v0.1.1 で修正しました**
-> （→ [docs/release/v0.1.1-notes.md](release/v0.1.1-notes.md)）。
+> **⚠ v0.1.0 に known issue があり、[v0.1.1](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.1.1) で修正しました（2026-08-03）。**
+> TRS モデルの感度解析値が TRS×TRRS profile へ混入していました
+> （Half-Plug Lab 側の fixture import で判明）。
 > 区間・`electricalTopology`・provenance には影響していません。
+> 対応の詳細は §5、配布物は [v0.1.1-notes.md](release/v0.1.1-notes.md)。
+>
+> **現在の配布物は v0.1.1 です。**v0.1.0 の asset は差し替えず immutable のまま残しています。
 
 完了条件は 2026-08-03 に 1 回通しで実測しました（→ §4）。
 **17 項目のうち 16 が PASS、1 が未確認**です。

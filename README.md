@@ -332,11 +332,15 @@ src/
 
 ## Half-Plug Lab との連携
 
-**配布物は [v0.1.0](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.1.0) です**
-（profile 2 件・schema 4 件・`SHA256SUMS`）。
+**配布物は [v0.1.1](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.1.1) です**
+（profile 2 件・schema 4 件・variant 別の感度 artifact 2 件・`SHA256SUMS`）。
 **固定には `provenance.inputDigest` を使ってください**
-（`bba0e6dc73a4…`）。`sourceRevision` や `main` では固定しないでください
+（TRS×TRS `ea318f0c5b6c…` ／ TRS×TRRS `49b2ef8d7a13…`。**v0.1.1 から variant ごとに違います**）。
+`sourceRevision` や `main` では固定しないでください
 — artifact を含めてコミットすると HEAD は変わりますが、入力が同じなら `inputDigest` は変わりません。
+
+> **v0.1.0 には known issue があります。**TRS モデルの感度解析値が TRS×TRRS profile へ
+> 混入していました。v0.1.1 で修正済みです（区間・`electricalTopology`・provenance には影響しません）。
 
 このプロジェクトは元々、**「有線イヤホンを半挿しにすると音の質感が変わる」現象を
 無線イヤホンで再現したい**という目的から始まりました。その音響エミュレーター
