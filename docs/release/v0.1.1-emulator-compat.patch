@@ -1,0 +1,46 @@
+# trs-jack-3d v0.1.1 対応パッチ（half-plug-emulator v0.4.3 の integrations/trs-jack-3d/ に当てる）
+# A: release-lock の inputDigest を variant 別に引く
+# B: spreadStatus の新しい enum 名を受ける（現行のままだと汚染検出が素通りする）
+# 適用: cd integrations/trs-jack-3d && patch -p1 < v0.1.1-compat.patch
+
+--- a/release-verifier.mjs
++++ b/release-verifier.mjs
+@@ -40,7 +40,8 @@
+   if (!expected) errors.push(`Unsupported variantId: ${profile.variantId}`);
+   if (profile.schemaVersion !== 1) errors.push(`Unsupported profile schemaVersion: ${profile.schemaVersion}`);
+   if (expected && profile.profileId !== expected.profileId) errors.push(`profileId mismatch: ${profile.profileId}`);
+-  if (profile.provenance?.inputDigest !== lock.inputDigest) errors.push('provenance.inputDigest does not match release lock');
++  const expectedDigest = expected?.inputDigest ?? lock.inputDigest;
++  if (profile.provenance?.inputDigest !== expectedDigest) errors.push('provenance.inputDigest does not match release lock');
+   const recomputed = computeProvenanceInputDigest(profile.provenance?.inputFiles ?? []);
+   if (recomputed !== profile.provenance?.inputDigest) errors.push('provenance.inputDigest cannot be recomputed from inputFiles');
+   if (profile.modelLimitations?.verifiedPhysical !== false) errors.push('verifiedPhysical must remain false for v0.1.0');
+@@ -75,7 +76,7 @@
+     warnings,
+     actualSha256,
+     expectedSha256,
+-    sourceInputMatchesReleaseLock: profile.provenance?.inputDigest === lock.inputDigest && source.recomputedInputDigest === lock.inputDigest,
++    sourceInputMatchesReleaseLock: profile.provenance?.inputDigest === (source.expected?.inputDigest ?? lock.inputDigest) && source.recomputedInputDigest === profile.provenance?.inputDigest,
+     exactReleaseAssetMatch: actualSha256 === expectedSha256,
+     releaseArtifact: profile.provenance?.artifactKind === 'release',
+     recomputedInputDigest: source.recomputedInputDigest,
+--- a/topology-adapter.mjs
++++ b/topology-adapter.mjs
+@@ -26,7 +26,7 @@
+     }
+   }
+   for (const event of profile.events ?? []) {
+-    if (event.spreadStatus !== 'MEASURED' || event.spreadMm === null) continue;
++    if (!['MEASURED','MODEL_SWEEP_EVENT_SPECIFIC'].includes(event.spreadStatus) || event.spreadMm === null) continue;
+     const { minMm, maxMm } = event.spreadMm;
+     if (!(Number.isFinite(minMm) && Number.isFinite(maxMm) && minMm <= event.depthMm && event.depthMm <= maxMm)) {
+       if (!issueCodes.includes('SENSITIVITY_NOMINAL_OUTSIDE_EVENT_RANGE')) issueCodes.push('SENSITIVITY_NOMINAL_OUTSIDE_EVENT_RANGE');
+@@ -115,7 +115,7 @@
+     summary: {
+       intervalCount: intervals.length,
+       eventCount: profile.events.length,
+-      notEventSpecificSpreadCount: profile.events.filter((event) => event.spreadStatus === 'NOT_EVENT_SPECIFIC').length,
++      notEventSpecificSpreadCount: profile.events.filter((event) => ['NOT_EVENT_SPECIFIC','MODEL_SWEEP_NOT_EVENT_SPECIFIC'].includes(event.spreadStatus)).length,
+       topologyCounts,
+     },
+     intervals,

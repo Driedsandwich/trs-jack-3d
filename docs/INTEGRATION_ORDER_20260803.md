@@ -39,9 +39,13 @@ Half-Plug Lab 側から受けた監査オーダーへの対応記録です。
 >
 > **現在の配布物は v0.1.1 です。**v0.1.0 の asset は差し替えず immutable のまま残しています。
 
-完了条件は 2026-08-03 に 1 回通しで実測しました（→ §4）。
-**17 項目のうち 16 が PASS、1 が未確認**です。
-未確認の 1 件（Half-Plug fixture import）は相手側の作業で、こちらから実行できません。
+完了条件は 2026-08-03 に 1 回通しで実測しました（→ §4）。**17 項目すべて実測済み・全件 PASS** です。
+
+項目 17（production byte import）は当初「実行できない」と書いていましたが、**誤りでした。**
+importer は配布物に同梱されており（`integrations/trs-jack-3d/import-profile.mjs`）、
+v0.1.1 の release asset に対して実行できます。実行した結果 PASS し、
+**同時に相互運用の不整合を 2 件検出しました**（→ §4-4）。うち 1 件は
+**エラーも警告も出さずに検査が丸ごと素通りする**もので、v0.1.1 の改名が原因です。
 
 Half-Plug Lab 側が正本にすべきなのは、**release asset の
 `artifactKind: "release"` の profile** です。リポジトリにコミットしてある
@@ -591,14 +595,50 @@ profile は `provenance.inputDigest` に「何から作ったか」を記録し�
 | 14 | TRS×TRRS 候補を ASSUMPTION として維持 | **PASS** | 該当 1 区間・`evidenceGrade: ASSUMPTION` |
 | 15 | PS000001 反対証拠を維持 | **PASS** | 図面値 0 件 / Lumberg 1 件 / 探索側にも `counterEvidence` |
 | 16 | release asset hash を生成 | **PASS** | `SHA256SUMS` を作成し、draft へ添付。**取り直して検算し 7 件とも byte 一致**（→ §3） |
-| 17 | Half-Plug fixture import | **未確認** | **相手側の作業**。こちらから実行できない |
+| 17 | Half-Plug production byte import | **PASS** | `--mode production` で TRS×TRRS が PASS（区間 30 / event 36 / 警告 0）。**不整合 2 件を検出**（→ §4-4） |
 
-**16 と 17 が埋まらない理由**は種類が違います。
+**16** は P0-8 そのものです。tag / Release を作る操作は承認事項なので、承認を得てから実行しました。
 
-- **16** は P0-8 そのものです。仕組みは動きますが、tag / Release を作る操作は承認事項なので
-  実行していません。
-- **17** は Half-Plug Lab 側で profile を読み込む試験です。**こちらのリポジトリからは
-  実行できません。**「未確認」であって「失敗した」ではありません。
+### 4-4. import で見つかった不整合 2 件
+
+importer を手元で走らせて初めて分かったもので、**どちらも v0.1.1 の変更が引き金**です。
+
+#### A. `release-lock` の `inputDigest` が variant を1つしか持てない
+
+`release-verifier.mjs` は `profile.provenance.inputDigest !== lock.inputDigest` を見ますが、
+`lock.inputDigest` は**トップレベルに 1 つだけ**です。v0.1.1 で inputDigest を variant 別にしたので、
+1 つの lock では**片方しか production import できません**。
+
+実測: TRRS の digest を入れた lock で TRS を import → `provenance.inputDigest does not match release lock` で停止。
+`lock.profiles[variantId].inputDigest` へ移すと**両 variant とも PASS** します（検証済み）。
+
+#### B. enum 改名で汚染検出が丸ごと素通りする（**エラーも警告も出ない**）
+
+`topology-adapter.mjs` は `event.spreadStatus !== 'MEASURED'` で `continue` します。
+v0.1.1 で `MEASURED` → `MODEL_SWEEP_EVENT_SPECIFIC` に改名したため、
+**36 event すべてが弾かれ、ループ本体が 1 回も走りません。**
+
+このループは飾りではなく、**「名目値が自分の spread の外にあるか」＝ v0.1.1 で直した汚染そのものを
+検出する箇所**です。つまり消費側の検出器が死んだ状態で `status: PASS` / `verificationWarnings: []` が返ります。
+`notEventSpecificSpreadCount` も真値 29 に対して 0 を報告します。
+
+変異検査（等価変異でないことの確認）:
+
+| | 汚染を 1 件仕込んだ profile |
+|---|---|
+| 現行の adapter | `AVAILABLE_AS_MODEL_SWEEP_ONLY`（**見逃す**） |
+| 新しい enum 名を足した adapter | `QUARANTINED`（検出する） |
+
+**教訓**: `schemaVersion` を据え置いたまま enum の値を変えると、値で絞り込む消費側からは
+**「その状態のデータが 1 件も無い」と見分けがつきません。**失敗ではなく沈黙になります。
+このリポジトリが全編で潰してきた空振り検査と同じ型で、今回は**こちらが原因側**でした。
+
+#### C.（付随）TRS variant は修正後も `QUARANTINED` になる
+
+`SENSITIVITY_PROVENANCE_NOT_VARIANT_SCOPED`。adapter は sensitivity 入力のパスすべてに
+variant 名が含まれることを求めますが、TRS variant は後方互換で
+`artifacts/sensitivity.json`（variant 名なし）も入力に残しています。
+**profile 側の既知の限界**として記録します。
 
 ---
 
