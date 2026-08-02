@@ -286,3 +286,45 @@ describe('README 冒頭の理由づけ', () => {
     expect(head).toMatch(/不確か/)
   })
 })
+
+/**
+ * 文書どうしの食い違い。
+ *
+ * 2026-08-03 に、6 つの主張（橋絡の深さ / Tip↔Ring が橋絡しないこと / ブレーク接点 /
+ * 4極ジャックの接点位置の根拠 / 挿抜力の校正 / 完全挿入深度）を 7 文書で突き合わせた。
+ * 該当行は 257 行あったが、**値が割れていたのは 1 件**だけだった。
+ *
+ *   ブレーク接点が開く深さ … README/REPORT §4 は 8.06、SENSITIVITY/REPORT §5 は 8.05。
+ *   artifact で確かめると events.json（0.02mm 走査）= 8.06、
+ *   sensitivity.json（二分法）= 8.0509 で、**方法が違うだけ**だった。
+ *   橋絡については同じ説明（11.760 と 11.78）が既にあるのに、ブレーク接点には無かった。
+ *
+ * 1 件なので「1 つの主張は 1 か所に書いて他は参照する」という構造の見直しはしない。
+ * 両方の値が出てくる文書に、方法の違いを書き添えるだけにした。
+ */
+describe('文書どうしの食い違い', () => {
+  const read = (f: string) => readFileSync(resolve(ROOT, f), 'utf8')
+
+  it('**ブレーク接点の 8.05 と 8.06 が、方法の違いだと説明されている**', () => {
+    for (const f of ['README.md', 'docs/REPORT.md', 'docs/SENSITIVITY.md']) {
+      const t = read(f)
+      if (t.includes('8.05') && t.includes('8.06'))
+        expect({ f, explained: /二分法/.test(t) && /刻み/.test(t) }).toEqual({ f, explained: true })
+    }
+    // SENSITIVITY は 8.05 側だが、走査値との関係を書いていること
+    expect(read('docs/SENSITIVITY.md')).toMatch(/8\.06/)
+  })
+
+  it('二分法の値と走査値が、artifact のとおりである', () => {
+    const ev = JSON.parse(readFileSync(resolve(ROOT, 'artifacts/events.json'), 'utf8')) as {
+      major: { kind: string; depthMm: number }[]
+    }
+    const first = ev.major.find((e) => e.kind === 'FIRST_BREAK_OPEN')!
+    expect(first.depthMm).toBe(8.06) // 0.02mm 走査
+    const sens = JSON.parse(readFileSync(resolve(ROOT, 'artifacts/sensitivity.json'), 'utf8')) as {
+      previouslyUnswept: { ringBreakOpenDeflection: { openDeflection: number; depth: number | null }[] }
+    }
+    const shipped = sens.previouslyUnswept.ringBreakOpenDeflection.find((r) => r.openDeflection === 0.05)!
+    expect(shipped.depth).toBe(8.0509) // 二分法
+  })
+})

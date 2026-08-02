@@ -97,7 +97,7 @@ npm run dev
 
 | コマンド | 内容 |
 |---|---|
-| `npm run test` | 単体テスト (Vitest) 210 件 |
+| `npm run test` | 単体テスト (Vitest) 212 件 |
 | `npm run typecheck` | TypeScript 型検査 (`src` / `scripts` / `test`) |
 | `npm run build` | 本番ビルド |
 | `npm run artifacts` | `artifacts/` へ走査結果 JSON を生成 |
@@ -192,6 +192,8 @@ src/
 |---|---:|---|
 | Ring↔Sleeve 橋絡が始まる | 11.78 mm | **6.96〜13.14 mm** |
 | Ring 側ブレーク接点が開く | 8.06 mm | **8.00〜12.33 mm** |
+
+<sub>8.06 は 0.02 mm 刻みの走査値です。二分法で詰めると 8.05 になります（[docs/SENSITIVITY.md](docs/SENSITIVITY.md)）。差は刻みの粒度で、食い違いではありません。</sub>
 
 **振れは最大 4.8 mm、しかも方向が事象ごとに違います。**
 橋絡は下へ **−4.82** / 上へ +1.36、ブレーク接点は下へ −0.06 / 上へ **+4.26**。

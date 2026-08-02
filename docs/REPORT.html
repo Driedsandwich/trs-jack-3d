@@ -148,7 +148,8 @@
 <p>橋絡が第2絶縁帯でだけ起きるのは、Ring と Sleeve がどちらも φ3.5 で高さが同じだからです。 第1絶縁帯では Tip が φ3.20 と 0.15 mm 低く、接点は Ring に押し上げられて Tip 面に届きません。 成立条件は「パッド幅 &gt; 絶縁帯幅」ではなく「<strong>同じ高さの導体面どうしの間隔（0.700 mm）&lt; パッド幅（0.9 mm）</strong>」です （2026-07-31 の公開前監査で判定の誤りを見つけて修正）。</p>
 <h3>この深さは単一値ではなく、幅を持ちます</h3>
 <p>上表はジャック内部の接点位置とパッド幅を<strong>現在の仮定値に固定した</strong>ときの計算結果です。 それらは一次資料に無い仮定なので、深さの数字はそのぶん動きます。 成立範囲いっぱいに振って測った結果が次です（<a href="SENSITIVITY.md">SENSITIVITY.md</a>）。</p>
-<div class="tw"><table><thead><tr><th>事象</th><th class="num">上表の値</th><th>仮定を振ったときの幅</th></tr></thead><tbody><tr><td>Ring↔Sleeve 橋絡が始まる</td><td class="num">11.76 mm</td><td><strong>6.96〜13.14 mm</strong></td></tr><tr><td>Ring 側ブレーク接点が開く</td><td class="num">8.05 mm</td><td><strong>8.00〜12.33 mm</strong>（しきい値 0.4 以上では一度も開かない）</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>事象</th><th class="num">上表の値</th><th>仮定を振ったときの幅</th></tr></thead><tbody><tr><td>Ring↔Sleeve 橋絡が始まる</td><td class="num">11.76 mm</td><td><strong>6.96〜13.14 mm</strong></td></tr><tr><td>Ring 側ブレーク接点が開く</td><td class="num">8.05 mm ※</td><td><strong>8.00〜12.33 mm</strong>（しきい値 0.4 以上では一度も開かない）</td></tr></tbody></table></div>
+<div class="note"><p><strong>※ この 8.05 は二分法で詰めた値です。</strong>§4 の表の <strong>8.06</strong> は 0.02 mm 刻みの走査値で、</p><p>差の 0.01 は刻みの粒度です（橋絡の 11.760 と 11.78 の関係と同じ）。同じ切り替わりを</p><p>別の方法で測った値であって、食い違いではありません。</p></div>
 <p><strong>一方、「何が起きるか」の順序は幅を持ちません。</strong> 帰線接点が Tip → Ring の順に通過すること、Ring↔Sleeve の橋絡が起きること、 Tip↔Ring の橋絡が（公称寸法では）起きないこと、ブレーク接点が正しい結線より先に開くこと —— これらはどの構成でも変わりませんでした。</p>
 <p><strong>「何が起きるか」はほぼ決まっていて、「何 mm で起きるか」が決まっていない</strong>、という状態です。</p>
 <hr>
