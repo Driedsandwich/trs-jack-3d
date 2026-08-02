@@ -85,13 +85,14 @@ npm run dev
 
 | コマンド | 内容 |
 |---|---|
-| `npm run test` | 単体テスト (Vitest) 154 件 |
+| `npm run test` | 単体テスト (Vitest) 166 件 |
 | `npm run typecheck` | TypeScript 型検査 (`src` / `scripts` / `test`) |
 | `npm run build` | 本番ビルド |
 | `npm run artifacts` | `artifacts/` へ走査結果 JSON を生成 |
 | `npm run sensitivity` | 仮定パラメータの感度解析（**15 分ほどかかる。CI 向けではない**） |
 | `npm run docs:html` | `docs/*.md` から `docs/*.html` を生成 |
 | `npm run export:half-plug` | 接点トポロジーを DSP 非依存の JSON として書き出す（→ [連携](#half-plug-lab-との連携)） |
+| `npm run search:topology -- --target GROUND_OPEN` | 目標トポロジーが成立する構成を探す（**約 10 分**） |
 | `npm run screenshots` | 実ブラウザ (Playwright) で UI を操作し、`docs/screenshots/` へ画像を保存 |
 | `npm run perf` | 実 GPU (headed Chrome) でフレームレートと描画コストを測定 |
 | `npm run touch` | iPhone/iPad 相当のビューポートにタッチ入力を注入して操作を検証 |
@@ -332,8 +333,40 @@ Half-Plug Lab                     DSP 状態候補への写像は向こう側の
 現れるのは誤接触・左右短絡・無音・正常接続です。
 
 profile はこれを `absentTopologies` として**機械可読な「不在」の記録**にしています。
-**表示上だけ足すことはしません。**別の構成で起こりうるかどうかは、
-今後 `search:topology` で探索する予定の課題です。
+**表示上だけ足すことはしません。**
+
+### では原理的に無理なのか — 探索した結果
+
+`npm run search:topology -- --target GROUND_OPEN` で、接点の軸位置・パッド幅・
+接触ドームの追従量を振り、**14,670 構成**を調べました。
+
+| | 件数 |
+|---|---:|
+| 共通帰線断が現れた構成 | 6,231 |
+| うち**完全挿入時の結線が壊れていない**もの | 318 |
+| うち**L と R が別導体のまま帰線だけが浮く**もの（本命） | **240** |
+
+**幾何的には成立します。**ただし成立する構成は、既定値と大きく違います。
+
+```
+例: 帰線接点 2.5mm（既定 3.2） / Ring 5.5（7.1） / Tip 9.5（11.4）
+    帰線パッド 0.1mm（既定 0.9 — 9 分の 1）
+    → 深さ 10.86mm 付近で L=Tip / R=Ring / 帰線=どこにも触れず
+```
+
+**この構成は実在の部品ではありません。**探索結果の全構成が `constructed: true` /
+`evidenceGrade: ASSUMPTION` です。**「3.5mm ジャック一般でこうなる」とは言えません。**
+
+| variant | 本命の成立数 |
+|---|---:|
+| 3極プラグ × 3極ジャック | 78 |
+| 4極 CTIA × 4極ジャック | 0 |
+| **3極プラグ × 4極ジャック** | **162** |
+
+窓の幅は最大でも **0.65 mm** です。深さをこの精度で保つ必要があります。
+
+> **4極 CTIA × 4極ジャックでは 0 件**でした。共通帰線断そのものは現れますが、
+> そのすべてで完全挿入時の結線が壊れています。
 
 ---
 
@@ -382,6 +415,7 @@ profile はこれを `absentTopologies` として**機械可読な「不在」�
 | `touch_verification.json` | タッチ操作の検証 20 項目の結果 |
 | `sensitivity.json` | 仮定パラメータの感度解析の生データ（→ [docs/SENSITIVITY.md](docs/SENSITIVITY.md)） |
 | `half_plug_topology_profile.v1.json` | 接点トポロジーの中立表現（`npm run export:half-plug`）。**音響係数ではありません** |
+| `topology_search_ground_open.json` | 共通帰線断が成立する構成の探索結果（`npm run search:topology`・約 10 分） |
 
 `sensitivity.json` だけは `npm run artifacts` では作られません。**`npm run sensitivity`
 （単独・実行に 15 分ほど）**で生成します。二分法を何万回も回すため他の成果物より桁違いに重く、
