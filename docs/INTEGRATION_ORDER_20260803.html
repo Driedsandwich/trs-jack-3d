@@ -103,10 +103,10 @@
 <div class="note"><p><strong>監査対象が HEAD より手前だったので、8 件すべてを現在の木で引き直しました。</strong></p><p>「もう直っている」で済ませられた項目は <strong>0 件</strong>で、8 件とも当時のまま残っていました。</p><p>間の 3 commit は CONTRIBUTING と検査の追加で、profile や exporter に触れていません。</p></div>
 <hr>
 <h2 id="s0">0. 現在の状態</h2>
-<div class="tw"><table><thead><tr><th></th><th>P0</th><th>状態</th></tr></thead><tbody><tr><td>✅</td><td><strong>P0-1</strong> artifact provenance</td><td><strong>完了</strong>（受入試験 7 項目・→ §1）</td></tr><tr><td>✅</td><td><strong>P0-2</strong> TRRS の basis / limitations</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-3</strong> <code>events[].spreadMm</code> を event 固有に</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-4</strong> 電気トポロジー分類の一本化</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-5</strong> 探索結果の表現を弱める</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-6</strong> Draft-07 の完全検証（Ajv）</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-7</strong> 文書と公開表現の整合</td><td><strong>完了</strong></td></tr><tr><td>🟡</td><td><strong>P0-8</strong> immutable release</td><td><strong>draft 作成済み。公開は未実行</strong>（→ §3）</td></tr></tbody></table></div>
-<p><strong>P0-8 は draft まで進みました。公開はしていません。</strong></p>
+<div class="tw"><table><thead><tr><th></th><th>P0</th><th>状態</th></tr></thead><tbody><tr><td>✅</td><td><strong>P0-1</strong> artifact provenance</td><td><strong>完了</strong>（受入試験 7 項目・→ §1）</td></tr><tr><td>✅</td><td><strong>P0-2</strong> TRRS の basis / limitations</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-3</strong> <code>events[].spreadMm</code> を event 固有に</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-4</strong> 電気トポロジー分類の一本化</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-5</strong> 探索結果の表現を弱める</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-6</strong> Draft-07 の完全検証（Ajv）</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-7</strong> 文書と公開表現の整合</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-8</strong> immutable release</td><td><strong>v0.1.0 公開済み</strong>（→ §3）</td></tr></tbody></table></div>
+<p><strong>P0-1〜P0-8 がすべて完了しました。</strong> <a href="https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.1.0">v0.1.0</a> を公開しています。</p>
 <p>完了条件は 2026-08-03 に 1 回通しで実測しました（→ §4）。 <strong>17 項目のうち 16 が PASS、1 が未確認</strong>です。 未確認の 1 件（Half-Plug fixture import）は相手側の作業で、こちらから実行できません。</p>
-<p>コミット済み profile は <code>artifactKind: "local"</code> / <code>workingTreeDirty: false</code> / <code>inputDigest: bba0e6dc73a4</code> です。Half-Plug Lab 側が正本にすべき <code>artifactKind: "release"</code> の資産は draft に添付済みで、<strong>公開待ち</strong>です（→ §3）。</p>
+<p>Half-Plug Lab 側が正本にすべきなのは、<strong>release asset の <code>artifactKind: "release"</code> の profile</strong> です。リポジトリにコミットしてある <code>artifactKind: "local"</code> のほうではありません（データは同一ですが、 release のほうは clean な入力から作ったことが記録に残っています）。</p>
 <hr>
 <h2 id="s1">1. 完了した項目</h2>
 <h3>P0-1 — artifact provenance</h3>
@@ -143,7 +143,7 @@
   clean checkout : dirty=false / release / digest 91a0e62a4eca
   → digest が一致。手元の artifact は clean な入力から作られている</code></pre>
 <p><strong><code>workingTreeDirty</code> と <code>inputDigest</code> は別の種類の事実です。</strong> 前者は「生成した瞬間の作業ツリーの状態」、後者は「何から作ったか」です。 上の実走では、手元の artifact が <code>dirty: true</code> を記録しているのに digest は clean checkout と一致しました。生成後に同じ入力をコミットしたためです。 <strong>固定に使うべきなのは digest のほう</strong>である、ということがそのまま出ています。</p>
-<div class="note"><p><strong>上の digest <code>91a0e62a4eca</code> は <code>aac0084</code> 時点の値です。</strong>現在の値とは違います。</p><p>そのあと schema に 1 行足したためで、schema は入力なので digest が変わるのが正しい挙動です。</p><p><strong>この記録は「その時にこう出た」であって、現在の値の表ではありません。</strong></p><p>コミット済みの profile は現在 <code>workingTreeDirty: false</code> / <code>artifactKind: local</code> です。</p><p><code>release</code> の artifact は P0-8（承認待ち）で作ります。</p></div>
+<div class="note"><p><strong>上の digest <code>91a0e62a4eca</code> は <code>aac0084</code> 時点の値です。</strong>現在の値とは違います。</p><p>そのあと schema に 1 行足したためで、schema は入力なので digest が変わるのが正しい挙動です。</p><p><strong>この記録は「その時にこう出た」であって、現在の値の表ではありません。</strong></p><p>コミット済みの profile は現在 <code>workingTreeDirty: false</code> / <code>artifactKind: local</code> です。</p><p><code>release</code> の artifact は v0.1.0 として公開しました（→ §3）。</p></div>
 <h4>受入試験 3 の実証</h4>
 <p>作り直した profile をコミットする前に、作業ツリーで確かめました。</p>
 <pre><code>$ git status --short
@@ -242,15 +242,28 @@ npm run validate:profiles / npm run verify:provenance
 npm run check:stale / npm run check:vacuity</code></pre>
 <div class="note"><p><code>verify:half-plug-release</code> は作っていません。上の 8 コマンドで完了条件を満たすため、</p><p>それらを束ねるだけの入口を増やしても守りが増えないと判断しました</p><p>（→ CONTRIBUTING §2「先に数えてから決める」）。</p></div>
 <h4>実行した範囲（2026-08-03・本人承認あり）</h4>
-<div class="tw"><table><thead><tr><th></th><th>状態</th></tr></thead><tbody><tr><td>annotated tag <code>v0.1.0</code></td><td><strong>ローカルのみ作成。push していません</strong></td></tr><tr><td>GitHub Release</td><td><strong>draft で作成。公開していません</strong></td></tr><tr><td>添付資産 7 件</td><td>draft へアップロード済み</td></tr><tr><td>公開されているもの</td><td><strong>ありません</strong>（tag は remote に無く、draft は所有者だけが見られます）</td></tr></tbody></table></div>
+<p><strong>2 段階で行いました。</strong>まず draft まで作って内容を確認し、承認を得てから公開しています。</p>
+<div class="tw"><table><thead><tr><th></th><th>状態</th></tr></thead><tbody><tr><td>annotated tag <code>v0.1.0</code></td><td><strong>公開済み</strong>（<code>84c3975</code> を指す。tag object <code>9b6a452</code>）</td></tr><tr><td>GitHub Release</td><td><strong>公開済み</strong>（2026-08-02T18:13:15Z）</td></tr><tr><td>添付資産 7 件</td><td>profile 2 / schema 4 / <code>SHA256SUMS</code></td></tr><tr><td>URL</td><td>https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.1.0</td></tr></tbody></table></div>
+<div class="note"><p><strong>tag は <code>84c3975</code> を指しています</strong>（<code>main</code> の先端ではありません）。</p><p>添付した profile の <code>provenance.generatedFromCommit</code> と一致させるためです。</p><p>それ以降のコミットは release の記録だけで、<code>inputDigest</code> は変わっていません。</p></div>
 <p>release 用の profile は <strong>clean checkout で <code>--release</code> を付けて生成</strong>しました。</p>
 <pre><code>inputDigest: bba0e6dc73a4 / dirty: false / release</code></pre>
 <p>コミット済みの profile（<code>artifactKind: local</code>）との差は <code>provenance</code> の 4 項目・<code>generatedAt</code>・<code>sourceRevision</code> だけで、 <strong><code>inputDigest</code> と <code>profileId</code> は同一</strong>です。データは同じで、生成の記録だけが違います。 これは <code>inputDigest</code> の設計どおりの挙動です。</p>
 <p>添付物の一覧と checksum は <a href="release/v0.1.0-SHA256SUMS.txt"><code>v0.1.0-SHA256SUMS.txt</code></a>、 Release notes は <a href="release/v0.1.0-notes.md"><code>v0.1.0-notes.md</code></a> に控えてあります。</p>
 <p><strong>アップロード後に取り直して検算しました。</strong>7 件とも <code>shasum -c</code> が OK で、 ローカルの資産と <strong>byte 単位で一致</strong>しています。</p>
-<h4>残っている操作（別途確認）</h4>
-<ol><li>draft の公開（<code>gh release edit v0.1.0 --draft=false</code>）</li><li>annotated tag の push（<code>git push origin v0.1.0</code>）</li></ol>
-<p><strong>公開すると取り消せません。</strong>Release と tag は削除できますが、 すでに取得した相手からは消せず、キャッシュやミラーにも残りえます。</p>
+<h4>公開後の実測</h4>
+<p><strong>別ディレクトリで取り直して確かめました。</strong></p>
+<pre><code>$ gh release download v0.1.0 --repo Driedsandwich/trs-jack-3d
+$ shasum -a 256 -c SHA256SUMS
+  7 件すべて OK
+
+provenance.inputDigest    bba0e6dc73a4…（SHA256SUMS の記載と一致）
+provenance.artifactKind   release
+provenance.workingTreeDirty  false
+modelLimitations.verifiedPhysical  false</code></pre>
+<h4>取り消す場合</h4>
+<pre><code>gh release delete v0.1.0
+git tag -d v0.1.0 &amp;&amp; git push origin :refs/tags/v0.1.0</code></pre>
+<p><strong>ただし、すでに取得した相手からは消せません。</strong>キャッシュやミラーにも残りえます。</p>
 <hr>
 <h2 id="s4">4. 完了条件の実測（2026-08-03・<code>6f69bcb</code>）</h2>
 <p>release を作る前に、オーダー §7 の完了条件を 1 回通しで確かめました。 <strong>clean checkout に <code>npm ci</code> した状態</strong>で実行しています（node_modules の共有なし）。</p>

@@ -26,17 +26,19 @@ Half-Plug Lab 側から受けた監査オーダーへの対応記録です。
 | ✅ | **P0-5** 探索結果の表現を弱める | **完了**（→ §1） |
 | ✅ | **P0-6** Draft-07 の完全検証（Ajv） | **完了**（→ §1） |
 | ✅ | **P0-7** 文書と公開表現の整合 | **完了** |
-| 🟡 | **P0-8** immutable release | **draft 作成済み。公開は未実行**（→ §3） |
+| ✅ | **P0-8** immutable release | **v0.1.0 公開済み**（→ §3） |
 
-**P0-8 は draft まで進みました。公開はしていません。**
+**P0-1〜P0-8 がすべて完了しました。**
+[v0.1.0](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.1.0) を公開しています。
 
 完了条件は 2026-08-03 に 1 回通しで実測しました（→ §4）。
 **17 項目のうち 16 が PASS、1 が未確認**です。
 未確認の 1 件（Half-Plug fixture import）は相手側の作業で、こちらから実行できません。
 
-コミット済み profile は `artifactKind: "local"` / `workingTreeDirty: false` /
-`inputDigest: bba0e6dc73a4` です。Half-Plug Lab 側が正本にすべき
-`artifactKind: "release"` の資産は draft に添付済みで、**公開待ち**です（→ §3）。
+Half-Plug Lab 側が正本にすべきなのは、**release asset の
+`artifactKind: "release"` の profile** です。リポジトリにコミットしてある
+`artifactKind: "local"` のほうではありません（データは同一ですが、
+release のほうは clean な入力から作ったことが記録に残っています）。
 
 ---
 
@@ -141,7 +143,7 @@ digest は clean checkout と一致しました。生成後に同じ入力をコ
 > **この記録は「その時にこう出た」であって、現在の値の表ではありません。**
 >
 > コミット済みの profile は現在 `workingTreeDirty: false` / `artifactKind: local` です。
-> `release` の artifact は P0-8（承認待ち）で作ります。
+> `release` の artifact は v0.1.0 として公開しました（→ §3）。
 
 #### 受入試験 3 の実証
 
@@ -447,12 +449,18 @@ npm run check:stale / npm run check:vacuity
 
 #### 実行した範囲（2026-08-03・本人承認あり）
 
+**2 段階で行いました。**まず draft まで作って内容を確認し、承認を得てから公開しています。
+
 | | 状態 |
 |---|---|
-| annotated tag `v0.1.0` | **ローカルのみ作成。push していません** |
-| GitHub Release | **draft で作成。公開していません** |
-| 添付資産 7 件 | draft へアップロード済み |
-| 公開されているもの | **ありません**（tag は remote に無く、draft は所有者だけが見られます） |
+| annotated tag `v0.1.0` | **公開済み**（`84c3975` を指す。tag object `9b6a452`） |
+| GitHub Release | **公開済み**（2026-08-02T18:13:15Z） |
+| 添付資産 7 件 | profile 2 / schema 4 / `SHA256SUMS` |
+| URL | https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.1.0 |
+
+> **tag は `84c3975` を指しています**（`main` の先端ではありません）。
+> 添付した profile の `provenance.generatedFromCommit` と一致させるためです。
+> それ以降のコミットは release の記録だけで、`inputDigest` は変わっていません。
 
 release 用の profile は **clean checkout で `--release` を付けて生成**しました。
 
@@ -471,13 +479,29 @@ Release notes は [`v0.1.0-notes.md`](release/v0.1.0-notes.md) に控えてあ�
 **アップロード後に取り直して検算しました。**7 件とも `shasum -c` が OK で、
 ローカルの資産と **byte 単位で一致**しています。
 
-#### 残っている操作（別途確認）
+#### 公開後の実測
 
-1. draft の公開（`gh release edit v0.1.0 --draft=false`）
-2. annotated tag の push（`git push origin v0.1.0`）
+**別ディレクトリで取り直して確かめました。**
 
-**公開すると取り消せません。**Release と tag は削除できますが、
-すでに取得した相手からは消せず、キャッシュやミラーにも残りえます。
+```
+$ gh release download v0.1.0 --repo Driedsandwich/trs-jack-3d
+$ shasum -a 256 -c SHA256SUMS
+  7 件すべて OK
+
+provenance.inputDigest    bba0e6dc73a4…（SHA256SUMS の記載と一致）
+provenance.artifactKind   release
+provenance.workingTreeDirty  false
+modelLimitations.verifiedPhysical  false
+```
+
+#### 取り消す場合
+
+```
+gh release delete v0.1.0
+git tag -d v0.1.0 && git push origin :refs/tags/v0.1.0
+```
+
+**ただし、すでに取得した相手からは消せません。**キャッシュやミラーにも残りえます。
 
 ---
 

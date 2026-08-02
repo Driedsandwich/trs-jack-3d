@@ -332,6 +332,12 @@ src/
 
 ## Half-Plug Lab との連携
 
+**配布物は [v0.1.0](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.1.0) です**
+（profile 2 件・schema 4 件・`SHA256SUMS`）。
+**固定には `provenance.inputDigest` を使ってください**
+（`bba0e6dc73a4…`）。`sourceRevision` や `main` では固定しないでください
+— artifact を含めてコミットすると HEAD は変わりますが、入力が同じなら `inputDigest` は変わりません。
+
 このプロジェクトは元々、**「有線イヤホンを半挿しにすると音の質感が変わる」現象を
 無線イヤホンで再現したい**という目的から始まりました。その音響エミュレーター
 （Half-Plug Lab）へ、接点のつながり方を渡すための出口が `npm run export:half-plug` です。
