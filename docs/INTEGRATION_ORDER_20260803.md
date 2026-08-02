@@ -132,7 +132,10 @@ revision 版は、**中身が同じでもコミットのたびに ID が変わ�
 digest は clean checkout と一致しました。生成後に同じ入力をコミットしたためです。
 **固定に使うべきなのは digest のほう**である、ということがそのまま出ています。
 
-> このあと入力が clean な状態で作り直したので、
+> **上の digest `91a0e62a4eca` は `aac0084` 時点の値です。**現在の値とは違います。
+> そのあと schema に 1 行足したためで、schema は入力なので digest が変わるのが正しい挙動です。
+> **この記録は「その時にこう出た」であって、現在の値の表ではありません。**
+>
 > コミット済みの profile は現在 `workingTreeDirty: false` / `artifactKind: local` です。
 > `release` の artifact は P0-8（承認待ち）で作ります。
 

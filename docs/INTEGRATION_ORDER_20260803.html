@@ -140,7 +140,7 @@
   clean checkout : dirty=false / release / digest 91a0e62a4eca
   → digest が一致。手元の artifact は clean な入力から作られている</code></pre>
 <p><strong><code>workingTreeDirty</code> と <code>inputDigest</code> は別の種類の事実です。</strong> 前者は「生成した瞬間の作業ツリーの状態」、後者は「何から作ったか」です。 上の実走では、手元の artifact が <code>dirty: true</code> を記録しているのに digest は clean checkout と一致しました。生成後に同じ入力をコミットしたためです。 <strong>固定に使うべきなのは digest のほう</strong>である、ということがそのまま出ています。</p>
-<div class="note"><p>このあと入力が clean な状態で作り直したので、</p><p>コミット済みの profile は現在 <code>workingTreeDirty: false</code> / <code>artifactKind: local</code> です。</p><p><code>release</code> の artifact は P0-8（承認待ち）で作ります。</p></div>
+<div class="note"><p><strong>上の digest <code>91a0e62a4eca</code> は <code>aac0084</code> 時点の値です。</strong>現在の値とは違います。</p><p>そのあと schema に 1 行足したためで、schema は入力なので digest が変わるのが正しい挙動です。</p><p><strong>この記録は「その時にこう出た」であって、現在の値の表ではありません。</strong></p><p>コミット済みの profile は現在 <code>workingTreeDirty: false</code> / <code>artifactKind: local</code> です。</p><p><code>release</code> の artifact は P0-8（承認待ち）で作ります。</p></div>
 <h4>受入試験 3 の実証</h4>
 <p>作り直した profile をコミットする前に、作業ツリーで確かめました。</p>
 <pre><code>$ git status --short

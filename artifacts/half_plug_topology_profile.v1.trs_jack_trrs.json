@@ -39,12 +39,12 @@
    ]
   }
  },
- "sourceRevision": "aac008421ea75950f02ad0415a103095cf8843aa",
+ "sourceRevision": "972cb91f703687649024a70fac4eda29087e8bd6",
  "generatedAt": "2026-08-02",
  "provenance": {
   "generatorVersion": 3,
-  "generatedFromCommit": "aac008421ea75950f02ad0415a103095cf8843aa",
-  "workingTreeDirty": true,
+  "generatedFromCommit": "972cb91f703687649024a70fac4eda29087e8bd6",
+  "workingTreeDirty": false,
   "revisionOverride": false,
   "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
