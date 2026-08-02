@@ -1,23 +1,41 @@
 {
-  "schemaVersion": 1,
-  "partNumber": "4極ジャック (代表構成)",
-  "manufacturer": "汎用 (端子番号は Same Sky SJ3-35074A に準拠)",
+  "schemaVersion": 2,
+  "partNumber": "4極ジャック (接点系を Lumberg 1503 28 に合わせた構成)",
+  "manufacturer": "Lumberg (接点系のみ)。外形は 3極 1503 09 の値を流用",
   "_comment": [
-    "4極ジャックのモデル。Lumberg 1503 09 のような『実測できた実在部品』ではない。",
+    "4極ジャックのモデル。2026-08-02 に、それまでの完全な架空構成から",
+    "**Lumberg 1503 28 (JEITA RC-5325A 準拠・4極・ブレーク接点 2 個・SMT) の接点系**へ組み直した。",
     "",
-    "・端子番号と機能の対応 (PIN1=sleeve / PIN2=tip / PIN3=ring1 / PIN4=ring2) は",
-    "  Same Sky SJ3-35074A のデータシート記載であり FACT。",
-    "  4極ジャックの端子番号は『先端から数えた順』ではない点に注意。",
-    "・機器側の配線は CTIA (Android が必須とする配列) を前提に、",
-    "  ring2 端子を帰線、sleeve 端子をマイクとして割り当てている。",
-    "・内部接点の軸位置・パッド幅・ばね定数を示す一次図面は入手できていないため、",
-    "  全て ASSUMPTION である。完全挿入時に各接点が対応する導体の内側に入るという",
-    "  条件から置いた。",
-    "・ブレーク接点は、入手した 4極ジャック資料に記載が無いため定義していない。",
-    "  『無いことを確認した』のではなく『確認できていない』である。",
+    "【この部品そのものではない】",
+    "・組み直したのは接点系 (端子の軸位置・端子番号と機能の対応・ブレーク接点) だけである。",
+    "  外形 (ハウジング寸法・ノーズ長・ナット径) は 3極 1503 09 の値を流用したままなので、",
+    "  **これは 1503 28 の再現ではなく、接点系だけを実在部品に合わせた合成である。**",
+    "  1503 28 は SMT のミッドマウント品でナットを持たない。3D 表示の外形は実物と違う。",
     "",
-    "このモデルの用途は、3極プラグを4極ジャックへ挿したときに何が起きるかを",
-    "幾何から計算することにある (仕様 §13)。実部品の内部再現ではない。"
+    "【FACT になったもの】",
+    "・端子 6 本の軸位置。基板レイアウト図の 2.75 / 2.75 / 5.50 / 9.30 / 10.50 / 11.50 に",
+    "  ノーズ突出 2.00 を足して挿入口面基準にした 4.74 / 4.74 / 7.50 / 11.30 / 12.50 / 13.50。",
+    "・ブレーク接点が 2 個あること。本文の \"with two break contacts\" と回路記号",
+    "  (端子3 のばねが常時 端子5 に接触 / 端子4 のばねが常時 端子6 に接触) の両方に記載がある。",
+    "  3極の 1503 09 とまったく同じ構造である。",
+    "・端子1 が箱記号であること。つまり Sleeve はばねではなくバレル (シェル) である。",
+    "",
+    "【DERIVED になったもの】",
+    "・端子番号と機能の対応。ばね 3 本 (4.74 / 7.50 / 11.30) が、完全挿入で各導体に",
+    "  パッド全幅が乗る範囲 (Ring2 3.2〜5.5 / Ring1 6.2〜8.5 / Tip 9.2〜14.0) へ",
+    "  同時に収まる割り当ては 1 通りしか無い。図面に Tip/Ring の明示は無い。",
+    "・機器側の配線は CTIA を前提に、Ring2 を帰線、Sleeve をマイクとして割り当てている。",
+    "",
+    "【ASSUMPTION のまま残るもの — ここが重要】",
+    "・**接点そのものの軸位置。** 1503 28 の図面に断面図は無い。",
+    "  端子位置は FACT だが、接点は端子より手前にありうる (trrs.jack.contact.beamOffset)。",
+    "  **「実在部品ベースになった」は「実測された」ではない。** UNKNOWNS §5-2 は閉じていない。",
+    "・パッド幅・ばね定数・接触ドームの追従量。図面に記載が無い。",
+    "・Sleeve 接点の軸位置。端子1 はバレルなので、端子位置から接点位置が決まらない。",
+    "",
+    "【逆を指す資料がある】",
+    "・pro-SIGNAL PS000001 の断面図は Tip 接点を 12.75 とし、その値では左右差分の区間が消える。",
+    "  1503 28 の端子位置は 11.30 で、区間が出る。docs/REAL_JACK_COMPARISON.md §6-4 を見ること。"
   ],
 
   "fullInsertionDepth": "jack.fullInsertionDepth",
@@ -36,30 +54,45 @@
   "terminals": [
     {
       "id": "P1", "pin": "1", "role": "sleeve-signal", "signalRole": "MIC",
-      "label": "Sleeve 接点 (マイク)", "functionLabel": "Microphone (CTIA 配線)",
-      "grade": "FACT", "sources": ["xref-trrs-dims", "android-headset-spec"],
-      "note": "端子番号は Same Sky SJ3-35074A 記載。機能割当は CTIA 配線を前提とした。"
+      "label": "Sleeve バレル (マイク)", "functionLabel": "Microphone (CTIA 配線)",
+      "grade": "DERIVED", "sources": ["ds-1503-28", "android-headset-spec"],
+      "note": "端子番号と軸位置 4.74 は 1503 28 の図面記載 (FACT)。回路記号が箱なのでばねではなくバレル。機能割当は CTIA 配線を前提とした。"
     },
     {
-      "id": "P2", "pin": "2", "role": "tip-signal", "signalRole": "L",
-      "label": "Tip 接点 (左)", "functionLabel": "Left channel",
-      "grade": "FACT", "sources": ["xref-trrs-dims"]
+      "id": "P2", "pin": "2", "role": "ring2-signal", "signalRole": "GND",
+      "label": "Ring2 接点 (帰線)", "functionLabel": "Ground (CTIA 配線)",
+      "grade": "DERIVED", "sources": ["ds-1503-28", "android-headset-spec"],
+      "note": "軸位置 4.74 (FACT)。3 本のばねのうち最も手前なので Ring2 以外に成立しない。ブレーク接点を持たない。"
     },
     {
       "id": "P3", "pin": "3", "role": "ring-signal", "signalRole": "R",
       "label": "Ring1 接点 (右)", "functionLabel": "Right channel",
-      "grade": "FACT", "sources": ["xref-trrs-dims"]
+      "grade": "DERIVED", "sources": ["ds-1503-28"],
+      "note": "軸位置 7.50 (FACT)。回路記号で常時 端子5 に接触する。"
     },
     {
-      "id": "P4", "pin": "4", "role": "ring2-signal", "signalRole": "GND",
-      "label": "Ring2 接点 (帰線)", "functionLabel": "Ground (CTIA 配線)",
-      "grade": "FACT", "sources": ["xref-trrs-dims", "android-headset-spec"]
+      "id": "P4", "pin": "4", "role": "tip-signal", "signalRole": "L",
+      "label": "Tip 接点 (左)", "functionLabel": "Left channel",
+      "grade": "DERIVED", "sources": ["ds-1503-28"],
+      "note": "軸位置 11.30 (FACT)。3 本のばねのうち最も奥なので Tip 以外に成立しない。回路記号で常時 端子6 に接触する。"
+    },
+    {
+      "id": "P5", "pin": "5", "role": "ring-normal",
+      "label": "Ring1 ブレーク接点", "functionLabel": "Normally closed to pin 3",
+      "grade": "FACT", "sources": ["ds-1503-28"],
+      "note": "軸位置 12.50。回路記号に「端子3 のばねが常時 端子5 に接触」と記載。"
+    },
+    {
+      "id": "P6", "pin": "6", "role": "tip-normal",
+      "label": "Tip ブレーク接点", "functionLabel": "Normally closed to pin 4",
+      "grade": "FACT", "sources": ["ds-1503-28"],
+      "note": "軸位置 13.50。回路記号に「端子4 のばねが常時 端子6 に接触」と記載。"
     }
   ],
 
   "contacts": [
     {
-      "id": "JC_SLEEVE", "label": "Sleeve 接点", "expectedSegment": "SLEEVE", "terminalId": "P1",
+      "id": "JC_SLEEVE", "label": "Sleeve バレル", "expectedSegment": "SLEEVE", "terminalId": "P1",
       "axialCenter": "trrs.jack.contact.sleeve.axialCenter",
       "padWidth": "jack.contact.sleeve.padWidth",
       "freeRadius": "jack.contact.sleeve.freeRadius",
@@ -67,12 +100,12 @@
       "maxDeflection": "jack.contact.sleeve.maxDeflection",
       "springRate": "jack.contact.sleeve.springRate",
       "angularPosition": 0,
-      "rootAxial": 4.8,
+      "rootAxial": "trrs.jack.terminal.p1.axialCenter",
       "breakContact": null,
       "grade": "ASSUMPTION"
     },
     {
-      "id": "JC_RING2", "label": "Ring2 接点", "expectedSegment": "RING2", "terminalId": "P4",
+      "id": "JC_RING2", "label": "Ring2 接点", "expectedSegment": "RING2", "terminalId": "P2",
       "axialCenter": "trrs.jack.contact.ring2.axialCenter",
       "padWidth": "trrs.jack.contact.narrowPadWidth",
       "freeRadius": "jack.contact.ring.freeRadius",
@@ -80,7 +113,7 @@
       "maxDeflection": "jack.contact.ring.maxDeflection",
       "springRate": "jack.contact.ring.springRate",
       "angularPosition": 180,
-      "rootAxial": 7.8,
+      "rootAxial": "trrs.jack.terminal.p2.axialCenter",
       "breakContact": null,
       "grade": "ASSUMPTION"
     },
@@ -93,12 +126,18 @@
       "maxDeflection": "jack.contact.ring.maxDeflection",
       "springRate": "jack.contact.ring.springRate",
       "angularPosition": 90,
-      "rootAxial": 9.6,
-      "breakContact": null,
+      "rootAxial": "trrs.jack.terminal.p3.axialCenter",
+      "breakContact": {
+        "id": "BRK_TRRS_RING",
+        "label": "Ring1 ブレーク接点",
+        "terminalId": "P5",
+        "normalState": "closed",
+        "openDeflection": "jack.break.ring.openDeflection"
+      },
       "grade": "ASSUMPTION"
     },
     {
-      "id": "JC_TIP", "label": "Tip 接点", "expectedSegment": "TIP", "terminalId": "P2",
+      "id": "JC_TIP", "label": "Tip 接点", "expectedSegment": "TIP", "terminalId": "P4",
       "axialCenter": "trrs.jack.contact.tip.axialCenter",
       "padWidth": "jack.contact.tip.padWidth",
       "freeRadius": "jack.contact.tip.freeRadius",
@@ -106,8 +145,14 @@
       "maxDeflection": "jack.contact.tip.maxDeflection",
       "springRate": "jack.contact.tip.springRate",
       "angularPosition": 270,
-      "rootAxial": 14.0,
-      "breakContact": null,
+      "rootAxial": "trrs.jack.terminal.p4.axialCenter",
+      "breakContact": {
+        "id": "BRK_TRRS_TIP",
+        "label": "Tip ブレーク接点",
+        "terminalId": "P6",
+        "normalState": "closed",
+        "openDeflection": "jack.break.tip.openDeflection"
+      },
       "grade": "ASSUMPTION"
     }
   ]

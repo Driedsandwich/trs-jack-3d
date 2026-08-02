@@ -357,6 +357,12 @@
     "idealDepthReachable": true
    },
    {
+    "axial": 4.74,
+    "threshold": 0.72,
+    "evaluatedDepthMm": 12.89,
+    "idealDepthReachable": true
+   },
+   {
     "axial": 5.25,
     "threshold": 0.72,
     "evaluatedDepthMm": 13.4,

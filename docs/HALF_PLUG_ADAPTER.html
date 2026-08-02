@@ -110,7 +110,7 @@
 <div class="tw"><table><thead><tr><th>してはいけないこと</th><th>なぜ</th></tr></thead><tbody><tr><td><code>topologyClass</code> を係数へ直接写像する</td><td>分類であって量ではない</td></tr><tr><td><code>quality</code> を接触抵抗 Ω やゲインへ換算する</td><td>相対スコアで、Ω に換算していない（profile に含めてもいません）</td></tr><tr><td>1 機種の <code>nominalStartMm</code> を一般的な「挿入深度」として使う</td><td><code>normalized</code> を併記しているのでそちらを使う</td></tr><tr><td><strong><code>ground-open-differential</code> を自動的に L−R 係数へ変換する</strong></td><td>§2 を参照</td></tr><tr><td>未実測なのに「実物と同じ」と表示する</td><td>全 profile が <code>verifiedPhysical: false</code></td></tr></tbody></table></div>
 <hr>
 <h2 id="s1">1. 渡す profile は 2 つあります</h2>
-<div class="tw"><table><thead><tr><th>ファイル</th><th>中身</th><th>左右差分</th></tr></thead><tbody><tr><td><code>half_plug_topology_profile.v1.trs_jack_trs.json</code></td><td>3極プラグ × 3極ジャック（Lumberg 実部品）</td><td><strong>現れない</strong></td></tr><tr><td><code>half_plug_topology_profile.v1.trs_jack_trrs.json</code></td><td>3極プラグ × <strong>4極ジャック</strong></td><td><strong>現れる</strong>（<code>IV019</code> / 12.90〜13.12 mm）</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>ファイル</th><th>中身</th><th>左右差分</th></tr></thead><tbody><tr><td><code>half_plug_topology_profile.v1.trs_jack_trs.json</code></td><td>3極プラグ × 3極ジャック（Lumberg 実部品）</td><td><strong>現れない</strong></td></tr><tr><td><code>half_plug_topology_profile.v1.trs_jack_trrs.json</code></td><td>3極プラグ × <strong>4極ジャック</strong></td><td><strong>現れる</strong>（<code>IV028</code> / 13.30〜13.52 mm）</td></tr></tbody></table></div>
 <p><strong>再現したい音が出るのは後者だけです。</strong>前者は「出ない」ことを <code>absentTopologies</code> に記録した反証として持っています。</p>
 <pre><code>npm run export:half-plug -- --variant "TRS|JACK-TRRS"</code></pre>
 <hr>
@@ -127,36 +127,45 @@
 <p>安全な DSP 表現（減衰・mono 化・mute など）へ写像し、 <strong>クラックルやポップのような過渡音を生成しないでください。</strong></p>
 <hr>
 <h2 id="s3">3. 本命の区間</h2>
-<p><code>half_plug_topology_profile.v1.trs_jack_trrs.json</code> の <code>IV019</code>:</p>
-<pre><code>nominalStartMm  12.90      normalizedStart  0.9214
-nominalEndMm    13.12      normalizedEnd    0.9371
+<p><code>half_plug_topology_profile.v1.trs_jack_trrs.json</code> の <code>IV028</code>:</p>
+<pre><code>nominalStartMm  13.30      normalizedStart  0.9500
+nominalEndMm    13.52      normalizedEnd    0.9657
 topologyClass   ground-open-differential
 evidenceGrade   ASSUMPTION
 safetyFlags     shortsSignalToReturn: false / shortsSignalToSignal: false</code></pre>
 <p>端子の状態:</p>
 <div class="tw"><table><thead><tr><th>端子</th><th>届いている導体</th></tr></thead><tbody><tr><td>L</td><td>Tip</td></tr><tr><td>R</td><td>Ring</td></tr><tr><td><strong>GND</strong></td><td><strong>なし（浮いている）</strong></td></tr></tbody></table></div>
 <p>4極ジャックの帰線接点が、3極プラグの絶縁帯にちょうど落ちるためです。</p>
-<h3>この区間の根拠は弱いです</h3>
-<p><strong>4極ジャックの接点位置は一次資料がなく、4 件とも仮定です</strong> （<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-2）。したがって:</p>
-<ul><li><strong>現象が起きること</strong>は仮定の振り方に対して頑健です （完全挿入が壊れない 432 構成のうち 162 件 = 38 % で成立）</li><li><strong>深さ 12.90〜13.12 mm という数字</strong>は、仮定した接点位置に完全に依存します</li></ul>
-<p><code>normalized</code>（0.9214〜0.9371）で扱うほうが、機種差に対しては幾分ましですが、 <strong>それも同じ仮定の上に乗っています。</strong></p>
-<h3>⚠ 2026-08-02 追記 — 実在図面 1 件は、この区間を支持していません</h3>
-<p>データシートを 170 型番探して、<strong>接点位置が寸法記入された断面図を 1 件</strong>見つけました （pro-SIGNAL PS000001）。その値を本モデルへ入れると、<strong>この区間は消えます。</strong></p>
-<div class="tw"><table><thead><tr><th></th><th class="num">Tip 接点の軸位置</th><th><code>IV019</code> の区間</th></tr></thead><tbody><tr><td>本モデルの仮定</td><td class="num">11.4 mm</td><td>12.90〜13.12 mm</td></tr><tr><td>PS000001 の図面値</td><td class="num"><strong>12.75 mm</strong></td><td><strong>出ない</strong></td></tr></tbody></table></div>
-<p>成否を決めるのは <strong>Tip 接点が 12.6 mm より浅いかどうか</strong>の 1 点です。</p>
+<h3>この区間の根拠 — 2026-08-02 に土台が変わりました</h3>
+<p><strong>4極ジャックを Lumberg 1503 28（JEITA RC-5325A 準拠）ベースへ組み直しました。</strong> それまでは接点位置 4 件が完全な架空値でしたが、いまは:</p>
+<div class="tw"><table><thead><tr><th></th><th>区分</th></tr></thead><tbody><tr><td>端子 6 本の軸位置</td><td><strong>FACT</strong>（図面の基板レイアウト記載）</td></tr><tr><td>端子番号 ↔ 機能の対応</td><td><strong>DERIVED</strong>（成立する割り当てが 1 通りしか無い）</td></tr><tr><td>ブレーク接点 2 個</td><td><strong>FACT</strong>（本文と回路記号の両方に記載）</td></tr><tr><td><strong>接点そのものの軸位置</strong></td><td><strong>ASSUMPTION</strong>（図面に断面図が無い）</td></tr></tbody></table></div>
+<p><strong>「実在部品ベースになった」は「実測された」ではありません。</strong> <a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-2 は閉じていません。</p>
+<p>残った仮定は <strong>1 つだけ</strong>です — 接点が端子より何 mm 手前にあるか （<code>trrs.jack.contact.beamOffset</code>、採用値 0、成立範囲 0〜1.3 mm）。</p>
+<ul><li><strong>現象が起きること</strong>は、この仮定の全域で成立します（0〜1.3 のどこでも区間が出る）</li><li><strong>深さ</strong>は仮定と<strong>ほぼ 1:1 で動きます</strong></li></ul>
+<div class="tw"><table><thead><tr><th class="num">beamOffset</th><th>区間</th></tr></thead><tbody><tr><td class="num"><strong>0（採用）</strong></td><td><strong>13.30〜13.52 mm</strong></td></tr><tr><td class="num">0.65</td><td>12.6 mm 付近</td></tr><tr><td class="num">1.3</td><td>11.98〜12.20 mm</td></tr></tbody></table></div>
+<p>つまり受け取り側にとっては、<strong>「この状態は起きる」は使ってよく、 「13.30 mm で起きる」は ±0.7 mm 程度の幅を持つ</strong>と考えてください。</p>
+<h3>⚠ 実在資料 2 件が逆を指しています</h3>
+<div class="tw"><table><thead><tr><th>根拠</th><th class="num">Tip 接点の軸位置</th><th>差分区間</th></tr></thead><tbody><tr><td><strong>本モデル</strong>（Lumberg 1503 28 の<strong>端子</strong>位置）</td><td class="num">11.30 mm</td><td>13.30〜13.52 mm</td></tr><tr><td>pro-SIGNAL PS000001（<strong>接点</strong>の寸法記入）</td><td class="num"><strong>12.75 mm</strong></td><td><strong>出ない</strong></td></tr></tbody></table></div>
+<p>成否を決めるのは <strong>Tip 接点が 12.6 mm より浅いかどうか</strong>の 1 点です。 2 件は証拠の種類が違い（一方は端子、他方は接点そのもの）、資料だけでは決まりません。</p>
 <p><strong>受け取り側への影響:</strong></p>
-<ul><li><code>IV019</code> を「実機で必ず起きる状態」として UI に出さないでください。 <code>evidenceGrade: ASSUMPTION</code> と <code>physicalClaimStatus: "unverified"</code> は、 この意味でも落とせません（§4）。</li><li>ただし <strong>DSP エミュレーションとしての価値は変わりません。</strong> 再現したいのは音であって、特定の実機の深さではありません。 「この電気的状態がどう聞こえるか」は独立に有用です。</li><li>変わったのは「実機のこの深さで起きる」と言えるかどうかだけです。</li></ul>
+<ul><li><code>IV028</code> を「実機で必ず起きる状態」として UI に出さないでください。 <code>evidenceGrade: ASSUMPTION</code> と <code>physicalClaimStatus: "unverified"</code> は、 この意味でも落とせません（§4）。</li><li>ただし <strong>DSP エミュレーションとしての価値は変わりません。</strong> 再現したいのは音であって、特定の実機の深さではありません。 「この電気的状態がどう聞こえるか」は独立に有用です。</li></ul>
 <p>詳細 → <a href="REAL_JACK_COMPARISON.md">REAL_JACK_COMPARISON.md</a></p>
 <hr>
 <h2 id="s4">4. プリセットへ持たせるメタデータ</h2>
 <p>統合オーダー §4 のとおり、Half-Plug 側のプリセットには次を持たせてください。</p>
 <pre><code>mechanismProfileRef      どの profile ファイルか
-topologyIntervalId       IV019 など
+topologyIntervalId       IV028 など（**単独では意味を持たない。下の警告を読むこと**）
 geometryRevision         profile の sourceRevision
 calibrationProfileId     実測した音響 profile（別管理）
 evidenceGrade            profile の interval から引き継ぐ
 physicalClaimStatus      未実測なら "unverified"</code></pre>
 <p><strong><code>evidenceGrade</code> と <code>physicalClaimStatus</code> を落とさないでください。</strong> 落とすと、UI で「実物と同じ」と読める表示になってしまいます。</p>
+<h3>⚠ <code>intervalId</code> を単独の鍵として保存しないでください</h3>
+<p><code>IV001</code>, <code>IV002</code>, … は<strong>区間の並び順から機械的に振った番号</strong>で、 <strong>モデルが変わると同じ番号が別の状態を指します。</strong></p>
+<p>2026-08-02 の 4極ジャック組み直しで、実際にこれが起きました。</p>
+<div class="tw"><table><thead><tr><th></th><th>旧</th><th>新</th></tr></thead><tbody><tr><td>本命の区間</td><td><code>IV019</code> / 12.90〜13.12 mm</td><td><strong><code>IV028</code></strong> / 13.30〜13.52 mm</td></tr><tr><td>区間の総数</td><td>21</td><td><strong>30</strong></td></tr></tbody></table></div>
+<p><strong><code>schemaVersion</code> は 1 のままです。</strong>項目も型も意味も変えていないためで、 変わったのは<strong>データ</strong>です。版で守るのではなく、次のように参照してください。</p>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>✅ 保存する</td><td><code>profileId</code>（<code>trs-jack-3d:&lt;variant&gt;:&lt;revision&gt;</code> の形。改訂が埋め込まれている）と <code>intervalId</code> を<strong>セットで</strong></td></tr><tr><td>✅ 再解決する</td><td><code>profileId</code> が違ったら、<code>acousticAnnotation.topologyClass</code> と <code>normalizedStart/End</code> で引き直す</td></tr><tr><td>❌ しない</td><td><code>intervalId</code> だけを保存して、新しい profile へそのまま当てる</td></tr></tbody></table></div>
 <hr>
 <h2 id="s5">5. 深さの窓が 0.2 mm しかない件</h2>
 <p>本命の区間は <strong>0.22 mm 幅</strong>で、挿入ストローク 14 mm の <strong>1.6 %</strong> です。</p>
@@ -167,7 +176,7 @@ physicalClaimStatus      未実測なら "unverified"</code></pre>
 <div class="note"><p>物理的に再現しようとする場合は別の話で、0.2 mm を保つのは容易ではありません。</p><p>ただしその場合、4極ジャックの接点位置が仮定である以上、</p><p><strong>狙うべき深さがそもそも分かりません。</strong>先に実測が要ります</p><p>（<a href="VERIFICATION_PLAN.md">VERIFICATION_PLAN.md</a>）。</p></div>
 <hr>
 <h2 id="s6">6. 受け取り側で必ず確認してほしいこと</h2>
-<ul class="chk"><li><input type="checkbox" disabled> <code>modelLimitations.verifiedPhysical</code> が <code>false</code> であること（現状すべて false）</li><li><input type="checkbox" disabled> <code>dataLicense.attribution</code> を表示または同梱すること（CC BY 4.0）</li><li><input type="checkbox" disabled> <code>sourceRevision</code> を固定して参照すること（<code>main</code> を追わない）</li><li><input type="checkbox" disabled> <code>schemaVersion</code> が 1 であること。破壊的変更は v2 へ上げます</li><li><input type="checkbox" disabled> <code>absentTopologies.absent</code> を読み、<strong>無い状態を UI に足さないこと</strong></li></ul>
+<ul class="chk"><li><input type="checkbox" disabled> <code>modelLimitations.verifiedPhysical</code> が <code>false</code> であること（現状すべて false）</li><li><input type="checkbox" disabled> <code>dataLicense.attribution</code> を表示または同梱すること（CC BY 4.0）</li><li><input type="checkbox" disabled> <code>sourceRevision</code> を固定して参照すること（<code>main</code> を追わない）</li><li><input type="checkbox" disabled> <code>schemaVersion</code> が 1 であること。<strong>項目・型・意味の</strong>破壊的変更だけを v2 へ上げます</li><li><input type="checkbox" disabled> <strong><code>intervalId</code> を単独で保存していないこと</strong>（§4 の警告。数値データの変更で指す先が変わります）</li><li><input type="checkbox" disabled> <code>breakStates</code> を読むこと（4極側は 2026-08-02 から <code>BRK_TRRS_RING</code> / <code>BRK_TRRS_TIP</code> が入ります）</li><li><input type="checkbox" disabled> <code>absentTopologies.absent</code> を読み、<strong>無い状態を UI に足さないこと</strong></li></ul>
 </div>
 </body>
 </html>

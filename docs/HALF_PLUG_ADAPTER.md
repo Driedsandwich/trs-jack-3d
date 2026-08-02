@@ -35,7 +35,7 @@
 | ファイル | 中身 | 左右差分 |
 |---|---|---|
 | `half_plug_topology_profile.v1.trs_jack_trs.json` | 3極プラグ × 3極ジャック（Lumberg 実部品） | **現れない** |
-| `half_plug_topology_profile.v1.trs_jack_trrs.json` | 3極プラグ × **4極ジャック** | **現れる**（`IV019` / 12.90〜13.12 mm） |
+| `half_plug_topology_profile.v1.trs_jack_trrs.json` | 3極プラグ × **4極ジャック** | **現れる**（`IV028` / 13.30〜13.52 mm） |
 
 **再現したい音が出るのは後者だけです。**前者は「出ない」ことを
 `absentTopologies` に記録した反証として持っています。
@@ -92,11 +92,11 @@ npm run export:half-plug -- --variant "TRS|JACK-TRRS"
 
 ## 3. 本命の区間
 
-`half_plug_topology_profile.v1.trs_jack_trrs.json` の `IV019`:
+`half_plug_topology_profile.v1.trs_jack_trrs.json` の `IV028`:
 
 ```
-nominalStartMm  12.90      normalizedStart  0.9214
-nominalEndMm    13.12      normalizedEnd    0.9371
+nominalStartMm  13.30      normalizedStart  0.9500
+nominalEndMm    13.52      normalizedEnd    0.9657
 topologyClass   ground-open-differential
 evidenceGrade   ASSUMPTION
 safetyFlags     shortsSignalToReturn: false / shortsSignalToSignal: false
@@ -112,39 +112,54 @@ safetyFlags     shortsSignalToReturn: false / shortsSignalToSignal: false
 
 4極ジャックの帰線接点が、3極プラグの絶縁帯にちょうど落ちるためです。
 
-### この区間の根拠は弱いです
+### この区間の根拠 — 2026-08-02 に土台が変わりました
 
-**4極ジャックの接点位置は一次資料がなく、4 件とも仮定です**
-（[UNKNOWNS.md](../UNKNOWNS.md) §5-2）。したがって:
+**4極ジャックを Lumberg 1503 28（JEITA RC-5325A 準拠）ベースへ組み直しました。**
+それまでは接点位置 4 件が完全な架空値でしたが、いまは:
 
-- **現象が起きること**は仮定の振り方に対して頑健です
-  （完全挿入が壊れない 432 構成のうち 162 件 = 38 % で成立）
-- **深さ 12.90〜13.12 mm という数字**は、仮定した接点位置に完全に依存します
+| | 区分 |
+|---|---|
+| 端子 6 本の軸位置 | **FACT**（図面の基板レイアウト記載） |
+| 端子番号 ↔ 機能の対応 | **DERIVED**（成立する割り当てが 1 通りしか無い） |
+| ブレーク接点 2 個 | **FACT**（本文と回路記号の両方に記載） |
+| **接点そのものの軸位置** | **ASSUMPTION**（図面に断面図が無い） |
 
-`normalized`（0.9214〜0.9371）で扱うほうが、機種差に対しては幾分ましですが、
-**それも同じ仮定の上に乗っています。**
+**「実在部品ベースになった」は「実測された」ではありません。**
+[UNKNOWNS.md](../UNKNOWNS.md) §5-2 は閉じていません。
 
-### ⚠ 2026-08-02 追記 — 実在図面 1 件は、この区間を支持していません
+残った仮定は **1 つだけ**です — 接点が端子より何 mm 手前にあるか
+（`trrs.jack.contact.beamOffset`、採用値 0、成立範囲 0〜1.3 mm）。
 
-データシートを 170 型番探して、**接点位置が寸法記入された断面図を 1 件**見つけました
-（pro-SIGNAL PS000001）。その値を本モデルへ入れると、**この区間は消えます。**
+- **現象が起きること**は、この仮定の全域で成立します（0〜1.3 のどこでも区間が出る）
+- **深さ**は仮定と**ほぼ 1:1 で動きます**
 
-| | Tip 接点の軸位置 | `IV019` の区間 |
+| beamOffset | 区間 |
+|---:|---|
+| **0（採用）** | **13.30〜13.52 mm** |
+| 0.65 | 12.6 mm 付近 |
+| 1.3 | 11.98〜12.20 mm |
+
+つまり受け取り側にとっては、**「この状態は起きる」は使ってよく、
+「13.30 mm で起きる」は ±0.7 mm 程度の幅を持つ**と考えてください。
+
+### ⚠ 実在資料 2 件が逆を指しています
+
+| 根拠 | Tip 接点の軸位置 | 差分区間 |
 |---|---:|---|
-| 本モデルの仮定 | 11.4 mm | 12.90〜13.12 mm |
-| PS000001 の図面値 | **12.75 mm** | **出ない** |
+| **本モデル**（Lumberg 1503 28 の**端子**位置） | 11.30 mm | 13.30〜13.52 mm |
+| pro-SIGNAL PS000001（**接点**の寸法記入） | **12.75 mm** | **出ない** |
 
 成否を決めるのは **Tip 接点が 12.6 mm より浅いかどうか**の 1 点です。
+2 件は証拠の種類が違い（一方は端子、他方は接点そのもの）、資料だけでは決まりません。
 
 **受け取り側への影響:**
 
-- `IV019` を「実機で必ず起きる状態」として UI に出さないでください。
+- `IV028` を「実機で必ず起きる状態」として UI に出さないでください。
   `evidenceGrade: ASSUMPTION` と `physicalClaimStatus: "unverified"` は、
   この意味でも落とせません（§4）。
 - ただし **DSP エミュレーションとしての価値は変わりません。**
   再現したいのは音であって、特定の実機の深さではありません。
   「この電気的状態がどう聞こえるか」は独立に有用です。
-- 変わったのは「実機のこの深さで起きる」と言えるかどうかだけです。
 
 詳細 → [REAL_JACK_COMPARISON.md](REAL_JACK_COMPARISON.md)
 
@@ -156,7 +171,7 @@ safetyFlags     shortsSignalToReturn: false / shortsSignalToSignal: false
 
 ```
 mechanismProfileRef      どの profile ファイルか
-topologyIntervalId       IV019 など
+topologyIntervalId       IV028 など（**単独では意味を持たない。下の警告を読むこと**）
 geometryRevision         profile の sourceRevision
 calibrationProfileId     実測した音響 profile（別管理）
 evidenceGrade            profile の interval から引き継ぐ
@@ -165,6 +180,27 @@ physicalClaimStatus      未実測なら "unverified"
 
 **`evidenceGrade` と `physicalClaimStatus` を落とさないでください。**
 落とすと、UI で「実物と同じ」と読める表示になってしまいます。
+
+### ⚠ `intervalId` を単独の鍵として保存しないでください
+
+`IV001`, `IV002`, … は**区間の並び順から機械的に振った番号**で、
+**モデルが変わると同じ番号が別の状態を指します。**
+
+2026-08-02 の 4極ジャック組み直しで、実際にこれが起きました。
+
+| | 旧 | 新 |
+|---|---|---|
+| 本命の区間 | `IV019` / 12.90〜13.12 mm | **`IV028`** / 13.30〜13.52 mm |
+| 区間の総数 | 21 | **30** |
+
+**`schemaVersion` は 1 のままです。**項目も型も意味も変えていないためで、
+変わったのは**データ**です。版で守るのではなく、次のように参照してください。
+
+| | |
+|---|---|
+| ✅ 保存する | `profileId`（`trs-jack-3d:<variant>:<revision>` の形。改訂が埋め込まれている）と `intervalId` を**セットで** |
+| ✅ 再解決する | `profileId` が違ったら、`acousticAnnotation.topologyClass` と `normalizedStart/End` で引き直す |
+| ❌ しない | `intervalId` だけを保存して、新しい profile へそのまま当てる |
 
 ---
 
@@ -199,5 +235,7 @@ Half-Plug は音を DSP で再現するものなので、プラグを物理的�
 - [ ] `modelLimitations.verifiedPhysical` が `false` であること（現状すべて false）
 - [ ] `dataLicense.attribution` を表示または同梱すること（CC BY 4.0）
 - [ ] `sourceRevision` を固定して参照すること（`main` を追わない）
-- [ ] `schemaVersion` が 1 であること。破壊的変更は v2 へ上げます
+- [ ] `schemaVersion` が 1 であること。**項目・型・意味の**破壊的変更だけを v2 へ上げます
+- [ ] **`intervalId` を単独で保存していないこと**（§4 の警告。数値データの変更で指す先が変わります）
+- [ ] `breakStates` を読むこと（4極側は 2026-08-02 から `BRK_TRRS_RING` / `BRK_TRRS_TIP` が入ります）
 - [ ] `absentTopologies.absent` を読み、**無い状態を UI に足さないこと**

@@ -226,12 +226,21 @@
       "note": "第3セグメントと第4セグメントの間の抵抗が 100Ω 以上なら 4極、未満なら 3極と判定する、という機器側の規定。"
     },
 
-    "trrs.jack.contact.tip.axialCenter": { "value": 11.4, "grade": "ASSUMPTION", "note": "4極ジャックの内部接点位置を示す一次図面は入手できていない。完全挿入で対応導体の内側に入るという条件から置いた値。" },
-    "trrs.jack.contact.ring1.axialCenter": { "value": 7.35, "grade": "ASSUMPTION", "note": "完全挿入で s = 6.65 = Ring1 (5.5〜7.8) の中央。導体配置の修正 (2026-07-31) に合わせて再センタリング。位置そのものに一次資料は無い。" },
-    "trrs.jack.contact.ring2.axialCenter": { "value": 4.35, "grade": "ASSUMPTION", "note": "完全挿入で s = 9.65 = Ring2 (8.5〜10.8) の中央。修正前は 5.85 で、直すと s=8.15 が第2絶縁帯の内側に入って一切導通しなくなるため移動させた。位置そのものに一次資料は無い。" },
-    "trrs.jack.contact.sleeve.axialCenter": { "value": 1.25, "grade": "ASSUMPTION", "note": "完全挿入で s = 12.75 = Sleeve (11.5〜14.0) の中央。修正前は 3.2 で、直すと s=10.8 が Sleeve に届かなくなるため移動させた。位置そのものに一次資料は無い。" },
+    "trrs.jack.terminal.p1.axialCenter": { "value": 4.74, "unit": "mm", "grade": "FACT", "sources": ["ds-1503-28"], "note": "端子1。基板レイアウト図の 2.75 に、側面図のノーズ突出 2.00 を足して挿入口面基準にした値。**回路記号では箱** = Sleeve バレルであって、ばねではない。" },
+    "trrs.jack.terminal.p2.axialCenter": { "value": 4.74, "unit": "mm", "grade": "FACT", "sources": ["ds-1503-28"], "note": "端子2。ばね。ブレーク接点を持たない。基板レイアウト 2.75 + ノーズ 2.00。" },
+    "trrs.jack.terminal.p3.axialCenter": { "value": 7.5, "unit": "mm", "grade": "FACT", "sources": ["ds-1503-28"], "note": "端子3。ばね。回路記号では常時 端子5 に接触 (ブレーク接点)。基板レイアウト 5.50 + ノーズ 2.00。" },
+    "trrs.jack.terminal.p4.axialCenter": { "value": 11.3, "unit": "mm", "grade": "FACT", "sources": ["ds-1503-28"], "note": "端子4。ばね。回路記号では常時 端子6 に接触 (ブレーク接点)。基板レイアウト 9.30 + ノーズ 2.00。" },
+    "trrs.jack.terminal.p5.axialCenter": { "value": 12.5, "unit": "mm", "grade": "FACT", "sources": ["ds-1503-28"], "note": "端子5。端子3 のブレーク相手。基板レイアウト 10.50 + ノーズ 2.00。" },
+    "trrs.jack.terminal.p6.axialCenter": { "value": 13.5, "unit": "mm", "grade": "FACT", "sources": ["ds-1503-28"], "note": "端子6。端子4 のブレーク相手。基板レイアウト 11.50 + ノーズ 2.00。" },
+
+    "trrs.jack.contact.beamOffset": { "value": 0, "unit": "mm", "grade": "ASSUMPTION", "sources": ["ds-1503-28"], "sweepRange": [0, 1.3], "note": "接点が端子より何 mm 手前にあるか。**4極ジャックの接点位置に残る唯一の仮定である。** 1503 28 の図面に断面図は無く、接点そのものの位置はどこにも書かれていない。完全挿入でばね 3 本が対応導体にパッド全幅で乗る条件から、成立するのは 0〜1.3mm。採用値 0 は「接点は端子の真上」という最小の仮定で、図面の記載値をそのまま接点位置として使うことを意味する。**この値を 0〜1.3 のどこに置いても左右差分の区間は出続け、深さだけがほぼ 1:1 で移動する** (b=0 で 13.30〜13.52 / b=1.3 で 11.98〜12.20。いずれも走査刻みの粒度 0.02mm を持つ)。つまり「起きるかどうか」はこの仮定に依らず、「何 mm で起きるか」だけが依る。" },
+
+    "trrs.jack.contact.tip.axialCenter": { "value": 11.3, "unit": "mm", "grade": "ASSUMPTION", "sources": ["ds-1503-28"], "note": "Tip 接点 = 端子4 の軸位置 11.30 − beamOffset。**端子位置は FACT だが、接点位置そのものは図面に無いので ASSUMPTION のままである。実測された値ではない。** 端子4 を Tip に割り当てられるのは、ばね 3 本 (4.74 / 7.50 / 11.30) が、完全挿入で各導体にパッド全幅が乗る範囲 (Ring2 3.2〜5.5 / Ring1 6.2〜8.5 / Tip 9.2〜14.0) へ同時に収まる割り当てが、この 1 通りしか無いため。" },
+    "trrs.jack.contact.ring1.axialCenter": { "value": 7.5, "unit": "mm", "grade": "ASSUMPTION", "sources": ["ds-1503-28"], "note": "Ring1 接点 = 端子3 の軸位置 7.50 − beamOffset。同上。端子位置は FACT、接点位置は ASSUMPTION。" },
+    "trrs.jack.contact.ring2.axialCenter": { "value": 4.74, "unit": "mm", "grade": "ASSUMPTION", "sources": ["ds-1503-28"], "note": "Ring2 接点 = 端子2 の軸位置 4.74 − beamOffset。同上。端子位置は FACT、接点位置は ASSUMPTION。端子2 はブレーク接点を持たない (CTIA 配線では帰線)。" },
+    "trrs.jack.contact.sleeve.axialCenter": { "value": 1.25, "unit": "mm", "grade": "ASSUMPTION", "sources": ["ds-1503-28"], "note": "Sleeve 接点。**これだけは端子位置から決まらない。** 回路記号で端子1 は箱、つまりばねではなくバレル (シェル) だからである。プラグの Sleeve 導体と重なる範囲 (軸位置 0〜2.5) のうち、ノーズの内側に置いた。一次資料は無い。" },
     "trrs.jack.contact.narrowPadWidth": { "value": 0.5, "grade": "ASSUMPTION", "note": "4極プラグの平坦面 (半径 1.750) どうしの間隔は 0.700mm (= 絶縁帯の幅そのもの。境界に面取りは無い)。このパッド幅はそれより狭いので常時橋絡しない。判定基準は導体幅でも絶縁帯幅でもなく、この平坦面どうしの間隔。" },
-    "trrs.jack.contact.rootOffset": { "value": 1.6, "grade": "ASSUMPTION", "note": "接触点から根元までの梁長。" },
+    "trrs.jack.contact.rootOffset": { "value": 1.6, "grade": "ASSUMPTION", "note": "【未使用】1503 28 ベースへ組み直した際、接点の根元は端子位置そのものになったため参照されなくなった。" },
 
     "model.quality.weightOverlap": { "value": 0.35, "unit": "-", "grade": "ASSUMPTION", "note": "接触品質スコアにおける有効接触幅の重み。抵抗値ではない相対指標。接触抵抗は接触幅より押付力に強く依存するため、押付側を重くしている。" },
     "model.quality.weightForce": { "value": 0.65, "unit": "-", "grade": "ASSUMPTION", "note": "接触品質スコアにおける押付力の重み。実際の接触抵抗が押付力に強く依存することを反映した配分 (実測校正ではない)。" },

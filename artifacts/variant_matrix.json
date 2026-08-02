@@ -133,7 +133,7 @@
   {
    "id": "TRS|JACK-TRRS",
    "plug": "Lumberg 1532 10 (3極)",
-   "jack": "汎用 (端子番号は Same Sky SJ3-35074A に準拠) 4極ジャック (代表構成)",
+   "jack": "Lumberg (接点系のみ)。外形は 3極 1503 09 の値を流用 4極ジャック (接点系を Lumberg 1503 28 に合わせた構成)",
    "plugBasis": "measured-part",
    "jackBasis": "constructed",
    "netFunctions": {
@@ -151,7 +151,9 @@
       "P1": [],
       "P2": [],
       "P3": [],
-      "P4": []
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "OPEN",
@@ -173,7 +175,9 @@
       ],
       "P2": [],
       "P3": [],
-      "P4": []
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "WRONG_SEGMENT",
@@ -195,7 +199,9 @@
       ],
       "P2": [],
       "P3": [],
-      "P4": []
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "WRONG_SEGMENT",
@@ -215,11 +221,13 @@
       "P1": [
        "SLEEVE"
       ],
-      "P2": [],
-      "P3": [],
-      "P4": [
+      "P2": [
        "RING"
-      ]
+      ],
+      "P3": [],
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "CLOSED",
@@ -240,14 +248,16 @@
        "SLEEVE"
       ],
       "P2": [
-       "TIP"
+       "SLEEVE"
       ],
       "P3": [
        "RING"
       ],
       "P4": [
-       "SLEEVE"
-      ]
+       "TIP"
+      ],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "CLOSED",
@@ -394,7 +404,7 @@
   {
    "id": "TRRS-CTIA|JACK-TRRS",
    "plug": "汎用 (JEITA RC-5325A 準拠品を想定) 4極 CTIA/AHJ (代表形状) (4極)",
-   "jack": "汎用 (端子番号は Same Sky SJ3-35074A に準拠) 4極ジャック (代表構成)",
+   "jack": "Lumberg (接点系のみ)。外形は 3極 1503 09 の値を流用 4極ジャック (接点系を Lumberg 1503 28 に合わせた構成)",
    "plugBasis": "constructed",
    "jackBasis": "constructed",
    "netFunctions": {
@@ -411,7 +421,9 @@
       "P1": [],
       "P2": [],
       "P3": [],
-      "P4": []
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "OPEN",
@@ -433,7 +445,9 @@
       ],
       "P2": [],
       "P3": [],
-      "P4": []
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "WRONG_SEGMENT",
@@ -455,7 +469,9 @@
       ],
       "P2": [],
       "P3": [],
-      "P4": []
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "WRONG_SEGMENT",
@@ -475,11 +491,13 @@
       "P1": [
        "RING2"
       ],
-      "P2": [],
-      "P3": [],
-      "P4": [
+      "P2": [
        "RING"
-      ]
+      ],
+      "P3": [],
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "WRONG_SEGMENT",
@@ -500,14 +518,16 @@
        "SLEEVE"
       ],
       "P2": [
-       "TIP"
+       "RING2"
       ],
       "P3": [
        "RING"
       ],
       "P4": [
-       "RING2"
-      ]
+       "TIP"
+      ],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "CLOSED",
@@ -654,7 +674,7 @@
   {
    "id": "TRRS-OMTP|JACK-TRRS",
    "plug": "汎用 (JEITA RC-5325A 準拠品を想定) 4極 OMTP (代表形状) (4極)",
-   "jack": "汎用 (端子番号は Same Sky SJ3-35074A に準拠) 4極ジャック (代表構成)",
+   "jack": "Lumberg (接点系のみ)。外形は 3極 1503 09 の値を流用 4極ジャック (接点系を Lumberg 1503 28 に合わせた構成)",
    "plugBasis": "constructed",
    "jackBasis": "constructed",
    "netFunctions": {
@@ -671,7 +691,9 @@
       "P1": [],
       "P2": [],
       "P3": [],
-      "P4": []
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "OPEN",
@@ -693,7 +715,9 @@
       ],
       "P2": [],
       "P3": [],
-      "P4": []
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "WRONG_SEGMENT",
@@ -715,7 +739,9 @@
       ],
       "P2": [],
       "P3": [],
-      "P4": []
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "WRONG_SEGMENT",
@@ -735,11 +761,13 @@
       "P1": [
        "RING2"
       ],
-      "P2": [],
-      "P3": [],
-      "P4": [
+      "P2": [
        "RING"
-      ]
+      ],
+      "P3": [],
+      "P4": [],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "WRONG_SEGMENT",
@@ -760,14 +788,16 @@
        "SLEEVE"
       ],
       "P2": [
-       "TIP"
+       "RING2"
       ],
       "P3": [
        "RING"
       ],
       "P4": [
-       "RING2"
-      ]
+       "TIP"
+      ],
+      "P5": [],
+      "P6": []
      },
      "states": {
       "JC_SLEEVE": "CLOSED",

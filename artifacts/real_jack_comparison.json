@@ -22,9 +22,9 @@
   "datum": "完全挿入時にプラグ肩が来る面 (図面の Reference plane と一致することを §2 の照合で確かめた)",
   "assumed": {
    "trrs.jack.contact.sleeve.axialCenter": 1.25,
-   "trrs.jack.contact.ring2.axialCenter": 4.35,
-   "trrs.jack.contact.ring1.axialCenter": 7.35,
-   "trrs.jack.contact.tip.axialCenter": 11.4
+   "trrs.jack.contact.ring2.axialCenter": 4.74,
+   "trrs.jack.contact.ring1.axialCenter": 7.5,
+   "trrs.jack.contact.tip.axialCenter": 11.3
   },
   "drawing": {
    "trrs.jack.contact.sleeve.axialCenter": 1.28,
@@ -34,9 +34,9 @@
   },
   "deltaMm": {
    "trrs.jack.contact.sleeve.axialCenter": 0.03,
-   "trrs.jack.contact.ring2.axialCenter": 0.05,
-   "trrs.jack.contact.ring1.axialCenter": 0.2,
-   "trrs.jack.contact.tip.axialCenter": 1.35
+   "trrs.jack.contact.ring2.axialCenter": -0.34,
+   "trrs.jack.contact.ring1.axialCenter": 0.05,
+   "trrs.jack.contact.tip.axialCenter": 1.45
   }
  },
  "scaleCheck": {
@@ -58,9 +58,9 @@
    "fullInsertionOk": true,
    "differenceWindows": [
     {
-     "fromMm": 12.89,
-     "toMm": 13.11,
-     "widthMm": 0.23
+     "fromMm": 13.29,
+     "toMm": 13.5,
+     "widthMm": 0.22
     }
    ]
   },
@@ -566,9 +566,11 @@
   "caveat": "端子位置を接点位置として使ってよい保証は無い。実在の 4極品には端子の並びが接点の並びと逆のものがある (Cliff FC68125)",
   "landingAtFullInsertion": {
    "MIC": "SLEEVE",
-   "L": "TIP",
+   "GND": "SLEEVE",
    "R": "RING",
-   "GND": "SLEEVE"
+   "L": "TIP",
+   "P5": null,
+   "P6": null
   },
   "fullInsertionOk": true,
   "differenceWindows": [
@@ -587,17 +589,25 @@
     "firstContactDepthMm": 1.98,
     "shoulderGapMm": 12.02
    },
-   "L": {
-    "firstContactDepthMm": 11.96,
-    "shoulderGapMm": 2.04
+   "GND": {
+    "firstContactDepthMm": 5.67,
+    "shoulderGapMm": 8.33
    },
    "R": {
-    "firstContactDepthMm": 8.28,
-    "shoulderGapMm": 5.72
+    "firstContactDepthMm": 8.43,
+    "shoulderGapMm": 5.57
    },
-   "GND": {
-    "firstContactDepthMm": 5.28,
-    "shoulderGapMm": 8.72
+   "L": {
+    "firstContactDepthMm": 11.86,
+    "shoulderGapMm": 2.14
+   },
+   "P5": {
+    "firstContactDepthMm": 8.43,
+    "shoulderGapMm": 5.57
+   },
+   "P6": {
+    "firstContactDepthMm": 11.86,
+    "shoulderGapMm": 2.14
    }
   },
   "drawing": {
@@ -605,17 +615,25 @@
     "firstContactDepthMm": 2.01,
     "shoulderGapMm": 11.99
    },
-   "L": {
-    "firstContactDepthMm": 13.31,
-    "shoulderGapMm": 0.69
+   "GND": {
+    "firstContactDepthMm": 5.33,
+    "shoulderGapMm": 8.67
    },
    "R": {
     "firstContactDepthMm": 8.48,
     "shoulderGapMm": 5.52
    },
-   "GND": {
-    "firstContactDepthMm": 5.33,
-    "shoulderGapMm": 8.67
+   "L": {
+    "firstContactDepthMm": 13.31,
+    "shoulderGapMm": 0.69
+   },
+   "P5": {
+    "firstContactDepthMm": 8.48,
+    "shoulderGapMm": 5.52
+   },
+   "P6": {
+    "firstContactDepthMm": 13.31,
+    "shoulderGapMm": 0.69
    }
   }
  },

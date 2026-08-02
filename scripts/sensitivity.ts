@@ -341,11 +341,20 @@ function padThreshold(axialKey: string, padKey: string, contactId: string, insC:
   }
 }
 
+/**
+ * 走査する水準に、必ず既定値そのものを含める。
+ * 2026-08-02 に 4極ジャックの既定値が動いたとき、直書きリストが古いままだと
+ * 「いま採っている値」を一度も評価しないまま結論を出してしまう
+ * (同種の取りこぼしを searchTopology で実際に出した)。
+ */
+const withShipped = (levels: number[], key: string) =>
+  [...new Set([...levels, base.dims.entry(key).value])].sort((a, b) => a - b)
+
 const padThresholds = {
-  JC_RING2: [3.45, 4.0, 4.35, 5.25, 5.85, 6.0, 6.5].map((a) =>
+  JC_RING2: withShipped([3.45, 4.0, 4.35, 5.25, 5.85, 6.0, 6.5], 'trrs.jack.contact.ring2.axialCenter').map((a) =>
     padThreshold('trrs.jack.contact.ring2.axialCenter', 'trrs.jack.contact.narrowPadWidth', 'JC_RING2', (7.8 + 8.5) / 2, a),
   ),
-  JC_SLEEVE: [0.45, 1.25, 2.05, 2.85, 3.5].map((a) =>
+  JC_SLEEVE: withShipped([0.45, 1.25, 2.05, 2.85, 3.5], 'trrs.jack.contact.sleeve.axialCenter').map((a) =>
     padThreshold('trrs.jack.contact.sleeve.axialCenter', 'jack.contact.sleeve.padWidth', 'JC_SLEEVE', (10.8 + 11.5) / 2, a),
   ),
 }

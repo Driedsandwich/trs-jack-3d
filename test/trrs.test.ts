@@ -11,6 +11,7 @@ import { plugRadiusAt } from '../src/model/resolve'
 import { allVariantIds, buildModelWithOverrides, getModel, splitVariantId } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import { sweep } from '../src/model/sweep'
+import type { TrsModel } from '../src/model/engine'
 
 const F = DEFAULT_FAULTS
 
@@ -86,14 +87,26 @@ describe('4極プラグの形状', () => {
   })
 })
 
+/**
+ * **端子 ID を直書きしない。** 2026-08-02 に 4極ジャックを Lumberg 1503 28 ベースへ
+ * 組み直したとき、端子番号が Same Sky 式 (P2=tip) から Lumberg 式 (P2=ring2) へ変わり、
+ * ID を直書きしていたこのファイルの検査が 3 件落ちた。
+ * 機能で引けば、どの部品を基準にしても同じ検査になる。
+ */
+const netsOf = (m: TrsModel, ev: ReturnType<TrsModel['evaluate']>, role: string) => {
+  const t = m.jack.terminals.find((x) => x.signalRole === role)
+  if (!t) throw new Error(`端子 role=${role} が引けない`)
+  return ev.circuit.terminalToPlugNet[t.id] ?? []
+}
+
 describe('同極どうしの完全挿入は正しく結線される', () => {
   it('4極 CTIA プラグ × 4極ジャック (CTIA 配線)', () => {
     const m = getModel('TRRS-CTIA|JACK-TRRS')
     const ev = m.evaluate(m.fullDepthMm, F)
-    expect(ev.circuit.terminalToPlugNet['P2']).toEqual(['TIP']) // L
-    expect(ev.circuit.terminalToPlugNet['P3']).toEqual(['RING']) // R
-    expect(ev.circuit.terminalToPlugNet['P4']).toEqual(['RING2']) // GND
-    expect(ev.circuit.terminalToPlugNet['P1']).toEqual(['SLEEVE']) // MIC
+    expect(netsOf(m, ev, 'L')).toEqual(['TIP'])
+    expect(netsOf(m, ev, 'R')).toEqual(['RING'])
+    expect(netsOf(m, ev, 'GND')).toEqual(['RING2'])
+    expect(netsOf(m, ev, 'MIC')).toEqual(['SLEEVE'])
     expect(ev.anyBridged).toBe(false)
     expect(ev.anyWrongSegment).toBe(false)
     expect(ev.acoustic.code).toBe('NORMAL')
@@ -103,8 +116,8 @@ describe('同極どうしの完全挿入は正しく結線される', () => {
     const m = getModel('TRRS-OMTP|JACK-TRRS')
     const ev = m.evaluate(m.fullDepthMm, F)
     // 幾何としては同じ導体に当たる
-    expect(ev.circuit.terminalToPlugNet['P4']).toEqual(['RING2'])
-    expect(ev.circuit.terminalToPlugNet['P1']).toEqual(['SLEEVE'])
+    expect(netsOf(m, ev, 'GND')).toEqual(['RING2'])
+    expect(netsOf(m, ev, 'MIC')).toEqual(['SLEEVE'])
     // だが機能が食い違うので「正常」にはならない
     expect(ev.acoustic.code).not.toBe('NORMAL')
   })
@@ -149,20 +162,22 @@ describe('混挿 (仕様 §13)', () => {
   })
 
   it('3極プラグ × 4極ジャック: 音は正常でマイクだけ未接続', () => {
-    // 図面どおりの配置だと、4極ジャックの Ring2 接点 (完全挿入で s=9.65) は
+    // 4極ジャックの Ring2 接点 (完全挿入で s = 14 − 4.74 = 9.26) は
     // 3極プラグの Sleeve (9.0〜14.0) に当たる。Ring2 端子は機器側の帰線なので
     // 正しくつながる。3極ヘッドホンが4極ジャックで普通に鳴る挙動と一致する。
+    // 2026-08-02 に Lumberg 1503 28 ベースへ組み直して 9.65 → 9.26 になった。
+    // 結論 (Sleeve に当たる) は変わっていない。
     const m = getModel('TRS|JACK-TRRS')
     expect(m.unmatchedContacts).toEqual(['JC_RING2'])
     const ev = m.evaluate(m.fullDepthMm, F)
     const r2 = ev.contacts.find((c) => c.contactId === 'JC_RING2')!
     expect(r2.reason).toContain('存在しない')
     expect(r2.connectedNets).toEqual(['SLEEVE'])
-    expect(r2.padCenterSMm).toBeCloseTo(9.65, 2)
+    expect(r2.padCenterSMm).toBeCloseTo(9.26, 2)
 
-    expect(ev.circuit.terminalToPlugNet['P2']).toEqual(['TIP']) // L
-    expect(ev.circuit.terminalToPlugNet['P3']).toEqual(['RING']) // R
-    expect(ev.circuit.terminalToPlugNet['P4']).toEqual(['SLEEVE']) // 帰線
+    expect(netsOf(m, ev, 'L')).toEqual(['TIP'])
+    expect(netsOf(m, ev, 'R')).toEqual(['RING'])
+    expect(netsOf(m, ev, 'GND')).toEqual(['SLEEVE']) // 帰線が Sleeve に落ちる
     expect(ev.acoustic.code).toBe('NORMAL')
     expect(ev.acoustic.label).toContain('マイク')
   })
@@ -316,5 +331,87 @@ describe('4極: 仮定に依存しない性質 (docs/SENSITIVITY.md §3)', () =>
       if (c?.connectedNets.join() === 'SLEEVE') sleeve++
     }
     expect(sleeve).toBeGreaterThanOrEqual(n - 1) // 端 1 点だけ絶縁帯に乗る
+  }, 30_000)
+})
+
+/**
+ * 4極ジャックを Lumberg 1503 28 ベースへ組み直したこと（2026-08-02）を固定する。
+ *
+ * ここで守りたいのは 2 つ。
+ * ① 端子位置が図面記載のままであること（勝手に動かして「実在部品ベース」を名乗らせない）
+ * ② **接点位置が ASSUMPTION のままだと明記されていること**
+ *    （「実在部品ベースになった」を「実測された」へ格上げさせない）
+ */
+describe('4極ジャックの土台 — Lumberg 1503 28', () => {
+  const m = getModel('TRS|JACK-TRRS')
+
+  it('端子は 6 本あり、軸位置は図面記載の値である', () => {
+    expect(m.jack.terminals.map((t) => t.id)).toEqual(['P1', 'P2', 'P3', 'P4', 'P5', 'P6'])
+    const v = (k: string) => m.dims.entry(k).value
+    expect([
+      v('trrs.jack.terminal.p1.axialCenter'),
+      v('trrs.jack.terminal.p2.axialCenter'),
+      v('trrs.jack.terminal.p3.axialCenter'),
+      v('trrs.jack.terminal.p4.axialCenter'),
+      v('trrs.jack.terminal.p5.axialCenter'),
+      v('trrs.jack.terminal.p6.axialCenter'),
+    ]).toEqual([4.74, 4.74, 7.5, 11.3, 12.5, 13.5])
+    for (const k of ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'])
+      expect({ k, grade: m.dims.entry(`trrs.jack.terminal.${k}.axialCenter`).grade }).toEqual({
+        k,
+        grade: 'FACT',
+      })
+  })
+
+  it('ブレーク接点が 2 個ある（UNKNOWNS §5-3 の解決）', () => {
+    const brk = m.jack.contacts.map((c) => c.breakContact).filter(Boolean)
+    expect(brk.map((b) => b!.id).sort()).toEqual(['BRK_TRRS_RING', 'BRK_TRRS_TIP'])
+    expect(brk.map((b) => b!.terminalId).sort()).toEqual(['P5', 'P6'])
+  })
+
+  it('**接点の軸位置は ASSUMPTION のままである**（実測されたことにしない）', () => {
+    for (const k of ['tip', 'ring1', 'ring2', 'sleeve'])
+      expect({ k, grade: m.dims.entry(`trrs.jack.contact.${k}.axialCenter`).grade }).toEqual({
+        k,
+        grade: 'ASSUMPTION',
+      })
+    expect(m.dims.entry('trrs.jack.contact.beamOffset').grade).toBe('ASSUMPTION')
+  })
+
+  it('**ばね 3 本の端子位置から、機能の割り当ては 1 通りしか成立しない**', () => {
+    // これが DERIVED の根拠。崩れたら「端子番号↔機能」の導出も崩れる。
+    const springs = [4.74, 7.5, 11.3]
+    const windows: Record<string, [number, number]> = {
+      ring2: [3.2, 5.5],
+      ring1: [6.2, 8.5],
+      tip: [9.2, 14.0],
+    }
+    const names = Object.keys(windows)
+    const perms: string[][] = []
+    const go = (rest: string[], acc: string[]) => {
+      if (!rest.length) perms.push(acc)
+      else rest.forEach((r, i) => go([...rest.slice(0, i), ...rest.slice(i + 1)], [...acc, r]))
+    }
+    go(names, [])
+    const ok = perms.filter((p) =>
+      p.every((name, i) => springs[i] > windows[name][0] && springs[i] < windows[name][1]),
+    )
+    expect(ok).toEqual([['ring2', 'ring1', 'tip']])
+  })
+
+  it('**4極 CTIA プラグでも無改造で左右差分の区間が出る**（組み直し前は 0 件だった）', () => {
+    const c = getModel('TRRS-CTIA|JACK-TRRS')
+    const term = (r: string) => c.jack.terminals.find((t) => t.signalRole === r)!
+    let hit = 0
+    for (let d = 0; d <= c.fullDepthMm + 1e-9; d += 0.01) {
+      const tt = c.evaluate(+d.toFixed(4), DEFAULT_FAULTS).circuit.terminalToPlugNet
+      const g = (r: string) => tt[term(r).id] ?? []
+      const l = g('L')
+      const rr = g('R')
+      const gn = g('GND')
+      if (gn.length === 0 && l.length === 1 && rr.length === 1 && l[0] !== rr[0]) hit++
+    }
+    expect(hit).toBeGreaterThan(0)
+    expect(c.evaluate(c.fullDepthMm, DEFAULT_FAULTS).acoustic.code).toBe('NORMAL')
   }, 30_000)
 })

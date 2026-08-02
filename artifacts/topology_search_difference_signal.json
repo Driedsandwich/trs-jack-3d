@@ -85,31 +85,34 @@
      "levels": [
       2.5,
       4.35,
+      4.74,
       6,
       8,
       10
      ],
-     "shipped": 4.35
+     "shipped": 4.74
     },
     {
      "key": "trrs.jack.contact.ring1.axialCenter",
      "levels": [
       5,
       7.35,
+      7.5,
       9,
       11
      ],
-     "shipped": 7.35
+     "shipped": 7.5
     },
     {
      "key": "trrs.jack.contact.tip.axialCenter",
      "levels": [
       9.5,
+      11.3,
       11.4,
       12.5,
       13.5
      ],
-     "shipped": 11.4
+     "shipped": 11.3
     },
     {
      "key": "trrs.jack.contact.narrowPadWidth",
@@ -158,7 +161,7 @@
    ]
   },
   "coarseStepMm": 0.05,
-  "configurationsTried": 14670,
+  "configurationsTried": 24750,
   "buildFailed": 0
  },
  "representativenessDisclaimer": "これは Lumberg 1532 10 × 1503 09 とその仮想的な改変についての探索である。一般的な 3.5mm ジャックを代表するものではない。constructed=true の構成は実在部品ではない。",
@@ -166,11 +169,11 @@
  "foundWithWorkingJack": true,
  "usableWitnesses": {
   "note": "完全挿入で正しく結線されたまま目標を通る構成。実在部品ではないが、成立しうることの証拠",
-  "total": 240,
+  "total": 1338,
   "byVariant": {
    "TRS|JACK-TRS": 78,
-   "TRRS-CTIA|JACK-TRRS": 0,
-   "TRS|JACK-TRRS": 162
+   "TRRS-CTIA|JACK-TRRS": 396,
+   "TRS|JACK-TRRS": 864
   },
   "samples": [
    {
@@ -358,10 +361,10 @@
     "robustIntervalWidthMm": 0.65
    },
    {
-    "variantId": "TRS|JACK-TRRS",
+    "variantId": "TRRS-CTIA|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
      "trrs.jack.contact.tip.axialCenter": 9.5,
      "trrs.jack.contact.narrowPadWidth": 0.1,
@@ -376,16 +379,16 @@
     "windows": [
      {
       "fromMm": 12.85,
-      "toMm": 13.3
+      "toMm": 13.2
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.4
    },
    {
-    "variantId": "TRS|JACK-TRRS",
+    "variantId": "TRRS-CTIA|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
      "trrs.jack.contact.tip.axialCenter": 9.5,
      "trrs.jack.contact.narrowPadWidth": 0.1,
@@ -400,16 +403,16 @@
     "windows": [
      {
       "fromMm": 12.85,
-      "toMm": 13.3
+      "toMm": 13.2
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.4
    },
    {
-    "variantId": "TRS|JACK-TRRS",
+    "variantId": "TRRS-CTIA|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
      "trrs.jack.contact.tip.axialCenter": 9.5,
      "trrs.jack.contact.narrowPadWidth": 0.1,
@@ -424,18 +427,90 @@
     "windows": [
      {
       "fromMm": 12.85,
-      "toMm": 13.3
+      "toMm": 13.2
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.4
    },
    {
-    "variantId": "TRS|JACK-TRRS",
+    "variantId": "TRRS-CTIA|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
-     "trrs.jack.contact.tip.axialCenter": 11.4,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.narrowPadWidth": 0.3,
+     "model.contact.complianceMm": 0.02
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": true,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 12.75,
+      "toMm": 13.1
+     }
+    ],
+    "robustIntervalWidthMm": 0.4
+   },
+   {
+    "variantId": "TRRS-CTIA|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.narrowPadWidth": 0.3,
+     "model.contact.complianceMm": 0.05
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": true,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 12.75,
+      "toMm": 13.1
+     }
+    ],
+    "robustIntervalWidthMm": 0.4
+   },
+   {
+    "variantId": "TRRS-CTIA|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.narrowPadWidth": 0.3,
+     "model.contact.complianceMm": 0.1
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": true,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 12.75,
+      "toMm": 13.1
+     }
+    ],
+    "robustIntervalWidthMm": 0.4
+   },
+   {
+    "variantId": "TRRS-CTIA|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 11.3,
      "trrs.jack.contact.narrowPadWidth": 0.1,
      "model.contact.complianceMm": 0.02
     },
@@ -448,18 +523,18 @@
     "windows": [
      {
       "fromMm": 12.85,
-      "toMm": 13.3
+      "toMm": 13.2
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.4
    },
    {
-    "variantId": "TRS|JACK-TRRS",
+    "variantId": "TRRS-CTIA|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
-     "trrs.jack.contact.tip.axialCenter": 11.4,
+     "trrs.jack.contact.tip.axialCenter": 11.3,
      "trrs.jack.contact.narrowPadWidth": 0.1,
      "model.contact.complianceMm": 0.05
     },
@@ -472,18 +547,66 @@
     "windows": [
      {
       "fromMm": 12.85,
-      "toMm": 13.3
+      "toMm": 13.2
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.4
    },
    {
     "variantId": "TRS|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
-     "trrs.jack.contact.tip.axialCenter": 11.4,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.narrowPadWidth": 0.1,
+     "model.contact.complianceMm": 0.02
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 13.1,
+      "toMm": 13.7
+     }
+    ],
+    "robustIntervalWidthMm": 0.65
+   },
+   {
+    "variantId": "TRS|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.narrowPadWidth": 0.1,
+     "model.contact.complianceMm": 0.05
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 13.1,
+      "toMm": 13.7
+     }
+    ],
+    "robustIntervalWidthMm": 0.65
+   },
+   {
+    "variantId": "TRS|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
      "trrs.jack.contact.narrowPadWidth": 0.1,
      "model.contact.complianceMm": 0.1
     },
@@ -495,19 +618,19 @@
     "strictDifferenceSignal": true,
     "windows": [
      {
-      "fromMm": 12.85,
-      "toMm": 13.3
+      "fromMm": 13.1,
+      "toMm": 13.7
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.65
    },
    {
     "variantId": "TRS|JACK-TRRS",
     "overrides": {
-     "trrs.jack.contact.sleeve.axialCenter": 1.25,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
-     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.tip.axialCenter": 11.3,
      "trrs.jack.contact.narrowPadWidth": 0.1,
      "model.contact.complianceMm": 0.02
     },
@@ -519,19 +642,19 @@
     "strictDifferenceSignal": true,
     "windows": [
      {
-      "fromMm": 12.85,
-      "toMm": 13.3
+      "fromMm": 13.1,
+      "toMm": 13.7
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.65
    },
    {
     "variantId": "TRS|JACK-TRRS",
     "overrides": {
-     "trrs.jack.contact.sleeve.axialCenter": 1.25,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
-     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.tip.axialCenter": 11.3,
      "trrs.jack.contact.narrowPadWidth": 0.1,
      "model.contact.complianceMm": 0.05
     },
@@ -543,23 +666,95 @@
     "strictDifferenceSignal": true,
     "windows": [
      {
-      "fromMm": 12.85,
-      "toMm": 13.3
+      "fromMm": 13.1,
+      "toMm": 13.7
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.65
+   },
+   {
+    "variantId": "TRS|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 11.3,
+     "trrs.jack.contact.narrowPadWidth": 0.1,
+     "model.contact.complianceMm": 0.1
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 13.1,
+      "toMm": 13.7
+     }
+    ],
+    "robustIntervalWidthMm": 0.65
+   },
+   {
+    "variantId": "TRS|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 11.4,
+     "trrs.jack.contact.narrowPadWidth": 0.1,
+     "model.contact.complianceMm": 0.02
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 13.1,
+      "toMm": 13.7
+     }
+    ],
+    "robustIntervalWidthMm": 0.65
+   },
+   {
+    "variantId": "TRS|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 11.4,
+     "trrs.jack.contact.narrowPadWidth": 0.1,
+     "model.contact.complianceMm": 0.05
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 13.1,
+      "toMm": 13.7
+     }
+    ],
+    "robustIntervalWidthMm": 0.65
    }
   ],
-  "droppedFromListing": 224
+  "droppedFromListing": 1314
  },
  "strictDifferenceSignal": {
   "note": "GROUND_OPEN のうち、L と R が別々の導体へ正しく届いたまま帰線だけが浮くもの。predictAcoustic の判定順の都合で、L と R が同じ導体に落ちていても GROUND_OPEN と分類される。それらを混ぜると、実体が左右短絡の構成まで数に入ってしまう。",
-  "total": 240,
-  "outOfUsable": 240,
+  "total": 1338,
+  "outOfUsable": 1338,
   "byVariant": {
    "TRS|JACK-TRS": 78,
-   "TRRS-CTIA|JACK-TRRS": 0,
-   "TRS|JACK-TRRS": 162
+   "TRRS-CTIA|JACK-TRRS": 396,
+   "TRS|JACK-TRRS": 864
   },
   "maxWindowMm": 0.65,
   "samples": [
@@ -748,10 +943,10 @@
     "robustIntervalWidthMm": 0.65
    },
    {
-    "variantId": "TRS|JACK-TRRS",
+    "variantId": "TRRS-CTIA|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
      "trrs.jack.contact.tip.axialCenter": 9.5,
      "trrs.jack.contact.narrowPadWidth": 0.1,
@@ -766,16 +961,16 @@
     "windows": [
      {
       "fromMm": 12.85,
-      "toMm": 13.3
+      "toMm": 13.2
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.4
    },
    {
-    "variantId": "TRS|JACK-TRRS",
+    "variantId": "TRRS-CTIA|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
      "trrs.jack.contact.tip.axialCenter": 9.5,
      "trrs.jack.contact.narrowPadWidth": 0.1,
@@ -790,16 +985,16 @@
     "windows": [
      {
       "fromMm": 12.85,
-      "toMm": 13.3
+      "toMm": 13.2
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.4
    },
    {
-    "variantId": "TRS|JACK-TRRS",
+    "variantId": "TRRS-CTIA|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
      "trrs.jack.contact.tip.axialCenter": 9.5,
      "trrs.jack.contact.narrowPadWidth": 0.1,
@@ -814,18 +1009,90 @@
     "windows": [
      {
       "fromMm": 12.85,
-      "toMm": 13.3
+      "toMm": 13.2
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.4
    },
    {
-    "variantId": "TRS|JACK-TRRS",
+    "variantId": "TRRS-CTIA|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
-     "trrs.jack.contact.tip.axialCenter": 11.4,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.narrowPadWidth": 0.3,
+     "model.contact.complianceMm": 0.02
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": true,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 12.75,
+      "toMm": 13.1
+     }
+    ],
+    "robustIntervalWidthMm": 0.4
+   },
+   {
+    "variantId": "TRRS-CTIA|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.narrowPadWidth": 0.3,
+     "model.contact.complianceMm": 0.05
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": true,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 12.75,
+      "toMm": 13.1
+     }
+    ],
+    "robustIntervalWidthMm": 0.4
+   },
+   {
+    "variantId": "TRRS-CTIA|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.narrowPadWidth": 0.3,
+     "model.contact.complianceMm": 0.1
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": true,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 12.75,
+      "toMm": 13.1
+     }
+    ],
+    "robustIntervalWidthMm": 0.4
+   },
+   {
+    "variantId": "TRRS-CTIA|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 11.3,
      "trrs.jack.contact.narrowPadWidth": 0.1,
      "model.contact.complianceMm": 0.02
     },
@@ -838,18 +1105,18 @@
     "windows": [
      {
       "fromMm": 12.85,
-      "toMm": 13.3
+      "toMm": 13.2
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.4
    },
    {
-    "variantId": "TRS|JACK-TRRS",
+    "variantId": "TRRS-CTIA|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
-     "trrs.jack.contact.tip.axialCenter": 11.4,
+     "trrs.jack.contact.tip.axialCenter": 11.3,
      "trrs.jack.contact.narrowPadWidth": 0.1,
      "model.contact.complianceMm": 0.05
     },
@@ -862,18 +1129,66 @@
     "windows": [
      {
       "fromMm": 12.85,
-      "toMm": 13.3
+      "toMm": 13.2
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.4
    },
    {
     "variantId": "TRS|JACK-TRRS",
     "overrides": {
      "trrs.jack.contact.sleeve.axialCenter": 0.5,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
-     "trrs.jack.contact.tip.axialCenter": 11.4,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.narrowPadWidth": 0.1,
+     "model.contact.complianceMm": 0.02
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 13.1,
+      "toMm": 13.7
+     }
+    ],
+    "robustIntervalWidthMm": 0.65
+   },
+   {
+    "variantId": "TRS|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.narrowPadWidth": 0.1,
+     "model.contact.complianceMm": 0.05
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 13.1,
+      "toMm": 13.7
+     }
+    ],
+    "robustIntervalWidthMm": 0.65
+   },
+   {
+    "variantId": "TRS|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 9.5,
      "trrs.jack.contact.narrowPadWidth": 0.1,
      "model.contact.complianceMm": 0.1
     },
@@ -885,19 +1200,19 @@
     "strictDifferenceSignal": true,
     "windows": [
      {
-      "fromMm": 12.85,
-      "toMm": 13.3
+      "fromMm": 13.1,
+      "toMm": 13.7
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.65
    },
    {
     "variantId": "TRS|JACK-TRRS",
     "overrides": {
-     "trrs.jack.contact.sleeve.axialCenter": 1.25,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
-     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.tip.axialCenter": 11.3,
      "trrs.jack.contact.narrowPadWidth": 0.1,
      "model.contact.complianceMm": 0.02
     },
@@ -909,19 +1224,19 @@
     "strictDifferenceSignal": true,
     "windows": [
      {
-      "fromMm": 12.85,
-      "toMm": 13.3
+      "fromMm": 13.1,
+      "toMm": 13.7
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.65
    },
    {
     "variantId": "TRS|JACK-TRRS",
     "overrides": {
-     "trrs.jack.contact.sleeve.axialCenter": 1.25,
-     "trrs.jack.contact.ring2.axialCenter": 4.35,
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
      "trrs.jack.contact.ring1.axialCenter": 7.35,
-     "trrs.jack.contact.tip.axialCenter": 9.5,
+     "trrs.jack.contact.tip.axialCenter": 11.3,
      "trrs.jack.contact.narrowPadWidth": 0.1,
      "model.contact.complianceMm": 0.05
     },
@@ -933,40 +1248,112 @@
     "strictDifferenceSignal": true,
     "windows": [
      {
-      "fromMm": 12.85,
-      "toMm": 13.3
+      "fromMm": 13.1,
+      "toMm": 13.7
      }
     ],
-    "robustIntervalWidthMm": 0.5
+    "robustIntervalWidthMm": 0.65
+   },
+   {
+    "variantId": "TRS|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 11.3,
+     "trrs.jack.contact.narrowPadWidth": 0.1,
+     "model.contact.complianceMm": 0.1
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 13.1,
+      "toMm": 13.7
+     }
+    ],
+    "robustIntervalWidthMm": 0.65
+   },
+   {
+    "variantId": "TRS|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 11.4,
+     "trrs.jack.contact.narrowPadWidth": 0.1,
+     "model.contact.complianceMm": 0.02
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 13.1,
+      "toMm": 13.7
+     }
+    ],
+    "robustIntervalWidthMm": 0.65
+   },
+   {
+    "variantId": "TRS|JACK-TRRS",
+    "overrides": {
+     "trrs.jack.contact.sleeve.axialCenter": 0.5,
+     "trrs.jack.contact.ring2.axialCenter": 4.74,
+     "trrs.jack.contact.ring1.axialCenter": 7.35,
+     "trrs.jack.contact.tip.axialCenter": 11.4,
+     "trrs.jack.contact.narrowPadWidth": 0.1,
+     "model.contact.complianceMm": 0.05
+    },
+    "constructed": true,
+    "evidenceGrade": "ASSUMPTION",
+    "fullInsertionOk": true,
+    "needsNoModification": false,
+    "realizablePadWidth": false,
+    "strictDifferenceSignal": true,
+    "windows": [
+     {
+      "fromMm": 13.1,
+      "toMm": 13.7
+     }
+    ],
+    "robustIntervalWidthMm": 0.65
    }
   ],
-  "droppedFromListing": 224
+  "droppedFromListing": 1314
  },
  "realizability": {
   "note": "realizablePadWidth はパッド幅 0.3mm 以上 (それ未満は製造上現実的でないとみなす)。needsNoModification は既定値から 1 つも動かしていない構成、つまり市販品のままで起きるもの。ただし 4極ジャックの接点位置は一次資料が無く全て仮定なので、「市販品のまま」であっても実物がそうだという意味にはならない。",
   "realizablePadWidth": {
-   "total": 159,
+   "total": 879,
    "byVariant": {
     "TRS|JACK-TRS": 51,
-    "TRRS-CTIA|JACK-TRRS": 0,
-    "TRS|JACK-TRRS": 108
+    "TRRS-CTIA|JACK-TRRS": 252,
+    "TRS|JACK-TRRS": 576
    }
   },
   "needsNoModification": {
-   "total": 1,
+   "total": 2,
    "byVariant": {
     "TRS|JACK-TRS": 0,
-    "TRRS-CTIA|JACK-TRRS": 0,
+    "TRRS-CTIA|JACK-TRRS": 1,
     "TRS|JACK-TRRS": 1
    },
    "samples": [
     {
-     "variantId": "TRS|JACK-TRRS",
+     "variantId": "TRRS-CTIA|JACK-TRRS",
      "overrides": {
       "trrs.jack.contact.sleeve.axialCenter": 1.25,
-      "trrs.jack.contact.ring2.axialCenter": 4.35,
-      "trrs.jack.contact.ring1.axialCenter": 7.35,
-      "trrs.jack.contact.tip.axialCenter": 11.4,
+      "trrs.jack.contact.ring2.axialCenter": 4.74,
+      "trrs.jack.contact.ring1.axialCenter": 7.5,
+      "trrs.jack.contact.tip.axialCenter": 11.3,
       "trrs.jack.contact.narrowPadWidth": 0.5,
       "model.contact.complianceMm": 0.05
      },
@@ -978,8 +1365,32 @@
      "strictDifferenceSignal": true,
      "windows": [
       {
-       "fromMm": 12.9,
-       "toMm": 13.1
+       "fromMm": 12.8,
+       "toMm": 13
+      }
+     ],
+     "robustIntervalWidthMm": 0.25
+    },
+    {
+     "variantId": "TRS|JACK-TRRS",
+     "overrides": {
+      "trrs.jack.contact.sleeve.axialCenter": 1.25,
+      "trrs.jack.contact.ring2.axialCenter": 4.74,
+      "trrs.jack.contact.ring1.axialCenter": 7.5,
+      "trrs.jack.contact.tip.axialCenter": 11.3,
+      "trrs.jack.contact.narrowPadWidth": 0.5,
+      "model.contact.complianceMm": 0.05
+     },
+     "constructed": false,
+     "evidenceGrade": "ASSUMPTION",
+     "fullInsertionOk": true,
+     "needsNoModification": true,
+     "realizablePadWidth": true,
+     "strictDifferenceSignal": true,
+     "windows": [
+      {
+       "fromMm": 13.3,
+       "toMm": 13.5
       }
      ],
      "robustIntervalWidthMm": 0.25
@@ -989,11 +1400,11 @@
  },
  "brokenJackWitnesses": {
   "note": "目標は通るが、完全挿入時の結線が壊れている構成。ジャックとして使えない",
-  "total": 2928,
+  "total": 5646,
   "byVariant": {
    "TRS|JACK-TRS": 354,
-   "TRRS-CTIA|JACK-TRRS": 1458,
-   "TRS|JACK-TRRS": 1116
+   "TRRS-CTIA|JACK-TRRS": 3060,
+   "TRS|JACK-TRRS": 2232
   },
   "samples": [
    {
@@ -1325,15 +1736,15 @@
     "robustIntervalWidthMm": 1.5
    }
   ],
-  "droppedFromListing": 2916
+  "droppedFromListing": 5634
  },
- "witnessCount": 3168,
+ "witnessCount": 6984,
  "witnessCountByVariant": {
   "TRS|JACK-TRS": 432,
-  "TRRS-CTIA|JACK-TRRS": 1458,
-  "TRS|JACK-TRRS": 1278
+  "TRRS-CTIA|JACK-TRRS": 3456,
+  "TRS|JACK-TRRS": 3096
  },
- "usableWitnessCount": 240,
+ "usableWitnessCount": 1338,
  "robustIntervalWidthMmAmongUsable": 0.65,
  "robustIntervalWidthMm": 1.5,
  "sensitivity": [
@@ -1487,10 +1898,11 @@
   },
   {
    "key": "trrs.jack.contact.ring2.axialCenter",
-   "shipped": 4.35,
+   "shipped": 4.74,
    "levelsTried": [
     2.5,
     4.35,
+    4.74,
     6,
     8,
     10
@@ -1498,49 +1910,57 @@
    "valuesAmongWitnesses": [
     2.5,
     4.35,
+    4.74,
     6,
     8,
     10
    ],
    "valuesAmongUsableWitnesses": [
-    4.35
+    4.35,
+    4.74
    ],
    "shippedValueAppearsInWitness": true
   },
   {
    "key": "trrs.jack.contact.ring1.axialCenter",
-   "shipped": 7.35,
+   "shipped": 7.5,
    "levelsTried": [
     5,
     7.35,
+    7.5,
     9,
     11
    ],
    "valuesAmongWitnesses": [
     5,
-    7.35
+    7.35,
+    7.5
    ],
    "valuesAmongUsableWitnesses": [
-    7.35
+    7.35,
+    7.5
    ],
    "shippedValueAppearsInWitness": true
   },
   {
    "key": "trrs.jack.contact.tip.axialCenter",
-   "shipped": 11.4,
+   "shipped": 11.3,
    "levelsTried": [
     9.5,
+    11.3,
     11.4,
     12.5,
     13.5
    ],
    "valuesAmongWitnesses": [
     9.5,
+    11.3,
     11.4,
     12.5
    ],
    "valuesAmongUsableWitnesses": [
     9.5,
+    11.3,
     11.4,
     12.5
    ],

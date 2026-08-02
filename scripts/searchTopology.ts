@@ -57,21 +57,35 @@ const shipped = (k: string) => base3.dims.entry(k).value
 // (2026-08-02: 実際にこの罠を踏み、4極 2 variant が既定値のまま数百回
 //  繰り返されるだけの空振りになっていた。下の assertAxesBite で検出する。)
 
+/**
+ * **振る水準には、必ず既定値そのものを含める。**
+ *
+ * 2026-08-02、4極ジャックを Lumberg 1503 28 ベースへ組み直して既定値が
+ * 11.4 → 11.30 などへ動いたとき、水準の直書きリストがそのままだったため
+ * **「無改造の構成」が一度も評価されなかった。**それでも探索は正常終了し、
+ * 「無改造で成立: 0」と報告した。0 は事実ではなく取りこぼしだった。
+ * 既定値を必ず混ぜ、下の assertShippedIncluded でも二重に検査する。
+ */
+const withShipped = (levels: number[], key: string): number[] => {
+  const v = shipped(key)
+  return [...new Set([...levels, v])].sort((a, b) => a - b)
+}
+
 const AXES_BY_JACK: Record<string, Axis[]> = {
   'JACK-TRS': [
-    { key: 'jack.contact.sleeve.axialCenter', levels: [0.5, 1.5, 2.5, 3.2, 4.5, 6.0, 8.0], shipped: shipped('jack.contact.sleeve.axialCenter') },
-    { key: 'jack.contact.ring.axialCenter', levels: [4.0, 5.5, 7.1, 8.5, 10.0, 11.5], shipped: shipped('jack.contact.ring.axialCenter') },
-    { key: 'jack.contact.tip.axialCenter', levels: [8.0, 9.5, 11.4, 12.5, 13.5], shipped: shipped('jack.contact.tip.axialCenter') },
-    { key: 'jack.contact.sleeve.padWidth', levels: [0.1, 0.3, 0.55, 0.9, 1.5], shipped: shipped('jack.contact.sleeve.padWidth') },
-    { key: 'model.contact.complianceMm', levels: [0.02, 0.05, 0.1], shipped: shipped('model.contact.complianceMm') },
+    { key: 'jack.contact.sleeve.axialCenter', levels: withShipped([0.5, 1.5, 2.5, 3.2, 4.5, 6.0, 8.0], 'jack.contact.sleeve.axialCenter'), shipped: shipped('jack.contact.sleeve.axialCenter') },
+    { key: 'jack.contact.ring.axialCenter', levels: withShipped([4.0, 5.5, 7.1, 8.5, 10.0, 11.5], 'jack.contact.ring.axialCenter'), shipped: shipped('jack.contact.ring.axialCenter') },
+    { key: 'jack.contact.tip.axialCenter', levels: withShipped([8.0, 9.5, 11.4, 12.5, 13.5], 'jack.contact.tip.axialCenter'), shipped: shipped('jack.contact.tip.axialCenter') },
+    { key: 'jack.contact.sleeve.padWidth', levels: withShipped([0.1, 0.3, 0.55, 0.9, 1.5], 'jack.contact.sleeve.padWidth'), shipped: shipped('jack.contact.sleeve.padWidth') },
+    { key: 'model.contact.complianceMm', levels: withShipped([0.02, 0.05, 0.1], 'model.contact.complianceMm'), shipped: shipped('model.contact.complianceMm') },
   ],
   'JACK-TRRS': [
-    { key: 'trrs.jack.contact.sleeve.axialCenter', levels: [0.5, 1.25, 2.5, 4.0, 6.0, 8.0], shipped: shipped('trrs.jack.contact.sleeve.axialCenter') },
-    { key: 'trrs.jack.contact.ring2.axialCenter', levels: [2.5, 4.35, 6.0, 8.0, 10.0], shipped: shipped('trrs.jack.contact.ring2.axialCenter') },
-    { key: 'trrs.jack.contact.ring1.axialCenter', levels: [5.0, 7.35, 9.0, 11.0], shipped: shipped('trrs.jack.contact.ring1.axialCenter') },
-    { key: 'trrs.jack.contact.tip.axialCenter', levels: [9.5, 11.4, 12.5, 13.5], shipped: shipped('trrs.jack.contact.tip.axialCenter') },
-    { key: 'trrs.jack.contact.narrowPadWidth', levels: [0.1, 0.3, 0.5, 0.9], shipped: shipped('trrs.jack.contact.narrowPadWidth') },
-    { key: 'model.contact.complianceMm', levels: [0.02, 0.05, 0.1], shipped: shipped('model.contact.complianceMm') },
+    { key: 'trrs.jack.contact.sleeve.axialCenter', levels: withShipped([0.5, 1.25, 2.5, 4.0, 6.0, 8.0], 'trrs.jack.contact.sleeve.axialCenter'), shipped: shipped('trrs.jack.contact.sleeve.axialCenter') },
+    { key: 'trrs.jack.contact.ring2.axialCenter', levels: withShipped([2.5, 4.35, 6.0, 8.0, 10.0], 'trrs.jack.contact.ring2.axialCenter'), shipped: shipped('trrs.jack.contact.ring2.axialCenter') },
+    { key: 'trrs.jack.contact.ring1.axialCenter', levels: withShipped([5.0, 7.35, 9.0, 11.0], 'trrs.jack.contact.ring1.axialCenter'), shipped: shipped('trrs.jack.contact.ring1.axialCenter') },
+    { key: 'trrs.jack.contact.tip.axialCenter', levels: withShipped([9.5, 11.4, 12.5, 13.5], 'trrs.jack.contact.tip.axialCenter'), shipped: shipped('trrs.jack.contact.tip.axialCenter') },
+    { key: 'trrs.jack.contact.narrowPadWidth', levels: withShipped([0.1, 0.3, 0.5, 0.9], 'trrs.jack.contact.narrowPadWidth'), shipped: shipped('trrs.jack.contact.narrowPadWidth') },
+    { key: 'model.contact.complianceMm', levels: withShipped([0.02, 0.05, 0.1], 'model.contact.complianceMm'), shipped: shipped('model.contact.complianceMm') },
   ],
 }
 
@@ -81,6 +95,16 @@ const VARIANTS = ['TRS|JACK-TRS', 'TRRS-CTIA|JACK-TRRS', 'TRS|JACK-TRRS'] as con
  * その軸を動かすと本当にモデルが変わることを確かめる。
  * 変わらない軸を「振った」と数えると、探索の網羅性を偽ることになる。
  */
+/** 既定値が水準に入っていることを確かめる。入っていないと「無改造」を数え損なう */
+function assertShippedIncluded(variantId: string, axes: Axis[]): void {
+  for (const a of axes)
+    if (!a.levels.includes(a.shipped))
+      throw new Error(
+        `${variantId}: 軸 ${a.key} の水準に既定値 ${a.shipped} が入っていない。` +
+          `このままでは「無改造で成立するか」を一度も評価しないまま 0 と報告してしまう`,
+      )
+}
+
 function assertAxesBite(variantId: (typeof VARIANTS)[number], axes: Axis[]): void {
   for (const a of axes) {
     const alt = a.levels.find((v) => v !== a.shipped)
@@ -201,6 +225,7 @@ for (const variantId of VARIANTS) {
   const axes = AXES_BY_JACK[jackId]
   if (!axes) throw new Error(`${variantId}: 軸の定義が無い`)
   assertAxesBite(variantId, axes) // 空振りならここで落ちる
+  assertShippedIncluded(variantId, axes) // 既定値が水準に無ければここで落ちる
   assertRolesResolvable(variantId) // 端子 role が引けなければここで落ちる
   axesUsed[variantId] = axes.map((a) => a.key)
   for (const ov of grid(axes)) {
