@@ -122,7 +122,7 @@
 <ul><li>Lumberg 1532 10 データシート — プラグの全寸法・材料・電気/機械仕様</li><li>Lumberg 1503 09 データシート — ジャックの外形・基板レイアウト・<strong>回路記号</strong>・材料・仕様</li></ul>
 <p>加えて、図面に数値記載の無い外形は自前で実測しました。 <strong>PDF を 1200 dpi にラスタライズして輪郭線を検出する方法</strong>と、<strong>ベクタ抽出</strong>という独立した 2 通りで測り、 両者が <strong>0.05 mm 以内で一致</strong>することを確認しています。</p>
 <h3>2-2. 根拠区分の内訳</h3>
-<div class="tw"><table><thead><tr><th>区分</th><th class="num">件数</th><th>意味</th></tr></thead><tbody><tr><td>FACT</td><td class="num">53</td><td>データシートに数値として直接記載されている</td></tr><tr><td>DERIVED</td><td class="num">39</td><td>記載寸法から演算、または図面を実測して導出した</td></tr><tr><td>ASSUMPTION</td><td class="num">43</td><td>資料が無いため明示的に置いた仮定</td></tr><tr><td>UNKNOWN</td><td class="num">0</td><td>（未確認のまま数値化した項目は無い）</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>区分</th><th class="num">件数</th><th>意味</th></tr></thead><tbody><tr><td>FACT</td><td class="num">53</td><td>データシートに数値として直接記載されている</td></tr><tr><td>DERIVED</td><td class="num">28</td><td>記載寸法から演算、または図面を実測して導出した</td></tr><tr><td>ASSUMPTION</td><td class="num">54</td><td>資料が無いため明示的に置いた仮定</td></tr><tr><td>UNKNOWN</td><td class="num">0</td><td>（未確認のまま数値化した項目は無い）</td></tr></tbody></table></div>
 <p>アプリ内の「根拠」タブで全キーの値・区分・出典を確認できます。</p>
 <h3>2-3. 図面から分かった重要な事実</h3>
 <p>データシートの寸法 <code>14</code> / <code>8.5</code> / <code>5</code> は、<strong>肩を共通の基準にして先端方向へ測られています</strong>。 したがって先端基準では <code>14 − 8.5 = 5.5</code>（Ring 前端）、<code>14 − 5 = 9.0</code>（Sleeve 前端）になります。 この読み取りは、独立した図面実測（5.487 / 8.992）と 0.013 mm 以内で一致しました。</p>

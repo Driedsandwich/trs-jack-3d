@@ -201,3 +201,51 @@ describe('逆向きの陳腐化', () => {
     expect(md('ASSUMPTIONS.md')).not.toMatch(/前面図でボアが本体高さ 6 ?mm の中央に描かれていることから DERIVED/)
   })
 })
+
+/**
+ * 根拠区分（grade）の付け方。
+ *
+ * 合成量の区分は**弱いほうの入力に合わせる**、というのがこのプロジェクトの規則である。
+ * 2026-08-03 に 92 件（FACT 53 + DERIVED 39）を 1 件ずつ点検し、**11 件**が
+ * 「資料から導いたものではないのに DERIVED」になっていたので下げた。
+ *
+ *   - 接点ばねの自由半径・公称たわみ・ばね定数 9 件
+ *     （別メーカー資料の押付力レンジに合わせた逆算。ASSUMPTIONS.md A 節の
+ *       「内部接点ばねの寸法は公開資料に含まれていない」と食い違っていた）
+ *   - jack.entryBushingLength（ノーズ長の全長がボアだという仮定。
+ *     UNKNOWNS §3-8 が「DERIVED の仮定」と自己矛盾した書き方をしていた）
+ *   - plug.handle.bodyDiameter（八角形の実測を表示用に φ10 へ丸めた値）
+ *
+ * **FACT 側 53 件からは 1 件も出なかった。**
+ */
+describe('根拠区分の付け方', () => {
+  const dims = getModel('TRS|JACK-TRS').dims
+
+  it('**接点ばねの諸元はすべて ASSUMPTION である**', () => {
+    // 資料に無いものを DERIVED と呼ばない。ASSUMPTIONS.md A 節の主張と揃える。
+    for (const c of ['tip', 'ring', 'sleeve'])
+      for (const p of ['freeRadius', 'nominalDeflection', 'springRate', 'maxDeflection', 'padWidth'])
+        expect({ k: `${c}.${p}`, grade: dims.entry(`jack.contact.${c}.${p}`).grade }).toEqual({
+          k: `${c}.${p}`,
+          grade: 'ASSUMPTION',
+        })
+  })
+
+  it('**接点まわりで DERIVED を名乗れるのは、図面の幾何から出るものだけ**', () => {
+    // 端子の横位置 (FACT) から出る円周位置と、端子の軸位置そのもの。それ以外は仮定。
+    const derived = Object.entries(dims.all())
+      .filter(([k, v]) => k.startsWith('jack.contact.') && v.grade === 'DERIVED')
+      .map(([k]) => k)
+      .sort()
+    expect(derived).toEqual([
+      'jack.contact.ring.angularPosition',
+      'jack.contact.sleeve.rootAxial',
+      'jack.contact.tip.angularPosition',
+    ])
+  })
+
+  it('自分の note が仮定だと書いている項目を FACT/DERIVED にしていない', () => {
+    for (const k of ['jack.entryBushingLength', 'plug.handle.bodyDiameter', 'jack.housing.axisHeightFromPcb'])
+      expect({ k, grade: dims.entry(k).grade }).toEqual({ k, grade: 'ASSUMPTION' })
+  })
+})

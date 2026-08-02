@@ -95,8 +95,8 @@
  },
  "gradeCounts": {
   "FACT": 53,
-  "DERIVED": 39,
-  "ASSUMPTION": 43,
+  "DERIVED": 28,
+  "ASSUMPTION": 54,
   "UNKNOWN": 0
  },
  "force": {

@@ -88,7 +88,7 @@
     },
     "plug.handle.shoulderLength": { "value": 1.016, "grade": "DERIVED", "sources": ["measure-drawing"] , "note": "図面実測。肩カラーの長さ (先端から 14.000〜15.016mm)。この値に当たる記載寸法は図面に無く、軸方向チェーン 14 + 25 + 13.5 = 52.5 の内側に含まれるため作画から測るしかない。2026-07-31 まで 1.85 としており、また grade を FACT としていたが、FACT の定義 (一次資料に数値として直接記載) を満たさないため DERIVED へ下げた。" },
     "plug.handle.bodyDiameter": {
-      "value": 10.0, "grade": "DERIVED", "sources": ["ds-1532-10"], "note": "ハンドル本体は八角柱で、図面に径の寸法記載は無い。対辺 ≒φ10.56 / 対角 ≒φ11.43 の実測から、表示用に φ10 とみなした。2026-07-31 まで「図面記載 Ø10」を根拠に FACT としていたが、図面の Ø10 は肩カラーの寸法であり、本体に付けられたものではなかった。"
+      "value": 10.0, "grade": "ASSUMPTION", "sources": ["ds-1532-10"], "note": "ハンドル本体は八角柱で、図面に径の寸法記載は無い。対辺 ≒φ10.56 / 対角 ≒φ11.43 の実測から、表示用に φ10 とみなした。2026-07-31 まで「図面記載 Ø10」を根拠に FACT としていたが、図面の Ø10 は肩カラーの寸法であり、本体に付けられたものではなかった。**実測は対辺 φ10.56 / 対角 φ11.43 の八角形で、φ10 は表示用の丸めである。**記載寸法からの演算でも図面実測の値そのものでもないので、2026-08-03 に ASSUMPTION へ下げた。表示専用。"
     },
     "plug.handle.bodyLength": {
       "value": 23.98, "grade": "DERIVED", "sources": ["ds-1532-10"],
@@ -120,7 +120,7 @@
     "jack.housing.axisHeightFromPcb": { "value": 3.0, "grade": "ASSUMPTION", "sources": ["ds-1503-09"],
       "note": "図面記載。側面図に、軸の中心線からブッシング下端 (＝本体底面) までを公差付きで引いた「3」の寸法線がある。同じ位置の外側には全高を示す「ø6」がある。2026-07-31 まで「前面図でボアが本体高さ 6mm の中央に描かれていることから導出」と書いていたが、これは記載寸法の拾い漏れだった。**ただしこの 3 は「軸の中心線から本体底面まで」であって「基板面まで」ではない。** 「基板面＝本体底面」は未確認の仮定なので (UNKNOWNS §3-5)、合成量であるこのキーの区分は 弱いほうに合わせて ASSUMPTION とする。2026-08-02 まで FACT としており、**note 自身が未確認と書いているのに区分が FACT という矛盾**になっていた。表示専用で接触判定・回路・力には入らない。" },
     "jack.entryBoreDiameter": { "value": 3.6, "grade": "FACT", "sources": ["ds-1503-09"], "note": "図面記載 ø3.6。図面には公差が併記されているが、入手した PDF の解像度では判読できなかった (UNKNOWN)。プラグ φ3.5 との片側隙間 0.05mm は公称どうしの差であり、両者の公差を考えると実際の隙間はこれより広くも狭くもなりうる。" },
-    "jack.entryBushingLength": { "value": 3.5, "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "ローレットナット部の長さ＝jack.noseLength。" },
+    "jack.entryBushingLength": { "value": 3.5, "grade": "ASSUMPTION", "sources": ["ds-1503-09"], "note": "ローレットナット部の長さ＝jack.noseLength。**ノーズ長 3.5 の全長がボアであるという仮定である。**図面はボアの深さを直接示していない。UNKNOWNS §3-8 が「DERIVED の仮定」と書いていた矛盾を、2026-08-03 に ASSUMPTION へ下げて解消した。" },
     "jack.nutDiameter": { "value": 6, "grade": "FACT", "sources": ["ds-1503-09"], "note": "図面記載「ø6」。側面図の左端に、前部ブッシング (ローレットナット部) の外径として引かれている。2026-07-31 まで 5.6 としており、note にも「前面図で本体高さ 6mm より小さく描かれていることから推定」と書いていたが、実際にはこの円は本体高さ 6mm にちょうど接しており、記述は実測と逆だった。図面に記載がある寸法を拾えていなかった例。表示専用で接触判定には使わない。" },
 
     "jack.fullInsertionDepth": {
@@ -157,12 +157,12 @@
     },
     "jack.contact.tip.padWidth": { "value": 0.55, "grade": "ASSUMPTION", "note": "接触ドームの軸方向有効幅。3極プラグの平坦面どうしの間隔 0.700mm より狭いので橋絡を起こせない。絶縁帯 0.7mm より狭くもあるので、絶縁帯の上に完全に乗って回路が開くことがある。" },
     "jack.contact.tip.freeRadius": {
-      "value": 1.1, "grade": "DERIVED", "sources": ["ds-1532-10", "te-contact-force"],
-      "note": "Tip 導体は接触位置で半径 1.406 しかない (φ3.5 の Ring/Sleeve より細い)。公称押付 0.8〜1.3N/接点を満たすには自由半径をここまで下げる必要がある。"
+      "value": 1.1, "grade": "ASSUMPTION", "sources": ["ds-1532-10", "te-contact-force"],
+      "note": "Tip 導体は接触位置で半径 1.406 しかない (φ3.5 の Ring/Sleeve より細い)。公称押付 0.8〜1.3N/接点を満たすには自由半径をここまで下げる必要がある。**この値は資料から導いたものではない。** 完全挿入時の押付力が別メーカー資料 (TE Connectivity 108-19423) の 0.8〜1.3N/接点 に収まるよう逆算して置いた値であり、実測でも FEA でもない。ASSUMPTIONS.md A 節が「内部接点ばねの寸法は公開資料に含まれていない」と書いているとおりで、2026-08-03 に DERIVED から下げた (A-1 の軸位置は 07-31 に同じ理由で下げ済み)。"
     },
-    "jack.contact.tip.nominalDeflection": { "value": 0.31, "grade": "DERIVED", "note": "完全挿入時のたわみ = 1.406 − 1.10。" },
+    "jack.contact.tip.nominalDeflection": { "value": 0.31, "grade": "ASSUMPTION", "note": "完全挿入時のたわみ = 1.406 − 1.10。**この値は資料から導いたものではない。** 完全挿入時の押付力が別メーカー資料 (TE Connectivity 108-19423) の 0.8〜1.3N/接点 に収まるよう逆算して置いた値であり、実測でも FEA でもない。ASSUMPTIONS.md A 節が「内部接点ばねの寸法は公開資料に含まれていない」と書いているとおりで、2026-08-03 に DERIVED から下げた (A-1 の軸位置は 07-31 に同じ理由で下げ済み)。" },
     "jack.contact.tip.maxDeflection": { "value": 0.95, "grade": "ASSUMPTION", "note": "φ3.5 の Sleeve 上に乗ったとき 0.65mm たわむため、それを許容する値。" },
-    "jack.contact.tip.springRate": { "value": 3.1, "unit": "N/mm", "grade": "DERIVED", "sources": ["te-contact-force"], "note": "公称たわみで 0.8〜1.3 N/接点になるよう設定。" },
+    "jack.contact.tip.springRate": { "value": 3.1, "unit": "N/mm", "grade": "ASSUMPTION", "sources": ["te-contact-force"], "note": "公称たわみで 0.8〜1.3 N/接点になるよう設定。**この値は資料から導いたものではない。** 完全挿入時の押付力が別メーカー資料 (TE Connectivity 108-19423) の 0.8〜1.3N/接点 に収まるよう逆算して置いた値であり、実測でも FEA でもない。ASSUMPTIONS.md A 節が「内部接点ばねの寸法は公開資料に含まれていない」と書いているとおりで、2026-08-03 に DERIVED から下げた (A-1 の軸位置は 07-31 に同じ理由で下げ済み)。" },
     "jack.contact.tip.angularPosition": { "value": 270, "unit": "deg", "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "端子3 が軸の左 (−5.05mm) にあることから。0deg = +Y、90deg = +Z。" },
     "jack.contact.tip.rootAxial": { "value": 14.2, "grade": "ASSUMPTION", "note": "端子3 (13.4) のわずかに奥。梁長 2.8mm。" },
     "jack.break.tip.openDeflection": { "value": 0.05, "grade": "ASSUMPTION", "note": "信号ばねが少し持ち上がるだけでノーマル接点から離れる構造。" },
@@ -172,10 +172,10 @@
       "note": "完全挿入で s=6.9 となり、Ring 導体区間 5.5〜8.3 のほぼ中央に来る。前後の絶縁帯まで約 1.06mm の余裕がある。端子2 (8.9) から前方へ伸びる梁。一次資料に接点の軸位置の記載は無く、この値は「完全挿入で対応する導体にパッド全幅が収まる」という条件を満たす範囲から選んだ当てはめ値である。端子の軸位置 (FACT) と前方へ伸びる片持ち梁という構造は範囲を狭めるが、梁の長さが不明なので値そのものは決まらない。2026-07-31 まで grade を DERIVED としていたが、幾何学的な導出ではないので、4極側 (trrs.jack.contact.*) と揃えて ASSUMPTION へ下げた。"
     },
     "jack.contact.ring.padWidth": { "value": 0.55, "grade": "ASSUMPTION", "note": "3極プラグの平坦面どうしの間隔 0.700mm より狭いので、絶縁帯をまたいだ橋絡は起こせない。絶縁帯 0.7mm より狭くもあるので、絶縁帯の上に完全に乗って回路が開くことがある。" },
-    "jack.contact.ring.freeRadius": { "value": 1.4, "grade": "DERIVED", "sources": ["te-contact-force"], "note": "φ3.5 (半径1.75) に対しての公称たわみ 0.35mm。" },
-    "jack.contact.ring.nominalDeflection": { "value": 0.35, "grade": "DERIVED" },
+    "jack.contact.ring.freeRadius": { "value": 1.4, "grade": "ASSUMPTION", "sources": ["te-contact-force"], "note": "φ3.5 (半径1.75) に対しての公称たわみ 0.35mm。**この値は資料から導いたものではない。** 完全挿入時の押付力が別メーカー資料 (TE Connectivity 108-19423) の 0.8〜1.3N/接点 に収まるよう逆算して置いた値であり、実測でも FEA でもない。ASSUMPTIONS.md A 節が「内部接点ばねの寸法は公開資料に含まれていない」と書いているとおりで、2026-08-03 に DERIVED から下げた (A-1 の軸位置は 07-31 に同じ理由で下げ済み)。" },
+    "jack.contact.ring.nominalDeflection": { "value": 0.35, "grade": "ASSUMPTION", "note": "**この値は資料から導いたものではない。** 完全挿入時の押付力が別メーカー資料 (TE Connectivity 108-19423) の 0.8〜1.3N/接点 に収まるよう逆算して置いた値であり、実測でも FEA でもない。ASSUMPTIONS.md A 節が「内部接点ばねの寸法は公開資料に含まれていない」と書いているとおりで、2026-08-03 に DERIVED から下げた (A-1 の軸位置は 07-31 に同じ理由で下げ済み)。" },
     "jack.contact.ring.maxDeflection": { "value": 0.85, "grade": "ASSUMPTION" },
-    "jack.contact.ring.springRate": { "value": 3.1, "unit": "N/mm", "grade": "DERIVED", "sources": ["te-contact-force"] },
+    "jack.contact.ring.springRate": { "value": 3.1, "unit": "N/mm", "grade": "ASSUMPTION", "note": "**この値は資料から導いたものではない。** 完全挿入時の押付力が別メーカー資料 (TE Connectivity 108-19423) の 0.8〜1.3N/接点 に収まるよう逆算して置いた値であり、実測でも FEA でもない。ASSUMPTIONS.md A 節が「内部接点ばねの寸法は公開資料に含まれていない」と書いているとおりで、2026-08-03 に DERIVED から下げた (A-1 の軸位置は 07-31 に同じ理由で下げ済み)。", "sources": ["te-contact-force"] },
     "jack.contact.ring.angularPosition": { "value": 90, "unit": "deg", "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "端子2 が軸の右 (+4.55mm) にある。Tip 接点とは軸を挟んで反対側。" },
     "jack.contact.ring.rootAxial": { "value": 9.7, "grade": "ASSUMPTION", "note": "端子2 (8.9) のわずかに奥。梁長 2.6mm。" },
     "jack.break.ring.openDeflection": { "value": 0.05, "grade": "ASSUMPTION" },
@@ -185,10 +185,10 @@
       "note": "完全挿入で s=10.8 となり、Sleeve 導体区間 9.0〜14.0 の内側に来る。端子1 (5.6) から前方へ伸びる。入口に近いので、挿入途中では Tip/Ring/絶縁帯の上を通過する。一次資料に接点の軸位置の記載は無く、この値は「完全挿入で対応する導体にパッド全幅が収まる」という条件を満たす範囲から選んだ当てはめ値である。端子の軸位置 (FACT) と前方へ伸びる片持ち梁という構造は範囲を狭めるが、梁の長さが不明なので値そのものは決まらない。2026-07-31 まで grade を DERIVED としていたが、幾何学的な導出ではないので、4極側 (trrs.jack.contact.*) と揃えて ASSUMPTION へ下げた。 なお、この 3.2 は jack.entryBushingLength (3.5) の内側にあり、ø3.6 のボアはプラグ φ3.5 に対し片側 0.05mm しか空いていないので、たわみ 0.35mm のばねはそこに収まらない。ただし entryBushingLength 自身が「ノーズ長 3.5 の全長がボア」という DERIVED の仮定なので、これは確定した矛盾ではなく、根拠の弱い 2 値のあいだの緊張である。両立させるなら 3.95〜4.55 の範囲になり、その場合は橋絡を含む全ての深度がちょうど +1.0mm ずれる (実測: 橋絡 11.77〜11.94 → 12.77〜12.94)。状態の並びと区間幅は変わらない。UNKNOWNS §3-8 参照。"
     },
     "jack.contact.sleeve.padWidth": { "value": 0.9, "grade": "ASSUMPTION", "note": "帰線側は接触面積を広く取るのが一般的。橋絡が起きる条件はこの幅が「同じ高さの導体面どうしの間隔」より広いことで、絶縁帯の幅ではない。3極プラグの平坦面 (半径 1.750) どうしの間隔は 0.700mm (= 第2絶縁帯の幅そのもの。境界に面取りは無い) なので、この 0.9mm なら第2絶縁帯 (Ring↔Sleeve) をまたいで橋絡する。第1絶縁帯 (Tip↔Ring) では Tip 導体が 0.15mm 低いため、パッドがまたいでも同時には触れられない。" },
-    "jack.contact.sleeve.freeRadius": { "value": 1.4, "grade": "DERIVED", "sources": ["te-contact-force"] },
-    "jack.contact.sleeve.nominalDeflection": { "value": 0.35, "grade": "DERIVED" },
+    "jack.contact.sleeve.freeRadius": { "value": 1.4, "grade": "ASSUMPTION", "note": "**この値は資料から導いたものではない。** 完全挿入時の押付力が別メーカー資料 (TE Connectivity 108-19423) の 0.8〜1.3N/接点 に収まるよう逆算して置いた値であり、実測でも FEA でもない。ASSUMPTIONS.md A 節が「内部接点ばねの寸法は公開資料に含まれていない」と書いているとおりで、2026-08-03 に DERIVED から下げた (A-1 の軸位置は 07-31 に同じ理由で下げ済み)。", "sources": ["te-contact-force"] },
+    "jack.contact.sleeve.nominalDeflection": { "value": 0.35, "grade": "ASSUMPTION", "note": "**この値は資料から導いたものではない。** 完全挿入時の押付力が別メーカー資料 (TE Connectivity 108-19423) の 0.8〜1.3N/接点 に収まるよう逆算して置いた値であり、実測でも FEA でもない。ASSUMPTIONS.md A 節が「内部接点ばねの寸法は公開資料に含まれていない」と書いているとおりで、2026-08-03 に DERIVED から下げた (A-1 の軸位置は 07-31 に同じ理由で下げ済み)。" },
     "jack.contact.sleeve.maxDeflection": { "value": 0.85, "grade": "ASSUMPTION" },
-    "jack.contact.sleeve.springRate": { "value": 3.1, "unit": "N/mm", "grade": "DERIVED", "sources": ["te-contact-force"] },
+    "jack.contact.sleeve.springRate": { "value": 3.1, "unit": "N/mm", "grade": "ASSUMPTION", "note": "**この値は資料から導いたものではない。** 完全挿入時の押付力が別メーカー資料 (TE Connectivity 108-19423) の 0.8〜1.3N/接点 に収まるよう逆算して置いた値であり、実測でも FEA でもない。ASSUMPTIONS.md A 節が「内部接点ばねの寸法は公開資料に含まれていない」と書いているとおりで、2026-08-03 に DERIVED から下げた (A-1 の軸位置は 07-31 に同じ理由で下げ済み)。", "sources": ["te-contact-force"] },
     "jack.contact.sleeve.angularPosition": { "value": 0, "unit": "deg", "grade": "ASSUMPTION", "note": "端子1 は軸上 (横方向オフセット 0) のため、円周方向の位置は図面から確定できない。" },
     "jack.contact.sleeve.rootAxial": { "value": 5.6, "grade": "DERIVED", "sources": ["ds-1503-09"], "note": "端子1 の軸位置。梁長 2.4mm。" },
 
