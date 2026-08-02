@@ -26,17 +26,17 @@ Half-Plug Lab 側から受けた監査オーダーへの対応記録です。
 | ✅ | **P0-5** 探索結果の表現を弱める | **完了**（→ §1） |
 | ✅ | **P0-6** Draft-07 の完全検証（Ajv） | **完了**（→ §1） |
 | ✅ | **P0-7** 文書と公開表現の整合 | **完了** |
-| ⏸ | **P0-8** immutable release | **tag / push の承認待ち**（→ §3） |
+| 🟡 | **P0-8** immutable release | **draft 作成済み。公開は未実行**（→ §3） |
 
-**残るのは P0-8 だけです。**それは承認事項です。
+**P0-8 は draft まで進みました。公開はしていません。**
 
 完了条件は 2026-08-03 に 1 回通しで実測しました（→ §4）。
-**17 項目のうち 15 が PASS、1 が一部、1 が未確認**です。
+**17 項目のうち 16 が PASS、1 が未確認**です。
 未確認の 1 件（Half-Plug fixture import）は相手側の作業で、こちらから実行できません。
 
 コミット済み profile は `artifactKind: "local"` / `workingTreeDirty: false` /
-`inputDigest: bba0e6dc73a4` です。Half-Plug Lab 側が正本にできるのは、
-clean な入力から `--release` で作った release asset だけで、それは P0-8 で作ります。
+`inputDigest: bba0e6dc73a4` です。Half-Plug Lab 側が正本にすべき
+`artifactKind: "release"` の資産は draft に添付済みで、**公開待ち**です（→ §3）。
 
 ---
 
@@ -441,13 +441,43 @@ npm run validate:profiles / npm run verify:provenance
 npm run check:stale / npm run check:vacuity
 ```
 
-残るのは tag と GitHub Release の作成です。
-オーダー自身が「このオーダーは tag、release、push の自動実行承認ではない」と
-書いているため、**着手しません。**対象・影響・可逆性・削除方法を示して別途確認します。
-
 > `verify:half-plug-release` は作っていません。上の 8 コマンドで完了条件を満たすため、
 > それらを束ねるだけの入口を増やしても守りが増えないと判断しました
 > （→ CONTRIBUTING §2「先に数えてから決める」）。
+
+#### 実行した範囲（2026-08-03・本人承認あり）
+
+| | 状態 |
+|---|---|
+| annotated tag `v0.1.0` | **ローカルのみ作成。push していません** |
+| GitHub Release | **draft で作成。公開していません** |
+| 添付資産 7 件 | draft へアップロード済み |
+| 公開されているもの | **ありません**（tag は remote に無く、draft は所有者だけが見られます） |
+
+release 用の profile は **clean checkout で `--release` を付けて生成**しました。
+
+```
+inputDigest: bba0e6dc73a4 / dirty: false / release
+```
+
+コミット済みの profile（`artifactKind: local`）との差は
+`provenance` の 4 項目・`generatedAt`・`sourceRevision` だけで、
+**`inputDigest` と `profileId` は同一**です。データは同じで、生成の記録だけが違います。
+これは `inputDigest` の設計どおりの挙動です。
+
+添付物の一覧と checksum は [`v0.1.0-SHA256SUMS.txt`](release/v0.1.0-SHA256SUMS.txt)、
+Release notes は [`v0.1.0-notes.md`](release/v0.1.0-notes.md) に控えてあります。
+
+**アップロード後に取り直して検算しました。**7 件とも `shasum -c` が OK で、
+ローカルの資産と **byte 単位で一致**しています。
+
+#### 残っている操作（別途確認）
+
+1. draft の公開（`gh release edit v0.1.0 --draft=false`）
+2. annotated tag の push（`git push origin v0.1.0`）
+
+**公開すると取り消せません。**Release と tag は削除できますが、
+すでに取得した相手からは消せず、キャッシュやミラーにも残りえます。
 
 ---
 
@@ -518,7 +548,7 @@ profile は `provenance.inputDigest` に「何から作ったか」を記録し�
 | 13 | TRS で差分候補不存在を維持 | **PASS** | 区間に出現せず、`absentTopologies` に記録あり |
 | 14 | TRS×TRRS 候補を ASSUMPTION として維持 | **PASS** | 該当 1 区間・`evidenceGrade: ASSUMPTION` |
 | 15 | PS000001 反対証拠を維持 | **PASS** | 図面値 0 件 / Lumberg 1 件 / 探索側にも `counterEvidence` |
-| 16 | release asset hash を生成 | **一部** | 生成できることは確認（`--release` で作り sha256 を取得）。**配布物そのものは未作成** |
+| 16 | release asset hash を生成 | **PASS** | `SHA256SUMS` を作成し、draft へ添付。**取り直して検算し 7 件とも byte 一致**（→ §3） |
 | 17 | Half-Plug fixture import | **未確認** | **相手側の作業**。こちらから実行できない |
 
 **16 と 17 が埋まらない理由**は種類が違います。
