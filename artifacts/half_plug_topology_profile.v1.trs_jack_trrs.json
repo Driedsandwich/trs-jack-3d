@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:fa877fb62609",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:aa34bdf66582",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -24,7 +24,7 @@
   "evidenceGrade": "ASSUMPTION",
   "note": "**4極ジャックは接点位置を含めて全て仮定である。** 図面もデータシートも入手できていない。この profile の深さの数字は、仮定した接点位置の帰結でしかない。"
  },
- "sourceRevision": "fa877fb62609a00c48d6d2ee629ad1aa01f6c5f4",
+ "sourceRevision": "aa34bdf665824e4cb6a3fad05403f5871e498eff",
  "generatedAt": "2026-08-02",
  "fullInsertionDepthMm": 14,
  "stepMm": 0.02,
@@ -51,12 +51,12 @@
  },
  "assumptionSummary": {
   "counts": {
-   "FACT": 54,
+   "FACT": 53,
    "DERIVED": 39,
-   "ASSUMPTION": 42,
+   "ASSUMPTION": 43,
    "UNKNOWN": 0
   },
-  "jackInternalAssumptions": 21
+  "jackInternalAssumptions": 22
  },
  "absentTopologies": {
   "searched": [

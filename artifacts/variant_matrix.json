@@ -133,7 +133,7 @@
   {
    "id": "TRS|JACK-TRRS",
    "plug": "Lumberg 1532 10 (3極)",
-   "jack": "Lumberg (接点系のみ)。外形は 3極 1503 09 の値を流用 4極ジャック (接点系を Lumberg 1503 28 に合わせた構成)",
+   "jack": "Lumberg (接点系のみ) 4極ジャック (1503 28 接点系)",
    "plugBasis": "measured-part",
    "jackBasis": "constructed",
    "netFunctions": {
@@ -404,7 +404,7 @@
   {
    "id": "TRRS-CTIA|JACK-TRRS",
    "plug": "汎用 (JEITA RC-5325A 準拠品を想定) 4極 CTIA/AHJ (代表形状) (4極)",
-   "jack": "Lumberg (接点系のみ)。外形は 3極 1503 09 の値を流用 4極ジャック (接点系を Lumberg 1503 28 に合わせた構成)",
+   "jack": "Lumberg (接点系のみ) 4極ジャック (1503 28 接点系)",
    "plugBasis": "constructed",
    "jackBasis": "constructed",
    "netFunctions": {
@@ -674,7 +674,7 @@
   {
    "id": "TRRS-OMTP|JACK-TRRS",
    "plug": "汎用 (JEITA RC-5325A 準拠品を想定) 4極 OMTP (代表形状) (4極)",
-   "jack": "Lumberg (接点系のみ)。外形は 3極 1503 09 の値を流用 4極ジャック (接点系を Lumberg 1503 28 に合わせた構成)",
+   "jack": "Lumberg (接点系のみ) 4極ジャック (1503 28 接点系)",
    "plugBasis": "constructed",
    "jackBasis": "constructed",
    "netFunctions": {

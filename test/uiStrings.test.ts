@@ -136,3 +136,68 @@ describe('画面に出る文字列', () => {
     expect(bushing.label).toMatch(/1503 09/)
   })
 })
+
+/**
+ * 「逆向きの陳腐化」— 解決済みの項目を、まだ未確認だと言い続けていないか。
+ *
+ * ## 汎用の検出器は作らなかった
+ *
+ * `dimensions.json` の 135 キーに対して「grade が FACT/DERIVED なのに note に
+ * 『仮定 / 不明 / 未確認』がある」「grade が ASSUMPTION なのに note に『図面記載 / FACT』がある」
+ * という語句スキャンをかけると **9 件**引っかかったが、**実質は 1 件だけ**だった（誤検出 8/9 = 89 %）。
+ *
+ * 誤検出の中身は 2 種類:
+ *   - 歴史的な記述（「2026-07-31 まで〜と書いていたが」）
+ *   - 同じ note の中で**別の量**を指している（「端子位置は FACT だが接点位置は ASSUMPTION」）
+ *
+ * 語句スキャンは文脈を見られないので、テストにすると 8 件の恒久的なノイズになる。
+ * `docs.test.ts` が「artifact の全数値を文書と突き合わせる」のをやめて
+ * 主張の台帳にしたのと同じ理由で、**見つかった分だけを名指しで固定する**。
+ *
+ * 2026-08-02 の洗い出しで見つかった 6 件:
+ *   1. jack.housing.axisHeightFromPcb が FACT なのに、note 自身が「依然として未確認」と書いていた
+ *   2. docs/REPORT.md が「Ring1 / Ring2 の境界は仮定」（07-31 に FACT へ解決済み）
+ *   3. ASSUMPTIONS.md G が軸高さの導出を旧記述（拾い漏れ前の「中央に描かれているから」）のまま
+ *   4. UNKNOWNS.md §2 が「JEITA が読めれば Ring1/Ring2 境界を確定できた」（もう確定済み）
+ *   5. ASSUMPTIONS.md F-3 が端子番号の出典を Same Sky SJ3-35074A のままにしていた
+ *   6. ASSUMPTIONS.md F-3 が「4極ジャックのブレーク接点は定義していません」（08-02 に定義済み）
+ */
+describe('逆向きの陳腐化', () => {
+  const md = (f: string) => readFileSync(resolve(ROOT, f), 'utf8')
+  const dims = getModel('TRS|JACK-TRRS').dims
+
+  it('**note が自分自身を未確認と書いている項目を FACT にしない**', () => {
+    // 1 件目。合成量の区分は、弱いほうの入力に合わせる。
+    expect(dims.entry('jack.housing.axisHeightFromPcb').grade).toBe('ASSUMPTION')
+  })
+
+  it('解決済みの Ring1/Ring2 境界を「仮定」と呼んでいない', () => {
+    // 境界は図面記載の演算で FACT（§5-1・2026-07-31 解決）
+    for (const k of ['trrs.ring1.end', 'trrs.ring2.start'])
+      expect({ k, grade: dims.entry(k).grade }).toEqual({ k, grade: 'FACT' })
+    for (const f of ['docs/REPORT.md', 'README.md', 'ASSUMPTIONS.md'])
+      expect({ f, stale: /Ring1 ?\/ ?Ring2 の境界[^。\n]*(は仮定|が仮定)/.test(md(f)) }).toEqual({
+        f,
+        stale: false,
+      })
+    expect(md('UNKNOWNS.md')).not.toMatch(/読めれば TRRS の Ring1\/Ring2 境界を確定できた/)
+  })
+
+  it('**4極ジャックのブレーク接点を「定義していない」と書いていない**', () => {
+    // §5-3 は 2026-08-02 に解決済み。モデルにも入っている。
+    const brk = getModel('TRS|JACK-TRRS').jack.contacts.filter((c) => c.breakContact)
+    expect(brk).toHaveLength(2)
+    for (const f of ['ASSUMPTIONS.md', 'UNKNOWNS.md', 'README.md'])
+      expect({ f, stale: /ブレーク接点は定義していません/.test(md(f)) }).toEqual({ f, stale: false })
+  })
+
+  it('4極ジャックの端子番号の出典が、いま使っている部品と一致している', () => {
+    // 旧: Same Sky SJ3-35074A / 現: Lumberg 1503 28
+    expect(md('ASSUMPTIONS.md')).not.toMatch(/端子番号（PIN1=sleeve[^）]*）は Same Sky/)
+    expect(md('ASSUMPTIONS.md')).toMatch(/1503 28/)
+  })
+
+  it('軸高さの導出について、拾い漏れ前の説明が残っていない', () => {
+    expect(md('ASSUMPTIONS.md')).not.toMatch(/前面図でボアが本体高さ 6 ?mm の中央に描かれていることから DERIVED/)
+  })
+})
