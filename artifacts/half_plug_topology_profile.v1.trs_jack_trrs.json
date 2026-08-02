@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:8c081c579ec9",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:bba0e6dc73a4",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -39,16 +39,16 @@
    ]
   }
  },
- "sourceRevision": "ccf0d1a8bbac6fc4d91518058faf31dd12e9f2f4",
+ "sourceRevision": "9e284d169a7e5cd1107d71f76685bde99a1099ae",
  "generatedAt": "2026-08-02",
  "provenance": {
   "generatorVersion": 3,
-  "generatedFromCommit": "ccf0d1a8bbac6fc4d91518058faf31dd12e9f2f4",
-  "workingTreeDirty": true,
+  "generatedFromCommit": "9e284d169a7e5cd1107d71f76685bde99a1099ae",
+  "workingTreeDirty": false,
   "revisionOverride": false,
   "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "8c081c579ec98061f2e2da1d5506116bfb907798f948b0ba139a214f0c12e08b",
+  "inputDigest": "bba0e6dc73a4273c7178ede2eaeb40cb518fcf6c9c0c7679d24f15a9a6d821a0",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -58,7 +58,7 @@
    },
    {
     "path": "package-lock.json",
-    "sha256": "9fe8e04bd9967f37ac64fa7387c17c2b14780f04df95dc6bdd272e52568bea44",
+    "sha256": "5a62467e286df6334967859b48449b633b61148930934f32b3b1b66849f11589",
     "role": "lockfile"
    },
    {
