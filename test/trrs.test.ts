@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { plugRadiusAt } from '../src/model/resolve'
-import { allVariantIds, buildModelWithOverrides, getModel, splitVariantId } from '../src/data'
+import { allVariantIds, buildModelWithOverrides, getModel, listJackVariants, splitVariantId } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import { sweep } from '../src/model/sweep'
 import type { TrsModel } from '../src/model/engine'
@@ -414,4 +414,30 @@ describe('4極ジャックの土台 — Lumberg 1503 28', () => {
     expect(hit).toBeGreaterThan(0)
     expect(c.evaluate(c.fullDepthMm, DEFAULT_FAULTS).acoustic.code).toBe('NORMAL')
   }, 30_000)
+})
+
+/**
+ * 画面に出る variant 説明文が、モデルの実態と食い違わないようにする。
+ * 2026-08-02 の組み直しで端子番号が Same Sky 式から Lumberg 式へ変わったのに、
+ * 説明文が「Same Sky SJ3-35074A に準拠」のまま残っていた。
+ * **画面の文言は文書より見られるので、ここが古いと一番害が大きい。**
+ */
+describe('4極ジャックの variant 説明文', () => {
+  const info = listJackVariants().find((v) => v.id === 'JACK-TRRS')!
+
+  it('組み直し前の出典（Same Sky SJ3-35074A）を名乗っていない', () => {
+    expect(info.description).not.toContain('SJ3-35074A')
+    expect(info.description).toContain('1503 28')
+  })
+
+  it('**接点位置が仮定であることを画面に出している**', () => {
+    expect(info.description).toMatch(/仮定/)
+    expect(info.basis).toBe('constructed')
+  })
+
+  it('**外形が流用であることを画面に出している**', () => {
+    // 3D は 3極品の外形を描く。黙っていると「1503 28 の実物」に見える。
+    expect(info.description).toMatch(/外形/)
+    expect(info.description).toMatch(/流用|違う/)
+  })
 })

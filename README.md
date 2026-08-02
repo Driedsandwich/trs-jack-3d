@@ -85,7 +85,7 @@ npm run dev
 
 | コマンド | 内容 |
 |---|---|
-| `npm run test` | 単体テスト (Vitest) 190 件 |
+| `npm run test` | 単体テスト (Vitest) 193 件 |
 | `npm run typecheck` | TypeScript 型検査 (`src` / `scripts` / `test`) |
 | `npm run build` | 本番ビルド |
 | `npm run artifacts` | `artifacts/` へ走査結果 JSON を生成 |

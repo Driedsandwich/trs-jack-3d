@@ -97,6 +97,7 @@
     <li><a href="#s5">5. 探した範囲（見つからなかった方向も残します）</a></li>
     <li><a href="#s6">6. Lumberg の 4極品を読みました（2026-08-02 追記）</a></li>
     <li><a href="#s7">7. 4極モデルを Lumberg 品へ組み直すか → 組み直しました（2026-08-02）</a></li>
+    <li><a href="#s8">8. 外形は揃えませんでした（2026-08-02 の判断）</a></li>
   </ol>
 </nav>
 <h1>実在部品の図面と、本モデルの仮定を突き合わせた結果</h1>
@@ -208,6 +209,24 @@
 <ul><li>4極ジャックを参照する実装 <strong>11 ファイル</strong>（<code>src/data</code> 3・<code>scripts</code> 3・<code>test</code> 4 ほか）</li><li>作り直しになる artifact <strong>4 件</strong>（<code>half_plug_topology_profile.v1.trs_jack_trrs</code> / <code>topology_search_difference_signal</code> / <code>variant_matrix</code> / <code>real_jack_comparison</code>）</li><li>文書に転記済みの 4極の数値 <strong>16 箇所</strong></li></ul>
 <p>Half-Plug 側へ渡した <code>IV019</code> は <code>IV028</code>（13.30〜13.52 mm）になりました。</p>
 <p><strong><code>schemaVersion</code> は 1 のままにしました。</strong>項目も型も意味も変えておらず、 変わったのは<strong>データ</strong>だからです。ただし <code>intervalId</code> は区間の並び順から機械的に振った番号で、 <strong>データが変われば同じ番号が別の状態を指します。</strong> そこで <a href="HALF_PLUG_ADAPTER.md">HALF_PLUG_ADAPTER.md</a> §4 に、 「<code>profileId</code>（改訂が埋め込まれている）と組で保存し、違っていたら <code>topologyClass</code> と <code>normalized</code> で引き直す」ことを明記しました。</p>
+<hr>
+<h2 id="s8">8. 外形は揃えませんでした（2026-08-02 の判断）</h2>
+<p>§7 で接点系を 1503 28 へ移しましたが、<strong>外形（本体・ノーズ・ナット）は 3極 1503 09 の 流用のままにしています。</strong>その判断の記録です。</p>
+<h3>図面からは読めました</h3>
+<div class="tw"><table><thead><tr><th>項目</th><th>1503 28 の記載値</th><th>本モデル（1503 09 流用）</th></tr></thead><tbody><tr><td>全長</td><td><strong>14.00</strong></td><td>17.6</td></tr><tr><td>ノーズ</td><td>長さ <strong>2.00</strong> / <strong>ø5.00</strong></td><td>長さ 3.5 / ø6</td></tr><tr><td>挿入口</td><td><strong>ø3.60±0.1</strong></td><td>ø3.6（同じ）</td></tr><tr><td>本体幅</td><td><strong>7.50</strong>（つば込み 9.10）</td><td>11.5</td></tr><tr><td>本体高さ</td><td><strong>4.20</strong></td><td>6</td></tr><tr><td>実装</td><td><strong>SMT ミッドマウント</strong>（パッド 6 本・2 列）</td><td>スルーホール・パネル取付（はんだ穴 5 本）</td></tr></tbody></table></div>
+<p><strong>寸法だけなら差し替えられます。</strong>それでも揃えなかった理由は 4 つです。</p>
+<h3>1. 基板面からの軸高さが読み取れない</h3>
+<p>これが決定的でした。<code>jack.housing.axisHeightFromPcb</code> は 3D の配置に必須ですが、 <strong>1503 28 はミッドマウント品で、基板が本体の途中を通ります。</strong> 3極品のような「基板の上に載っていて、その面から軸まで何 mm」という量になりません。 図面の正面図にある <code>4.20</code> と <code>1.50</code> からどちらとも読めて、<strong>確定できませんでした。</strong></p>
+<p>推測で埋めれば 3D は動きますが、<strong>根拠タブに区分と出典つきで表示される数値</strong>なので、 このプロジェクトでそれをやるわけにはいきません。</p>
+<h3>2. 寸法だけ入れ替えると、かえって嘘が増える</h3>
+<p>3D は前面の円柱を <code>materials.json</code> の <strong>「ローレットナット (CuZn ニッケルめっき)」</strong>として描きます。 1503 28 のノーズは<strong>樹脂（PA GF）</strong>で、ナットではありません。 材質の割り当ては variant 別に切り替えられる構造になっていないので、 <strong>寸法だけ 1503 28 にすると「1503 28 の形をした、金属ナットつきの何か」</strong>になります。</p>
+<p>いまの「見るからに 3極品の外形を借りている」状態のほうが、読者を誤らせません。</p>
+<h3>3. 端子の形が違う</h3>
+<p>1503 28 は SMT パッド 6 本（2 列）、1503 09 はスルーホール 5 本です。 <code>jackGeometry.ts</code> は端子を 1 列の脚として置いており、これも構造の変更になります。</p>
+<h3>4. 外形は計算に一切入らない</h3>
+<p>接触判定・回路・力は、プラグの軸方向区間と接点の軸位置・パッド幅・ばね変位だけで決まります。 <strong>外形は表示専用</strong>です。揃えても結論は 1 つも変わりません。</p>
+<h3>代わりにやったこと</h3>
+<ul><li>上の外形寸法を <a href="../SOURCES.md">SOURCES.md</a> §13 に記録しました（将来やるときのため）</li><li><strong>アプリの variant 説明文を直しました。</strong>「端子番号は Same Sky SJ3-35074A に準拠」という 組み直し前の文言が残っていたので、1503 28 ベースであること・<strong>外形は流用であること</strong>を 画面上に出しています</li><li><a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-6 に、軸高さが読めない件を立てました</li></ul>
 </div>
 </body>
 </html>
