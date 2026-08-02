@@ -59,13 +59,36 @@
 1. `src/data/*.json` を直す
 2. `npm run artifacts` — 走査結果と区分件数を作り直す
 3. `npm run export:half-plug:all` — profile を作り直す（区分が変わったときは必須）
-4. `npm run test` — **ここで連動漏れが落ちます**
-5. `npm run test:count` — テスト件数の artifact を更新する
-6. `npm run docs:html` — HTML を作り直す
+4. **`npm run check:stale`** — 重い成果物の再実行が要るかを**機械が判定します**（→ 下）
+5. `npm run test` — **ここで連動漏れが落ちます**
+6. `npm run test:count` — テスト件数の artifact を更新する
+7. `npm run docs:html` — HTML を作り直す
 
-**接点位置や区分を変えたときは `npm run search:topology`（約 10 分）と
-`npm run sensitivity`（約 15 分）も必要です。**どちらも走査水準に既定値を含むので、
-既定値が動くと結果が変わります。
+### 重い成果物（10〜15 分）は、必要かどうかを機械に訊く
+
+`npm run search:topology`（約 10 分）と `npm run sensitivity`（約 15 分）は毎回は回せません。
+かといって回し忘れると**成果物だけが古い値のまま残ります。**
+
+**条件を覚えないでください。`npm run check:stale` が判定します。**
+
+```
+$ npm run check:stale
+  照合: topology_search_difference_signal.json: 軸 11 件
+
+**再実行が必要です。**
+
+  npm run search:topology -- --target DIFFERENCE_SIGNAL
+    topology_search_difference_signal.json: jack.contact.sleeve.padWidth が 0.9 → 0.92 に変わっている
+```
+
+判定は**成果物自身の記録**で行います。`topology_search_*.json` は走査軸ごとに `shipped`（実行時の値）を、
+`sensitivity.json` は `inputs`（走査に使った寸法値）を持っています。
+現在のモデルと突き合わせるだけなので、**走査軸が増えても勝手に追随します。**
+人がキーの一覧を保守しません。
+
+> **2026-08-03 まで、ここには「接点位置や区分を変えたときは必要」と書いていました。
+> これは条件として足りていませんでした。**下の通し確認で、
+> 帰線パッド幅を変えたときも両方の再実行が要ることが分かったためです。
 
 ---
 
@@ -82,7 +105,30 @@
 
 ---
 
-## 5. やってはいけないこと
+## 5. 手順を実際に通した記録
+
+**「手順を書いた」と「手順が通ることを確かめた」は別です。**通した記録を残します。
+
+### 2026-08-03 — 初回の通し確認
+
+2 種類の変更で、上の手順だけを順に実行しました。
+
+| | 変えたもの | 結果 |
+|---|---|---|
+| **A** | 表示専用の `note` を 1 行足す（`jack.nutDiameter`） | artifact 差分ゼロ・テスト 213 件すべて通過。**手順 2〜3 が空振りになるのが正しい挙動** |
+| **B** | 帰線パッド幅 0.9 → 0.92（接触判定に効く） | 手順 2 で `events.json` / `contact_sweep.json` / `force_curve.json` が変化、手順 3 で profile 2 件が変化、**手順 5 のテストで 3 件が期待どおり落ちた**（README と REPORT の深さが `events.json` に無い、走査値と真値の取り違え） |
+
+**手順は機能しました。**連動漏れは手順 5 で捕まります。
+
+**ただし 1 つ穴がありました。**B で変えたのは「接点位置」でも「区分」でもなく**パッド幅**ですが、
+`search:topology` も `sensitivity` も**パッド幅を走査軸に持っています**。
+当時の条件（「接点位置や区分を変えたときは必要」）からはそう読み取れませんでした。
+そこで `npm run check:stale` を作り、条件を機械判定に置き換えました。
+
+> 検出器そのものも試しました。パッド幅を 0.92 にすると
+> **キー名と必要なコマンドを名指しで出す**ことを確認し、戻すと消えることも確認しています。
+
+## 6. やってはいけないこと
 
 - **artifact の数字を書き換えてテストを通す。**artifact はモデルの出力です。
   文書側を直すか、モデルを直してください。

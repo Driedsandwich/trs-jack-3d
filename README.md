@@ -107,6 +107,7 @@ npm run dev
 | `npm run sensitivity` | 仮定パラメータの感度解析（**15 分ほどかかる。CI 向けではない**） |
 | `npm run docs:html` | `docs/*.md` から `docs/*.html` を生成 |
 | `npm run test:count` | テスト件数を `artifacts/test_counts.json` へ書き出す（文書と機械照合するため） |
+| `npm run check:stale` | 重い成果物（探索・感度解析）の再実行が要るかを判定する |
 | `npm run export:half-plug -- --variant "TRS\|JACK-TRRS"` | 接点トポロジーを DSP 非依存の JSON として書き出す |
 | `npm run export:half-plug:all` | 3極×3極 と 3極×4極 の両方を書き出す |
 | `npm run search:topology -- --target DIFFERENCE_SIGNAL` | 目標トポロジーが成立する構成を探す（**約 10 分**） |

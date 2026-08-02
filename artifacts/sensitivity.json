@@ -1,6 +1,19 @@
 {
- "schemaVersion": 4,
+ "schemaVersion": 5,
  "generatedBy": "npm run sensitivity",
+ "inputs": {
+  "jack.contact.sleeve.axialCenter": 3.2,
+  "jack.contact.sleeve.padWidth": 0.9,
+  "jack.contact.ring.axialCenter": 7.1,
+  "jack.contact.tip.axialCenter": 11.4,
+  "jack.break.ring.openDeflection": 0.05,
+  "model.contact.complianceMm": 0.05,
+  "plug.bodyRadius": 1.75,
+  "plug.insulatorRadius": 1.6,
+  "trrs.jack.contact.ring2.axialCenter": 4.74,
+  "trrs.jack.contact.narrowPadWidth": 0.5,
+  "trrs.jack.contact.sleeve.axialCenter": 1.25
+ },
  "note": "しきい値は走査ではなく二分法で求めている (走査刻みが答えを変えるため)。乱数は使っていないので何度実行しても同じ結果になる。初版 (schemaVersion 1) には手法上の欠陥が 4 つあり作り直した。scripts/sensitivity.ts の冒頭を参照。",
  "stepHeightMm": 0.15,
  "baseline": {

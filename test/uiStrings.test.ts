@@ -28,7 +28,7 @@
  *      (その境界は 2026-07-31 に FACT へ解決済み。**逆向きの陳腐化**)
  */
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
@@ -326,5 +326,42 @@ describe('文書どうしの食い違い', () => {
     }
     const shipped = sens.previouslyUnswept.ringBreakOpenDeflection.find((r) => r.openDeflection === 0.05)!
     expect(shipped.depth).toBe(8.0509) // 二分法
+  })
+})
+
+/**
+ * 手順（CONTRIBUTING.md §3）が実際に機能することを固定する。
+ *
+ * 2026-08-03 の通し確認で、手順は機能したが**条件に穴があった**。
+ * 「接点位置や区分を変えたときは重い成果物の再実行が必要」と書いていたが、
+ * 帰線パッド幅を変えたときも必要だった（両方の走査軸に入っている）。
+ * 条件を人が覚えるのをやめ、`npm run check:stale` の機械判定に置き換えた。
+ *
+ * ここで守るのは「判定に必要な記録が成果物に入っていること」である。
+ * 記録が消えると、判定はできなくなるのに**静かに「再実行不要」と答えてしまう**。
+ */
+describe('重い成果物の陳腐化判定', () => {
+  const art = (f: string) => resolve(ROOT, 'artifacts', f)
+
+  it('**探索の成果物が、走査軸ごとに実行時の値を記録している**', () => {
+    const p = art('topology_search_difference_signal.json')
+    if (!existsSync(p)) return
+    const a = JSON.parse(readFileSync(p, 'utf8')) as {
+      searchSpace: { axesByJack: Record<string, { key: string; shipped: number }[]> }
+    }
+    const axes = Object.values(a.searchSpace.axesByJack).flat()
+    expect(axes.length).toBeGreaterThan(0)
+    for (const x of axes) expect({ k: x.key, hasShipped: typeof x.shipped === 'number' }).toEqual({ k: x.key, hasShipped: true })
+  })
+
+  it('**感度解析の成果物が、走査に使った寸法値を記録している**', () => {
+    const p = art('sensitivity.json')
+    if (!existsSync(p)) return
+    const a = JSON.parse(readFileSync(p, 'utf8')) as { inputs?: Record<string, number> }
+    expect(a.inputs).toBeDefined()
+    expect(Object.keys(a.inputs!).length).toBeGreaterThan(5)
+    // 記録された値が、実在する寸法キーであること
+    const dims = getModel('TRS|JACK-TRS').dims
+    for (const k of Object.keys(a.inputs!)) expect({ k, exists: dims.entry(k) !== undefined }).toEqual({ k, exists: true })
   })
 })

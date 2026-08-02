@@ -520,9 +520,32 @@ console.log(`    校正係数は純粋な倍率: ${calibrationLinear.map((x) => 
 
 // ---------------------------------------------------------------------------
 
+/**
+ * **この成果物が、どの寸法値の上で作られたかを記録する。**
+ * 記録しておくと、あとから `npm run check:stale` が「モデルの値が動いたのに
+ * 感度解析を回し直していない」を機械で判定できる。
+ * 2026-08-03 の手順の通し確認で、パッド幅を変えたときに再実行が要ることが
+ * 手順書から読み取れなかったため追加した (CONTRIBUTING.md §3)。
+ * キーは、このスクリプトが実際に参照する寸法キーを列挙している。
+ */
+const SWEPT_KEYS = [
+  'jack.contact.sleeve.axialCenter',
+  'jack.contact.sleeve.padWidth',
+  'jack.contact.ring.axialCenter',
+  'jack.contact.tip.axialCenter',
+  'jack.break.ring.openDeflection',
+  'model.contact.complianceMm',
+  'plug.bodyRadius',
+  'plug.insulatorRadius',
+  'trrs.jack.contact.ring2.axialCenter',
+  'trrs.jack.contact.narrowPadWidth',
+  'trrs.jack.contact.sleeve.axialCenter',
+]
+
 const out = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   generatedBy: 'npm run sensitivity',
+  inputs: Object.fromEntries(SWEPT_KEYS.map((k) => [k, base.dims.entry(k).value])),
   note:
     'しきい値は走査ではなく二分法で求めている (走査刻みが答えを変えるため)。乱数は使っていないので何度実行しても同じ結果になる。' +
     '初版 (schemaVersion 1) には手法上の欠陥が 4 つあり作り直した。scripts/sensitivity.ts の冒頭を参照。',

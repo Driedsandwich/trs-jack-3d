@@ -93,7 +93,8 @@
     <li><a href="#s1">2. 守り方を選んだ基準 — 先に数えてから決める</a></li>
     <li><a href="#s2">3. モデルを変えたら、どこが連動するか</a></li>
     <li><a href="#s3">4. テスト件数だけは、ずっと手で直していました</a></li>
-    <li><a href="#s4">5. やってはいけないこと</a></li>
+    <li><a href="#s4">5. 手順を実際に通した記録</a></li>
+    <li><a href="#s5">6. やってはいけないこと</a></li>
   </ol>
 </nav>
 <h1>変更するときに読むもの</h1>
@@ -114,14 +115,33 @@
 <p>直近 8 コミットで <code>src/data/dimensions.json</code> と<strong>同時に変わったファイル</strong>の実測です。</p>
 <div class="tw"><table><thead><tr><th>連動先</th><th>誰が守っているか</th></tr></thead><tbody><tr><td><code>artifacts/verification_summary.json</code> の区分件数 → README / REPORT の根拠区分表</td><td><strong>機械照合</strong>（<code>docs.test.ts</code>）</td></tr><tr><td>「ジャック内部の寸法は N 件の仮定を含み」（README 2 か所）</td><td><strong>機械照合</strong>（<code>docs.test.ts</code>）</td></tr><tr><td><code>artifacts/half_plug_topology_profile.v1.*.json</code>（区分は接点から伝播する）</td><td><strong>機械照合</strong>（<code>halfPlugProfile.test.ts</code>）</td></tr><tr><td>接点まわりの区分</td><td><strong>不変条件</strong>（<code>uiStrings.test.ts</code>）</td></tr><tr><td>画面の variant 説明文・材質ラベル</td><td><strong>不変条件</strong>（<code>uiStrings.test.ts</code>）</td></tr><tr><td><strong>テスト件数</strong>（README / UNKNOWNS / <code>docs/TEST_RESULTS.md</code>）</td><td><strong>機械照合</strong>（<code>artifacts/test_counts.json</code> と突き合わせ。→ §4）</td></tr></tbody></table></div>
 <h3>手順</h3>
-<ol><li><code>src/data/*.json</code> を直す</li><li><code>npm run artifacts</code> — 走査結果と区分件数を作り直す</li><li><code>npm run export:half-plug:all</code> — profile を作り直す（区分が変わったときは必須）</li><li><code>npm run test</code> — <strong>ここで連動漏れが落ちます</strong></li><li><code>npm run test:count</code> — テスト件数の artifact を更新する</li><li><code>npm run docs:html</code> — HTML を作り直す</li></ol>
-<p><strong>接点位置や区分を変えたときは <code>npm run search:topology</code>（約 10 分）と <code>npm run sensitivity</code>（約 15 分）も必要です。</strong>どちらも走査水準に既定値を含むので、 既定値が動くと結果が変わります。</p>
+<ol><li><code>src/data/*.json</code> を直す</li><li><code>npm run artifacts</code> — 走査結果と区分件数を作り直す</li><li><code>npm run export:half-plug:all</code> — profile を作り直す（区分が変わったときは必須）</li><li><strong><code>npm run check:stale</code></strong> — 重い成果物の再実行が要るかを<strong>機械が判定します</strong>（→ 下）</li><li><code>npm run test</code> — <strong>ここで連動漏れが落ちます</strong></li><li><code>npm run test:count</code> — テスト件数の artifact を更新する</li><li><code>npm run docs:html</code> — HTML を作り直す</li></ol>
+<h3>重い成果物（10〜15 分）は、必要かどうかを機械に訊く</h3>
+<p><code>npm run search:topology</code>（約 10 分）と <code>npm run sensitivity</code>（約 15 分）は毎回は回せません。 かといって回し忘れると<strong>成果物だけが古い値のまま残ります。</strong></p>
+<p><strong>条件を覚えないでください。<code>npm run check:stale</code> が判定します。</strong></p>
+<pre><code>$ npm run check:stale
+  照合: topology_search_difference_signal.json: 軸 11 件
+
+**再実行が必要です。**
+
+  npm run search:topology -- --target DIFFERENCE_SIGNAL
+    topology_search_difference_signal.json: jack.contact.sleeve.padWidth が 0.9 → 0.92 に変わっている</code></pre>
+<p>判定は<strong>成果物自身の記録</strong>で行います。<code>topology_search_*.json</code> は走査軸ごとに <code>shipped</code>（実行時の値）を、 <code>sensitivity.json</code> は <code>inputs</code>（走査に使った寸法値）を持っています。 現在のモデルと突き合わせるだけなので、<strong>走査軸が増えても勝手に追随します。</strong> 人がキーの一覧を保守しません。</p>
+<div class="note"><p>**2026-08-03 まで、ここには「接点位置や区分を変えたときは必要」と書いていました。</p><p>これは条件として足りていませんでした。**下の通し確認で、</p><p>帰線パッド幅を変えたときも両方の再実行が要ることが分かったためです。</p></div>
 <hr>
 <h2 id="s3">4. テスト件数だけは、ずっと手で直していました</h2>
 <p>2026-08-03 までの 8 コミットすべてで、テスト件数を <strong>README / UNKNOWNS / <code>docs/TEST_RESULTS.md</code> の 3 か所</strong>手で直していました。<strong>24 回の手作業</strong>です。</p>
 <ul><li><strong>README と UNKNOWNS からは数を消しました。</strong>読者にとって「207 件」と「212 件」の違いに 意味はなく、手作業を増やすだけでした。</li><li><strong><code>docs/TEST_RESULTS.md</code> には残しました。</strong>そこでは件数そのものが報告の内容だからです。 代わりに <code>npm run test:count</code> が <code>artifacts/test_counts.json</code> を作り、 文書の数字と機械照合します。</li></ul>
 <hr>
-<h2 id="s4">5. やってはいけないこと</h2>
+<h2 id="s4">5. 手順を実際に通した記録</h2>
+<p><strong>「手順を書いた」と「手順が通ることを確かめた」は別です。</strong>通した記録を残します。</p>
+<h3>2026-08-03 — 初回の通し確認</h3>
+<p>2 種類の変更で、上の手順だけを順に実行しました。</p>
+<div class="tw"><table><thead><tr><th></th><th>変えたもの</th><th>結果</th></tr></thead><tbody><tr><td><strong>A</strong></td><td>表示専用の <code>note</code> を 1 行足す（<code>jack.nutDiameter</code>）</td><td>artifact 差分ゼロ・テスト 213 件すべて通過。<strong>手順 2〜3 が空振りになるのが正しい挙動</strong></td></tr><tr><td><strong>B</strong></td><td>帰線パッド幅 0.9 → 0.92（接触判定に効く）</td><td>手順 2 で <code>events.json</code> / <code>contact_sweep.json</code> / <code>force_curve.json</code> が変化、手順 3 で profile 2 件が変化、<strong>手順 5 のテストで 3 件が期待どおり落ちた</strong>（README と REPORT の深さが <code>events.json</code> に無い、走査値と真値の取り違え）</td></tr></tbody></table></div>
+<p><strong>手順は機能しました。</strong>連動漏れは手順 5 で捕まります。</p>
+<p><strong>ただし 1 つ穴がありました。</strong>B で変えたのは「接点位置」でも「区分」でもなく<strong>パッド幅</strong>ですが、 <code>search:topology</code> も <code>sensitivity</code> も<strong>パッド幅を走査軸に持っています</strong>。 当時の条件（「接点位置や区分を変えたときは必要」）からはそう読み取れませんでした。 そこで <code>npm run check:stale</code> を作り、条件を機械判定に置き換えました。</p>
+<div class="note"><p>検出器そのものも試しました。パッド幅を 0.92 にすると</p><p><strong>キー名と必要なコマンドを名指しで出す</strong>ことを確認し、戻すと消えることも確認しています。</p></div>
+<h2 id="s5">6. やってはいけないこと</h2>
 <ul><li><strong>artifact の数字を書き換えてテストを通す。</strong>artifact はモデルの出力です。 文書側を直すか、モデルを直してください。</li><li><strong>「確認済み」「検証済み」と単独で書く。</strong>何をどう検証したかを添えてください （静的検査／単体テスト／実ブラウザ／実機はすべて別のものです）。</li><li><strong>解決した項目を「まだ仮定です」と言い続ける。</strong>逆向きも嘘です（→ §1 (c)）。</li><li><strong>合成量に、強いほうの入力の区分を付ける。</strong>弱いほうに合わせてください（→ §1 (d)）。</li></ul>
 </div>
 </body>

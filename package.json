@@ -18,6 +18,7 @@
     "screenshots": "node scripts/screenshots.mjs",
     "docs:html": "node scripts/mdToHtml.mjs",
     "test:count": "node scripts/testCount.mjs",
+    "check:stale": "node scripts/checkStale.mjs",
     "perf": "node scripts/perf.mjs",
     "touch": "node scripts/touch.mjs",
     "predict:probe": "vite-node scripts/predictProbe.ts",
