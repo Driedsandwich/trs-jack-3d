@@ -84,13 +84,30 @@ try {
     readFileSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v1.trs_jack_trs.json'), 'utf8'),
   ).provenance
   console.log(
-    `\n  手元の artifact: dirty=${local.workingTreeDirty} / ${local.artifactKind}`
+    `\n  コミット済み artifact: dirty=${local.workingTreeDirty} / ${local.artifactKind}`
       + ` / digest ${local.inputDigest.slice(0, 12)}`,
   )
-  console.log(`  clean checkout : dirty=${p.workingTreeDirty} / ${p.artifactKind} / digest ${p.inputDigest.slice(0, 12)}`)
-  if (local.inputDigest !== p.inputDigest)
-    console.log('  → digest が違う。手元に未コミットの入力変更がある（開発中は正常）')
-  else console.log('  → digest が一致。手元の artifact は clean な入力から作られている')
+  console.log(`  clean checkout      : dirty=${p.workingTreeDirty} / ${p.artifactKind} / digest ${p.inputDigest.slice(0, 12)}`)
+
+  // **「入力が汚れている」と「artifact が古い」を取り違えないこと。**
+  // 2026-08-03 の通し確認で、clean な worktree なのに
+  // 「手元に未コミットの入力変更がある（開発中は正常）」と表示し、
+  // **古い artifact を正常扱いして exit 0 で終えていた。**
+  // clean checkout で digest が食い違うなら、原因は未コミット変更ではなく
+  // コミット済み artifact が古いことしかありえない。
+  if (local.inputDigest !== p.inputDigest) {
+    console.log('\n  ✗ コミット済み artifact の inputDigest が、現在の入力と食い違っている。')
+    console.log('    clean な checkout で作り直しても違うので、**artifact のほうが古い。**')
+    console.log('    npm run export:half-plug:all で作り直してコミットする。')
+    ok = false
+  } else {
+    console.log('  → digest が一致。コミット済み artifact は現在の入力から作られている')
+  }
+  if (local.workingTreeDirty) {
+    console.log('\n  ⚠ コミット済み artifact が workingTreeDirty: true を記録している。')
+    console.log('    未コミットの入力があった状態で生成されたもので、その入力は再現できない。')
+    console.log('    release の前に、clean な状態で作り直すこと。')
+  }
 } finally {
   try {
     run('git', ['worktree', 'remove', '--force', wt], { cwd: ROOT })

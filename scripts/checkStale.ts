@@ -20,18 +20,22 @@
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { buildProvenance } from './provenance'
 
 const ROOT = process.cwd()
-const dims = JSON.parse(readFileSync(resolve(ROOT, 'src/data/dimensions.json'), 'utf8')).entries
-const now = (k) => dims[k]?.value
+const dims = JSON.parse(readFileSync(resolve(ROOT, 'src/data/dimensions.json'), 'utf8')).entries as Record<
+  string,
+  { value: number }
+>
+const now = (k: string) => dims[k]?.value
 
-const stale = []
-const checked = []
+const stale: { artifact: string; reason: string; cmd: string }[] = []
+const checked: string[] = []
 
 // --- 1. 目標トポロジー探索 -------------------------------------------------
 for (const f of readdirSync(resolve(ROOT, 'artifacts')).filter((x) => x.startsWith('topology_search_'))) {
   const a = JSON.parse(readFileSync(resolve(ROOT, 'artifacts', f), 'utf8'))
-  const axes = Object.values(a.searchSpace?.axesByJack ?? {}).flat()
+  const axes = Object.values(a.searchSpace?.axesByJack ?? {}).flat() as { key: string; shipped: number }[]
   if (!axes.length) {
     stale.push({ artifact: f, reason: '走査軸の記録が無い（古い schemaVersion）', cmd: 'npm run search:topology' })
     continue
@@ -66,6 +70,41 @@ if (!existsSync(sp)) {
   }
 }
 
+// --- 3. profile が入力より古くなっていないか -------------------------------
+//
+// **2026-08-03 の完了条件の通し確認で見つかった穴。**
+// profile は provenance.inputDigest に「何から作ったか」を記録しているのに、
+// **それを現在の入力と突き合わせる検査がどこにも無かった。**
+//
+// 実際に古くなっていた。ajv を dev 依存へ足したとき package-lock.json が変わり、
+// これは digest の対象なので profile を作り直す必要があったが、誰も気付かなかった。
+// 記録は目の前にあったのに使っていなかった。
+//
+// 重い成果物と違い profile は数秒で作り直せるが、**古いまま公開されるのは同じ害**である。
+const wanted = buildProvenance({
+  root: ROOT,
+  command: 'check:stale',
+  artifactDate: '1970-01-01', // digest に日付は入らない。何を入れても同じ
+  release: false,
+  allowRevisionOverride: false,
+}).inputDigest
+
+for (const f of readdirSync(resolve(ROOT, 'artifacts')).filter((x) => x.startsWith('half_plug_topology_profile'))) {
+  const a = JSON.parse(readFileSync(resolve(ROOT, 'artifacts', f), 'utf8'))
+  const got = a.provenance?.inputDigest
+  if (!got) {
+    stale.push({ artifact: f, reason: 'provenance.inputDigest が無い', cmd: 'npm run export:half-plug:all' })
+    continue
+  }
+  checked.push(`${f}: inputDigest ${String(got).slice(0, 12)}`)
+  if (got !== wanted)
+    stale.push({
+      artifact: f,
+      reason: `入力が変わっている (記録 ${String(got).slice(0, 12)} → 現在 ${wanted.slice(0, 12)})`,
+      cmd: 'npm run export:half-plug:all',
+    })
+}
+
 // --- 出力 -----------------------------------------------------------------
 for (const c of checked) console.log(`  照合: ${c}`)
 if (!stale.length) {
@@ -73,7 +112,7 @@ if (!stale.length) {
   process.exit(0)
 }
 console.log('\n**再実行が必要です。**')
-const byCmd = {}
+const byCmd: Record<string, typeof stale> = {}
 for (const s of stale) (byCmd[s.cmd] ??= []).push(s)
 for (const [cmd, list] of Object.entries(byCmd)) {
   console.log(`\n  ${cmd}`)
