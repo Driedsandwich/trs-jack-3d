@@ -95,6 +95,8 @@
     <li><a href="#s3">3. 何が起きて、なぜ消えるのか</a></li>
     <li><a href="#s4">4. 差し替えも variant 追加もしません</a></li>
     <li><a href="#s5">5. 探した範囲（見つからなかった方向も残します）</a></li>
+    <li><a href="#s6">6. Lumberg の 4極品を読みました（2026-08-02 追記）</a></li>
+    <li><a href="#s7">7. 4極モデルを Lumberg 品へ組み直すか</a></li>
   </ol>
 </nav>
 <h1>実在部品の図面と、本モデルの仮定を突き合わせた結果</h1>
@@ -106,6 +108,7 @@
 <p>4極ジャックの接点位置には一次資料が 1 つもなく、4 件とも仮定でした（<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-2）。 これを資料で埋められないか <strong>170 型番</strong>を実際に開いて探し、<strong>接点位置そのものが寸法記入された図面を 1 件</strong>見つけました。 その値を本モデルへ入れると、</p>
 <div class="tw"><table><thead><tr><th></th><th>深さ 12.9〜13.1 mm 付近</th></tr></thead><tbody><tr><td>仮定値（1.25 / 4.35 / 7.35 / <strong>11.4</strong>）</td><td>左右差分が残る区間が出る（幅 0.23 mm）</td></tr><tr><td>図面値（1.28 / 4.4 / 7.55 / <strong>12.75</strong>）</td><td><strong>区間が出ない</strong>（全ストロークで 1 点も無い）</td></tr></tbody></table></div>
 <p>3 件はほぼ一致しました（差 0.03 / 0.05 / 0.20 mm）。<strong>外れたのは Tip 接点 1 件だけで、その 1 件が結論を決めていました。</strong></p>
+<div class="note"><p><strong>同日の続報で、この結論はさらに 1 段変わりました（→ §6）。</strong></p><p>Lumberg 自身の 4極ジャック <strong>1503 28</strong> を読むと、Tip ばねの<strong>端子</strong>は 11.30 mm にあり、</p><p>それを接点位置として計算すると<strong>区間は出ます</strong>（13.29〜13.50 mm）。</p><p>つまり <strong>「唯一の実在図面が否定した」ではなく「実在資料 2 件が逆を指している」</strong>が正確です。</p><p>2 件は証拠の種類が違います（PS000001 = 接点そのもの／1503 28 = 端子）。</p><p>以下の §1〜§4 は PS000001 単独の話として読んでください。</p></div>
 <hr>
 <h2 id="s1">1. 見つけた資料</h2>
 <div class="tw"><table><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody><tr><td>部品番号</td><td><strong>PS000001</strong></td></tr><tr><td>ブランド</td><td>pro-SIGNAL（Premier Farnell の自社ブランド）</td></tr><tr><td>製造者</td><td><strong>図面に記載なし</strong>（商社の自社ブランド資料）</td></tr><tr><td>文書名</td><td>3.5mm 4 Pole Audio Jack, SMT, IPX5/7</td></tr><tr><td>発行</td><td>2017-03-31 V1.0</td></tr><tr><td>URL</td><td>https://www.farnell.com/datasheets/2261829.pdf</td></tr><tr><td>取得日</td><td>2026-08-02</td></tr></tbody></table></div>
@@ -145,9 +148,7 @@
 <p>この 2 つを artifact（<code>artifacts/real_jack_comparison.json</code>）とテストで固定しました。 将来この結論を復活させる変更が入っても、テストが落ちます。</p>
 <div class="note"><p><strong>この 1 件で「4極ジャック一般」は語れません。</strong>PS000001 は防水 SMT 品 1 部品です。</p><p>別の部品では Tip 接点がもっと手前にあるかもしれません。</p><p>言えるのは「少なくとも 1 つの実在設計では成立しない」ということです。</p></div>
 <h3>次にやるなら — Lumberg 1503 28</h3>
-<p>探索中に、<strong>Lumberg 自身が 3.5mm 4極ジャックを出している</strong>ことが分かりました。</p>
-<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>部品</td><td><strong>1503 28</strong>（JEITA RC-5325A 準拠・4極・ブレーク接点 2 個・SMT）</td></tr><tr><td>対応プラグ</td><td><strong>1532 02</strong>（データシートの Counterparts 欄）</td></tr><tr><td>URL</td><td>https://downloads.lumberg.com/datenblaetter/en/1503_28.pdf</td></tr></tbody></table></div>
-<p>本プロジェクトの 3極は 1532 10 / 1503 09 という Lumberg の対で組んであります。 <strong>4極も同じ品質・同じ図面様式・同じ読み取り手順で組み直せます。</strong> ただし 1503 28 の図面にも<strong>断面図はなく</strong>、基板レイアウトの端子位置 （2.75 / 5.50 / 6.87 / 9.30 / 10.50 / 11.50 mm）までです。接点位置は依然として仮定になります。</p>
+<p><strong>→ 実際に読みました。<a href="#6-lumberg-の-4極品を読みました2026-08-02-追記">§6</a> と <a href="#7-4極モデルを-lumberg-品へ組み直すか">§7</a> を見てください。</strong></p>
 <hr>
 <h2 id="s5">5. 探した範囲（見つからなかった方向も残します）</h2>
 <p>「探したが無かった」と「探していない」は別の情報です。 2026-08-02 に <strong>13 方面・170 型番</strong>を実際に開いて確認しました。</p>
@@ -158,6 +159,49 @@
 <h3>探索の限界</h3>
 <ul><li><strong>13 方面は網羅ではありません。</strong> 台湾・韓国メーカー、車載向け、日本メーカーの個別品番カタログは 十分に当たれていません。</li><li>図面がラスタ画像でテキスト抽出できないものは、レンダリングして目視で読みました。 <strong>寸法の数字そのものは図に書かれているので読み違えにくい</strong>一方、 §2 の照合のような「図から位置を測る」作業は目視なので 0.1 mm 程度の誤差を含みます。本命の PS000001 と Cliff FC68125 / FC68129 については、 <strong>上記のとおり自分で PDF を取得し、図を描画して確認しています。</strong></li></ul>
 <div class="note"><p><strong>付記（2026-08-02）:</strong> <a href="../SOURCES.md">SOURCES.md</a> §9 で挿入口径の根拠として引いていた</p><p><strong>Cliff FC68128 は「3.5mm PHONE JACK - 4 POLE (17mm PLUG)」</strong> で、嵌合長 17 mm の別規格品でした。</p><p>挿入口径 Ø3.6 の根拠としては有効ですが、<strong>14 mm プラグの部品として扱ってはいけません。</strong></p></div>
+<hr>
+<h2 id="s6">6. Lumberg の 4極品を読みました（2026-08-02 追記）</h2>
+<p>Lumberg は 3.5mm 4極の<strong>対応組み合わせ</strong>を持っています。本プロジェクトの 3極は Lumberg 1532 10 / 1503 09 の対で組んであるので、同じ品質で 4極を組み直せる可能性がありました。</p>
+<div class="tw"><table><thead><tr><th></th><th>部品</th><th>規格</th></tr></thead><tbody><tr><td>プラグ</td><td><strong>1532 02</strong></td><td>JEITA RC-5325A <strong>JC35P4</strong></td></tr><tr><td>ジャック</td><td><strong>1503 28</strong></td><td>JEITA RC-5325A・ブレーク接点 2 個・SMT</td></tr></tbody></table></div>
+<p>両方のデータシートを取得して図面を読みました。</p>
+<h3>6-1. プラグ 1532 02 — 導体境界の寸法が<strong>ありません</strong></h3>
+<p>図面にある寸法は <strong><code>14</code> / <code>25</code> / <code>12</code> と <code>ø3.5</code></strong> だけです。 3極の 1532 10 が持っていた <code>8.5</code> / <code>5</code> / <code>0.7</code> に相当するものがなく、 <strong>独立した 3 社目の「記載寸法」にはなりませんでした。</strong></p>
+<p>ただし図は縮尺どおりに描かれています。1200 dpi で描画して寸法補助線を検出すると、 <strong>3 区間とも 67.0 px/mm</strong> で一致しました（<code>14</code>→67.00 / <code>25</code>→67.12 / <code>12</code>→67.00）。 そこで <a href="../SOURCES.md">SOURCES.md</a> §5 と同じ手法で導体境界を実測しました。</p>
+<div class="tw"><table><thead><tr><th>区間</th><th class="num">図面実測</th><th class="num">本モデルの FACT</th></tr></thead><tbody><tr><td>Tip</td><td class="num">0〜5.02</td><td class="num">0〜4.8</td></tr><tr><td>絶縁帯 1</td><td class="num">5.02〜5.64</td><td class="num">4.8〜5.5</td></tr><tr><td>Ring1</td><td class="num">5.64〜8.03</td><td class="num">5.5〜7.8</td></tr><tr><td>絶縁帯 2</td><td class="num">8.03〜8.51</td><td class="num">7.8〜8.5</td></tr><tr><td>Ring2</td><td class="num">8.51〜11.02</td><td class="num">8.5〜10.8</td></tr><tr><td>絶縁帯 3</td><td class="num">11.02〜11.49</td><td class="num">10.8〜11.5</td></tr><tr><td>Sleeve</td><td class="num">11.49〜<strong>14.000</strong></td><td class="num">11.5〜14.0</td></tr></tbody></table></div>
+<p><strong>合計は 14.000 mm でぴたりと閉じます。</strong>構成（導体 4・絶縁帯 3・その並び）は一致し、 Sleeve 長 2.507 は記載値 2.5 と一致します。</p>
+<div class="note"><p><strong>ただしこの実測は精度が足りません。</strong> 図面の線幅が 0.239 mm あり、</p><p>境界を線の中心で取るか外縁で取るかで <strong>±0.12 mm</strong> 動きます。</p><p>絶縁帯幅は中心間で 0.48、線幅を足すと 0.72 で、<strong>記載値 0.7 と区別できません。</strong></p><p>つまりこの実測は「<strong>構成が同じことの確認</strong>」であって、</p><p><strong>0.7 という数値の独立した裏付けにはなりません。</strong></p></div>
+<h3>6-2. ジャック 1503 28 — 端子と回路構成は読めます。接点位置は読めません</h3>
+<p>図面に断面図はなく、基板レイアウトと回路記号までです。</p>
+<p><strong>回路記号</strong>（箱＝バレル）:</p>
+<pre><code>端子1 ─ 箱（Sleeve バレル）
+端子2 ─ ばね（ブレーク接点なし）
+端子3 ─ ばね ─ 常時 端子5 に接触
+端子4 ─ ばね ─ 常時 端子6 に接触</code></pre>
+<p>3極の 1503 09 とまったく同じ構造です（箱が 1 つ、信号ばね 2 本にブレーク接点）。 <strong>「ブレーク接点 2 個」はデータシート本文の記載とも一致します。</strong></p>
+<p><strong>端子の軸位置</strong>（基板レイアウト。ノーズ突出 2.00 を足して挿入口面基準に換算）:</p>
+<div class="tw"><table><thead><tr><th>端子</th><th class="num">図面値</th><th class="num">挿入口面基準</th></tr></thead><tbody><tr><td>1（箱＝Sleeve）／ 2</td><td class="num">2.75</td><td class="num"><strong>4.74</strong></td></tr><tr><td>3</td><td class="num">5.50</td><td class="num"><strong>7.50</strong></td></tr><tr><td>4</td><td class="num">9.30</td><td class="num"><strong>11.30</strong></td></tr><tr><td>5</td><td class="num">10.50</td><td class="num">12.50</td></tr><tr><td>6</td><td class="num">11.50</td><td class="num">13.50</td></tr></tbody></table></div>
+<h3>6-3. 端子位置が、接点が入るべき範囲に<strong>全部入っています</strong></h3>
+<p>完全挿入で各接点が正しい導体に乗るには、軸位置が次の範囲になければなりません。</p>
+<div class="tw"><table><thead><tr><th>接点</th><th>必要な範囲</th><th class="num">ばねの端子位置</th></tr></thead><tbody><tr><td>Ring2</td><td>3.2〜5.5</td><td class="num"><strong>4.74</strong> ✓</td></tr><tr><td>Ring1</td><td>6.2〜8.5</td><td class="num"><strong>7.50</strong> ✓</td></tr><tr><td>Tip</td><td>9.2〜14.0</td><td class="num"><strong>11.30</strong> ✓</td></tr></tbody></table></div>
+<p><strong>3 本とも入っています。</strong>Cliff FC68125 のように端子の並びが接点の並びと逆なら、 こうはなりません。この部品では<strong>接点が端子のほぼ真上にある</strong>と読むのが自然です。</p>
+<p>そこで「接点＝端子位置」として計算すると:</p>
+<ul><li>完全挿入は正常（MIC→Sleeve / L→Tip / R→Ring / GND→Sleeve）</li><li><strong>左右差分の区間が出ます: 13.29〜13.50 mm（幅 0.22 mm）</strong></li></ul>
+<h3>6-4. 実在部品 2 件が、逆を向いています</h3>
+<div class="tw"><table><thead><tr><th>根拠</th><th class="num">Tip 接点の軸位置</th><th>左右差分の区間</th><th>根拠の強さ</th></tr></thead><tbody><tr><td>本モデルの仮定</td><td class="num">11.4</td><td>12.89〜13.11</td><td>一次資料なし</td></tr><tr><td><strong>PS000001</strong>（<strong>接点</strong>の寸法記入）</td><td class="num"><strong>12.75</strong></td><td><strong>なし</strong></td><td>断面図に直接記入。ただし商社ブランドで製造者不明</td></tr><tr><td><strong>Lumberg 1503 28</strong>（<strong>端子</strong>位置）</td><td class="num"><strong>11.30</strong></td><td>13.29〜13.50</td><td>メーカー公式・JEITA 準拠。ただし端子であって接点ではない</td></tr></tbody></table></div>
+<p><strong>この 2 件は種類の違う証拠です。</strong></p>
+<ul><li>PS000001 は<strong>接点そのもの</strong>の位置を書いています。強い。ただし 1 部品で、製造者も不明です。</li><li>1503 28 は<strong>端子</strong>の位置です。接点位置として使うのは推論であり、 実在の 4極品にはその推論が成り立たないもの（Cliff FC68125）が現にあります。</li></ul>
+<p>したがって <strong>「区間は出る」とも「出ない」とも言えません。</strong> 言えるのは、<strong>現象の成否が Tip 接点の軸位置 1 点にかかっており、 手に入る 2 件の実在資料が逆を指している</strong>ということです。</p>
+<p>前節（§0〜§4）で「実在図面 1 件に支持されていない」と書きましたが、 <strong>より正確には「実在資料 2 件が割れている」です。</strong></p>
+<hr>
+<h2 id="s7">7. 4極モデルを Lumberg 品へ組み直すか</h2>
+<p><strong>判断: 組み直す価値がある。ただし独立した変更として行う。</strong></p>
+<h3>何が変わるか</h3>
+<div class="tw"><table><thead><tr><th>項目</th><th>現在</th><th>1503 28 ベース後</th></tr></thead><tbody><tr><td>ジャック外形・ボア ø3.6</td><td>一次資料なし</td><td><strong>FACT</strong></td></tr><tr><td>端子の軸位置 6 本</td><td>定義なし</td><td><strong>FACT</strong></td></tr><tr><td>端子番号 ↔ 機能</td><td>定義なし</td><td><strong>DERIVED</strong>（1503 09 と同じ幾何的導出）</td></tr><tr><td>ブレーク接点の有無・個数</td><td><strong>未定義</strong>（<a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-3）</td><td><strong>FACT</strong>（2 個・回路記号あり）</td></tr><tr><td>接点の軸位置 4 件</td><td>ASSUMPTION（自由に選べる）</td><td><strong>ASSUMPTION（端子位置に拘束される）</strong></td></tr><tr><td>パッド幅・ばね定数</td><td>ASSUMPTION</td><td>ASSUMPTION（変わらない）</td></tr></tbody></table></div>
+<p><strong>§5-2 は閉じません。</strong>接点位置は仮定のままです。 変わるのは「4 件を自由に選んだ」から「実在部品の端子位置に縛られた」への格上げと、 <strong>§5-3（ブレーク接点）が完全に解決する</strong>ことです。</p>
+<h3>なぜ今この場で実施しないか</h3>
+<p>影響範囲が広く、<strong>公開済みの数値が動く</strong>ためです。実測すると:</p>
+<ul><li>4極ジャックを参照する実装 <strong>11 ファイル</strong>（<code>src/data</code> 3・<code>scripts</code> 3・<code>test</code> 4 ほか）</li><li>作り直しになる artifact <strong>4 件</strong>（<code>half_plug_topology_profile.v1.trs_jack_trrs</code> / <code>topology_search_difference_signal</code> / <code>variant_matrix</code> / <code>real_jack_comparison</code>）</li><li>文書に転記済みの 4極の数値 <strong>16 箇所</strong></li></ul>
+<p>とくに Half-Plug 側へ渡した <code>IV019</code>（12.90〜13.12 mm）が別の値になります。 <a href="HALF_PLUG_ADAPTER.md">HALF_PLUG_ADAPTER.md</a> の受け渡し契約に関わるので、 <strong>profile の版を上げるかどうかを含めて、この移行だけを 1 つの変更として扱うべき</strong>です。</p>
 </div>
 </body>
 </html>

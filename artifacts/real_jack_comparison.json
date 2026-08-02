@@ -554,6 +554,31 @@
    "比較として持つ: いま確実に言えるのは「Tip 接点の軸位置がしきい値より浅いことが、看板の結論の必要条件である」ということ。これはしきい値と反例として記録するのが正確"
   ]
  },
+ "lumbergTerminalScenario": {
+  "note": "Lumberg 1503 28 の基板レイアウトから読んだ **端子** 軸位置 (挿入口面基準)。接点位置ではない。「もし接点が端子の真上にあるなら」という条件付きの計算",
+  "partNumber": "1503 28",
+  "url": "https://downloads.lumberg.com/datenblaetter/en/1503_28.pdf",
+  "terminalsFromNoseMm": {
+   "trrs.jack.contact.ring2.axialCenter": 4.74,
+   "trrs.jack.contact.ring1.axialCenter": 7.5,
+   "trrs.jack.contact.tip.axialCenter": 11.3
+  },
+  "caveat": "端子位置を接点位置として使ってよい保証は無い。実在の 4極品には端子の並びが接点の並びと逆のものがある (Cliff FC68125)",
+  "landingAtFullInsertion": {
+   "MIC": "SLEEVE",
+   "L": "TIP",
+   "R": "RING",
+   "GND": "SLEEVE"
+  },
+  "fullInsertionOk": true,
+  "differenceWindows": [
+   {
+    "fromMm": 13.29,
+    "toMm": 13.5,
+    "widthMm": 0.22
+   }
+  ]
+ },
  "testerPredictions": {
   "note": "4極プラグを 4極ジャックへ挿し、各端子が最初に導通する位置でプラグ肩とジャック前面のすき間を測る (docs/VERIFICATION_PLAN.md §2-2)。仮定値と図面値でどこに差が出るかを示す",
   "variantId": "TRRS-CTIA|JACK-TRRS",

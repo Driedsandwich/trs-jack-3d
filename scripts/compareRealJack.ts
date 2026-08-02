@@ -129,6 +129,31 @@ for (const pad of [0.3, 0.4, 0.5, 0.7, 0.9])
     })
   }
 
+/**
+ * Lumberg 1503 28 (4極・JEITA RC-5325A) の **端子** 軸位置。接点位置ではない。
+ * 基板レイアウト図の 2.75 / 5.50 / 9.30 に、ノーズ突出 2.00 を足して挿入口面基準にした値。
+ * 端子 1 は回路記号の箱 = Sleeve バレルなので、ばねは端子 2 / 3 / 4 の 3 本。
+ *
+ * **これを接点位置として使ってよい保証は無い。** 端子は「ばねが基板へ降りる位置」であって
+ * 接点そのものではなく、実在の 4極品には端子の並びが接点の並びと逆のものもある
+ * (Cliff FC68125)。ここでは「もし接点が端子の真上にあるなら」という条件付きの計算をする。
+ */
+const LUMBERG_TERMINALS: Record<string, number> = {
+  'trrs.jack.contact.ring2.axialCenter': 4.74,
+  'trrs.jack.contact.ring1.axialCenter': 7.5,
+  'trrs.jack.contact.tip.axialCenter': 11.3,
+}
+
+/** 完全挿入時に各接点が触れる導体。端子位置が接点位置として成立しうるかの検査 */
+function landingAtFullInsertion(ov: Record<string, number>) {
+  const m = build(ov)
+  const ev = m.evaluate(m.fullDepthMm, DEFAULT_FAULTS)
+  const tt = ev.circuit.terminalToPlugNet
+  return Object.fromEntries(
+    m.jack.terminals.map((t) => [t.signalRole ?? t.id, (tt[t.id] ?? []).join('+') || null]),
+  )
+}
+
 // --- 5. テスターで測れる形の予測 (VERIFICATION_PLAN §2-2 の突き合わせ用) --------
 // 4極プラグを使う。各端子が「最初に導通する深さ」と、そのときの肩〜ジャック前面のすき間。
 function testerPredictions(ov: Record<string, number>) {
@@ -243,6 +268,20 @@ const out = {
       '比較として持つ: いま確実に言えるのは「Tip 接点の軸位置がしきい値より浅いことが、'
         + '看板の結論の必要条件である」ということ。これはしきい値と反例として記録するのが正確',
     ],
+  },
+
+  lumbergTerminalScenario: {
+    note:
+      'Lumberg 1503 28 の基板レイアウトから読んだ **端子** 軸位置 (挿入口面基準)。'
+      + '接点位置ではない。「もし接点が端子の真上にあるなら」という条件付きの計算',
+    partNumber: '1503 28',
+    url: 'https://downloads.lumberg.com/datenblaetter/en/1503_28.pdf',
+    terminalsFromNoseMm: LUMBERG_TERMINALS,
+    caveat:
+      '端子位置を接点位置として使ってよい保証は無い。実在の 4極品には端子の並びが接点の並びと逆のものがある (Cliff FC68125)',
+    landingAtFullInsertion: landingAtFullInsertion(LUMBERG_TERMINALS),
+    fullInsertionOk: fullInsertionOk(build(LUMBERG_TERMINALS)),
+    differenceWindows: differenceWindows(build(LUMBERG_TERMINALS)),
   },
 
   testerPredictions: {

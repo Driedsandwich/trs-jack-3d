@@ -126,6 +126,27 @@ describe('実在部品の図面値との突き合わせ', () => {
       }
     })
 
+    it('**Lumberg 1503 28 の端子位置は、接点が入るべき範囲に全部入る**', () => {
+      // §6-3 の主張。ここが崩れると「接点は端子のほぼ真上」という読みが成立しない。
+      const t = art.lumbergTerminalScenario.terminalsFromNoseMm as Record<string, number>
+      const need: Record<string, [number, number]> = {
+        'trrs.jack.contact.ring2.axialCenter': [3.2, 5.5],
+        'trrs.jack.contact.ring1.axialCenter': [6.2, 8.5],
+        'trrs.jack.contact.tip.axialCenter': [9.2, 14.0],
+      }
+      for (const [k, [lo, hi]] of Object.entries(need))
+        expect({ k, inside: t[k] > lo && t[k] < hi }).toEqual({ k, inside: true })
+    })
+
+    it('**実在資料 2 件が逆を指していることを記録している**', () => {
+      // PS000001 は区間なし、Lumberg 端子位置は区間あり。
+      // 片方だけ残して「決着した」と書けないようにする。
+      expect(art.result.drawing.differenceWindows).toHaveLength(0)
+      expect(art.lumbergTerminalScenario.differenceWindows.length).toBeGreaterThan(0)
+      expect(art.lumbergTerminalScenario.fullInsertionOk).toBe(true)
+      expect(art.lumbergTerminalScenario.caveat).toMatch(/保証は無い/)
+    })
+
     it('モデルがこの部品の値を採用していないこと', () => {
       // 「比較対象として持つ」という判断が守られているか。
       // 採用してしまうと artifact の assumed 側が図面値と同じになる。
