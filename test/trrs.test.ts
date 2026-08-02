@@ -11,6 +11,7 @@ import { plugRadiusAt } from '../src/model/resolve'
 import { allVariantIds, buildModelWithOverrides, getModel, listJackVariants, splitVariantId } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import { sweep } from '../src/model/sweep'
+import { classifyFromEvaluation } from '../src/model/topology'
 import type { TrsModel } from '../src/model/engine'
 
 const F = DEFAULT_FAULTS
@@ -399,17 +400,15 @@ describe('4極ジャックの土台 — Lumberg 1503 28', () => {
     expect(ok).toEqual([['ring2', 'ring1', 'tip']])
   })
 
-  it('**4極 CTIA プラグでも無改造で左右差分の区間が出る**（組み直し前は 0 件だった）', () => {
+  it('**4極 CTIA プラグでも既定の入力値のまま左右差分の区間が出る**（組み直し前は 0 件だった）', () => {
+    // 「無改造」とは書かない。意味するのは「このモデルの入力値を変えていない」であって、
+    // 市販の実物がそうなるという意味ではない (統合オーダー P0-5)。
     const c = getModel('TRRS-CTIA|JACK-TRRS')
-    const term = (r: string) => c.jack.terminals.find((t) => t.signalRole === r)!
     let hit = 0
     for (let d = 0; d <= c.fullDepthMm + 1e-9; d += 0.01) {
-      const tt = c.evaluate(+d.toFixed(4), DEFAULT_FAULTS).circuit.terminalToPlugNet
-      const g = (r: string) => tt[term(r).id] ?? []
-      const l = g('L')
-      const rr = g('R')
-      const gn = g('GND')
-      if (gn.length === 0 && l.length === 1 && rr.length === 1 && l[0] !== rr[0]) hit++
+      // 判定は分類器に任せる (統合オーダー P0-4)。ここに条件式を写さない
+      const cls = classifyFromEvaluation(c.jack.terminals, c.plug.netFunctions, c.evaluate(+d.toFixed(4), DEFAULT_FAULTS))
+      if (cls.topologyClass === 'ground-open-differential') hit++
     }
     expect(hit).toBeGreaterThan(0)
     expect(c.evaluate(c.fullDepthMm, DEFAULT_FAULTS).acoustic.code).toBe('NORMAL')

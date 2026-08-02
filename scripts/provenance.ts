@@ -28,7 +28,7 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { resolve, relative, join } from 'node:path'
+import { resolve, join } from 'node:path'
 
 /**
  * 生成器の版。**出力の形（項目・意味）を変えたら上げる。**

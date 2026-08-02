@@ -164,6 +164,16 @@
 <div class="tw"><table><thead><tr><th>ファイル</th><th>結果</th></tr></thead><tbody><tr><td><code>docs.test.ts</code></td><td><strong>ENOENT で落ちた。</strong> ガードを持っていない。<strong>これが正しい挙動</strong></td></tr><tr><td><code>topologySearch.test.ts</code></td><td>12 件が<strong>黙って skip</strong></td></tr><tr><td><code>realJackComparison.test.ts</code></td><td>6 件が<strong>黙って skip</strong></td></tr><tr><td><code>uiStrings.test.ts</code></td><td>3 件が<strong>黙って合格</strong>（早期 <code>return</code>）</td></tr></tbody></table></div>
 <p><strong>ガードが働くのは「壊れたときに黙る」ときだけでした。</strong> <code>skipIf</code> と早期 <code>return</code> を全部外し、<code>docs.test.ts</code> と同じく素直に読むようにしました。</p>
 <p>さらに変異試験で、<code>realJackComparison.test.ts</code> の <strong>「図面値では左右差分の区間が出ない」（反証を守るための検査）が、 端子の引き方を壊しても通る</strong>ことを確かめました。 <code>differenceWindowCount</code> が「引けなかった」を <strong>0</strong> として返していたためです。</p>
+<h3>検査コマンドそのものが空振りすることもある</h3>
+<p><strong>2026-08-03、型検査を 3 セッションにわたって「何も検査しない形」で回していました。</strong></p>
+<pre><code>$ npx tsc --noEmit -p tsconfig.json    # ← rc=0。しかし 1 ファイルも見ていない
+$ npm run typecheck                    # ← tsc -b。こちらが本物
+scripts/provenance.ts(31,19): error TS6133: 'relative' is declared but its value is never read.
+scripts/searchTopology.ts(210,10): error TS2304: Cannot find name 'classifyFromEvaluation'.</code></pre>
+<p><code>tsconfig.json</code> は <code>"files": []</code> と <code>references</code> だけを持つ<strong>振り分け専用</strong>です。 <code>-p</code> で直接指定すると「対象 0 件」で正常終了します。<strong><code>-b</code>（build mode）でないと 参照先（<code>tsconfig.app</code> / <code>node</code> / <code>scripts</code>）へ降りません。</strong></p>
+<p>そのあいだ、テストもビルドも通っていました。<strong>vitest も vite も型検査をしません。</strong> 実際、未定義の関数を呼ぶコードが 1 コミット分すり抜けています （<code>npm run search:topology</code> を実行して初めて <code>ReferenceError</code> で落ちました）。</p>
+<p><strong>検査は必ず <code>package.json</code> の script 名で呼んでください。</strong> <code>npx</code> で直接叩くと、引数の違いで黙って対象が空になります。</p>
+<div class="tw"><table><thead><tr><th>✅</th><th>❌</th></tr></thead><tbody><tr><td><code>npm run typecheck</code></td><td><code>npx tsc --noEmit -p tsconfig.json</code></td></tr><tr><td><code>npm run test</code></td><td>—</td></tr><tr><td><code>npm run build</code></td><td>—</td></tr></tbody></table></div>
 <h3>書くときの規則</h3>
 <ol><li><strong>成果物の有無で分岐しない。</strong><code>artifacts/</code> は git 管理下です。<code>existsSync</code> は使いません。 読めなければ落ちるべきです。</li><li><strong><code>?? []</code> / <code>?? null</code> で「引けなかった」を隠さない。</strong> 0 件と「引けなかった」が同じ値になる関数を書かない。<code>test/_must.ts</code> の <code>mustFind</code> を使えば、何を探して何があったかがメッセージに残ります。</li><li><strong>列挙した識別子は、実在を先に検査する。</strong> ```ts for (const kind of KINDS)                      // ← まず実在を見る expect({ kind, inArtifact: a.major.some((e) =&gt; e.kind === kind) }) .toEqual({ kind, inArtifact: true }) for (const kind of KINDS) { /* ここで値を比べる */ } ```</li><li><strong>「n 件を検査した」という主張そのものを検査する。</strong> <code>axesUsedPerVariant</code> が <code>{}</code> になると、「振った軸が効く」を 0 回検査したまま通ります。 前提が空でないことを <code>mustBeNonEmpty</code> で見ます。</li><li><strong><code>.find(...)!</code> を機械的に置き換えない。</strong>41 か所ありますが、あれは落ちます。 全部書き換えても守りは増えず、差分だけが増えます。</li></ol>
 <h3>機械が確かめること — <code>npm run check:vacuity</code></h3>

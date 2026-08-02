@@ -16,6 +16,7 @@ import type {
   SignalFunction,
 } from './types'
 import type { ResolvedJack, ResolvedPlug } from './resolve'
+import { classifyFromEvaluation } from './topology'
 
 /** この状態なら電流が流れているとみなす */
 const CONDUCTING: ContactState[] = ['CLOSED', 'TOUCH_UNSTABLE', 'WRONG_SEGMENT', 'BRIDGED']
@@ -187,9 +188,12 @@ export function predictAcoustic(
   const fnOf = (nets: PlugNet[]): SignalFunction[] =>
     [...new Set(nets.map((n) => plug.netFunctions[n]).filter((f): f is SignalFunction => !!f))]
 
-  const lNets = reach(termFor('L')?.id)
-  const rNets = reach(termFor('R')?.id)
-  const gNets = reach(termFor('GND')?.id)
+  // **電気的な事実は分類器から取る (統合オーダー P0-4)。**
+  // ここで再計算すると、同じ判定がまた 2 か所になる。
+  // この関数が独自に持つのは「どう聞こえるか」と表示文だけにする。
+  const t = classifyFromEvaluation(jack.terminals, plug.netFunctions, { contacts, circuit })
+  const { lNets, rNets, gndNets: gNets } = t
+
   const micT = termFor('MIC')
   const micNets = reach(micT?.id)
 
@@ -201,8 +205,7 @@ export function predictAcoustic(
   const gOk = okFor(gNets, 'GND')
 
   const anyConnection = lNets.length + rNets.length + gNets.length > 0
-  const lrShorted =
-    lNets.length > 0 && rNets.length > 0 && lNets.some((n) => rNets.includes(n))
+  const lrShorted = t.shortsSignalToSignal
   const unstable = contacts.some((c) => c.state === 'TOUCH_UNSTABLE')
 
   const mk = (
@@ -229,7 +232,9 @@ export function predictAcoustic(
     // 「左右差分が残る」と表示していた。** 実際にはその場合、両チャンネルが
     // 同じ節点に落ちて差分は生じない。構成探索で 318 件中 78 件しか
     // 本当の差分信号でなかったことから見つかった。
-    if (lNets.length === 1 && rNets.length === 1 && lNets[0] !== rNets[0]) {
+    //
+    // 判定そのものは topology.ts が持つ。ここは表示文を選ぶだけにする。
+    if (t.topologyClass === 'ground-open-differential') {
       return mk(
         'DIFFERENCE_SIGNAL',
         '共通帰線断 (左右差分が残る)',

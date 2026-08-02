@@ -178,15 +178,15 @@ describe('Half-Plug Topology Profile v1', () => {
     expect(p.absentTopologies.searched).toContain('ground-open-differential')
     expect(p.absentTopologies.searched).toContain('ground-open-nondifferential')
     const present = new Set(
-      p.intervals.map((x: { acousticAnnotation: { topologyClass: string } }) => x.acousticAnnotation.topologyClass),
+      p.intervals.map((x: { electricalTopology: { topologyClass: string } }) => x.electricalTopology.topologyClass),
     )
     for (const t of p.absentTopologies.absent) expect(present.has(t)).toBe(false)
     for (const t of present) expect(p.absentTopologies.absent).not.toContain(t)
   })
 
   it('3極×3極では左右差分が現れず、3極×4極では現れる（取り違えていない）', () => {
-    const cls = (p: { intervals: { acousticAnnotation: { topologyClass: string } }[] }) =>
-      new Set(p.intervals.map((x) => x.acousticAnnotation.topologyClass))
+    const cls = (p: { intervals: { electricalTopology: { topologyClass: string } }[] }) =>
+      new Set(p.intervals.map((x) => x.electricalTopology.topologyClass))
     expect(cls(profile).has('ground-open-differential')).toBe(false)
     expect(profile.absentTopologies.absent).toContain('ground-open-differential')
     expect(cls(trrsProfile).has('ground-open-differential')).toBe(true)
@@ -195,8 +195,8 @@ describe('Half-Plug Topology Profile v1', () => {
   it('3極プラグ × 4極ジャックの profile が、左右差分の区間を持っている', () => {
     // **無改造で成立する唯一の構成。** これが消えたら気づけるようにする
     const iv = trrsProfile.intervals.filter(
-      (x: { acousticAnnotation: { topologyClass: string } }) =>
-        x.acousticAnnotation.topologyClass === 'ground-open-differential',
+      (x: { electricalTopology: { topologyClass: string } }) =>
+        x.electricalTopology.topologyClass === 'ground-open-differential',
     )
     expect(iv.length).toBeGreaterThan(0)
     for (const x of iv) {
@@ -309,7 +309,7 @@ describe('Half-Plug Topology Profile v1', () => {
     expect(notes).toMatch(/代表しない/)
     // acousticAnnotation は係数ではなく分類であること
     for (const x of profile.intervals) {
-      expect(typeof x.acousticAnnotation.topologyClass).toBe('string')
+      expect(typeof x.electricalTopology.topologyClass).toBe('string')
       expect(['none', 'protection-dependent', 'short-circuit']).toContain(x.acousticAnnotation.electricalRisk)
     }
   })

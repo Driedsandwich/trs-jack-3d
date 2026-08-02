@@ -233,7 +233,7 @@ physicalClaimStatus      未実測なら "unverified"
 | | |
 |---|---|
 | ✅ 保存する | `profileId`（`trs-jack-3d:<variant>:<inputDigest 12桁>` の形）と `intervalId` を**セットで** |
-| ✅ 再解決する | `profileId` が違ったら、`acousticAnnotation.topologyClass` と `normalizedStart/End` で引き直す |
+| ✅ 再解決する | `profileId` が違ったら、`electricalTopology.topologyClass` と `normalizedStart/End` で引き直す |
 | ❌ しない | `intervalId` だけを保存して、新しい profile へそのまま当てる |
 
 > **`profileId` の作り方が変わりました（2026-08-03）。**

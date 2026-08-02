@@ -17,6 +17,62 @@
 
 ## [Unreleased]
 
+### 訂正 — 型検査を 3 セッション「何も検査しない形」で回していた
+
+`npx tsc --noEmit -p tsconfig.json` を使っていたが、`tsconfig.json` は
+`"files": []` と `references` だけの**振り分け専用**なので、
+**対象 0 件で正常終了していた。**本物は `npm run typecheck`（`tsc -b`）である。
+
+そのあいだ、テストもビルドも通っていた。**vitest も vite も型検査をしない。**
+実際に**未定義の関数を呼ぶコードが 1 コミット分すり抜けており**
+（`scripts/searchTopology.ts` の `classifyFromEvaluation`）、
+`npm run search:topology` を実行して初めて `ReferenceError` で落ちた。
+同時に、前コミットの `scripts/provenance.ts` に未使用 import が残っていたことも判明した。
+
+**過去の報告にある「typecheck rc=0」のうち、この期間のものは根拠になっていない。**
+再発防止は CONTRIBUTING §7 に書いた（検査は必ず package.json の script 名で呼ぶ）。
+
+### 訂正 — 電気トポロジーの分類が 5 か所に散っていた（統合オーダー P0-4）
+
+「帰線が浮き、L と R が別々の導体に届いている」という同じ判定が、
+`circuit.ts` / `searchTopology.ts` / `compareRealJack.ts` とテスト 2 件の
+**計 5 か所**に書かれていた。`src/model/topology.ts` の
+`classifyElectricalTopology()` を唯一の正本にし、5 か所すべてを向けた。
+
+指摘どおり、`searchTopology.ts` の説明文が旧実装のままだった
+（「判定順の都合で L と R が同じ導体でも `GROUND_OPEN` になる」）。
+**その挙動は 2026-08-02 に直っている。**逆向きの陳腐化として削除し、テストで固定した。
+
+一本化して初めて分かったことが 2 件ある。
+
+- **同じ数を 2 つの名前で報告していた。**`usableWitnesses` と
+  `strictDifferenceSignal` はどちらも 1,338 件だった。目標が「厳密な差分信号」
+  そのものになった時点で後者は定義上すべて前者に一致する。廃止し、
+  廃止したこと自体を artifact の `removedMeasures` に残した。
+- **短絡の種類を取り違えていた。**`shortsSignalToSignal` を
+  「`TIP` と `RING` に同時接触」という**導体名**で判定していた。
+  導体名は位置であって機能ではない（OMTP では Ring2 と Sleeve の機能が入れ替わる）。
+  分類器へ差し替えた結果、profile に `signal-to-signal-short` と `on-insulator` が
+  現れるようになった（従来はどちらも `signal-to-return-short` へ丸められていた）。
+
+**破壊的変更**: `topologyClass` を `acousticAnnotation` から
+`electricalTopology` へ移した（電気的な事実と聴感の仮説を別層にする）。
+
+### 訂正 — 「作れる」「市販品のまま」を名乗っていた（統合オーダー P0-5）
+
+| 旧 | 新 |
+|---|---|
+| `realizablePadWidth` | `passesPadWidthHeuristic` |
+| `needsNoModification` | `matchesCurrentNominalParameters` |
+
+0.3 mm という閾値に**出典が無い**ことを `heuristic.source: null` /
+`manufacturingVerified: false` として機械可読にした。
+材料・ばね応力・耐久性・成形・公差・接触圧・メーカー工程のいずれも確認していない。
+
+README の見出しを「半挿しにすると、**無改造で**左右差分が残ります」から
+「半挿しで左右差分が残る区間は、**モデル上の候補です**」へ直し、
+**同じ表の直下に反対証拠**（PS000001 では区間 0 件）を置いた。
+
 ### 追加 — artifact provenance（統合オーダー P0-1）
 
 profile に「何から作られたか」を残した。**`sourceRevision` では固定できなかった。**

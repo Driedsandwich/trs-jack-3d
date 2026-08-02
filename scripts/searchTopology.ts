@@ -23,6 +23,7 @@ import { buildModelWithOverrides, getModel } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import { sweep } from '../src/model/sweep'
 import type { TrsModel } from '../src/model/engine'
+import { classifyFromEvaluation, type TopologyClass } from '../src/model/topology'
 
 const ROOT = resolve(process.cwd())
 
@@ -36,6 +37,26 @@ const argOf = (name: string, dflt: string) => {
 // 2026-08-02 に GROUND_OPEN の意味を「帰線が浮くが差分にならない方」へ狭めたので、
 // 既定を GROUND_OPEN のままにすると、引数なしの実行が本命でない方を探してしまう。
 const TARGET = argOf('target', 'DIFFERENCE_SIGNAL')
+
+/**
+ * 目標を**分類器の語彙**へ写す (統合オーダー P0-4)。
+ *
+ * CLI と成果物のファイル名は従来の音響コードのままにしてある
+ * (`topology_search_difference_signal.json` を参照している検査・文書があるため)。
+ * 判定に使うのは分類器のクラスだけで、ここが唯一の対応表になる。
+ */
+const TARGET_CLASS_BY_CODE: Record<string, TopologyClass> = {
+  DIFFERENCE_SIGNAL: 'ground-open-differential',
+  GROUND_OPEN: 'ground-open-nondifferential',
+  LR_SHORTED: 'signal-to-return-short',
+  SILENT: 'no-path',
+  NORMAL: 'fully-seated',
+}
+const TARGET_CLASS = TARGET_CLASS_BY_CODE[TARGET]
+if (!TARGET_CLASS)
+  throw new Error(
+    `--target ${TARGET} は分類器のクラスへ写せない。使えるのは ${Object.keys(TARGET_CLASS_BY_CODE).join(' / ')}`,
+  )
 const COARSE = Number(argOf('step', '0.05'))
 
 // --- 探索空間 -----------------------------------------------------------
@@ -92,6 +113,54 @@ const AXES_BY_JACK: Record<string, Axis[]> = {
 const VARIANTS = ['TRS|JACK-TRS', 'TRRS-CTIA|JACK-TRRS', 'TRS|JACK-TRRS'] as const
 
 /**
+ * パッド幅の下限。**製造可能性の判定ではない (統合オーダー P0-5)。**
+ *
+ * 2026-08-03 まで `realizablePadWidth` という名前で「作れる」と読める形にしていたが、
+ * 実体は 0.3mm という 1 本の閾値だけである。しかもこの値に出典が無い。
+ * 材料・ばね応力・耐久性・成形・公差・接触圧・メーカー工程のいずれも確認していない。
+ */
+const PAD_WIDTH_HEURISTIC = {
+  name: 'minimumPadWidth',
+  thresholdMm: 0.3,
+  source: null,
+  manufacturingVerified: false,
+  note: '探索空間を切るための下限。出典は無く、製造上の妥当性も確認していない',
+} as const
+
+/**
+ * variant ごとの土台。**探索結果を「3.5mm ジャック一般」へ広げさせない。**
+ *
+ * 代表性の断り書きが 1 本しかないと、Lumberg 1532 10 × 1503 09 の話に見えてしまう。
+ * 実際には 4極ジャックを含む variant が 2 つあり、そちらは構成 profile である。
+ */
+const VARIANT_BASIS: Record<string, Record<string, unknown>> = {
+  'TRS|JACK-TRS': {
+    basePartOrConstructedProfile: 'Lumberg 1532 10 × Lumberg 1503 09 (どちらも実在の単一品)',
+    sourceBasis: 'メーカー公開データシートの図面・基板レイアウト・回路記号',
+    unverifiedAssumptions: ['接点ばねの自由半径・公称たわみ・ばね定数 (別メーカー資料への逆算)'],
+    representativenessDisclaimer: 'この 1 組についての結果であり、3.5mm ジャック全般を代表しない',
+  },
+  'TRRS-CTIA|JACK-TRRS': {
+    basePartOrConstructedProfile: '構成 profile。4極プラグは合成、4極ジャックは端子系のみ Lumberg 1503 28',
+    sourceBasis: '導体境界は図面記載寸法からの演算 (FACT)。端子位置は 1503 28 の基板レイアウト図 (FACT)',
+    unverifiedAssumptions: [
+      '接点の軸方向オフセット (beamOffset) — 一次資料なし',
+      '4極ジャックの外形 — 3極 1503 09 からの流用',
+    ],
+    representativenessDisclaimer: '実在の特定製品ではない。実物がこう振る舞うという主張ではない',
+  },
+  'TRS|JACK-TRRS': {
+    basePartOrConstructedProfile: '構成 profile。3極プラグ Lumberg 1532 10 × 端子系 Lumberg 1503 28 の混挿',
+    sourceBasis: '端子位置は 1503 28 の基板レイアウト図 (FACT)。接点位置は端子位置に拘束された仮定',
+    unverifiedAssumptions: [
+      '接点の軸方向オフセット (beamOffset) — 一次資料なし',
+      'PS000001 の断面図を入れると左右差分の区間は消える。実在資料 2 件が逆を指している',
+    ],
+    representativenessDisclaimer: '実在の単一製品ではない組み合わせ。実物がこう振る舞うという主張ではない',
+  },
+}
+
+/**
  * その軸を動かすと本当にモデルが変わることを確かめる。
  * 変わらない軸を「振った」と数えると、探索の網羅性を偽ることになる。
  */
@@ -127,32 +196,23 @@ function fullInsertionOk(m: TrsModel): boolean {
 }
 
 /**
- * **GROUND_OPEN には 2 種類ある。**
+ * その深さの電気トポロジーを分類する。**判定はここに書かない。**
  *
- * predictAcoustic は「帰線がどの導体にも届かない かつ L と R が何かに届く」で
- * GROUND_OPEN を出す。この判定は lrShorted より先にあるので、
- * **L と R が同じ導体に落ちていても GROUND_OPEN と分類される。**
+ * 2026-08-03 まで、ここに `isStrictDifferenceSignal` という独自実装があり、
+ * 「帰線が浮き L と R が別々の導体」という同じ判定が**このリポジトリに 5 か所**
+ * あった (src/model/circuit.ts / ここ / compareRealJack / テスト 2 件)。
  *
- * Half-Plug が再現したいのは左右の差分が残る状態なので、
- * 「L と R が別々の導体に正しく届いていて、帰線だけが浮いている」厳密な場合を
- * 分けて数える。両者を混ぜると、実体が左右短絡の構成まで数に入る。
+ * さらにその説明文が旧実装のまま取り残されていた。
+ * 「predictAcoustic は判定順の都合で L と R が同じ導体でも GROUND_OPEN を出す」
+ * と書いてあったが、**その挙動は 2026-08-02 に直っていた**（逆向きの陳腐化）。
+ * 分類は src/model/topology.ts が唯一持つ。
  */
-function isStrictDifferenceSignal(m: TrsModel, depthMm: number): boolean {
-  // **端子 ID を直書きしてはいけない。** 3極ジャックは T1/T2/T3、4極ジャックは
-  // P1〜P4 を使う。直書きすると 4極側が常に false になり、
-  // 「4極も調べた」と言いながら一度も判定していない状態になる
-  // (2026-08-02 に実際にそうなった。この探索で同種の空振りは 3 件目)。
-  // predictAcoustic と同じく signalRole から引く。
-  const tt = m.evaluate(depthMm, DEFAULT_FAULTS).circuit.terminalToPlugNet
-  const byRole = (role: string) => {
-    const t = m.jack.terminals.find((x) => x.signalRole === role)
-    return t ? tt[t.id] ?? [] : null
-  }
-  const l = byRole('L')
-  const r = byRole('R')
-  const g = byRole('GND')
-  if (!l || !r || !g) return false
-  return g.length === 0 && l.length === 1 && r.length === 1 && l[0] !== r[0]
+function topologyAt(m: TrsModel, depthMm: number): TopologyClass {
+  return classifyFromEvaluation(
+    m.jack.terminals,
+    m.plug.netFunctions,
+    m.evaluate(depthMm, DEFAULT_FAULTS),
+  ).topologyClass
 }
 
 /** L / R / GND の端子が引けることを確かめる。引けない variant は判定不能 */
@@ -164,13 +224,13 @@ function assertRolesResolvable(variantId: (typeof VARIANTS)[number]): void {
   }
 }
 
-/** 目標コードが現れる深さ区間 (粗い走査) */
+/** 目標クラスが現れる深さ区間 (粗い走査)。**判定は分類器に任せる** */
 function hitWindows(m: TrsModel, step: number): { fromMm: number; toMm: number }[] {
   const rows = sweep(m, { stepMm: step }).filter((r) => r.depthMm >= 0)
   const wins: { fromMm: number; toMm: number }[] = []
   let cur: { fromMm: number; toMm: number } | null = null
   for (const r of rows) {
-    if (r.acoustic === TARGET) {
+    if (topologyAt(m, r.depthMm) === TARGET_CLASS) {
       if (cur) cur.toMm = r.depthMm
       else cur = { fromMm: r.depthMm, toMm: r.depthMm }
     } else if (cur) {
@@ -190,12 +250,21 @@ interface Witness {
   constructed: boolean
   evidenceGrade: 'ASSUMPTION'
   fullInsertionOk: boolean
-  /** L と R が別々の導体に届いたまま帰線だけが浮く、厳密な差分信号か */
-  strictDifferenceSignal: boolean
-  /** 既定値から 1 つも動かしていないか。＝市販品のままで起きるか */
-  needsNoModification: boolean
-  /** 製造しうるパッド幅か (0.3mm 未満は現実的でないとみなす) */
-  realizablePadWidth: boolean
+  /**
+   * 既定値から 1 つも動かしていないか。
+   *
+   * **「市販品のままで起きる」という意味ではない (統合オーダー P0-5)。**
+   * 意味するのは「このモデルの入力値を 1 つも変えていない」だけである。
+   */
+  matchesCurrentNominalParameters: boolean
+  /**
+   * パッド幅が探索用の下限 0.3mm 以上か。
+   *
+   * **製造可能性の判定ではない (統合オーダー P0-5)。** 材料・ばね応力・耐久性・成形・
+   * 公差・接触圧・メーカー工程のどれも確認していない。0.3mm という値にも出典が無い。
+   * 探索空間を切るための heuristic にすぎないので、名前でそう言う。
+   */
+  passesPadWidthHeuristic: boolean
   windows: { fromMm: number; toMm: number }[]
   robustIntervalWidthMm: number
 }
@@ -246,14 +315,10 @@ for (const variantId of VARIANTS) {
       constructed,
       evidenceGrade: 'ASSUMPTION',
       fullInsertionOk: fullInsertionOk(m),
-      needsNoModification: axes.every((a) => ov[a.key] === a.shipped),
-      realizablePadWidth: axes
+      matchesCurrentNominalParameters: axes.every((a) => ov[a.key] === a.shipped),
+      passesPadWidthHeuristic: axes
         .filter((a) => a.key.toLowerCase().includes('padwidth'))
-        .every((a) => ov[a.key] >= 0.3),
-      strictDifferenceSignal: wins.some((w) => {
-        for (let d = w.fromMm; d <= w.toMm + 1e-9; d += COARSE) if (isStrictDifferenceSignal(m, d)) return true
-        return false
-      }),
+        .every((a) => ov[a.key] >= PAD_WIDTH_HEURISTIC.thresholdMm),
       windows: wins.map((w) => ({ fromMm: +w.fromMm.toFixed(3), toMm: +w.toMm.toFixed(3) })),
       robustIntervalWidthMm: +Math.max(...wins.map((w) => w.toMm - w.fromMm + COARSE)).toFixed(3),
     })
@@ -321,10 +386,13 @@ const stratified = (ws: Witness[], nPerVariant: number) =>
       .slice(0, nPerVariant),
   )
 
-const strict = usable.filter((w) => w.strictDifferenceSignal)
-// 「作れる可能性のある構成」と「計算上そうなるだけの構成」を分ける
-const realizable = strict.filter((w) => w.realizablePadWidth)
-const noMod = strict.filter((w) => w.needsNoModification)
+// **`strictDifferenceSignal` という別集計は廃止した (統合オーダー P0-4)。**
+// 目標そのものが分類器の `ground-open-differential` になったので、
+// 見つかった構成は定義上すべて「厳密」である。
+// 2026-08-03 の実測でも usableWitnesses と strictDifferenceSignal はどちらも 1338 件で、
+// **同じ数を 2 つの名前で報告していた** (独立した裏付けに見えてしまう)。
+const realizable = usable.filter((w) => w.passesPadWidthHeuristic)
+const noMod = usable.filter((w) => w.matchesCurrentNominalParameters)
 const broken = witnesses.filter((w) => !w.fullInsertionOk)
 
 // --- 書き出し -----------------------------------------------------------
@@ -337,6 +405,8 @@ const out = {
     variants: VARIANTS,
     axesByJack: Object.fromEntries(Object.entries(AXES_BY_JACK).map(([j, ax]) => [j, ax.map((a) => ({ key: a.key, levels: a.levels, shipped: a.shipped }))])),
     axesUsedPerVariant: axesUsed,
+    // variant ごとに土台を書く。1 本の断り書きだと 3極×3極の話に見えてしまう
+    variantBasis: Object.fromEntries(VARIANTS.map((v) => [v, { variantId: v, ...VARIANT_BASIS[v] }])),
     coarseStepMm: COARSE,
     configurationsTried: tried,
     buildFailed,
@@ -356,31 +426,40 @@ const out = {
     samples: stratified(usable, 8),
     droppedFromListing: Math.max(0, usable.length - stratified(usable, 8).length),
   },
-  // **ここが Half-Plug にとっての本命。**
-  strictDifferenceSignal: {
-    note:
-      'GROUND_OPEN のうち、L と R が別々の導体へ正しく届いたまま帰線だけが浮くもの。' +
-      'predictAcoustic の判定順の都合で、L と R が同じ導体に落ちていても GROUND_OPEN と分類される。' +
-      'それらを混ぜると、実体が左右短絡の構成まで数に入ってしまう。',
-    total: strict.length,
-    outOfUsable: usable.length,
-    byVariant: byVariant(strict),
-    maxWindowMm: strict.length ? Math.max(...strict.map((w) => w.robustIntervalWidthMm)) : null,
-    samples: stratified(strict, 8),
-    droppedFromListing: Math.max(0, strict.length - stratified(strict, 8).length),
-  },
-  // **ここが「作れるか」の答え。**
+  // **廃止した集計を、消したことごと記録する。**
+  removedMeasures: [
+    {
+      key: 'strictDifferenceSignal',
+      removedOn: '2026-08-03',
+      reason:
+        '目標そのものが分類器の ground-open-differential になったので、見つかった構成は定義上すべて厳密である。'
+        + '廃止前の実測でも usableWitnesses と strictDifferenceSignal はどちらも 1338 件で、'
+        + '**同じ数を 2 つの名前で報告していた**。独立した裏付けがあるように読めてしまうため消した。'
+        + '厳密な差分信号の件数が要る場合は usableWitnesses.total を見ること。',
+    },
+  ],
+  // **ここが「モデル上どこまで絞れるか」の答え。作れるかどうかではない。**
   realizability: {
     note:
-      'realizablePadWidth はパッド幅 0.3mm 以上 (それ未満は製造上現実的でないとみなす)。' +
-      'needsNoModification は既定値から 1 つも動かしていない構成、つまり市販品のままで起きるもの。' +
-      'ただし 4極ジャックの接点位置は一次資料が無く全て仮定なので、' +
-      '「市販品のまま」であっても実物がそうだという意味にはならない。',
-    realizablePadWidth: { total: realizable.length, byVariant: byVariant(realizable) },
-    needsNoModification: {
+      'passesPadWidthHeuristic は探索用の下限 (パッド幅 0.3mm 以上) を通ったというだけである。'
+      + '**製造可能性の判定ではない。** 材料・ばね応力・耐久性・成形・公差・接触圧・メーカー工程のいずれも確認していない。'
+      + 'matchesCurrentNominalParameters は「このモデルの入力値を 1 つも変えていない」という意味であって、'
+      + '**市販の実物でそうなると確認したという意味ではない。**'
+      + 'さらに 4極ジャックの接点の軸方向オフセットは一次資料が無く仮定なので、'
+      + 'この列のどの数字も実物の挙動を主張しない。',
+    heuristic: PAD_WIDTH_HEURISTIC,
+    passesPadWidthHeuristic: { total: realizable.length, byVariant: byVariant(realizable) },
+    matchesCurrentNominalParameters: {
       total: noMod.length,
       byVariant: byVariant(noMod),
       samples: stratified(noMod, 3),
+    },
+    counterEvidence: {
+      note:
+        '**同じ可視性で反対証拠を置く。** 唯一入手できた実在 4極ジャックの断面図 (pro-SIGNAL PS000001) の'
+        + '接点位置を入れると、左右差分の区間は 1 件も出ない。詳細は artifacts/real_jack_comparison.json と'
+        + ' docs/REAL_JACK_COMPARISON.md。実在資料 2 件 (PS000001 と Lumberg 1503 28 の端子位置) は逆を指している。',
+      ref: 'artifacts/real_jack_comparison.json',
     },
   },
   brokenJackWitnesses: {
@@ -409,10 +488,11 @@ writeFileSync(resolve(OUT, `topology_search_${TARGET.toLowerCase()}.json`), JSON
 console.log(`\n  目標 ${TARGET} / 試した構成 ${tried} (組めなかった ${buildFailed})`)
 console.log(`  現れた構成: ${witnesses.length}`)
 console.log(`  うち完全挿入が壊れていないもの: ${usable.length}`)
-console.log(`  うち厳密な差分信号 (L/R が別導体・帰線だけ浮く): ${strict.length}`)
-console.log(`    variant 別: ${JSON.stringify(byVariant(strict))}`)
-console.log(`  うちパッド 0.3mm 以上 (作れそう): ${realizable.length}`)
-console.log(`  うち既定値のまま (無改造): ${noMod.length} ${JSON.stringify(byVariant(noMod))}`)
+console.log(`    variant 別: ${JSON.stringify(byVariant(usable))}`)
+console.log(`  うちパッド幅 heuristic (>= ${PAD_WIDTH_HEURISTIC.thresholdMm}mm) を通ったもの: ${realizable.length}`)
+console.log(`    **製造可能性は確認していない。探索用の下限にすぎない**`)
+console.log(`  うち既定の入力値のまま: ${noMod.length} ${JSON.stringify(byVariant(noMod))}`)
+console.log(`    **市販の実物でそうなるという意味ではない**`)
 if (out.robustIntervalWidthMm !== null) console.log(`  最も広い窓: ${out.robustIntervalWidthMm} mm`)
 if (notFoundReason) console.log(`  → ${notFoundReason}`)
 console.log(`  artifacts/topology_search_${TARGET.toLowerCase()}.json を書き出した`)

@@ -16,6 +16,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { buildModelWithOverrides, getModel } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
+import { classifyFromEvaluation } from '../src/model/topology'
 import type { TrsModel } from '../src/model/engine'
 import { mustFind } from './_must'
 
@@ -39,17 +40,21 @@ const VARIANT = 'TRS|JACK-TRRS' as const
  * 引けないことは即座に落とす。0 と「引けなかった」を同じ値にしない。
  */
 function differenceWindowCount(m: TrsModel): number {
-  const term = (r: string) => mustFind(m.jack.terminals, (t) => t.signalRole === r, `端子 role=${r}`)
-  const ids = { L: term('L').id, R: term('R').id, GND: term('GND').id }
+  // **端子が引けることを先に確かめる。** 引けないと分類器は「届いていない」を返し、
+  // 窓が 0 件になる。0 と「引けなかった」を同じ値にすると、
+  // 反証を守るテストが壊れていても通る (2026-08-03 に変異試験で実測した)。
+  for (const role of ['L', 'R', 'GND'] as const)
+    mustFind(m.jack.terminals, (t) => t.signalRole === role, `端子 role=${role}`)
   let n = 0
   let inWindow = false
   for (let d = 0; d <= m.fullDepthMm + 1e-9; d += STEP) {
-    const tt = m.evaluate(+d.toFixed(4), DEFAULT_FAULTS).circuit.terminalToPlugNet
-    const nets = (r: 'L' | 'R' | 'GND') => tt[ids[r]] ?? []
-    const l = nets('L')
-    const r = nets('R')
-    const g = nets('GND')
-    const hit = g.length === 0 && l.length === 1 && r.length === 1 && l[0] !== r[0]
+    // 判定は分類器に任せる (統合オーダー P0-4)。ここに条件式を書かない
+    const cls = classifyFromEvaluation(
+      m.jack.terminals,
+      m.plug.netFunctions,
+      m.evaluate(+d.toFixed(4), DEFAULT_FAULTS),
+    )
+    const hit = cls.topologyClass === 'ground-open-differential'
     if (hit && !inWindow) n++
     inWindow = hit
   }

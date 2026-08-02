@@ -102,8 +102,8 @@
 <div class="note"><p><strong>監査対象が HEAD より手前だったので、8 件すべてを現在の木で引き直しました。</strong></p><p>「もう直っている」で済ませられた項目は <strong>0 件</strong>で、8 件とも当時のまま残っていました。</p><p>間の 3 commit は CONTRIBUTING と検査の追加で、profile や exporter に触れていません。</p></div>
 <hr>
 <h2 id="s0">0. 現在の状態</h2>
-<div class="tw"><table><thead><tr><th></th><th>P0</th><th>状態</th></tr></thead><tbody><tr><td>✅</td><td><strong>P0-1</strong> artifact provenance</td><td><strong>完了</strong>（受入試験 7 項目・→ §1）</td></tr><tr><td>✅</td><td><strong>P0-2</strong> TRRS の basis / limitations</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-3</strong> <code>events[].spreadMm</code> を event 固有に</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-7</strong>（一部）<code>DERIVED 39</code> の是正・adapter 文書の更新</td><td><strong>完了</strong></td></tr><tr><td>⬜</td><td><strong>P0-4</strong> 電気トポロジー分類の一本化</td><td>未着手（→ §2）</td></tr><tr><td>⬜</td><td><strong>P0-5</strong> 探索結果の表現を弱める</td><td>未着手（→ §2）</td></tr><tr><td>⏸</td><td><strong>P0-6</strong> Draft-07 の完全検証（Ajv）</td><td><strong>依存追加の承認待ち</strong>（→ §3）</td></tr><tr><td>⏸</td><td><strong>P0-8</strong> immutable release</td><td><strong>tag / push の承認待ち</strong>（→ §3）</td></tr></tbody></table></div>
-<p><strong>オーダー §8 の最優先 3 件（P0-1 / P0-2 / P0-3）は揃いました。</strong> ただし、<strong>リポジトリにコミットされている profile は <code>artifactKind: "local"</code> / <code>workingTreeDirty: true</code></strong> です（開発中に生成しているため）。 Half-Plug Lab 側が正本にできるのは、clean な入力から <code>--release</code> で作った release asset だけです。それは P0-8（承認待ち）で作ります。</p>
+<div class="tw"><table><thead><tr><th></th><th>P0</th><th>状態</th></tr></thead><tbody><tr><td>✅</td><td><strong>P0-1</strong> artifact provenance</td><td><strong>完了</strong>（受入試験 7 項目・→ §1）</td></tr><tr><td>✅</td><td><strong>P0-2</strong> TRRS の basis / limitations</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-3</strong> <code>events[].spreadMm</code> を event 固有に</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-4</strong> 電気トポロジー分類の一本化</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-5</strong> 探索結果の表現を弱める</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-7</strong> 文書と公開表現の整合</td><td><strong>完了</strong></td></tr><tr><td>⏸</td><td><strong>P0-6</strong> Draft-07 の完全検証（Ajv）</td><td><strong>依存追加の承認待ち</strong>（→ §3）</td></tr><tr><td>⏸</td><td><strong>P0-8</strong> immutable release</td><td><strong>tag / push の承認待ち</strong>（→ §3）</td></tr></tbody></table></div>
+<p><strong>着手できる P0 は出揃いました。</strong>残る 2 件はどちらも承認事項です。 ただし、<strong>リポジトリにコミットされている profile は <code>artifactKind: "local"</code> / <code>workingTreeDirty: true</code></strong> です（開発中に生成しているため）。 Half-Plug Lab 側が正本にできるのは、clean な入力から <code>--release</code> で作った release asset だけです。それは P0-8（承認待ち）で作ります。</p>
 <hr>
 <h2 id="s1">1. 完了した項目</h2>
 <h3>P0-1 — artifact provenance</h3>
@@ -183,9 +183,29 @@ sweptParameters: [jack.contact.sleeve.axialCenter, jack.contact.sleeve.padWidth]
 <h3>P0-7（一部） — 文書と公開表現</h3>
 <div class="tw"><table><thead><tr><th>指摘</th><th>対応</th></tr></thead><tbody><tr><td><code>docs/TEST_RESULTS.md</code> の <code>DERIVED 39</code></td><td>✅ 是正。件数を書かず artifact を正本にし、時点も明記</td></tr><tr><td>adapter 文書が旧 <code>spreadMm</code> の契約を説明</td><td>✅ §4 に意味の変更と移行方法を追記</td></tr><tr><td>「無改造で左右差分が残る」等の表現を弱める</td><td>⬜ <strong>P0-5 と同時に行う</strong>（→ §2）</td></tr><tr><td>generated HTML を MD から再生成</td><td>✅ <code>npm run docs:html</code></td></tr></tbody></table></div>
 <hr>
+<h3>P0-4 — 電気トポロジー分類が 5 か所に散っていた</h3>
+<p><strong>指摘より多く見つかりました。</strong>「帰線が浮き、L と R が別々の導体に届いている」 という同じ判定が、<strong>5 か所</strong>に書かれていました。</p>
+<div class="tw"><table><thead><tr><th></th><th>場所</th></tr></thead><tbody><tr><td>1</td><td><code>src/model/circuit.ts</code> の <code>predictAcoustic</code></td></tr><tr><td>2</td><td><code>scripts/searchTopology.ts</code> の <code>isStrictDifferenceSignal</code></td></tr><tr><td>3</td><td><code>scripts/compareRealJack.ts</code> の <code>differenceWindows</code></td></tr><tr><td>4</td><td><code>test/realJackComparison.test.ts</code> の <code>differenceWindowCount</code></td></tr><tr><td>5</td><td><code>test/trrs.test.ts</code> の左右差分カウンタ</td></tr></tbody></table></div>
+<p><code>src/model/topology.ts</code> の <code>classifyElectricalTopology()</code> を唯一の正本にし、 5 か所すべてをそこへ向けました。<code>isStrictDifferenceSignal</code> は削除しました。</p>
+<h4>指摘どおり、説明文が旧実装のまま残っていました</h4>
+<p><code>searchTopology.ts</code> に「<code>predictAcoustic</code> は判定順の都合で、L と R が同じ導体に 落ちていても <code>GROUND_OPEN</code> と分類される」と書かれていました。 <strong>その挙動は 2026-08-02 に直っています</strong>（<code>circuit.ts</code> が両者を分けた）。 逆向きの陳腐化そのものなので削除し、復活しないようテストで固定しました。</p>
+<h4>一本化して初めて分かった 2 件</h4>
+<p><strong>① 同じ数を 2 つの名前で報告していました。</strong> <code>usableWitnesses</code> と <code>strictDifferenceSignal</code> は<strong>どちらも 1,338 件</strong>でした。 目標が「厳密な差分信号」そのものになった時点で、後者は定義上すべて前者に一致します。 独立した裏付けがあるように読めるので、<code>strictDifferenceSignal</code> を廃止し、 <strong>廃止したこと自体を <code>removedMeasures</code> として artifact に残しました。</strong></p>
+<p><strong>② 短絡の種類を取り違えていました。</strong> <code>safetyFlags.shortsSignalToSignal</code> を <strong>「<code>TIP</code> と <code>RING</code> に同時接触」という導体名</strong>で判定していました。 導体名は位置であって機能ではありません（OMTP では Ring2 と Sleeve の機能が入れ替わります）。 <code>shortsSignalToReturn</code> も実体は「どれかの接点が 2 本に触れている」＝橋絡でした。 分類器の出力へ差し替えた結果、profile に <strong><code>signal-to-signal-short</code> と <code>on-insulator</code> が現れるようになりました</strong> （従来はどちらも <code>signal-to-return-short</code> に丸められていました）。</p>
+<h4>層を分けました</h4>
+<p><code>topologyClass</code> を <code>acousticAnnotation</code> から <code>electricalTopology</code> へ移しました。 電気的な事実（<code>topologyClass</code> / <code>reasonCode</code> / <code>openSignals</code> / <code>confidenceBoundary</code>）と、 未検証の聴感の仮説（<code>audibleHypothesis</code> / <code>electricalRisk</code> / <code>confidence</code>）を別の入れ物にします。</p>
+<div class="note"><p><strong>受け手への影響</strong>: <code>acousticAnnotation.topologyClass</code> は</p><p><code>electricalTopology.topologyClass</code> へ移動しました（adapter 文書 §4 に記載）。</p></div>
+<hr>
+<h3>P0-5 — 「作れる」「市販品のまま」を名乗っていた</h3>
+<div class="tw"><table><thead><tr><th>旧</th><th>新</th></tr></thead><tbody><tr><td><code>realizablePadWidth</code></td><td><strong><code>passesPadWidthHeuristic</code></strong></td></tr><tr><td><code>needsNoModification</code></td><td><strong><code>matchesCurrentNominalParameters</code></strong></td></tr></tbody></table></div>
+<p><code>heuristic: { name: 'minimumPadWidth', thresholdMm: 0.3, source: null, manufacturingVerified: false }</code> を添え、<strong>0.3 mm に出典が無いこと</strong>を機械可読にしました。</p>
+<p>README の見出しも 「半挿しにすると、<strong>無改造で</strong>左右差分が残ります」→ 「半挿しで左右差分が残る区間は、<strong>モデル上の候補です</strong>」へ直しました。</p>
+<p><strong>反対証拠を同じ可視性で置きました。</strong>README のその表の直下に、 PS000001（Tip 12.75 → 区間 0 件）と Lumberg 1503 28（Tip 11.30 → 区間あり）が 逆を指していることを表で置いています。artifact 側にも <code>realizability.counterEvidence</code> を追加しました。</p>
+<p>variant ごとに <code>variantId</code> / <code>basePartOrConstructedProfile</code> / <code>sourceBasis</code> / <code>unverifiedAssumptions</code> / <code>representativenessDisclaimer</code> を記録しました （断り書きが 1 本だと 3極×3極の話に見えてしまうため）。</p>
+<hr>
 <h2 id="s2">2. 未着手（次にやること）</h2>
-<div class="tw"><table><thead><tr><th></th><th>内容</th><th>なぜ今回やらなかったか</th></tr></thead><tbody><tr><td><strong>P0-4</strong></td><td><code>classifyElectricalTopology()</code> を model core へ置き、4 か所を統一</td><td><code>searchTopology.ts</code> の説明文が旧実装のまま（<code>predictAcoustic</code> の判定順で L/R が同導体でも <code>GROUND_OPEN</code> になる、という記述）。実装は 08-02 に直っており、<strong>説明だけが古い</strong>。分類の重複解消と同時に直す</td></tr><tr><td><strong>P0-5</strong></td><td><code>realizablePadWidth</code> → <code>passesPadWidthHeuristic</code> 等の改名</td><td>改名は <code>searchTopology.ts</code> の出力キーを変えるので、<strong><code>npm run search:topology</code>（約 10 分）の再実行が要る</strong>。P0-4 と同じ回に走らせるのが効率的</td></tr></tbody></table></div>
-<p><strong>P0-4 と P0-5 は同じ回にやるのが効率的です。</strong>どちらも <code>searchTopology.ts</code> を触り、 P0-5 は探索の再実行を伴います。P0-4 の分類統一で探索結果が変わる可能性もあるので、 <strong>先に P0-4、続けて P0-5、最後に 1 回だけ再走</strong>という順序になります。</p>
+<p><strong>着手できる P0 は残っていません。</strong></p>
+<p>P1（contact observation manifest）は実物の入手が前提で、 P2（3D 同期 API）は static 統合が安定してからと、オーダー自身が定めています。</p>
 <p><strong>P0-4 について 1 点補足</strong>: オーダーは「<code>searchTopology.ts</code> の説明が旧実装を前提にしている」と 指摘しています。現在の木で確認したところ、そのとおりでした（<code>scripts/searchTopology.ts:130-140</code>）。 <code>src/model/circuit.ts:227</code> には「2026-08-02 まで、この 2 つを区別せず <code>GROUND_OPEN</code> にまとめていた」 とあり、<strong>実装は直っているのに探索側の説明とヘルパが取り残されています。</strong> これは §1 (c)「逆向きの陳腐化」そのものです。</p>
 <hr>
 <h2 id="s3">3. 承認が要る項目</h2>

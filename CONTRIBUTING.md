@@ -203,6 +203,34 @@ $ npm run check:stale
 端子の引き方を壊しても通る**ことを確かめました。
 `differenceWindowCount` が「引けなかった」を **0** として返していたためです。
 
+### 検査コマンドそのものが空振りすることもある
+
+**2026-08-03、型検査を 3 セッションにわたって「何も検査しない形」で回していました。**
+
+```
+$ npx tsc --noEmit -p tsconfig.json    # ← rc=0。しかし 1 ファイルも見ていない
+$ npm run typecheck                    # ← tsc -b。こちらが本物
+scripts/provenance.ts(31,19): error TS6133: 'relative' is declared but its value is never read.
+scripts/searchTopology.ts(210,10): error TS2304: Cannot find name 'classifyFromEvaluation'.
+```
+
+`tsconfig.json` は `"files": []` と `references` だけを持つ**振り分け専用**です。
+`-p` で直接指定すると「対象 0 件」で正常終了します。**`-b`（build mode）でないと
+参照先（`tsconfig.app` / `node` / `scripts`）へ降りません。**
+
+そのあいだ、テストもビルドも通っていました。**vitest も vite も型検査をしません。**
+実際、未定義の関数を呼ぶコードが 1 コミット分すり抜けています
+（`npm run search:topology` を実行して初めて `ReferenceError` で落ちました）。
+
+**検査は必ず `package.json` の script 名で呼んでください。**
+`npx` で直接叩くと、引数の違いで黙って対象が空になります。
+
+| ✅ | ❌ |
+|---|---|
+| `npm run typecheck` | `npx tsc --noEmit -p tsconfig.json` |
+| `npm run test` | — |
+| `npm run build` | — |
+
 ### 書くときの規則
 
 1. **成果物の有無で分岐しない。**`artifacts/` は git 管理下です。`existsSync` は使いません。

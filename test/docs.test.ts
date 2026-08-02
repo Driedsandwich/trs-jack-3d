@@ -429,8 +429,8 @@ describe('B. 文書に転記した artifact の値が一致している', () => 
     // 手で書いた区間の数字が、生成物とずれないようにする
     const prof = json('artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json')
     const iv = prof.intervals.find(
-      (x: { acousticAnnotation: { topologyClass: string } }) =>
-        x.acousticAnnotation.topologyClass === 'ground-open-differential',
+      (x: { electricalTopology: { topologyClass: string } }) =>
+        x.electricalTopology.topologyClass === 'ground-open-differential',
     )
     expect(iv).toBeTruthy()
     const md = text['docs/HALF_PLUG_ADAPTER.md']

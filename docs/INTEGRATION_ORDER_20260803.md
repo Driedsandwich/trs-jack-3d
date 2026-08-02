@@ -22,13 +22,13 @@ Half-Plug Lab 側から受けた監査オーダーへの対応記録です。
 | ✅ | **P0-1** artifact provenance | **完了**（受入試験 7 項目・→ §1） |
 | ✅ | **P0-2** TRRS の basis / limitations | **完了** |
 | ✅ | **P0-3** `events[].spreadMm` を event 固有に | **完了** |
-| ✅ | **P0-7**（一部）`DERIVED 39` の是正・adapter 文書の更新 | **完了** |
-| ⬜ | **P0-4** 電気トポロジー分類の一本化 | 未着手（→ §2） |
-| ⬜ | **P0-5** 探索結果の表現を弱める | 未着手（→ §2） |
+| ✅ | **P0-4** 電気トポロジー分類の一本化 | **完了**（→ §1） |
+| ✅ | **P0-5** 探索結果の表現を弱める | **完了**（→ §1） |
+| ✅ | **P0-7** 文書と公開表現の整合 | **完了** |
 | ⏸ | **P0-6** Draft-07 の完全検証（Ajv） | **依存追加の承認待ち**（→ §3） |
 | ⏸ | **P0-8** immutable release | **tag / push の承認待ち**（→ §3） |
 
-**オーダー §8 の最優先 3 件（P0-1 / P0-2 / P0-3）は揃いました。**
+**着手できる P0 は出揃いました。**残る 2 件はどちらも承認事項です。
 ただし、**リポジトリにコミットされている profile は `artifactKind: "local"` /
 `workingTreeDirty: true`** です（開発中に生成しているため）。
 Half-Plug Lab 側が正本にできるのは、clean な入力から `--release` で作った
@@ -263,16 +263,88 @@ STATE_CHANGE:JC_RING:BREAK_CLOSED->BREAK_OPEN#1
 
 ---
 
+### P0-4 — 電気トポロジー分類が 5 か所に散っていた
+
+**指摘より多く見つかりました。**「帰線が浮き、L と R が別々の導体に届いている」
+という同じ判定が、**5 か所**に書かれていました。
+
+| | 場所 |
+|---|---|
+| 1 | `src/model/circuit.ts` の `predictAcoustic` |
+| 2 | `scripts/searchTopology.ts` の `isStrictDifferenceSignal` |
+| 3 | `scripts/compareRealJack.ts` の `differenceWindows` |
+| 4 | `test/realJackComparison.test.ts` の `differenceWindowCount` |
+| 5 | `test/trrs.test.ts` の左右差分カウンタ |
+
+`src/model/topology.ts` の `classifyElectricalTopology()` を唯一の正本にし、
+5 か所すべてをそこへ向けました。`isStrictDifferenceSignal` は削除しました。
+
+#### 指摘どおり、説明文が旧実装のまま残っていました
+
+`searchTopology.ts` に「`predictAcoustic` は判定順の都合で、L と R が同じ導体に
+落ちていても `GROUND_OPEN` と分類される」と書かれていました。
+**その挙動は 2026-08-02 に直っています**（`circuit.ts` が両者を分けた）。
+逆向きの陳腐化そのものなので削除し、復活しないようテストで固定しました。
+
+#### 一本化して初めて分かった 2 件
+
+**① 同じ数を 2 つの名前で報告していました。**
+`usableWitnesses` と `strictDifferenceSignal` は**どちらも 1,338 件**でした。
+目標が「厳密な差分信号」そのものになった時点で、後者は定義上すべて前者に一致します。
+独立した裏付けがあるように読めるので、`strictDifferenceSignal` を廃止し、
+**廃止したこと自体を `removedMeasures` として artifact に残しました。**
+
+**② 短絡の種類を取り違えていました。**
+`safetyFlags.shortsSignalToSignal` を
+**「`TIP` と `RING` に同時接触」という導体名**で判定していました。
+導体名は位置であって機能ではありません（OMTP では Ring2 と Sleeve の機能が入れ替わります）。
+`shortsSignalToReturn` も実体は「どれかの接点が 2 本に触れている」＝橋絡でした。
+分類器の出力へ差し替えた結果、profile に
+**`signal-to-signal-short` と `on-insulator` が現れるようになりました**
+（従来はどちらも `signal-to-return-short` に丸められていました）。
+
+#### 層を分けました
+
+`topologyClass` を `acousticAnnotation` から `electricalTopology` へ移しました。
+電気的な事実（`topologyClass` / `reasonCode` / `openSignals` / `confidenceBoundary`）と、
+未検証の聴感の仮説（`audibleHypothesis` / `electricalRisk` / `confidence`）を別の入れ物にします。
+
+> **受け手への影響**: `acousticAnnotation.topologyClass` は
+> `electricalTopology.topologyClass` へ移動しました（adapter 文書 §4 に記載）。
+
+---
+
+### P0-5 — 「作れる」「市販品のまま」を名乗っていた
+
+| 旧 | 新 |
+|---|---|
+| `realizablePadWidth` | **`passesPadWidthHeuristic`** |
+| `needsNoModification` | **`matchesCurrentNominalParameters`** |
+
+`heuristic: { name: 'minimumPadWidth', thresholdMm: 0.3, source: null, manufacturingVerified: false }`
+を添え、**0.3 mm に出典が無いこと**を機械可読にしました。
+
+README の見出しも
+「半挿しにすると、**無改造で**左右差分が残ります」→
+「半挿しで左右差分が残る区間は、**モデル上の候補です**」へ直しました。
+
+**反対証拠を同じ可視性で置きました。**README のその表の直下に、
+PS000001（Tip 12.75 → 区間 0 件）と Lumberg 1503 28（Tip 11.30 → 区間あり）が
+逆を指していることを表で置いています。artifact 側にも
+`realizability.counterEvidence` を追加しました。
+
+variant ごとに `variantId` / `basePartOrConstructedProfile` / `sourceBasis` /
+`unverifiedAssumptions` / `representativenessDisclaimer` を記録しました
+（断り書きが 1 本だと 3極×3極の話に見えてしまうため）。
+
+---
+
 ## 2. 未着手（次にやること）
 
-| | 内容 | なぜ今回やらなかったか |
-|---|---|---|
-| **P0-4** | `classifyElectricalTopology()` を model core へ置き、4 か所を統一 | `searchTopology.ts` の説明文が旧実装のまま（`predictAcoustic` の判定順で L/R が同導体でも `GROUND_OPEN` になる、という記述）。実装は 08-02 に直っており、**説明だけが古い**。分類の重複解消と同時に直す |
-| **P0-5** | `realizablePadWidth` → `passesPadWidthHeuristic` 等の改名 | 改名は `searchTopology.ts` の出力キーを変えるので、**`npm run search:topology`（約 10 分）の再実行が要る**。P0-4 と同じ回に走らせるのが効率的 |
+**着手できる P0 は残っていません。**
 
-**P0-4 と P0-5 は同じ回にやるのが効率的です。**どちらも `searchTopology.ts` を触り、
-P0-5 は探索の再実行を伴います。P0-4 の分類統一で探索結果が変わる可能性もあるので、
-**先に P0-4、続けて P0-5、最後に 1 回だけ再走**という順序になります。
+P1（contact observation manifest）は実物の入手が前提で、
+P2（3D 同期 API）は static 統合が安定してからと、オーダー自身が定めています。
 
 **P0-4 について 1 点補足**: オーダーは「`searchTopology.ts` の説明が旧実装を前提にしている」と
 指摘しています。現在の木で確認したところ、そのとおりでした（`scripts/searchTopology.ts:130-140`）。

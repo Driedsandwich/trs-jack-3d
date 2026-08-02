@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:989197f852a1",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:8c081c579ec9",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -39,16 +39,16 @@
    ]
   }
  },
- "sourceRevision": "972cb91f703687649024a70fac4eda29087e8bd6",
+ "sourceRevision": "ccf0d1a8bbac6fc4d91518058faf31dd12e9f2f4",
  "generatedAt": "2026-08-02",
  "provenance": {
   "generatorVersion": 3,
-  "generatedFromCommit": "972cb91f703687649024a70fac4eda29087e8bd6",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "ccf0d1a8bbac6fc4d91518058faf31dd12e9f2f4",
+  "workingTreeDirty": true,
   "revisionOverride": false,
   "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "989197f852a1b984f29720196b6867088533c2c98905f821023153df4a7d1715",
+  "inputDigest": "8c081c579ec98061f2e2da1d5506116bfb907798f948b0ba139a214f0c12e08b",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -63,17 +63,17 @@
    },
    {
     "path": "schemas/half-plug-topology-profile.v1.schema.json",
-    "sha256": "0f5aeaf1cb5ab3241eb136803f2bf0063bcd67ac3e55628850873040b91f4c12",
+    "sha256": "ba4d6bca95397d5adb32e1cbe9593644cc4a23a463914d1724b16abfd9700289",
     "role": "schema"
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "b7c6b3d1f66f51cb0843f7ac257931e9704b5d2e22d70cb05aa45b262fec655a",
+    "sha256": "944017f2d5a56dc696fe4f0a6b58dc73e33fe33253abaf8d490459dd59c47002",
     "role": "generator"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "75e5c4df1398190e89dc3227795daf7c13ed994cbfc45e508a9238883b994fff",
+    "sha256": "f2fdd33fedff7090ce4688d5b9cd71aa8157f46e0cb4da987b12b0f95c2836d1",
     "role": "generator"
    },
    {
@@ -123,7 +123,7 @@
    },
    {
     "path": "src/model/circuit.ts",
-    "sha256": "1bdcff279c4e249ca000e4f65728e986a0a554ab83249616f3e9b2b9c43bfd38",
+    "sha256": "bfc407f8921aaf230cc736c6a368f9490d59f0da9acca16dabfbc9ba49ca3025",
     "role": "model-code"
    },
    {
@@ -149,6 +149,11 @@
    {
     "path": "src/model/sweep.ts",
     "sha256": "bb88036fd8d757e652b66f36861b3b72a4abc6e9fd0f501761c785ff0a5472a4",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/topology.ts",
+    "sha256": "85594e701a195a574238853bcdf3bc5e421a9f860703443ee7ae123e953de478",
     "role": "model-code"
    },
    {
@@ -197,9 +202,10 @@
    "fully-seated",
    "no-path",
    "one-sided",
-   "signal-to-return-short",
    "on-insulator",
    "wrong-conductor",
+   "signal-to-signal-short",
+   "signal-to-return-short",
    "ground-open-differential",
    "ground-open-nondifferential"
   ],
@@ -315,8 +321,18 @@
     "anyWrongSegment": false,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "NO_CONDUCTING_PATH",
+    "openSignals": [
+     "L",
+     "R",
+     "GND",
+     "MIC"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -448,8 +464,17 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "R",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -572,8 +597,18 @@
     "anyWrongSegment": false,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "NO_CONDUCTING_PATH",
+    "openSignals": [
+     "L",
+     "R",
+     "GND",
+     "MIC"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -705,8 +740,17 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "R",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -838,8 +882,17 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "R",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -977,8 +1030,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [
+     "L",
+     "R"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -994,7 +1055,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -1119,8 +1180,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [
+     "L",
+     "R"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -1136,7 +1205,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -1252,8 +1321,17 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "R",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -1385,8 +1463,17 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "R",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -1518,8 +1605,17 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "R",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -1662,8 +1758,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -1806,8 +1910,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -1950,8 +2062,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -2100,8 +2220,15 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [
+     "L"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -2117,7 +2244,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -2244,8 +2371,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -2395,8 +2530,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -2412,7 +2555,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": true,
+    "shortsSignalToReturn": false,
     "shortsSignalToSignal": false
    }
   },
@@ -2539,8 +2682,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "no-path",
+    "reasonCode": "RETURN_OPEN_AND_CIRCUIT_NOT_CLOSED",
+    "openSignals": [
+     "L",
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "無音",
     "electricalRisk": "none",
     "confidence": "medium",
@@ -2692,8 +2843,15 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [
+     "L"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -2709,7 +2867,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -2834,8 +2992,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [
+     "L",
+     "R"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -2851,7 +3017,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -2976,8 +3142,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [
+     "L",
+     "R"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -2993,7 +3167,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -3118,8 +3292,16 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [
+     "L",
+     "R"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -3135,7 +3317,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -3271,8 +3453,15 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [
+     "L"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -3288,7 +3477,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -3424,8 +3613,15 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [
+     "L"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -3441,7 +3637,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -3585,8 +3781,13 @@
     "anyWrongSegment": true,
     "anyUnstable": true
    },
+   "electricalTopology": {
+    "topologyClass": "signal-to-signal-short",
+    "reasonCode": "L_AND_R_ON_SAME_CONDUCTOR",
+    "openSignals": [],
+    "confidenceBoundary": true
+   },
    "acousticAnnotation": {
-    "topologyClass": "signal-to-return-short",
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -3602,8 +3803,8 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
-    "shortsSignalToSignal": false
+    "shortsSignalToReturn": true,
+    "shortsSignalToSignal": true
    }
   },
   {
@@ -3746,8 +3947,13 @@
     "anyWrongSegment": true,
     "anyUnstable": true
    },
+   "electricalTopology": {
+    "topologyClass": "signal-to-signal-short",
+    "reasonCode": "L_AND_R_ON_SAME_CONDUCTOR",
+    "openSignals": [],
+    "confidenceBoundary": true
+   },
    "acousticAnnotation": {
-    "topologyClass": "signal-to-return-short",
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -3763,8 +3969,8 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
-    "shortsSignalToSignal": false
+    "shortsSignalToReturn": true,
+    "shortsSignalToSignal": true
    }
   },
   {
@@ -3907,8 +4113,13 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
+   "electricalTopology": {
+    "topologyClass": "signal-to-signal-short",
+    "reasonCode": "L_AND_R_ON_SAME_CONDUCTOR",
+    "openSignals": [],
+    "confidenceBoundary": false
+   },
    "acousticAnnotation": {
-    "topologyClass": "signal-to-return-short",
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -3924,8 +4135,8 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
-    "shortsSignalToSignal": false
+    "shortsSignalToReturn": true,
+    "shortsSignalToSignal": true
    }
   },
   {
@@ -4062,8 +4273,15 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [
+     "R"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -4079,7 +4297,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -4223,8 +4441,13 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "signal-to-return-short",
+    "reasonCode": "RETURN_TERMINAL_ON_SIGNAL_CONDUCTOR",
+    "openSignals": [],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": null,
     "electricalRisk": "short-circuit",
     "confidence": "low",
@@ -4240,7 +4463,7 @@
     ]
    },
    "safetyFlags": {
-    "shortsSignalToReturn": false,
+    "shortsSignalToReturn": true,
     "shortsSignalToSignal": false
    }
   },
@@ -4378,8 +4601,15 @@
     "anyWrongSegment": false,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "ground-open-differential",
+    "reasonCode": "RETURN_OPEN_L_AND_R_ON_DISTINCT_CONDUCTORS",
+    "openSignals": [
+     "GND"
+    ],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "音量が落ち、左右の差分成分が残る",
     "electricalRisk": "none",
     "confidence": "low",
@@ -4539,8 +4769,13 @@
     "anyWrongSegment": true,
     "anyUnstable": false
    },
-   "acousticAnnotation": {
+   "electricalTopology": {
     "topologyClass": "fully-seated",
+    "reasonCode": "ALL_EXPECTED_FUNCTIONS_MATCH",
+    "openSignals": [],
+    "confidenceBoundary": false
+   },
+   "acousticAnnotation": {
     "audibleHypothesis": "正常",
     "electricalRisk": "none",
     "confidence": "high",

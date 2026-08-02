@@ -600,6 +600,7 @@
         "terminalToPlugNet",
         "breakStates",
         "mechanicalFlags",
+        "electricalTopology",
         "acousticAnnotation",
         "evidenceGrade",
         "uncertainty",
@@ -721,20 +722,62 @@
             }
           }
         },
-        "acousticAnnotation": {
+        "electricalTopology": {
           "type": "object",
-          "description": "**参考分類であって DSP 係数ではない。** これをフィルタ係数・ゲイン・クロストーク量へ直接変換してはならない。topologyClass は電気的な接続の分類、audibleHypothesis は未検証の聴感の仮説である。",
+          "description": "**電気的な事実。** どう聞こえるかは含まない (それは acousticAnnotation)。2026-08-03 まで topologyClass は acousticAnnotation の中にあり、電気の分類と聴感の仮説が同じ入れ物に同居していた",
           "required": [
             "topologyClass",
+            "reasonCode",
+            "openSignals",
+            "confidenceBoundary"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "topologyClass": {
+              "enum": [
+                "fully-seated",
+                "no-path",
+                "one-sided",
+                "on-insulator",
+                "wrong-conductor",
+                "signal-to-signal-short",
+                "signal-to-return-short",
+                "ground-open-differential",
+                "ground-open-nondifferential"
+              ]
+            },
+            "reasonCode": {
+              "type": "string",
+              "description": "なぜその分類になったか。文言ではなく機械可読な符号。表示文を変えても変わらない"
+            },
+            "openSignals": {
+              "type": "array",
+              "description": "どこにも届いていない機能。端子が存在するのに導体へ届いていないものだけ",
+              "items": {
+                "enum": [
+                  "L",
+                  "R",
+                  "GND",
+                  "MIC"
+                ]
+              }
+            },
+            "confidenceBoundary": {
+              "type": "boolean",
+              "description": "判定の境目に近いか。接触が不安定、またはブレーク接点が判定不能なときに立つ"
+            }
+          }
+        },
+        "acousticAnnotation": {
+          "type": "object",
+          "description": "**未検証の聴感の仮説であって DSP 係数ではない。** これをフィルタ係数・ゲイン・クロストーク量へ直接変換してはならない。電気的な分類は electricalTopology にある",
+          "required": [
             "audibleHypothesis",
             "electricalRisk",
             "confidence"
           ],
           "additionalProperties": false,
           "properties": {
-            "topologyClass": {
-              "type": "string"
-            },
             "audibleHypothesis": {
               "type": [
                 "string",

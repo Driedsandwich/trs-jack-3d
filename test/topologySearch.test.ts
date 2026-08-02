@@ -86,12 +86,15 @@ describe('目標トポロジー探索 (DIFFERENCE_SIGNAL)', () => {
     expect(search.foundWithWorkingJack).toBe(search.usableWitnessCount > 0)
   })
 
-  /** 3 分類の標本をすべて集める */
-  const allSamples = () => [
-    ...search.usableWitnesses.samples,
-    ...search.strictDifferenceSignal.samples,
-    ...search.brokenJackWitnesses.samples,
-  ]
+  /**
+   * 2 分類の標本をすべて集める。
+   *
+   * **`strictDifferenceSignal` は 2026-08-03 に廃止した (統合オーダー P0-4)。**
+   * 目標が分類器の `ground-open-differential` そのものになったので、
+   * 見つかった構成は定義上すべて厳密である。廃止前の実測でも usableWitnesses と
+   * どちらも 1338 件で、**同じ数を 2 つの名前で報告していた**。
+   */
+  const allSamples = () => [...search.usableWitnesses.samples, ...search.brokenJackWitnesses.samples]
 
   it('実在部品と架空の構成を混同していない', () => {
     for (const w of allSamples()) {
@@ -119,7 +122,6 @@ describe('目標トポロジー探索 (DIFFERENCE_SIGNAL)', () => {
     // 種類を混ぜて幅の広い順に上位を取ったせいで、上位が全部別種で占められていた。
     for (const [name, cat] of Object.entries({
       usable: search.usableWitnesses,
-      strict: search.strictDifferenceSignal,
       broken: search.brokenJackWitnesses,
     }) as [string, { total: number; samples: unknown[]; droppedFromListing: number }][]) {
       if (cat.total > 0) expect({ name, shown: cat.samples.length > 0 }).toEqual({ name, shown: true })
@@ -133,7 +135,6 @@ describe('目標トポロジー探索 (DIFFERENCE_SIGNAL)', () => {
     // 「240 件成立」とだけ書かれた artifact ができた (同日・2 度目の同型)
     for (const [name, cat] of Object.entries({
       usable: search.usableWitnesses,
-      strict: search.strictDifferenceSignal,
     }) as [string, { byVariant: Record<string, number>; samples: { variantId: string }[] }][]) {
       const shown = new Set(cat.samples.map((w) => w.variantId))
       for (const [variantId, n] of Object.entries(cat.byVariant))
@@ -145,14 +146,67 @@ describe('目標トポロジー探索 (DIFFERENCE_SIGNAL)', () => {
     const sum = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0)
     expect(sum(search.witnessCountByVariant)).toBe(search.witnessCount)
     expect(sum(search.usableWitnesses.byVariant)).toBe(search.usableWitnesses.total)
-    expect(sum(search.strictDifferenceSignal.byVariant)).toBe(search.strictDifferenceSignal.total)
+    expect(sum(search.realizability.passesPadWidthHeuristic.byVariant)).toBe(
+      search.realizability.passesPadWidthHeuristic.total,
+    )
   })
 
-  it('厳密な差分信号は usable の部分集合である', () => {
-    expect(search.strictDifferenceSignal.total).toBeLessThanOrEqual(search.usableWitnesses.total)
-    for (const w of search.strictDifferenceSignal.samples) {
-      expect(w.fullInsertionOk).toBe(true)
-      expect(w.strictDifferenceSignal).toBe(true)
+  it('成立した構成は、完全挿入が壊れていない', () => {
+    mustBeNonEmpty(search.usableWitnesses.samples, 'usable の標本')
+    for (const w of search.usableWitnesses.samples) expect(w.fullInsertionOk).toBe(true)
+  })
+
+  it('**廃止した集計を、消したことごと記録している**', () => {
+    // 黙って消すと「前は別の数字があった」ことが分からなくなる
+    const rm = search.removedMeasures as { key: string; removedOn: string; reason: string }[]
+    mustBeNonEmpty(rm, 'removedMeasures')
+    const e = rm.find((x) => x.key === 'strictDifferenceSignal')
+    expect(e, 'strictDifferenceSignal の廃止記録が無い').toBeTruthy()
+    expect(e!.reason.length).toBeGreaterThan(40)
+    // 旧キーが復活していないこと
+    expect(Object.keys(search)).not.toContain('strictDifferenceSignal')
+  })
+
+  it('**「作れる」「市販品のまま」を verified fact として出していない**', () => {
+    // 統合オーダー P0-5。0.3mm の閾値には出典が無い
+    const h = search.realizability.heuristic
+    expect({ name: h.name, source: h.source, verified: h.manufacturingVerified }).toEqual({
+      name: 'minimumPadWidth',
+      source: null,
+      verified: false,
+    })
+    // 旧名が復活していないこと
+    const whole = JSON.stringify(search)
+    for (const old of ['realizablePadWidth', 'needsNoModification'])
+      expect({ old, present: whole.includes(old) }).toEqual({ old, present: false })
+    // 断り書きが「モデルの入力値」の話だと明示していること
+    expect(search.realizability.note).toMatch(/製造可能性の判定ではない/)
+    expect(search.realizability.note).toMatch(/市販の実物でそうなると確認したという意味ではない/)
+  })
+
+  it('**反対証拠を同じ可視性で置いている**', () => {
+    // 成立件数だけを載せて、PS000001 で区間が消える事実を隠さない
+    const ce = search.realizability.counterEvidence
+    expect(ce, 'counterEvidence が無い').toBeTruthy()
+    expect(ce.ref).toBe('artifacts/real_jack_comparison.json')
+    expect(ce.note).toMatch(/PS000001/)
+    expect(ce.note).toMatch(/1 件も出ない|逆を指している/)
+  })
+
+  it('**variant ごとに土台を記録している**', () => {
+    // 断り書きが 1 本だと 3極×3極の話に見えてしまう
+    const vb = search.searchSpace.variantBasis as Record<string, Record<string, unknown>>
+    mustBeNonEmpty(Object.entries(vb), 'variantBasis')
+    for (const v of search.searchSpace.variants as string[]) {
+      expect({ v, has: v in vb }).toEqual({ v, has: true })
+      for (const k of [
+        'variantId',
+        'basePartOrConstructedProfile',
+        'sourceBasis',
+        'unverifiedAssumptions',
+        'representativenessDisclaimer',
+      ])
+        expect({ v, k, has: k in vb[v] }).toEqual({ v, k, has: true })
     }
   })
 

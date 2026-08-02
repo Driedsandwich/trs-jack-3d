@@ -25,6 +25,7 @@ import { getModel } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import { extractEvents, sweep } from '../src/model/sweep'
 import type { TrsModel } from '../src/model/engine'
+import { ALL_TOPOLOGY_CLASSES, classifyFromEvaluation } from '../src/model/topology'
 import { buildProvenance } from './provenance'
 
 const ROOT = resolve(process.cwd())
@@ -80,8 +81,13 @@ const sourceRevision = () => provenance.generatedFromCommit
 // 「電気的なトポロジー」「未検証の聴感の仮説」「電気リスク」を分けて渡す。
 // ---------------------------------------------------------------------------
 
+/**
+ * **`topologyClass` はここに無い。** 統合オーダー P0-4 で
+ * 「electrical topology と audible hypothesis を別層にする」と定められたため、
+ * 分類は `electricalTopology`（`src/model/topology.ts` が正本）が持つ。
+ * ここに残るのは「どう聞こえるか」の仮説だけである。
+ */
 interface Annotation {
-  topologyClass: string
   audibleHypothesis: string | null
   stabilityOverlay: string | null
   electricalRisk: 'none' | 'protection-dependent' | 'short-circuit'
@@ -89,33 +95,29 @@ interface Annotation {
 }
 
 const ANNOTATION: Record<string, Omit<Annotation, 'stabilityOverlay'>> = {
-  NORMAL: { topologyClass: 'fully-seated', audibleHypothesis: '正常', electricalRisk: 'none', confidence: 'high' },
-  SILENT: { topologyClass: 'no-path', audibleHypothesis: '無音', electricalRisk: 'none', confidence: 'medium' },
-  LEFT_ONLY: { topologyClass: 'one-sided', audibleHypothesis: '左のみ', electricalRisk: 'none', confidence: 'medium' },
-  RIGHT_ONLY: { topologyClass: 'one-sided', audibleHypothesis: '右のみ', electricalRisk: 'none', confidence: 'medium' },
+  NORMAL: { audibleHypothesis: '正常', electricalRisk: 'none', confidence: 'high' },
+  SILENT: { audibleHypothesis: '無音', electricalRisk: 'none', confidence: 'medium' },
+  LEFT_ONLY: { audibleHypothesis: '左のみ', electricalRisk: 'none', confidence: 'medium' },
+  RIGHT_ONLY: { audibleHypothesis: '右のみ', electricalRisk: 'none', confidence: 'medium' },
   DIFFERENCE_SIGNAL: {
-    topologyClass: 'ground-open-differential',
     // 「左右の差分が残る」は電気的な帰結であって、聴感の実測ではない
     audibleHypothesis: '音量が落ち、左右の差分成分が残る',
     electricalRisk: 'none',
     confidence: 'low',
   },
   GROUND_OPEN: {
-    topologyClass: 'ground-open-nondifferential',
     audibleHypothesis: 'ほぼ無音',
     electricalRisk: 'none',
     confidence: 'low',
   },
   LR_SHORTED: {
-    topologyClass: 'signal-to-return-short',
     // 聴感は機器の保護動作に依存するので、断定しない
     audibleHypothesis: null,
     electricalRisk: 'short-circuit',
     confidence: 'low',
   },
-  INSULATED: { topologyClass: 'on-insulator', audibleHypothesis: '断', electricalRisk: 'none', confidence: 'medium' },
+  INSULATED: { audibleHypothesis: '断', electricalRisk: 'none', confidence: 'medium' },
   WRONG_SEGMENT: {
-    topologyClass: 'wrong-conductor',
     audibleHypothesis: null,
     electricalRisk: 'protection-dependent',
     confidence: 'low',
@@ -124,7 +126,6 @@ const ANNOTATION: Record<string, Omit<Annotation, 'stabilityOverlay'>> = {
 
 function annotate(code: string, unstable: boolean): Annotation {
   const base = ANNOTATION[code] ?? {
-    topologyClass: `unmapped:${code}`,
     audibleHypothesis: null,
     electricalRisk: 'protection-dependent' as const,
     confidence: 'low' as const,
@@ -160,10 +161,12 @@ function buildIntervals(m: TrsModel) {
   const flush = (startRow: (typeof rows)[number], endMm: number, idx: number) => {
     const ev = m.evaluate(startRow.depthMm, DEFAULT_FAULTS)
     const grades = ev.contacts.map((c) => (c.grade ?? 'ASSUMPTION') as Grade)
-    const shorted = ev.contacts.some((c) => c.connectedNets.length > 1)
-    const signalToSignal = ev.contacts.some(
-      (c) => c.connectedNets.includes('TIP') && c.connectedNets.includes('RING'),
-    )
+    // **safetyFlags を導体名から作らない (統合オーダー P0-4)。**
+    // 2026-08-03 まで shortsSignalToSignal を `TIP と RING に同時接触` で判定していた。
+    // 導体名は位置であって機能ではない。OMTP では Ring2 と Sleeve の機能が入れ替わるので、
+    // 同じ導体名でも意味が変わる。shorted も「どれかの接点が 2 本に触れている」＝橋絡であって、
+    // 帰線への短絡ではなかった。分類器の出力へ差し替える。
+    const cls = classifyFromEvaluation(m.jack.terminals, m.plug.netFunctions, ev)
     out.push({
       intervalId: `IV${String(idx).padStart(3, '0')}`,
       nominalStartMm: +startRow.depthMm.toFixed(4),
@@ -189,6 +192,14 @@ function buildIntervals(m: TrsModel) {
         anyWrongSegment: ev.anyWrongSegment,
         anyUnstable: ev.anyUnstable,
       },
+      // 電気的な事実。**分類の正本は src/model/topology.ts。**
+      electricalTopology: {
+        topologyClass: cls.topologyClass,
+        reasonCode: cls.reasonCode,
+        openSignals: cls.openSignals,
+        confidenceBoundary: cls.confidenceBoundary,
+      },
+      // 聴感の仮説。**別層。** ここに分類は入らない
       acousticAnnotation: annotate(ev.acoustic.code, ev.anyUnstable),
       evidenceGrade: weakest(grades),
       uncertainty: {
@@ -201,7 +212,7 @@ function buildIntervals(m: TrsModel) {
           '帰線接点の軸位置 (ASSUMPTION) を入口ブッシング寸法と両立させると、全区間が一律 +1.0mm ずれる (UNKNOWNS §3-8)。',
         ],
       },
-      safetyFlags: { shortsSignalToReturn: shorted, shortsSignalToSignal: signalToSignal },
+      safetyFlags: { shortsSignalToReturn: cls.shortsSignalToReturn, shortsSignalToSignal: cls.shortsSignalToSignal },
     })
   }
 
@@ -473,8 +484,10 @@ const profile = {
   // 統合オーダー §3 P0: 既定モデルに GROUND_OPEN が無いなら、それを明示的に出力する。
   // Half-Plug 側の中核候補なので、「無い」ことこそ渡すべき情報である。
   absentTopologies: (() => {
-    const searched = ['fully-seated', 'no-path', 'one-sided', 'signal-to-return-short', 'on-insulator', 'wrong-conductor', 'ground-open-differential', 'ground-open-nondifferential']
-    const present = new Set(intervals.map((i) => (i.acousticAnnotation as Annotation).topologyClass))
+    // **分類器が持つ一覧をそのまま使う。** ここに手書きの配列を置くと、
+    // クラスを増やしたときに「探した」の一覧だけが古くなる (逆向きの陳腐化)
+    const searched = [...ALL_TOPOLOGY_CLASSES]
+    const present = new Set(intervals.map((i) => (i.electricalTopology as { topologyClass: string }).topologyClass))
     return {
       searched,
       absent: searched.filter((t) => !present.has(t)),
@@ -493,7 +506,7 @@ mkdirSync(OUT_DIR, { recursive: true })
 const OUT_PATH = resolve(OUT_DIR, `half_plug_topology_profile.v1.${slug}.json`)
 writeFileSync(OUT_PATH, JSON.stringify(profile, null, 1) + '\n')
 
-const codes = new Set(intervals.map((i) => (i.acousticAnnotation as Annotation).topologyClass))
+const codes = new Set(intervals.map((i) => (i.electricalTopology as { topologyClass: string }).topologyClass))
 console.log(`\n  ${VARIANT}`)
 console.log(`  区間 ${intervals.length} / イベント ${events.length}`)
 console.log(`  現れたトポロジー: ${[...codes].sort().join(', ')}`)

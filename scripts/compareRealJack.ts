@@ -23,6 +23,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { buildModelWithOverrides, getModel } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
+import { classifyFromEvaluation } from '../src/model/topology'
 import type { TrsModel } from '../src/model/engine'
 
 const ROOT = resolve(process.cwd())
@@ -44,22 +45,19 @@ const DRAWING: Record<string, number> = {
   'trrs.jack.contact.tip.axialCenter': 12.75,
 }
 
-/** 「帰線が浮き、L と R が別々の導体に届いている」厳密な区間 */
+/**
+ * 「帰線が浮き、L と R が別々の導体に届いている」区間。
+ *
+ * **判定は書かない (統合オーダー P0-4)。** 2026-08-03 まで、ここに同じ条件式の
+ * 3 つ目の写しがあった。分類器 (src/model/topology.ts) が唯一の正本。
+ */
 function differenceWindows(m: TrsModel): { fromMm: number; toMm: number; widthMm: number }[] {
-  const term = (r: string) => m.jack.terminals.find((t) => t.signalRole === r)
   const out: { fromMm: number; toMm: number; widthMm: number }[] = []
   let cur: { fromMm: number; toMm: number } | null = null
   for (let d = 0; d <= m.fullDepthMm + 1e-9; d += STEP) {
     const dd = +d.toFixed(4)
-    const tt = m.evaluate(dd, DEFAULT_FAULTS).circuit.terminalToPlugNet
-    const nets = (r: string) => {
-      const t = term(r)
-      return t ? tt[t.id] ?? [] : []
-    }
-    const l = nets('L')
-    const r = nets('R')
-    const g = nets('GND')
-    if (g.length === 0 && l.length === 1 && r.length === 1 && l[0] !== r[0]) {
+    const cls = classifyFromEvaluation(m.jack.terminals, m.plug.netFunctions, m.evaluate(dd, DEFAULT_FAULTS))
+    if (cls.topologyClass === 'ground-open-differential') {
       if (!cur) cur = { fromMm: dd, toMm: dd }
       else cur.toMm = dd
     } else if (cur) {
