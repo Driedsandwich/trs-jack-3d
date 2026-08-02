@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "partNumber": "4極ジャック (接点系を Lumberg 1503 28 に合わせた構成)",
-  "manufacturer": "Lumberg (接点系のみ)。外形は 3極 1503 09 の値を流用",
+  "partNumber": "4極ジャック (1503 28 接点系)",
+  "manufacturer": "Lumberg (接点系のみ)",
   "_comment": [
     "4極ジャックのモデル。2026-08-02 に、それまでの完全な架空構成から",
     "**Lumberg 1503 28 (JEITA RC-5325A 準拠・4極・ブレーク接点 2 個・SMT) の接点系**へ組み直した。",

@@ -218,7 +218,7 @@ const PARTS: Record<string, { id: string; label: string; poles: number; manufact
   'TRRS-CTIA': { id: 'PLUG-TRRS-CTIA', label: '4極 CTIA プラグ (構成)', poles: 4, manufacturerPartNumber: null },
   'TRRS-OMTP': { id: 'PLUG-TRRS-OMTP', label: '4極 OMTP プラグ (構成)', poles: 4, manufacturerPartNumber: null },
   'JACK-TRS': { id: 'JACK-TRS', label: 'Lumberg 1503 09', poles: 3, manufacturerPartNumber: '1503 09' },
-  'JACK-TRRS': { id: 'JACK-TRRS', label: '4極ジャック (接点位置は全て仮定)', poles: 4, manufacturerPartNumber: null },
+  'JACK-TRRS': { id: 'JACK-TRRS', label: '4極ジャック (端子系 Lumberg 1503 28 / 接点位置は仮定)', poles: 4, manufacturerPartNumber: null },
 }
 
 const m = getModel(VARIANT)

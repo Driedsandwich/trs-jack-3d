@@ -49,14 +49,16 @@ const PLUG_VARIANTS: VariantInfo<PlugVariantId>[] = [
     id: 'TRRS-CTIA',
     label: '4極 TRRS / CTIA (代表形状)',
     description:
-      'Tip=左, Ring1=右, Ring2=帰線, Sleeve=マイク。配列は Android の一次仕様。形状は 2 社の図面で一致する共通寸法から構成。Ring1/Ring2 の境界は仮定。',
+      'Tip=左, Ring1=右, Ring2=帰線, Sleeve=マイク。配列は Android の一次仕様。導体境界は 2 社の図面記載から算出 (FACT)。' +
+      '共通寸法から組んだ代表形状で、実在の特定製品ではない。',
     basis: 'constructed',
   },
   {
     id: 'TRRS-OMTP',
     label: '4極 TRRS / OMTP (代表形状)',
     description:
-      'Tip=左, Ring1=右, Ring2=マイク, Sleeve=帰線。配列は OMTP 一次仕様。CTIA とは Ring2 と Sleeve の機能だけが入れ替わる (形状は同一)。',
+      'Tip=左, Ring1=右, Ring2=マイク, Sleeve=帰線。配列は OMTP 一次仕様。CTIA とは Ring2 と Sleeve の機能だけが入れ替わる (形状は同一)。' +
+      '共通寸法から組んだ代表形状で、実在の特定製品ではない。',
     basis: 'constructed',
   },
 ]
@@ -74,7 +76,7 @@ const JACK_VARIANTS: VariantInfo<JackVariantId>[] = [
     description:
       '端子位置・端子番号・ブレーク接点 2 個は Lumberg 1503 28 (JEITA RC-5325A) の図面記載。' +
       'ただし内部接点そのものの位置は図面に断面図が無いため仮定のまま。' +
-      '外形 (本体・ノーズ・ナット) は 3極 1503 09 の流用で、1503 28 の実物とは違う (SMT ミッドマウント品でナットを持たない)。',
+      '外形 (本体・ノーズ・ナット) は 3極 1503 09 の流用で、実在の特定製品ではない (1503 28 は SMT ミッドマウント品でナットを持たない)。',
     basis: 'constructed',
   },
 ]

@@ -8,6 +8,7 @@ import { ViewPanel } from './ui/ViewPanel'
 import { FaultPanel } from './ui/FaultPanel'
 import { ForcePanel } from './ui/ForcePanel'
 import { EvidencePanel } from './ui/EvidencePanel'
+import { jackInfo, plugInfo, splitVariantId } from './data'
 import { useAppStore, useModel } from './store/useAppStore'
 import { useEvaluation } from './store/useEvaluation'
 import { STATE_COLOR, STATE_LABEL, STATE_SYMBOL } from './three/materials'
@@ -75,13 +76,23 @@ export default function App() {
     return () => el.removeEventListener('wheel', onWheel, { capture: true } as never)
   }, [nudge])
 
+  // 両側が実在部品の実測に基づくときだけ「実在の一例」と名乗る
+  const [plugId, jackId] = splitVariantId(useAppStore((s) => s.variantId))
+  const realPair = plugInfo(plugId).basis === 'measured-part' && jackInfo(jackId).basis === 'measured-part'
+
   return (
     <div className="app">
       <header className="topbar">
         <h1>3.5&nbsp;mm TRS 接合機構ビューア</h1>
         <span className="sub">
           プラグ {model.plug.manufacturer} {model.plug.partNumber} / ジャック {model.jack.manufacturer}{' '}
-          {model.jack.partNumber} — 実在する代表的な 3.5&nbsp;mm TRS 接続の一例
+          {model.jack.partNumber} —{' '}
+          {/*
+            **「実在する代表的な一例」と名乗ってよいのは、両側が実在部品のときだけ。**
+            2026-08-02 に 4極ジャックを構成モデルのまま選んでも同じ文が出ていた。
+            画面の一番目立つ行なので、ここが嘘だと他の注意書きが効かない。
+          */}
+          {realPair ? '実在する代表的な 3.5\u00a0mm TRS 接続の一例' : '構成モデルを含む (実在部品そのものではない)'}
         </span>
       </header>
 

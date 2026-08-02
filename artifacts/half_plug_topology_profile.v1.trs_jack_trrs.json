@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:6415063a701f",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:fa877fb62609",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -10,7 +10,7 @@
  },
  "jack": {
   "id": "JACK-TRRS",
-  "label": "4極ジャック (接点位置は全て仮定)",
+  "label": "4極ジャック (端子系 Lumberg 1503 28 / 接点位置は仮定)",
   "poles": 4,
   "manufacturerPartNumber": null
  },
@@ -24,7 +24,7 @@
   "evidenceGrade": "ASSUMPTION",
   "note": "**4極ジャックは接点位置を含めて全て仮定である。** 図面もデータシートも入手できていない。この profile の深さの数字は、仮定した接点位置の帰結でしかない。"
  },
- "sourceRevision": "6415063a701f8c8c00ceac679c9bf3b64e4a4b77",
+ "sourceRevision": "fa877fb62609a00c48d6d2ee629ad1aa01f6c5f4",
  "generatedAt": "2026-08-02",
  "fullInsertionDepthMm": 14,
  "stepMm": 0.02,

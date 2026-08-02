@@ -218,8 +218,8 @@
       "note": "4極も嵌合長は 14mm で 3極と同じ。独立 2 社の図面で一致。"
     },
     "trrs.jack.boreDiameter": {
-      "value": 3.6, "unit": "mm", "grade": "FACT", "sources": ["xref-trrs-dims"],
-      "note": "4極ジャックの挿入口も Ø3.6。Cliff FC68125/FC68128。"
+      "value": 3.6, "unit": "mm", "grade": "FACT", "sources": ["ds-1503-28", "xref-trrs-dims"],
+      "note": "4極ジャックの挿入口も Ø3.6。Lumberg 1503 28 は ø3.60±0.1 と公差つきで記載。Cliff FC68125 も Ø3.6。なお Cliff FC68128 は図面タイトルが「(17mm PLUG)」で嵌合長 17mm の別規格品であり、口径の傍証にはなるが 14mm プラグの部品として扱ってはいけない。"
     },
     "trrs.jack.detectThreshold": {
       "value": 100, "unit": "Ω", "grade": "FACT", "sources": ["android-headset-spec"],
