@@ -249,3 +249,40 @@ describe('根拠区分の付け方', () => {
       expect({ k, grade: dims.entry(k).grade }).toEqual({ k, grade: 'ASSUMPTION' })
   })
 })
+
+/**
+ * README 冒頭の「使える／使えない」の理由づけ。
+ *
+ * 2026-08-03 に根拠区分を見直して ASSUMPTION が 43 → 54 件へ増えたとき、
+ * 冒頭の理由が**件数だけ**になっていた。件数は「どれくらい信用できないか」を
+ * 表さない（順序と仕組みは仮定に頑健で、深さと力だけが仮定に乗る）。
+ * 読者が最初に決める分岐に効くよう、確か／不確かの切り分けを冒頭へ出した。
+ *
+ * ここで守るのは 2 つ。
+ *   - 押付力の根拠が **別メーカーの資料** であることを README が隠さない
+ *   - 冒頭の「確か」の側に、実は仮定に乗るもの（ブレーク接点の開くタイミング）を混ぜない
+ */
+describe('README 冒頭の理由づけ', () => {
+  const readme = readFileSync(resolve(ROOT, 'README.md'), 'utf8')
+
+  it('**ばね定数の根拠が別メーカー資料であることを書いている**', () => {
+    // SOURCES §6 は「この値を 1503 09 の仕様として表示してはいません」と定めている。
+    // README が「メーカー公称レンジ」とだけ書くと、同じ部品の値に読める。
+    expect(readme).toMatch(/別メーカー/)
+    expect(readme).not.toMatch(/摩擦係数とばね定数は\s*\n?\s*メーカー公称レンジに整合するよう置いた仮定値です/)
+  })
+
+  it('**「確か」の側にブレーク接点のタイミングを入れていない**', () => {
+    // しきい値 0.4 以上では一度も開かない。順序の不変量には含められない。
+    const head = readme.slice(0, readme.indexOf('### 言葉づかい'))
+    const row = head.split('\n').find((l) => l.includes('**確か**'))!
+    expect(row).not.toMatch(/ブレーク接点/)
+    expect(row).toMatch(/順序/)
+  })
+
+  it('冒頭が件数だけで終わっていない（頑健な結論も示している）', () => {
+    const head = readme.slice(0, readme.indexOf('### 言葉づかい'))
+    expect(head).toMatch(/何もかもが不確かなわけではありません/)
+    expect(head).toMatch(/不確か/)
+  })
+})
