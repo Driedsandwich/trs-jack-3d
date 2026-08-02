@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>統合オーダー (2026-08-03) への対応状況</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">0. 現在の状態</a></li>
+    <li><a href="#s1">1. 完了した項目</a></li>
+    <li><a href="#s2">2. 未着手（次にやること）</a></li>
+    <li><a href="#s3">3. 承認が要る項目</a></li>
+    <li><a href="#s4">4. 採用が見送られた要求はありません</a></li>
+  </ol>
+</nav>
+<h1>統合オーダー (2026-08-03) への対応状況</h1>
+<p>Half-Plug Lab 側から受けた監査オーダーへの対応記録です。 <strong>「コードベースは採用、現在の artifact は保留」</strong>という判断を受けています。</p>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>オーダー作成日</td><td>2026-08-03</td></tr><tr><td>監査対象 revision</td><td><code>ba58b4c</code>（当時の HEAD <code>dd05267</code> より <strong>3 commit 手前</strong>）</td></tr><tr><td>このページの更新</td><td>2026-08-03</td></tr></tbody></table></div>
+<div class="note"><p><strong>監査対象が HEAD より手前だったので、8 件すべてを現在の木で引き直しました。</strong></p><p>「もう直っている」で済ませられた項目は <strong>0 件</strong>で、8 件とも当時のまま残っていました。</p><p>間の 3 commit は CONTRIBUTING と検査の追加で、profile や exporter に触れていません。</p></div>
+<hr>
+<h2 id="s0">0. 現在の状態</h2>
+<div class="tw"><table><thead><tr><th></th><th>P0</th><th>状態</th></tr></thead><tbody><tr><td>✅</td><td><strong>P0-2</strong> TRRS の basis / limitations</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-3</strong> <code>events[].spreadMm</code> を event 固有に</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-7</strong>（一部）<code>DERIVED 39</code> の是正・adapter 文書の更新</td><td><strong>完了</strong></td></tr><tr><td>⬜</td><td><strong>P0-1</strong> artifact provenance</td><td>未着手（→ §2）</td></tr><tr><td>⬜</td><td><strong>P0-4</strong> 電気トポロジー分類の一本化</td><td>未着手（→ §2）</td></tr><tr><td>⬜</td><td><strong>P0-5</strong> 探索結果の表現を弱める</td><td>未着手（→ §2）</td></tr><tr><td>⏸</td><td><strong>P0-6</strong> Draft-07 の完全検証（Ajv）</td><td><strong>依存追加の承認待ち</strong>（→ §3）</td></tr><tr><td>⏸</td><td><strong>P0-8</strong> immutable release</td><td><strong>tag / push の承認待ち</strong>（→ §3）</td></tr></tbody></table></div>
+<p><strong>この状態で Half-Plug Lab へ artifact を投入しないでください。</strong> オーダー §8 の最優先 3 件のうち P0-1 が残っています。</p>
+<hr>
+<h2 id="s1">1. 完了した項目</h2>
+<h3>P0-2 — TRRS profile の basis が陳腐化していた</h3>
+<p><strong>指摘は正しく、しかも指摘より深いものでした。</strong></p>
+<p>問題は「artifact を作り直していない」ことではありません。 <strong>この artifact は 2026-08-02 に作り直されており</strong>（<code>sourceRevision: 1f26460</code>）、 それでも旧説明が残っていました。原因は exporter 側の<strong>直書き文字列</strong>です。</p>
+<pre><code>source: '一次資料なし'
+note:   '**4極ジャックは接点位置を含めて全て仮定である。** 図面もデータシートも入手できていない。'</code></pre>
+<p>4極ジャックを Lumberg 1503 28 ベースへ組み直したとき（08-02）、 <code>dimensions.json</code> と <code>jackContacts.trrs.json</code> は直したのに、 <strong>exporter の文字列だけが取り残されました。</strong></p>
+<p>さらに悪いことに、<code>test/halfPlugProfile.test.ts</code> が</p>
+<pre><code>expect(trrsProfile.jackBasis.note).toMatch(/接点位置を含めて全て仮定/)</code></pre>
+<p>と書いており、<strong>テストが古い主張を守る側に回っていました。</strong></p>
+<h4>直し方</h4>
+<p>直書きをやめ、<strong>台帳の区分から組み立てる</strong>ようにしました。台帳を直せば artifact が追随します。</p>
+<div class="tw"><table><thead><tr><th>項目</th><th>現在</th><th>根拠</th></tr></thead><tbody><tr><td><code>partIdentityBasis</code></td><td>構成 profile。実在の単一品ではない</td><td>—</td></tr><tr><td><code>externalGeometryBasis</code></td><td><strong>ASSUMPTION</strong></td><td>外形は 3極 1503 09 からの流用（1503 28 の外形図は未入手）</td></tr><tr><td><code>terminalLayoutBasis</code></td><td><strong>FACT</strong></td><td>1503 28 基板レイアウト図</td></tr><tr><td><code>breakContactBasis</code></td><td><strong>FACT</strong></td><td>1503 28 回路記号に 2 個記載</td></tr><tr><td><code>internalContactGeometryBasis</code></td><td><strong>ASSUMPTION</strong></td><td>端子位置に拘束された仮定</td></tr><tr><td><code>electricalContinuityValidation</code></td><td>未実施</td><td></td></tr><tr><td><code>acousticValidation</code></td><td>未実施</td><td></td></tr></tbody></table></div>
+<p><code>modelLimitations</code> も variant ごとに書き分けました （従来はどの variant でも「Lumberg 1532 10 × 1503 09 の 1 組」と書いていました）。</p>
+<p><strong>反対証拠は残しています。</strong><code>jackBasis.note</code> に 「PS000001 の断面図（Tip 12.75）を入れると左右差分の区間は消える。実在資料 2 件は逆を指している」 を残し、テストで固定しました。</p>
+<h4>受入試験</h4>
+<div class="tw"><table><thead><tr><th>オーダーの受入条件</th><th>結果</th></tr></thead><tbody><tr><td>artifact 内に「一次資料なし」「全て仮定」が残らない</td><td>✅ 両 profile とも 0 件</td></tr><tr><td>1503 28 の FACT と接点位置 ASSUMPTION が分離される</td><td>✅ <code>detail</code> 7 項目</td></tr><tr><td><code>verifiedPhysical</code> は false のまま</td><td>✅</td></tr><tr><td>実在品と constructed profile を同じ ID にしない</td><td>✅ <code>constructedProfile: true</code></td></tr><tr><td>反対証拠の PS000001 比較を失わない</td><td>✅ テストで固定</td></tr></tbody></table></div>
+<hr>
+<h3>P0-3 — <code>spreadMm</code> が event 固有でなかった</h3>
+<p><strong>指摘のとおりでした。</strong>36 件の event のうち <strong>29 件が <code>STATE_CHANGE</code></strong> で、 その 29 件すべてに同じ値が付いていました。</p>
+<pre><code>minMm: -0.88, maxMm: 14      ← 挿入ストローク全域。事実上「不明」と同じ
+sweptParameters: [jack.contact.sleeve.axialCenter, jack.contact.sleeve.padWidth]</code></pre>
+<p>Ring のブレーク接点にも帰線接点用の幅が付いていました。</p>
+<h4>直し方</h4>
+<p><strong><code>kind</code> が 1 回しか出ない事象にだけ幅を付けます。</strong></p>
+<div class="tw"><table><thead><tr><th><code>spreadStatus</code></th><th class="num">件数</th><th><code>spreadMm</code></th></tr></thead><tbody><tr><td><code>MEASURED</code></td><td class="num">7</td><td>値あり（その事象そのものを測ったもの）</td></tr><tr><td><code>NOT_EVENT_SPECIFIC</code></td><td class="num">29</td><td><code>null</code>（集計しか無く、配れない）</td></tr><tr><td><code>NOT_MEASURED</code></td><td class="num">0</td><td><code>null</code></td></tr></tbody></table></div>
+<p><code>kind</code> 単位の集計は捨てず、<code>sensitivitySummary.aggregateSpreadByKind</code> へ移しました。</p>
+<p><code>eventId</code> も導入しました。<code>label</code> の文言からは作りません。</p>
+<pre><code>STATE_CHANGE:JC_RING:BREAK_CLOSED-&gt;BREAK_OPEN#1</code></pre>
+<div class="note"><p><strong>一意性の検査が、書いた直後に前提の誤りを捕まえました。</strong></p><p>最初は <code>kind:subject:from-&gt;to</code> だけで作りましたが、</p><p>帰線接点は絶縁帯を 2 本またぐので <code>OPEN-&gt;INSULATED</code> が 2 回起きます。</p><p>生成時の重複検査に落ちて <strong>7 件の衝突</strong>が分かりました。</p><p>検査を入れていなければ「一意な ID」を名乗ったまま出荷していました。</p><p>末尾の <code>#n</code> は<strong>位置に依存します</strong>（<code>intervalId</code> と同じ性質。adapter 文書 §4 に記載）。</p></div>
+<hr>
+<h3>P0-7（一部） — 文書と公開表現</h3>
+<div class="tw"><table><thead><tr><th>指摘</th><th>対応</th></tr></thead><tbody><tr><td><code>docs/TEST_RESULTS.md</code> の <code>DERIVED 39</code></td><td>✅ 是正。件数を書かず artifact を正本にし、時点も明記</td></tr><tr><td>adapter 文書が旧 <code>spreadMm</code> の契約を説明</td><td>✅ §4 に意味の変更と移行方法を追記</td></tr><tr><td>「無改造で左右差分が残る」等の表現を弱める</td><td>⬜ <strong>P0-5 と同時に行う</strong>（→ §2）</td></tr><tr><td>generated HTML を MD から再生成</td><td>✅ <code>npm run docs:html</code></td></tr></tbody></table></div>
+<hr>
+<h2 id="s2">2. 未着手（次にやること）</h2>
+<div class="tw"><table><thead><tr><th></th><th>内容</th><th>なぜ今回やらなかったか</th></tr></thead><tbody><tr><td><strong>P0-1</strong></td><td>provenance（<code>inputDigest</code> / <code>workingTreeDirty</code> / <code>inputFiles[]</code>）</td><td><strong>最優先。</strong> 単独で 1 回ぶんの作業量があり、P0-2/P0-3 で profile の中身が変わる前にやると作り直しになる。順序として後</td></tr><tr><td><strong>P0-4</strong></td><td><code>classifyElectricalTopology()</code> を model core へ置き、4 か所を統一</td><td><code>searchTopology.ts</code> の説明文が旧実装のまま（<code>predictAcoustic</code> の判定順で L/R が同導体でも <code>GROUND_OPEN</code> になる、という記述）。実装は 08-02 に直っており、<strong>説明だけが古い</strong>。分類の重複解消と同時に直す</td></tr><tr><td><strong>P0-5</strong></td><td><code>realizablePadWidth</code> → <code>passesPadWidthHeuristic</code> 等の改名</td><td>改名は <code>searchTopology.ts</code> の出力キーを変えるので、<strong><code>npm run search:topology</code>（約 10 分）の再実行が要る</strong>。P0-1 の provenance 実装と同じ回に走らせるのが効率的</td></tr></tbody></table></div>
+<p><strong>P0-4 について 1 点補足</strong>: オーダーは「<code>searchTopology.ts</code> の説明が旧実装を前提にしている」と 指摘しています。現在の木で確認したところ、そのとおりでした（<code>scripts/searchTopology.ts:130-140</code>）。 <code>src/model/circuit.ts:227</code> には「2026-08-02 まで、この 2 つを区別せず <code>GROUND_OPEN</code> にまとめていた」 とあり、<strong>実装は直っているのに探索側の説明とヘルパが取り残されています。</strong> これは §1 (c)「逆向きの陳腐化」そのものです。</p>
+<hr>
+<h2 id="s3">3. 承認が要る項目</h2>
+<p><strong>この 2 件は着手しません。</strong></p>
+<h3>P0-6 — Ajv（または Python jsonschema）の導入</h3>
+<p>現在の <code>test/halfPlugProfile.test.ts</code> は <strong>自前の部分 validator</strong> を使っています （<code>required</code> / <code>type</code> / <code>enum</code> / <code>const</code> / <code>additionalProperties</code> / <code>$ref</code> / <code>minItems</code> / <code>minimum</code> だけを実装。汎用ではないとファイル冒頭に明記してあります）。</p>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>何が要るか</td><td>dev dependency として <code>ajv</code>（draft-07）を 1 つ追加</td></tr><tr><td>影響</td><td>dev-only。実行時依存には入らない。<code>package-lock.json</code> が変わる</td></tr><tr><td>代替</td><td>現在の部分 validator を広げる（<code>pattern</code> / <code>oneOf</code> 等）。依存は増えないが、<strong>汎用実装ではないという弱点は残る</strong></td></tr><tr><td>戻し方</td><td><code>npm uninstall ajv</code> と <code>git checkout package.json package-lock.json</code></td></tr></tbody></table></div>
+<p><strong>新規の依存追加なので、承認をもらってから入れます。</strong></p>
+<h3>P0-8 — immutable release（tag / GitHub Release）</h3>
+<p>オーダー自身が「このオーダーは tag、release、push の自動実行承認ではない」と書いています。 P0-1〜P0-7 の完了後に、対象・影響・可逆性・削除方法を示して別途確認します。</p>
+<hr>
+<h2 id="s4">4. 採用が見送られた要求はありません</h2>
+<p>オーダーが「変更しない」と定めた項目 （都合よく差分信号を発生させる形状の追加／反対証拠の削除／<code>verifiedPhysical</code> の昇格／ DSP 係数生成／音響録音の保存／メーカー CAD の再配布／自動 push）は、 いずれもこのリポジトリの方針と一致しており、<strong>今回の変更でも触れていません。</strong></p>
+</div>
+</body>
+</html>

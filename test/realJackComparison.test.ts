@@ -11,31 +11,41 @@
  * artifact の数字を書き換えただけでは通らない。
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { buildModelWithOverrides, getModel } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import type { TrsModel } from '../src/model/engine'
+import { mustFind } from './_must'
 
 const ROOT = resolve(__dirname, '..')
 const PATH = resolve(ROOT, 'artifacts/real_jack_comparison.json')
-const present = existsSync(PATH)
-const art = present ? JSON.parse(readFileSync(PATH, 'utf8')) : null
+// **ガードを置かない。** artifacts/ は git 管理下で「無い環境」は存在しない。
+// 2026-08-03 まで `describe.skipIf(!present)` を付けており、実測すると
+// この artifact を消しただけで 6 件が黙って消えた (→ CONTRIBUTING §7)。
+const art = JSON.parse(readFileSync(PATH, 'utf8'))
 
 const STEP = 0.01
 const VARIANT = 'TRS|JACK-TRRS' as const
 
+/**
+ * 左右差分の窓を数える。
+ *
+ * **`t ? ... : []` にしてはいけない。** 2026-08-03 に変異試験で確かめたところ、
+ * signalRole を引けないと全深さで `l.length === 1` が偽になり、この関数は **0 を返す**。
+ * すると「図面値では区間が出ない」「パッド幅を振っても戻らない」という
+ * **反証を守るための 2 件が、壊れていても通った**。
+ * 引けないことは即座に落とす。0 と「引けなかった」を同じ値にしない。
+ */
 function differenceWindowCount(m: TrsModel): number {
-  const term = (r: string) => m.jack.terminals.find((t) => t.signalRole === r)
+  const term = (r: string) => mustFind(m.jack.terminals, (t) => t.signalRole === r, `端子 role=${r}`)
+  const ids = { L: term('L').id, R: term('R').id, GND: term('GND').id }
   let n = 0
   let inWindow = false
   for (let d = 0; d <= m.fullDepthMm + 1e-9; d += STEP) {
     const tt = m.evaluate(+d.toFixed(4), DEFAULT_FAULTS).circuit.terminalToPlugNet
-    const nets = (r: string) => {
-      const t = term(r)
-      return t ? tt[t.id] ?? [] : []
-    }
+    const nets = (r: 'L' | 'R' | 'GND') => tt[ids[r]] ?? []
     const l = nets('L')
     const r = nets('R')
     const g = nets('GND')
@@ -103,7 +113,7 @@ describe('実在部品の図面値との突き合わせ', () => {
     for (let i = 0; i < 3; i++) expect(Math.abs(centers[i] - measured[i])).toBeLessThan(0.1)
   })
 
-  describe.skipIf(!present)('artifact との整合', () => {
+  describe('artifact との整合', () => {
     it('artifact の結論がモデルの実測と一致する', () => {
       expect(art.result.drawing.differenceWindows).toHaveLength(0)
       expect(art.result.assumed.differenceWindows).toHaveLength(1)

@@ -17,6 +17,78 @@
 
 ## [Unreleased]
 
+### 訂正 — 公開済み profile の 4極ジャック根拠が古かった（統合オーダー P0-2）
+
+2026-08-02 に 4極ジャックを Lumberg 1503 28 ベースへ組み直したとき、
+**`scripts/exportHalfPlugProfile.ts` の直書き文字列だけが取り残された。**
+`artifacts/half_plug_topology_profile.v1.trs_jack_trrs.json` は
+その後（`sourceRevision: 1f26460`）作り直されているのに、次の記述が残っていた。
+
+```
+source: 一次資料なし
+note:   4極ジャックは接点位置を含めて全て仮定である。図面もデータシートも入手できていない。
+```
+
+**実際には端子 6 本の軸位置とブレーク接点 2 個は図面記載（FACT）で、
+仮定として残っているのは接点の軸方向オフセット 1 つだけである。**
+
+さらに `test/halfPlugProfile.test.ts` が
+
+```ts
+expect(trrsProfile.jackBasis.note).toMatch(/接点位置を含めて全て仮定/)
+```
+
+と書いており、**テストが古い主張を守る側に回っていた。**
+語句を固定するのをやめ、「強い根拠と弱い根拠が分けて書かれていること」を固定する形へ改めた。
+
+- 根拠は台帳の区分から組み立てる（`detail` に 7 項目）。台帳を直せば artifact が追随する
+- `modelLimitations` を variant ごとに書き分けた（従来はどの variant でも「1532 10 × 1503 09」）
+- 反対証拠（PS000001 で区間が消えること）を `jackBasis.note` に残した
+
+> **これは「軽い成果物の陳腐化 0 件」の反例ではない。**作り直しは行われていた。
+> 陳腐化していたのは**生成器が持っていた文章**で、`inputs` の記録では検出できない種類である。
+
+### 訂正 — `events[].spreadMm` が事象固有でなかった（統合オーダー P0-3）
+
+感度解析の `kind` 単位の集計を全事象へ複製していた。
+`STATE_CHANGE` は 1 回の挿入で **29 件**出るため、29 件すべてに同じ
+`−0.88〜14 mm`（＝挿入ストローク全域）が付き、
+**Ring のブレーク接点にも帰線接点用の幅が付いていた。**
+
+- `kind` が 1 回しか出ない事象にだけ幅を付ける（`MEASURED` 7 件 / `NOT_EVENT_SPECIFIC` 29 件）
+- `kind` 単位の集計は `sensitivitySummary.aggregateSpreadByKind` へ移した（捨てていない）
+- `eventId` を導入。`label` の文言からは作らない
+- `docs/HALF_PLUG_ADAPTER.md` §4 に、意味の変更と移行方法を書いた
+
+> **一意性の検査が、書いた直後に前提の誤りを捕まえた。**
+> 帰線接点は絶縁帯を 2 本またぐので同じ遷移が 2 回起きる。
+> `kind:subject:from->to` だけでは **7 件が衝突**していた。
+
+### 追加 — `npm run check:vacuity`（空振りしているテストの検出）
+
+**通っているテストが何も検査していない**欠陥を、2026-08-02〜03 に 7 回作った。
+`test/` 全体を機械で洗うと候補は **142 か所**あったが、
+1 件ずつ見ると**本当に偽の合格になるのは 7 か所**だった（誤検出 95 %）。
+
+構文を洗うのはやめ、**結果の側**（skip されたか／件数が減ったか）を見る検査にした。
+
+実測（成果物を 5 件消して走らせた結果）:
+
+| ファイル | 修正前 | 修正後 |
+|---|---|---|
+| `docs.test.ts` | ENOENT で落ちる（**ガード無しが正しい**） | 変更なし |
+| `topologySearch.test.ts` | 12 件が黙って skip | ENOENT で落ちる |
+| `realJackComparison.test.ts` | 6 件が黙って skip | ENOENT で落ちる |
+| `uiStrings.test.ts` | 3 件が黙って合格 | ENOENT で落ちる |
+
+変異試験で、`realJackComparison.test.ts` の
+**「図面値では左右差分の区間が出ない」（反証を守るための検査）が、
+端子の引き方を壊しても通る**ことも確認した。
+`differenceWindowCount` が「引けなかった」を **0** として返していたためで、
+`test/_must.ts` の `mustFind` で即座に落とすようにした。
+
+書き方は [CONTRIBUTING.md §7](CONTRIBUTING.md) に残した。
+
 ### 判断 — `check:stale` を全成果物へは広げない
 
 軽い成果物 7 件（`events` / `contact_sweep` / `force_curve` / `variant_matrix` /

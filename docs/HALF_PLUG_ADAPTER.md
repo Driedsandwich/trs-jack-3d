@@ -202,6 +202,33 @@ physicalClaimStatus      未実測なら "unverified"
 | ✅ 再解決する | `profileId` が違ったら、`acousticAnnotation.topologyClass` と `normalizedStart/End` で引き直す |
 | ❌ しない | `intervalId` だけを保存して、新しい profile へそのまま当てる |
 
+**`events[].eventId` も同じ扱いです。**`eventId` は
+`STATE_CHANGE:JC_RING:BREAK_CLOSED->BREAK_OPEN#1` のように、
+**何がどの状態からどの状態へ変わったか**で作ってあります（`label` の文言からは作りません。
+文言を直しただけで ID が変わらないようにするためです）。
+末尾の `#n` は同じ遷移が挿入中に複数回起きるための連番で、
+**手前に事象が増えると後ろがずれます。**`profileId` とセットで保存してください。
+
+### ⚠ `events[].spreadMm` の意味が変わりました（2026-08-03）
+
+2026-08-02 版までの `spreadMm` は、**感度解析の `kind` 単位の集計をそのまま各事象へ複製していました。**
+`STATE_CHANGE` は 1 回の挿入で 29 件出るので、29 件すべてに同じ `−0.88〜14 mm` が付き、
+たとえば Ring のブレーク接点にも帰線接点用の幅が付いていました。**下流では誤情報です。**
+
+現在は `spreadStatus` で 3 つを区別します。
+
+| `spreadStatus` | `spreadMm` | 意味 |
+|---|---|---|
+| `MEASURED` | 値あり | **その事象そのものを測った幅。** その `kind` が 1 回しか出ない事象だけ |
+| `NOT_EVENT_SPECIFIC` | `null` | `kind` 単位の集計しか無く、この事象へは配れない |
+| `NOT_MEASURED` | `null` | 測っていない |
+
+**どれも「動かない」の意味ではありません。**
+`kind` 単位の集計は捨てず、`sensitivitySummary.aggregateSpreadByKind` に残してあります。
+そちらを個々の事象へ当てはめないでください。
+
+> 2026-08-02 版の profile を取り込み済みの場合、`events[].spreadMm` は読み捨ててください。
+
 ---
 
 ## 5. 深さの窓が 0.2 mm しかない件

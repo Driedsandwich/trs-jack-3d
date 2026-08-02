@@ -37,8 +37,12 @@ const r = JSON.parse(readFileSync(TMP, 'utf8'))
 rmSync(TMP, { force: true })
 
 const byFile = {}
+let skipped = 0
 for (const f of r.testResults) {
   byFile[f.name.split('/').slice(-1)[0]] = f.assertionResults.length
+  // **飛ばされたテストを数える。** 0 でないと npm run check:vacuity が落ちる。
+  // 「通った」と「そもそも走っていない」を同じ緑にしないため (→ CONTRIBUTING §7)
+  skipped += f.assertionResults.filter((a) => a.status === 'skipped' || a.status === 'pending').length
 }
 const total = Object.values(byFile).reduce((a, b) => a + b, 0)
 
@@ -54,9 +58,11 @@ writeFileSync(
       generatedAt,
       note:
         'npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、'
-        + '手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。',
+        + '手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。'
+        + 'byFile は npm run check:vacuity の下限としても使う。件数が減る変更は理由を書く。',
       total,
       byFile: Object.fromEntries(Object.entries(byFile).sort()),
+      skipped,
       allPassed: r.numFailedTests === 0,
     },
     null,

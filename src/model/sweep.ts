@@ -220,6 +220,13 @@ export function extractEvents(model: TrsModel, rows: SweepRow[]): InsertionEvent
                 : b.state === 'CLOSED'
                   ? 'ok'
                   : 'info',
+            // label とは別に持つ。文言を直しても識別子が変わらないようにする
+            subject: {
+              subjectType: 'contact',
+              subjectId: b.contactId,
+              fromState: a.state,
+              toState: b.state,
+            },
           })
         }
         if (a.breakState !== b.breakState) {
@@ -229,6 +236,12 @@ export function extractEvents(model: TrsModel, rows: SweepRow[]): InsertionEvent
             label: `${b.contactId} ブレーク接点: ${a.breakState} → ${b.breakState}`,
             detail: 'ジャック内蔵スイッチの開閉',
             severity: 'info',
+            subject: {
+              subjectType: 'break-contact',
+              subjectId: b.contactId,
+              fromState: String(a.breakState),
+              toState: String(b.breakState),
+            },
           })
         }
       }

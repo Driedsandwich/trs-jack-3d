@@ -28,7 +28,10 @@
  *      (その境界は 2026-07-31 に FACT へ解決済み。**逆向きの陳腐化**)
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+// **`existsSync` を輸入しない。** 2026-08-03 まで 4 か所で
+// `if (!existsSync(p)) return` と書いており、成果物が消えると 3 件が黙って通った。
+// artifacts/ は 14 件とも git 管理下で「無い環境」は存在しない (→ CONTRIBUTING §7)。
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_FAULTS } from '../src/model/contact'
@@ -347,7 +350,6 @@ describe('重い成果物の陳腐化判定', () => {
 
   it('**探索の成果物が、走査軸ごとに実行時の値を記録している**', () => {
     const p = art('topology_search_difference_signal.json')
-    if (!existsSync(p)) return
     const a = JSON.parse(readFileSync(p, 'utf8')) as {
       searchSpace: { axesByJack: Record<string, { key: string; shipped: number }[]> }
     }
@@ -358,7 +360,6 @@ describe('重い成果物の陳腐化判定', () => {
 
   it('**感度解析の成果物が、走査に使った寸法値を記録している**', () => {
     const p = art('sensitivity.json')
-    if (!existsSync(p)) return
     const a = JSON.parse(readFileSync(p, 'utf8')) as { inputs?: Record<string, number> }
     expect(a.inputs).toBeDefined()
     expect(Object.keys(a.inputs!).length).toBeGreaterThan(5)
@@ -388,7 +389,6 @@ describe('成果物がモデルより古くなっていない', () => {
 
   it('**events.json の橋絡区間が、いまのモデルから計算し直した値と一致する**', () => {
     const p = art('events.json')
-    if (!existsSync(p)) return
     const a = JSON.parse(readFileSync(p, 'utf8')) as {
       stepMm: number
       major: { kind: string; depthMm: number }[]
@@ -412,7 +412,6 @@ describe('成果物がモデルより古くなっていない', () => {
 
   it('**verification_summary.json の区分件数が、いまの台帳と一致する**', () => {
     const p = art('verification_summary.json')
-    if (!existsSync(p)) return
     const a = JSON.parse(readFileSync(p, 'utf8')) as { gradeCounts: Record<string, number> }
     const counts: Record<string, number> = { FACT: 0, DERIVED: 0, ASSUMPTION: 0, UNKNOWN: 0 }
     for (const v of Object.values(getModel('TRS|JACK-TRS').dims.all())) counts[v.grade]++

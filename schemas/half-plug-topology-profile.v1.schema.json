@@ -190,15 +190,52 @@
       "items": {
         "type": "object",
         "required": [
+          "eventId",
           "kind",
           "depthMm",
           "normalized",
-          "label"
+          "label",
+          "spreadStatus"
         ],
         "additionalProperties": false,
         "properties": {
+          "eventId": {
+            "type": "string",
+            "description": "同じ入力から決定的に生成される識別子。kind だけでは STATE_CHANGE が区別できないため、対象と遷移を含める。**label の文言を変えても変わらない。**"
+          },
           "kind": {
             "type": "string"
+          },
+          "eventIdentity": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "何がどの状態からどの状態へ変わったか。kind が 1 回しか出ない事象では null",
+            "required": [
+              "subjectType",
+              "subjectId",
+              "fromState",
+              "toState"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "subjectType": {
+                "enum": [
+                  "contact",
+                  "break-contact"
+                ]
+              },
+              "subjectId": {
+                "type": "string"
+              },
+              "fromState": {
+                "type": "string"
+              },
+              "toState": {
+                "type": "string"
+              }
+            }
           },
           "depthMm": {
             "type": "number"
@@ -209,12 +246,20 @@
           "label": {
             "type": "string"
           },
+          "spreadStatus": {
+            "enum": [
+              "MEASURED",
+              "NOT_MEASURED",
+              "NOT_EVENT_SPECIFIC"
+            ],
+            "description": "MEASURED = この事象そのものの幅を測った。NOT_MEASURED = 測っていない。NOT_EVENT_SPECIFIC = kind 単位の集計しか無く、この事象へ配れない (集計は sensitivitySummary.aggregateSpreadByKind にある)。**どれも「動かない」の意味ではない。**"
+          },
           "spreadMm": {
             "type": [
               "object",
               "null"
             ],
-            "description": "帰線接点の位置とパッド幅を成立範囲いっぱいに振ったときの幅。null は未測定であって不動の意味ではない",
+            "description": "**その事象そのものを測った幅だけを入れる。** kind 単位の集計を事象へ複製しない (統合オーダー P0-3)。null は未測定であって不動の意味ではない",
             "required": [
               "minMm",
               "maxMm",
@@ -273,6 +318,30 @@
             "number",
             "null"
           ]
+        },
+        "aggregateSpreadByKind": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "kind 単位の深さの幅の集計。**個々の事象へ当てはめてはならない。** STATE_CHANGE のように 1 回の挿入で複数回起きる kind では、全接点・全遷移をまたいだ和集合になっている",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "minMm": {
+                "type": "number"
+              },
+              "maxMm": {
+                "type": "number"
+              },
+              "configs": {
+                "type": "number"
+              },
+              "movesMm": {
+                "type": "number"
+              }
+            }
+          }
         },
         "notes": {
           "type": "array",
@@ -340,7 +409,7 @@
     },
     "basis": {
       "type": "object",
-      "description": "その部品の寸法が何に由来するか",
+      "description": "その部品の寸法が何に由来するか。**一括りにしない。** 外形・端子・ブレーク接点・内部接点はそれぞれ根拠が違い、まとめると強いほうか弱いほうへ丸まる",
       "required": [
         "source",
         "evidenceGrade"
@@ -355,6 +424,55 @@
         },
         "note": {
           "type": "string"
+        },
+        "detail": {
+          "type": "object",
+          "description": "根拠の内訳。実在の単一品と、複数の部品から組み立てた構成 profile を取り違えさせないための欄",
+          "required": [
+            "partIdentityBasis",
+            "externalGeometryBasis",
+            "terminalLayoutBasis",
+            "breakContactBasis",
+            "internalContactGeometryBasis",
+            "electricalContinuityValidation",
+            "acousticValidation",
+            "constructedProfile",
+            "constructedFrom"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "partIdentityBasis": {
+              "type": "string"
+            },
+            "externalGeometryBasis": {
+              "type": "string"
+            },
+            "terminalLayoutBasis": {
+              "type": "string"
+            },
+            "breakContactBasis": {
+              "type": "string"
+            },
+            "internalContactGeometryBasis": {
+              "type": "string"
+            },
+            "electricalContinuityValidation": {
+              "type": "string"
+            },
+            "acousticValidation": {
+              "type": "string"
+            },
+            "constructedProfile": {
+              "type": "boolean",
+              "description": "true なら複数の部品から組み立てたもので、実在の単一品ではない"
+            },
+            "constructedFrom": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     },

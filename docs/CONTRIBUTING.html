@@ -94,7 +94,9 @@
     <li><a href="#s2">3. モデルを変えたら、どこが連動するか</a></li>
     <li><a href="#s3">4. テスト件数だけは、ずっと手で直していました</a></li>
     <li><a href="#s4">5. 手順を実際に通した記録</a></li>
-    <li><a href="#s5">6. やってはいけないこと</a></li>
+    <li><a href="#s5">7. 空振りしないテストの書き方</a></li>
+    <li><a href="#s6">8. やってはいけないこと</a></li>
+    <li><a href="#s7">9. 統合オーダーへの対応状況</a></li>
   </ol>
 </nav>
 <h1>変更するときに読むもの</h1>
@@ -150,8 +152,34 @@
 <div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>古いまま残った実績</td><td><strong>0 件</strong>（直近 14 コミットの実測）</td></tr><tr><td>作り直す手間</td><td><strong>数秒</strong>。しかも 1 コマンドでまとめて回せる</td></tr></tbody></table></div>
 <p>重い 2 つ（10〜15 分）とは事情が違います。代わりに <strong><code>npm run artifacts:all</code></strong> を用意し、 「困ったら全部回す」で足りる形にしました。</p>
 <p><strong>その代わり、本当の穴のほうを塞ぎました。</strong>回し忘れを検出する仕組みが無くても、 <code>artifact ↔ モデル</code> を突き合わせるテストがあれば、ずれたまま緑にはなりません。</p>
-<h2 id="s5">6. やってはいけないこと</h2>
-<ul><li><strong>artifact の数字を書き換えてテストを通す。</strong>artifact はモデルの出力です。 文書側を直すか、モデルを直してください。</li><li><strong>「確認済み」「検証済み」と単独で書く。</strong>何をどう検証したかを添えてください （静的検査／単体テスト／実ブラウザ／実機はすべて別のものです）。</li><li><strong>解決した項目を「まだ仮定です」と言い続ける。</strong>逆向きも嘘です（→ §1 (c)）。</li><li><strong>合成量に、強いほうの入力の区分を付ける。</strong>弱いほうに合わせてください（→ §1 (d)）。</li></ul>
+<h2 id="s5">7. 空振りしないテストの書き方</h2>
+<p><strong>通っているテストが、何も検査していないことがあります。</strong> このリポジトリでは 2026-08-02〜03 に <strong>7 回</strong>、同じ形の欠陥を作りました。 どれも「識別子で引く → 見つからない → それでもテストが通る」です（一覧は <code>test/_must.ts</code>）。</p>
+<h3>数えた結果 — 構文で洗うのは筋が悪い</h3>
+<p><code>test/</code> 全体（当時 217 件）を機械で洗うと、候補は <strong>142 か所</strong>ありました。 1 件ずつ見ると、<strong>本当に偽の合格になるのは 7 か所</strong>でした（<strong>誤検出 95 %</strong>）。</p>
+<div class="tw"><table><thead><tr><th>形</th><th class="num">候補</th><th class="num">実際に空振りする</th><th>なぜ</th></tr></thead><tbody><tr><td><code>.find(...)!</code>（非 null 断言）</td><td class="num">41</td><td class="num"><strong>0</strong></td><td>引けないと <code>undefined.x</code> で <strong>TypeError</strong> になり、落ちる</td></tr><tr><td><code>for..of</code>（空集合で素通り）</td><td class="num">87</td><td class="num"><strong>0</strong></td><td>空になるのはモデルが壊れたときで、それは他の数十件が先に捕まえる</td></tr><tr><td><code>describe.skipIf</code> / 早期 <code>return</code></td><td class="num">6</td><td class="num"><strong>6</strong></td><td><strong>静かに消える。</strong> 落ちも通りもしない</td></tr><tr><td>引けなくても値を返す関数</td><td class="num">5</td><td class="num"><strong>1</strong></td><td><code>?? []</code> が「0 件」と「引けなかった」を同じ値にする</td></tr></tbody></table></div>
+<p><strong>構文ではなく「miss が偽の合格になるか」だけが境目です。</strong> 落ちるなら直しません。</p>
+<h3>実測した被害</h3>
+<p>成果物を 5 件消して走らせました（<code>artifacts/</code> は 14 件とも git 管理下なので、本来ありえない状態です）。</p>
+<div class="tw"><table><thead><tr><th>ファイル</th><th>結果</th></tr></thead><tbody><tr><td><code>docs.test.ts</code></td><td><strong>ENOENT で落ちた。</strong> ガードを持っていない。<strong>これが正しい挙動</strong></td></tr><tr><td><code>topologySearch.test.ts</code></td><td>12 件が<strong>黙って skip</strong></td></tr><tr><td><code>realJackComparison.test.ts</code></td><td>6 件が<strong>黙って skip</strong></td></tr><tr><td><code>uiStrings.test.ts</code></td><td>3 件が<strong>黙って合格</strong>（早期 <code>return</code>）</td></tr></tbody></table></div>
+<p><strong>ガードが働くのは「壊れたときに黙る」ときだけでした。</strong> <code>skipIf</code> と早期 <code>return</code> を全部外し、<code>docs.test.ts</code> と同じく素直に読むようにしました。</p>
+<p>さらに変異試験で、<code>realJackComparison.test.ts</code> の <strong>「図面値では左右差分の区間が出ない」（反証を守るための検査）が、 端子の引き方を壊しても通る</strong>ことを確かめました。 <code>differenceWindowCount</code> が「引けなかった」を <strong>0</strong> として返していたためです。</p>
+<h3>書くときの規則</h3>
+<ol><li><strong>成果物の有無で分岐しない。</strong><code>artifacts/</code> は git 管理下です。<code>existsSync</code> は使いません。 読めなければ落ちるべきです。</li><li><strong><code>?? []</code> / <code>?? null</code> で「引けなかった」を隠さない。</strong> 0 件と「引けなかった」が同じ値になる関数を書かない。<code>test/_must.ts</code> の <code>mustFind</code> を使えば、何を探して何があったかがメッセージに残ります。</li><li><strong>列挙した識別子は、実在を先に検査する。</strong> ```ts for (const kind of KINDS)                      // ← まず実在を見る expect({ kind, inArtifact: a.major.some((e) =&gt; e.kind === kind) }) .toEqual({ kind, inArtifact: true }) for (const kind of KINDS) { /* ここで値を比べる */ } ```</li><li><strong>「n 件を検査した」という主張そのものを検査する。</strong> <code>axesUsedPerVariant</code> が <code>{}</code> になると、「振った軸が効く」を 0 回検査したまま通ります。 前提が空でないことを <code>mustBeNonEmpty</code> で見ます。</li><li><strong><code>.find(...)!</code> を機械的に置き換えない。</strong>41 か所ありますが、あれは落ちます。 全部書き換えても守りは増えず、差分だけが増えます。</li></ol>
+<h3>機械が確かめること — <code>npm run check:vacuity</code></h3>
+<p>構文を洗い続けるのはやめました。<strong>結果の側</strong>を見ます。 空振りは形がばらばらでも、必ず次のどちらかで現れます。</p>
+<ul><li>テストが <strong>skip</strong> される</li><li>テストの <strong>件数が減る</strong>（ファイルが読めない／動的生成が 0 件になる／消された）</li></ul>
+<pre><code>$ npm run check:vacuity
+  実行: 220 件 / 8 ファイル (記録: 220 件)
+
+空振りしているテストはありません。全件が実際に走っています。</code></pre>
+<p><code>artifacts/test_counts.json</code> の <code>byFile</code> を<strong>下限</strong>として使います。 減らす変更が正しいこともあります（テストを統合した等）。そのときは <code>npm run test:count</code> で更新し、<strong>なぜ減ったかをコミットに書いてください。</strong> 止めたいのは「黙って減ること」だけです。</p>
+<div class="note"><p>検出器そのものも試しました。<code>describe.skip</code> を 1 つ入れると</p><p><strong>飛ばされた 12 件を名指しで出す</strong>ことを確認し、戻すと消えることも確認しています。</p></div>
+<hr>
+<h2 id="s6">8. やってはいけないこと</h2>
+<ul><li><strong>artifact の数字を書き換えてテストを通す。</strong>artifact はモデルの出力です。 文書側を直すか、モデルを直してください。</li><li><strong>「確認済み」「検証済み」と単独で書く。</strong>何をどう検証したかを添えてください （静的検査／単体テスト／実ブラウザ／実機はすべて別のものです）。</li><li><strong>解決した項目を「まだ仮定です」と言い続ける。</strong>逆向きも嘘です（→ §1 (c)）。</li><li><strong>合成量に、強いほうの入力の区分を付ける。</strong>弱いほうに合わせてください（→ §1 (d)）。</li><li><strong>語句をそのままテストで固定する。</strong>モデルが進んだときに、テストが古い主張を守る側に回ります。 実際に <code>halfPlugProfile.test.ts</code> が「接点位置を含めて全て仮定」を固定し続け、 4極ジャックを実在部品ベースへ組み直したあとも公開 artifact に旧主張が残りました（→ §7・§9）。 固定するのは語句ではなく<strong>構造</strong>（強い根拠と弱い根拠が分けて書かれていること）にしてください。</li><li><strong>成果物の有無でテストを分岐させる。</strong><code>artifacts/</code> は git 管理下です（→ §7）。</li></ul>
+<hr>
+<h2 id="s7">9. 統合オーダーへの対応状況</h2>
+<p>Half-Plug Lab 側から 2026-08-03 付で監査オーダーを受けています （監査対象 revision <code>ba58b4c</code>。当時の HEAD より 3 commit 手前）。 対応状況は <a href="docs/INTEGRATION_ORDER_20260803.md">docs/INTEGRATION_ORDER_20260803.md</a> にあります。</p>
 </div>
 </body>
 </html>

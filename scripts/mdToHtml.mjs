@@ -95,6 +95,11 @@ const TARGETS = [
   { md: 'docs/HALF_PLUG_ADAPTER.md', html: 'docs/HALF_PLUG_ADAPTER.html', title: 'Half-Plug Lab へ渡すもの — adapter 仕様' },
   { md: 'docs/REAL_JACK_COMPARISON.md', html: 'docs/REAL_JACK_COMPARISON.html', title: '実在部品の図面と本モデルの仮定の突き合わせ' },
   { md: 'CONTRIBUTING.md', html: 'docs/CONTRIBUTING.html', title: '変更するときに読むもの' },
+  {
+    md: 'docs/INTEGRATION_ORDER_20260803.md',
+    html: 'docs/INTEGRATION_ORDER_20260803.html',
+    title: '統合オーダー (2026-08-03) への対応状況',
+  },
 ]
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

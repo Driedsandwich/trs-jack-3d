@@ -226,6 +226,74 @@ const dims = JSON.parse(readFileSync(resolve(ROOT, 'src/data/dimensions.json'), 
   string,
   { grade: Grade }
 >
+
+/**
+ * ジャックの根拠を、**台帳から組み立てる**。
+ *
+ * 統合オーダー 2026-08-03 P0-2: ここは 2026-08-02 まで variant ごとの文字列を直書きしていた。
+ * その後 4極ジャックを Lumberg 1503 28 ベースへ組み直したのに、**この文字列だけが取り残され**、
+ * 公開済み artifact に「一次資料なし」「接点位置を含めて全て仮定」が残った。
+ * 直書きをやめて grade から生成すれば、台帳を直した時点で自動的に追随する。
+ *
+ * 分けて書くもの (オーダーの推奨構造):
+ *   端子の軸位置        … FACT      (基板レイアウト図の記載値)
+ *   端子番号と機能の対応 … DERIVED   (ばね 3 本の位置から順列が 1 通りしか成立しない)
+ *   ブレーク接点        … FACT      (回路記号に 2 個記載)
+ *   接点の軸位置        … ASSUMPTION (**ここだけが残った仮定**)
+ */
+function gradeOf(...keys: string[]): Grade | null {
+  const gs = keys.map((k) => dims[k]?.grade).filter(Boolean) as Grade[]
+  return gs.length === keys.length ? weakest(gs) : null
+}
+
+function jackBasis() {
+  if (!String(VARIANT).endsWith('JACK-TRRS'))
+    return {
+      source: 'メーカー公開データシートの外形・基板レイアウト・回路記号 (Lumberg 1503 09)',
+      evidenceGrade: 'ASSUMPTION' as const,
+      note: '外形は図面どおりだが、内部の接点ばね寸法は一次資料に無く、仮定である。',
+      detail: {
+        partIdentityBasis: 'Lumberg 1503 09 (実在の単一品)',
+        externalGeometryBasis: 'FACT — データシート外形図',
+        terminalLayoutBasis: 'FACT — 基板レイアウト図',
+        breakContactBasis: 'FACT — 回路記号',
+        internalContactGeometryBasis: 'ASSUMPTION — 接点ばねの寸法は公開資料に無い',
+        electricalContinuityValidation: '未実施',
+        acousticValidation: '未実施',
+        constructedProfile: false,
+        constructedFrom: [],
+      },
+    }
+  const terminal = gradeOf(...[1, 2, 3, 4, 5, 6].map((i) => `trrs.jack.terminal.p${i}.axialCenter`))
+  const contact = gradeOf(...['tip', 'ring1', 'ring2', 'sleeve'].map((c) => `trrs.jack.contact.${c}.axialCenter`))
+  return {
+    // **かつての「一次資料なし」「全て仮定」は誤りになった。** 端子系は 1503 28 の図面から採っている。
+    // 資料が無いのは接点の軸方向オフセットだけなので、そう書く (包括的な断りに戻さない)
+    source: 'Lumberg 1503 28 の基板レイアウト図・回路記号 (端子系)。接点の軸方向オフセットだけ資料が無い',
+    evidenceGrade: (contact ?? 'ASSUMPTION') as Grade,
+    note:
+      `端子 6 本の軸位置は図面記載 (${terminal ?? '不明'})。ブレーク接点 2 個も回路記号どおり。`
+      + `**残る仮定は接点が端子より何 mm 手前にあるか (beamOffset) だけである (${contact ?? '不明'})。**`
+      + 'この profile の深さの数字は、その 1 つの仮定に乗っている。'
+      + 'なお PS000001 の断面図 (Tip 12.75) を入れると左右差分の区間は消える。実在資料 2 件は逆を指している。',
+    detail: {
+      // 実在の単一品と誤認させない。3極プラグ × 4極ジャックの混挿は構成 profile である
+      partIdentityBasis: '構成 profile。実在の単一品ではない',
+      externalGeometryBasis: 'ASSUMPTION — 外形は 3極 1503 09 の値を流用している (1503 28 の外形図は未入手)',
+      terminalLayoutBasis: `${terminal ?? 'UNKNOWN'} — Lumberg 1503 28 基板レイアウト図`,
+      breakContactBasis: 'FACT — Lumberg 1503 28 回路記号に 2 個記載',
+      internalContactGeometryBasis: `${contact ?? 'UNKNOWN'} — 端子位置に拘束された仮定`,
+      electricalContinuityValidation: '未実施',
+      acousticValidation: '未実施',
+      constructedProfile: true,
+      constructedFrom: [
+        `プラグ: ${PARTS[String(VARIANT).split('|')[0]]?.label ?? '不明'}`,
+        'ジャックの端子系: Lumberg 1503 28',
+        'ジャックの外形: Lumberg 1503 09 からの流用',
+      ],
+    },
+  }
+}
 const counts = { FACT: 0, DERIVED: 0, ASSUMPTION: 0, UNKNOWN: 0 }
 for (const v of Object.values(dims)) counts[v.grade]++
 const jackInternal = Object.keys(dims).filter(
@@ -249,9 +317,14 @@ try {
     bridgeDepthJointRangeMm: [s.bridgeDepthRange.joint.minMm, s.bridgeDepthRange.joint.maxMm],
     tipBridgeComplianceThreshold: s.tipBridge.complianceThreshold,
     tipBridgeWorstCornerThreshold: s.tipBridge.toleranceBox.worstCorner.tipThreshold,
+    // kind 単位の集計は**ここに置く**。事象へは配らない (統合オーダー P0-3)
+    aggregateSpreadByKind: s.eventSpread?.byKind ?? null,
     notes: [
       'これはモデル内部の感度であって、実物のばらつきではない。',
       'spreadMm が null の事象は「測っていない」であって「動かない」ではない。',
+      'aggregateSpreadByKind は kind 単位の集計である。'
+        + 'STATE_CHANGE は 1 回の挿入で複数回起きるので、この幅を個々の事象へ当てはめてはならない。'
+        + '2026-08-03 まで当てはめており、Ring のブレーク接点に帰線接点用の幅が付いていた。',
     ],
   }
 } catch {
@@ -259,22 +332,73 @@ try {
 }
 
 const intervals = buildIntervals(m)
-const events = extractEvents(m, sweep(m, { stepMm: STEP_MM })).map((e) => {
+const rawEvents = extractEvents(m, sweep(m, { stepMm: STEP_MM }))
+
+/**
+ * 感度解析が振った寸法。artifact の note に書かれている 2 本。
+ * ここを直したら sensitivity.ts の `SWEPT_FOR_EVENT_SPREAD` も直す (同じ定数を 2 か所に置かない)。
+ */
+const SWEPT_FOR_EVENT_SPREAD = ['jack.contact.sleeve.axialCenter', 'jack.contact.sleeve.padWidth']
+
+/**
+ * その kind が 1 回しか出ないか。**幅を事象へ配れるのはここが true のときだけ。**
+ *
+ * 統合オーダー P0-3: 2026-08-03 まで `eventSpread.byKind[e.kind]` を全事象へ配っていた。
+ * STATE_CHANGE は 1 回の挿入で 29 件出るので、**29 件すべてに同じ −0.88〜14mm が付いた**。
+ * Ring のブレーク接点にも帰線接点用の幅が付き、受け手には誤情報になる。
+ * kind 単位しか無い集計は profile 直下の aggregateSpreadByKind へ移し、事象へは配らない。
+ */
+const kindCount = new Map<string, number>()
+for (const e of rawEvents) kindCount.set(e.kind, (kindCount.get(e.kind) ?? 0) + 1)
+
+/**
+ * 文言を変えても変わらない識別子。**label からは作らない。**
+ *
+ * 末尾の連番は、同じ遷移が挿入中に複数回起きるため要る。
+ * (帰線接点は絶縁帯を 2 本またぐので OPEN→INSULATED が 2 回起きる。
+ *  最初 `kind:subject:from->to` だけで作って重複検査に落ちた。検査を入れていなければ
+ *  「一意な ID」を名乗ったまま 7 件が衝突していた。)
+ *
+ * **この連番は位置に依存する。** 手前に事象が増えると後ろがずれる。
+ * profile v1 の intervalId と同じ性質で、ID の組は profileId とセットで保存する
+ * (docs/HALF_PLUG_ADAPTER.md)。事象列が変われば profileId が変わるので検出できる。
+ */
+const idSeen = new Map<string, number>()
+const eventIdOf = (e: (typeof rawEvents)[number]) => {
+  const base = e.subject
+    ? `${e.kind}:${e.subject.subjectId}:${e.subject.fromState}->${e.subject.toState}`
+    : e.kind
+  const n = (idSeen.get(base) ?? 0) + 1
+  idSeen.set(base, n)
+  return n === 1 && !e.subject ? base : `${base}#${n}`
+}
+
+const events = rawEvents.map((e) => {
   const sp = eventSpread[e.kind]
+  const eventSpecific = sp !== undefined && kindCount.get(e.kind) === 1
   return {
+    eventId: eventIdOf(e),
     kind: e.kind,
+    eventIdentity: e.subject ?? null,
     depthMm: +e.depthMm.toFixed(4),
     normalized: +(e.depthMm / m.fullDepthMm).toFixed(6),
     label: e.label,
-    spreadMm: sp
-      ? {
-          minMm: sp.minMm,
-          maxMm: sp.maxMm,
-          sweptParameters: ['jack.contact.sleeve.axialCenter', 'jack.contact.sleeve.padWidth'],
-        }
-      : null,
+    spreadMm: eventSpecific ? { minMm: sp.minMm, maxMm: sp.maxMm, sweptParameters: SWEPT_FOR_EVENT_SPREAD } : null,
+    // null の理由を分ける。「動かない」ではない
+    spreadStatus: eventSpecific
+      ? 'MEASURED'
+      : sp === undefined
+        ? 'NOT_MEASURED'
+        : 'NOT_EVENT_SPECIFIC',
   }
 })
+
+// eventId は決定的で、同じ入力からは同じ値になる。重複が出たら識別子として使えない
+const dupIds = [...new Map<string, number>(
+  events.map((e) => [e.eventId, events.filter((x) => x.eventId === e.eventId).length]),
+)].filter(([, n]) => n > 1)
+if (dupIds.length)
+  throw new Error(`eventId が重複している: ${dupIds.map(([id, n]) => `${id} ×${n}`).join(', ')}`)
 
 const profile = {
   schemaVersion: 1 as const,
@@ -287,19 +411,7 @@ const profile = {
     evidenceGrade: 'DERIVED' as const,
     note: '外形は図面どおり。導体境界は記載寸法からの演算。絶縁帯の縮径のみ図面実測 (φ3.20〜3.22)。',
   },
-  jackBasis: String(VARIANT).endsWith('JACK-TRRS')
-    ? {
-        source: '一次資料なし',
-        evidenceGrade: 'ASSUMPTION' as const,
-        note:
-          '**4極ジャックは接点位置を含めて全て仮定である。** 図面もデータシートも入手できていない。' +
-          'この profile の深さの数字は、仮定した接点位置の帰結でしかない。',
-      }
-    : {
-        source: 'メーカー公開データシートの外形・基板レイアウト・回路記号',
-        evidenceGrade: 'ASSUMPTION' as const,
-        note: '外形は図面どおりだが、内部の接点ばね寸法は一次資料に無く、全て仮定である。',
-      },
+  jackBasis: jackBasis(),
   sourceRevision: sourceRevision(),
   generatedAt: generatedAt(),
   fullInsertionDepthMm: m.fullDepthMm,
@@ -319,8 +431,12 @@ const profile = {
     verifiedPhysical: false,
     physicalVerificationRef: null,
     notes: [
-      '実物と突き合わせた検証をしていない。ジャック内部の接点寸法は全て仮定である。',
-      'この profile は Lumberg 1532 10 × 1503 09 の 1 組についてのものであり、3.5mm ジャック全般を代表しない。',
+      '実物と突き合わせた検証をしていない。ジャック内部の接点ばね寸法は仮定である。',
+      // **variant ごとに書き分ける。** 2026-08-03 まで全 variant へ 1532 10 × 1503 09 と書いていた
+      // (統合オーダー P0-2)。組み合わせは PARTS の実データから作る
+      `この profile は ${PARTS[String(VARIANT).split('|')[0]]?.label ?? '不明'} × `
+        + `${PARTS[String(VARIANT).split('|')[1]]?.label ?? '不明'} の 1 組についてのものであり、`
+        + '3.5mm ジャック全般を代表しない。',
       'acousticAnnotation は参考分類であって DSP 係数ではない。フィルタ係数・ゲイン・クロストーク量へ直接変換してはならない。',
       'quality を接触抵抗 Ω へ換算してはならない。相対スコアであって物理量ではない。',
       'nominalStartMm は 1 機種の実寸であり、一般的な「挿入深度」ではない。機種横断では normalized を使うこと。',

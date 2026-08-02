@@ -66,168 +66,312 @@
    "depthMm": 3.92,
    "label": "JC_SLEEVE: OPEN → INSULATED",
    "detail": "接触セグメント: TIP",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_SLEEVE",
+    "fromState": "OPEN",
+    "toState": "INSULATED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 3.94,
    "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
    "detail": "接触セグメント: TIP",
-   "severity": "bad"
+   "severity": "bad",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_SLEEVE",
+    "fromState": "INSULATED",
+    "toState": "WRONG_SEGMENT"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 6.32,
    "label": "JC_SLEEVE: WRONG_SEGMENT → INSULATED",
    "detail": "接触セグメント: TIP",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_SLEEVE",
+    "fromState": "WRONG_SEGMENT",
+    "toState": "INSULATED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 6.34,
    "label": "JC_SLEEVE: INSULATED → OPEN",
    "detail": "接触セグメント: なし",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_SLEEVE",
+    "fromState": "INSULATED",
+    "toState": "OPEN"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 7.02,
    "label": "JC_SLEEVE: OPEN → INSULATED",
    "detail": "接触セグメント: TIP",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_SLEEVE",
+    "fromState": "OPEN",
+    "toState": "INSULATED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 7.04,
    "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
    "detail": "接触セグメント: TIP",
-   "severity": "bad"
+   "severity": "bad",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_SLEEVE",
+    "fromState": "INSULATED",
+    "toState": "WRONG_SEGMENT"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 8,
    "label": "JC_RING: OPEN → INSULATED",
    "detail": "接触セグメント: TIP",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_RING",
+    "fromState": "OPEN",
+    "toState": "INSULATED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 8.02,
    "label": "JC_RING: INSULATED → WRONG_SEGMENT",
    "detail": "接触セグメント: TIP",
-   "severity": "bad"
+   "severity": "bad",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_RING",
+    "fromState": "INSULATED",
+    "toState": "WRONG_SEGMENT"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 8.06,
    "label": "JC_RING ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
    "detail": "ジャック内蔵スイッチの開閉",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "break-contact",
+    "subjectId": "JC_RING",
+    "fromState": "BREAK_CLOSED",
+    "toState": "BREAK_OPEN"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 8.26,
    "label": "JC_SLEEVE: WRONG_SEGMENT → INSULATED",
    "detail": "接触セグメント: RING",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_SLEEVE",
+    "fromState": "WRONG_SEGMENT",
+    "toState": "INSULATED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 8.28,
    "label": "JC_SLEEVE: INSULATED → WRONG_SEGMENT",
    "detail": "接触セグメント: RING",
-   "severity": "bad"
+   "severity": "bad",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_SLEEVE",
+    "fromState": "INSULATED",
+    "toState": "WRONG_SEGMENT"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 9.44,
    "label": "JC_RING ブレーク接点: BREAK_OPEN → BREAK_CLOSED",
    "detail": "ジャック内蔵スイッチの開閉",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "break-contact",
+    "subjectId": "JC_RING",
+    "fromState": "BREAK_OPEN",
+    "toState": "BREAK_CLOSED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 10.04,
    "label": "JC_RING: WRONG_SEGMENT → INSULATED",
    "detail": "接触セグメント: TIP",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_RING",
+    "fromState": "WRONG_SEGMENT",
+    "toState": "INSULATED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 10.06,
    "label": "JC_RING: INSULATED → OPEN",
    "detail": "接触セグメント: なし",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_RING",
+    "fromState": "INSULATED",
+    "toState": "OPEN"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 11.1,
    "label": "JC_RING: OPEN → INSULATED",
    "detail": "接触セグメント: TIP",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_RING",
+    "fromState": "OPEN",
+    "toState": "INSULATED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 11.12,
    "label": "JC_RING: INSULATED → WRONG_SEGMENT",
    "detail": "接触セグメント: TIP",
-   "severity": "bad"
+   "severity": "bad",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_RING",
+    "fromState": "INSULATED",
+    "toState": "WRONG_SEGMENT"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 11.24,
    "label": "JC_RING ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
    "detail": "ジャック内蔵スイッチの開閉",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "break-contact",
+    "subjectId": "JC_RING",
+    "fromState": "BREAK_CLOSED",
+    "toState": "BREAK_OPEN"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 11.78,
    "label": "JC_SLEEVE: WRONG_SEGMENT → BRIDGED",
    "detail": "接触セグメント: RING, SLEEVE",
-   "severity": "bad"
+   "severity": "bad",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_SLEEVE",
+    "fromState": "WRONG_SEGMENT",
+    "toState": "BRIDGED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 11.96,
    "label": "JC_SLEEVE: BRIDGED → CLOSED",
    "detail": "接触セグメント: SLEEVE",
-   "severity": "ok"
+   "severity": "ok",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_SLEEVE",
+    "fromState": "BRIDGED",
+    "toState": "CLOSED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 11.96,
    "label": "JC_TIP: OPEN → TOUCH_UNSTABLE",
    "detail": "接触セグメント: TIP",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_TIP",
+    "fromState": "OPEN",
+    "toState": "TOUCH_UNSTABLE"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 12.02,
    "label": "JC_TIP ブレーク接点: BREAK_CLOSED → BREAK_OPEN",
    "detail": "ジャック内蔵スイッチの開閉",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "break-contact",
+    "subjectId": "JC_TIP",
+    "fromState": "BREAK_CLOSED",
+    "toState": "BREAK_OPEN"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 12.18,
    "label": "JC_RING: WRONG_SEGMENT → INSULATED",
    "detail": "接触セグメント: INS1",
-   "severity": "info"
+   "severity": "info",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_RING",
+    "fromState": "WRONG_SEGMENT",
+    "toState": "INSULATED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 12.18,
    "label": "JC_TIP: TOUCH_UNSTABLE → CLOSED",
    "detail": "接触セグメント: TIP",
-   "severity": "ok"
+   "severity": "ok",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_TIP",
+    "fromState": "TOUCH_UNSTABLE",
+    "toState": "CLOSED"
+   }
   },
   {
    "kind": "STATE_CHANGE",
    "depthMm": 12.34,
    "label": "JC_RING: INSULATED → CLOSED",
    "detail": "接触セグメント: RING",
-   "severity": "ok"
+   "severity": "ok",
+   "subject": {
+    "subjectType": "contact",
+    "subjectId": "JC_RING",
+    "fromState": "INSULATED",
+    "toState": "CLOSED"
+   }
   }
  ]
 }

@@ -166,6 +166,13 @@ physicalClaimStatus      未実測なら "unverified"</code></pre>
 <div class="tw"><table><thead><tr><th></th><th>旧</th><th>新</th></tr></thead><tbody><tr><td>本命の区間</td><td><code>IV019</code> / 12.90〜13.12 mm</td><td><strong><code>IV028</code></strong> / 13.30〜13.52 mm</td></tr><tr><td>区間の総数</td><td>21</td><td><strong>30</strong></td></tr></tbody></table></div>
 <p><strong><code>schemaVersion</code> は 1 のままです。</strong>項目も型も意味も変えていないためで、 変わったのは<strong>データ</strong>です。版で守るのではなく、次のように参照してください。</p>
 <div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>✅ 保存する</td><td><code>profileId</code>（<code>trs-jack-3d:&lt;variant&gt;:&lt;revision&gt;</code> の形。改訂が埋め込まれている）と <code>intervalId</code> を<strong>セットで</strong></td></tr><tr><td>✅ 再解決する</td><td><code>profileId</code> が違ったら、<code>acousticAnnotation.topologyClass</code> と <code>normalizedStart/End</code> で引き直す</td></tr><tr><td>❌ しない</td><td><code>intervalId</code> だけを保存して、新しい profile へそのまま当てる</td></tr></tbody></table></div>
+<p><strong><code>events[].eventId</code> も同じ扱いです。</strong><code>eventId</code> は <code>STATE_CHANGE:JC_RING:BREAK_CLOSED-&gt;BREAK_OPEN#1</code> のように、 <strong>何がどの状態からどの状態へ変わったか</strong>で作ってあります（<code>label</code> の文言からは作りません。 文言を直しただけで ID が変わらないようにするためです）。 末尾の <code>#n</code> は同じ遷移が挿入中に複数回起きるための連番で、 <strong>手前に事象が増えると後ろがずれます。</strong><code>profileId</code> とセットで保存してください。</p>
+<h3>⚠ <code>events[].spreadMm</code> の意味が変わりました（2026-08-03）</h3>
+<p>2026-08-02 版までの <code>spreadMm</code> は、<strong>感度解析の <code>kind</code> 単位の集計をそのまま各事象へ複製していました。</strong> <code>STATE_CHANGE</code> は 1 回の挿入で 29 件出るので、29 件すべてに同じ <code>−0.88〜14 mm</code> が付き、 たとえば Ring のブレーク接点にも帰線接点用の幅が付いていました。<strong>下流では誤情報です。</strong></p>
+<p>現在は <code>spreadStatus</code> で 3 つを区別します。</p>
+<div class="tw"><table><thead><tr><th><code>spreadStatus</code></th><th><code>spreadMm</code></th><th>意味</th></tr></thead><tbody><tr><td><code>MEASURED</code></td><td>値あり</td><td><strong>その事象そのものを測った幅。</strong> その <code>kind</code> が 1 回しか出ない事象だけ</td></tr><tr><td><code>NOT_EVENT_SPECIFIC</code></td><td><code>null</code></td><td><code>kind</code> 単位の集計しか無く、この事象へは配れない</td></tr><tr><td><code>NOT_MEASURED</code></td><td><code>null</code></td><td>測っていない</td></tr></tbody></table></div>
+<p><strong>どれも「動かない」の意味ではありません。</strong> <code>kind</code> 単位の集計は捨てず、<code>sensitivitySummary.aggregateSpreadByKind</code> に残してあります。 そちらを個々の事象へ当てはめないでください。</p>
+<div class="note"><p>2026-08-02 版の profile を取り込み済みの場合、<code>events[].spreadMm</code> は読み捨ててください。</p></div>
 <hr>
 <h2 id="s5">5. 深さの窓が 0.2 mm しかない件</h2>
 <p>本命の区間は <strong>0.22 mm 幅</strong>で、挿入ストローク 14 mm の <strong>1.6 %</strong> です。</p>

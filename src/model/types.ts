@@ -416,6 +416,23 @@ export interface InsertionEvent {
   label: string
   detail: string
   severity: 'info' | 'ok' | 'warn' | 'bad'
+  /**
+   * 何が、どの状態からどの状態へ変わったか。
+   *
+   * `kind` だけでは事象を区別できない。STATE_CHANGE は 1 回の挿入で 29 件出るのに、
+   * どれも kind が同じなので、感度解析の「kind ごとの幅」を引くと
+   * **Ring のブレーク接点に帰線接点用の幅 (−0.88〜14mm) が付く**という誤りが起きた
+   * (統合オーダー 2026-08-03 P0-3)。
+   *
+   * label から作らないこと。**文言を直しただけで ID が変わってはいけない。**
+   * kind が 1 回しか出ない事象では省略する (kind そのものが識別子になる)。
+   */
+  subject?: {
+    subjectType: 'contact' | 'break-contact'
+    subjectId: string
+    fromState: string
+    toState: string
+  }
 }
 
 // ---------------------------------------------------------------------------

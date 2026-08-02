@@ -8,19 +8,23 @@
  * 網羅性の主張は、主張そのものを検査しないと簡単に嘘になる。
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { buildModelWithOverrides, getModel } from '../src/data'
+import { mustBeNonEmpty } from './_must'
 
 const ROOT = resolve(__dirname, '..')
 const PATH = resolve(ROOT, 'artifacts/topology_search_difference_signal.json')
 
-// artifact は npm run search:topology で作る。無い環境ではこの検査を飛ばす
-const present = existsSync(PATH)
-const search = present ? JSON.parse(readFileSync(PATH, 'utf8')) : null
+// **ガードを置かない。** 2026-08-03 まで `describe.skipIf(!existsSync(PATH))` を付けていたが、
+// artifacts/ は 14 件とも git 管理下にあり「無い環境」は存在しない。
+// 実測すると、この artifact を消しただけで**このファイルの 12 件が黙って消えた**。
+// ガードが働くのは「壊れたときに黙る」ときだけだった。
+// docs.test.ts はガードを持たず ENOENT で大声で落ちる。そちらが正しい (→ CONTRIBUTING §7)。
+const search = JSON.parse(readFileSync(PATH, 'utf8'))
 
-describe.skipIf(!present)('目標トポロジー探索 (DIFFERENCE_SIGNAL)', () => {
+describe('目標トポロジー探索 (DIFFERENCE_SIGNAL)', () => {
   it('目標と探索空間が記録されている', () => {
     expect(search.targetCode).toBe('DIFFERENCE_SIGNAL')
     expect(search.searchSpace.configurationsTried).toBeGreaterThan(100)
@@ -28,8 +32,13 @@ describe.skipIf(!present)('目標トポロジー探索 (DIFFERENCE_SIGNAL)', () 
   })
 
   it('**各 variant で振った軸が、その variant に実際に効く**', () => {
-    // 空振りの再発防止。効かないキーで「振った」と数えていないことを実測で確かめる
-    for (const [variantId, keys] of Object.entries(search.searchSpace.axesUsedPerVariant as Record<string, string[]>)) {
+    // 空振りの再発防止。効かないキーで「振った」と数えていないことを実測で確かめる。
+    // **この検査自身が空振りしうる。** axesUsedPerVariant が {} になると、
+    // 「振った軸が効く」を 0 回検査したまま通る。まず中身があることを見る。
+    const perVariant = Object.entries(search.searchSpace.axesUsedPerVariant as Record<string, string[]>)
+    mustBeNonEmpty(perVariant, 'axesUsedPerVariant')
+    for (const [variantId, keys] of perVariant) {
+      mustBeNonEmpty(keys, `${variantId} の走査軸`)
       const before = JSON.stringify(
         getModel(variantId as never).jack.contacts.map((c) => [c.axialCenterMm, c.padWidthMm]),
       )
@@ -52,7 +61,10 @@ describe.skipIf(!present)('目標トポロジー探索 (DIFFERENCE_SIGNAL)', () 
 
   it('4極 variant には 4極用のキーを使っている', () => {
     const used = search.searchSpace.axesUsedPerVariant as Record<string, string[]>
-    for (const [variantId, keys] of Object.entries(used)) {
+    // 4極 variant が 1 つも入っていなければ、この検査は何も見ていない
+    const entries = Object.entries(used)
+    mustBeNonEmpty(entries.filter(([v]) => v.endsWith('JACK-TRRS')), '4極 variant の走査軸')
+    for (const [variantId, keys] of entries) {
       const isTrrsJack = variantId.endsWith('JACK-TRRS')
       const contactKeys = keys.filter((k) => k.includes('contact') && !k.includes('complianceMm'))
       for (const k of contactKeys)

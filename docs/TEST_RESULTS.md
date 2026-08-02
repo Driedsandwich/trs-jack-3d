@@ -13,13 +13,18 @@
 > その文書自体は本リポジトリに含まれていません（公開の対象外）。
 > 各項目が何を確認したかは、§番号を見なくても本文だけで読めるように書いてあります。
 >
-> なお、図面の実測（DERIVED 39 件の土台）に使ったスクリプトと生の測定値もリポジトリにありません。
+> なお、図面の実測（DERIVED 区分の土台）に使ったスクリプトと生の測定値もリポジトリにありません。
 > **この 1 工程だけは第三者が再現できません。**
+>
+> （2026-08-03 まで「DERIVED 39 件」と書いていました。08-03 の区分点検で 11 件を
+> ASSUMPTION へ下げ、現在は 28 件です。件数はここに書かず、
+> `artifacts/verification_summary.json` を正本にします。）
 
 | 種別 | コマンド | 結果 |
 |---|---|---|
 | 型検査 | `npm run typecheck` | **エラー 0**（`src` / `scripts` / `test`） |
-| 単体テスト | `npm run test` | **217 件**（内訳は `artifacts/test_counts.json`。`npm run test:count` で更新） |
+| 単体テスト | `npm run test` | **220 件**（内訳は `artifacts/test_counts.json`。`npm run test:count` で更新） |
+| 空振り検査 | `npm run check:vacuity` | skip 0 件・件数の減少なし（→ [CONTRIBUTING §7](CONTRIBUTING.html)） |
 | 実ブラウザ検証 | `npm run screenshots` | **27 件すべて成功**、コンソールエラー 0 |
 | 本番ビルド | `npm run build` | **成功**（1,356 kB / gzip 388 kB・2026-08-01 実測） |
 | 実 GPU 性能 | `npm run perf` | **全条件 fps 59.9**（Apple M5 / vsync 上限）、**33 ms 超のフレーム落ち 0 件** |

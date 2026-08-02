@@ -10,6 +10,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { getModel } from '../src/data'
 
 const ROOT = resolve(__dirname, '..')
 const json = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
@@ -207,10 +208,90 @@ describe('Half-Plug Topology Profile v1', () => {
     }
   })
 
-  it('4極ジャックの profile は、根拠が仮定であることを明示している', () => {
-    expect(trrsProfile.jackBasis.evidenceGrade).toBe('ASSUMPTION')
-    expect(trrsProfile.jackBasis.note).toMatch(/接点位置を含めて全て仮定/)
+  /**
+   * **このテストは 2026-08-03 まで、古くなった主張のほうを固定していた。**
+   *
+   * 元は `expect(jackBasis.note).toMatch(/接点位置を含めて全て仮定/)` だった。
+   * 2026-08-02 に 4極ジャックを Lumberg 1503 28 ベースへ組み直し、端子位置とブレーク接点が
+   * FACT になったのに、exporter の直書き文字列と**この検査**が古い主張を守り続けたため、
+   * 公開済み artifact に「一次資料なし」「全て仮定」が残った (統合オーダー P0-2)。
+   *
+   * 語句をそのまま固定すると、**モデルが進んだときにテストが足枷になる。**
+   * 固定するのは語句ではなく「強い根拠と弱い根拠が分けて書かれていること」にする。
+   */
+  it('4極ジャックの profile は、**どこが FACT でどこが仮定か**を分けて書いている', () => {
+    const b = trrsProfile.jackBasis
+    // 全体としては最も弱い入力に合わせる
+    expect(b.evidenceGrade).toBe('ASSUMPTION')
     expect(trrsProfile.modelLimitations.verifiedPhysical).toBe(false)
+
+    // 包括的な断りへ戻していないこと (逆向きの陳腐化の再発防止)
+    const whole = JSON.stringify(trrsProfile)
+    for (const stale of ['一次資料なし', '接点位置を含めて全て仮定'])
+      expect({ stale, present: whole.includes(stale) }).toEqual({ stale, present: false })
+
+    // 内訳が台帳の区分と一致すること。台帳を直せば artifact も追随する
+    const dims = getModel('TRS|JACK-TRRS').dims
+    expect(dims.entry('trrs.jack.terminal.p1.axialCenter').grade).toBe('FACT')
+    expect(dims.entry('trrs.jack.contact.beamOffset').grade).toBe('ASSUMPTION')
+    expect(b.detail.terminalLayoutBasis).toMatch(/^FACT/)
+    expect(b.detail.breakContactBasis).toMatch(/^FACT/)
+    expect(b.detail.internalContactGeometryBasis).toMatch(/^ASSUMPTION/)
+    // 実在の単一品と誤認させない
+    expect(b.detail.constructedProfile).toBe(true)
+    expect(b.detail.constructedFrom.length).toBeGreaterThan(0)
+    // 実物確認はどちらも未実施のまま
+    expect(b.detail.electricalContinuityValidation).toBe('未実施')
+    expect(b.detail.acousticValidation).toBe('未実施')
+    // 反対証拠を落としていない
+    expect(b.note).toMatch(/PS000001/)
+  })
+
+  it('**variant ごとに limitations を書き分けている**', () => {
+    // 2026-08-03 まで、どの variant でも「Lumberg 1532 10 × 1503 09 の 1 組」と書いていた
+    const trsNote = profile.modelLimitations.notes.join()
+    const trrsNote = trrsProfile.modelLimitations.notes.join()
+    expect(trsNote).toMatch(/1503 09/)
+    expect(trrsNote).toMatch(/1503 28/)
+    expect({ trrsClaimsTrsJack: trrsNote.includes('1532 10 × Lumberg 1503 09') }).toEqual({
+      trrsClaimsTrsJack: false,
+    })
+  })
+
+  /**
+   * 統合オーダー P0-3。感度の幅を **kind 単位の集計から事象へ複製しない**。
+   *
+   * 2026-08-03 まで `eventSpread.byKind[e.kind]` を全事象へ配っていた。
+   * STATE_CHANGE は 1 回の挿入で 29 件出るので、29 件すべてに同じ −0.88〜14mm が付き、
+   * Ring のブレーク接点にも帰線接点用の幅が付いていた。
+   */
+  it('**同じ kind が複数回出る事象へ、kind 単位の幅を配っていない**', () => {
+    const byKind: Record<string, number> = {}
+    for (const e of profile.events as { kind: string }[]) byKind[e.kind] = (byKind[e.kind] ?? 0) + 1
+    const multi = Object.entries(byKind).filter(([, n]) => n > 1).map(([k]) => k)
+    // 前提そのものを検査する。複数回出る kind が無ければこの検査は何も見ていない
+    expect(multi.length, '複数回出る kind が 1 つも無い。この検査は空振りしている').toBeGreaterThan(0)
+    for (const e of profile.events as { kind: string; spreadMm: unknown; spreadStatus: string }[])
+      if (multi.includes(e.kind))
+        expect({ kind: e.kind, spread: e.spreadMm, status: e.spreadStatus }).toEqual({
+          kind: e.kind,
+          spread: null,
+          status: 'NOT_EVENT_SPECIFIC',
+        })
+    // 集計そのものは profile 直下に残っている (捨てていない)
+    expect(profile.sensitivitySummary.aggregateSpreadByKind).toBeTruthy()
+  })
+
+  it('**eventId が一意で、label の文言から作られていない**', () => {
+    const ids = (profile.events as { eventId: string; label: string }[]).map((e) => e.eventId)
+    expect(ids.length).toBeGreaterThan(0)
+    expect(new Set(ids).size, `eventId が重複: ${ids.length} 件中 ${new Set(ids).size} 種`).toBe(ids.length)
+    // label を変えても変わらないこと = label の文字列が ID に入っていないこと
+    for (const e of profile.events as { eventId: string; label: string }[])
+      expect({ id: e.eventId, containsLabel: e.eventId.includes(e.label) }).toEqual({
+        id: e.eventId,
+        containsLabel: false,
+      })
   })
 
   // 10. CC BY 対象データの帰属情報を保持
