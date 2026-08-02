@@ -63,7 +63,8 @@
 5. `npm run test` — **ここで連動漏れが落ちます**
 6. `npm run test:count` — テスト件数の artifact を更新する
 7. **`npm run check:vacuity`** — 空振りしているテストが無いかを機械が判定します（→ §7）
-8. `npm run docs:html` — HTML を作り直す
+8. **`npm run validate:profiles`** — 成果物 5 件を schema と意味規則で検証します
+9. `npm run docs:html` — HTML を作り直す
 
 > **`npm run verify:provenance` は手順に入れません。**
 > これは clean checkout から生成して provenance を確かめるもので、
@@ -230,6 +231,20 @@ scripts/searchTopology.ts(210,10): error TS2304: Cannot find name 'classifyFromE
 | `npm run typecheck` | `npx tsc --noEmit -p tsconfig.json` |
 | `npm run test` | — |
 | `npm run build` | — |
+
+### 検査器が「その規則を実装していない」こともある
+
+**同じ日に 2 度目が出ました。**`schemas/` に `pattern` 制約を 5 本足したのに、
+検証していた自前の validator が **`pattern` を実装していませんでした**。
+schema に書いた時点で守られたつもりになり、report にもそう書きました。
+
+意図的な違反 10 種で突き合わせると、**5 種が素通り**していました
+（現物の artifact に違反は 0 件だったので、誤った値は公開されていません）。
+
+いまは `ajv`（draft-07 の完全実装）に任せています → `npm run validate:profiles`。
+
+**制約を足したら、その制約が実際に弾くことを 1 回試してください。**
+「schema に書いた」と「schema が効いている」は別です。
 
 ### 書くときの規則
 

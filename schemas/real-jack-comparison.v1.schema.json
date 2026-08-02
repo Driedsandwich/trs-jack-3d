@@ -1,0 +1,150 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/real-jack-comparison.v1.schema.json",
+  "title": "実在部品の図面と本モデルの仮定の突き合わせ v1",
+  "description": "npm run compare:real-jack の出力。**この artifact の目的は反証を保持することである。** 唯一入手できた実在 4極ジャックの断面図 (pro-SIGNAL PS000001) を入れると、このプロジェクトの看板だった左右差分の区間が消える。その結果を消させないための構造になっている。",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "variantId",
+    "stepMm",
+    "question",
+    "referencePart",
+    "contactPositions",
+    "scaleCheck",
+    "result",
+    "whyItDisappears",
+    "decision",
+    "lumbergTerminalScenario",
+    "testerPredictions",
+    "limitations"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "generatedAt": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "variantId": { "type": "string" },
+    "stepMm": { "type": "number", "exclusiveMinimum": 0 },
+    "question": { "type": "string", "minLength": 20 },
+    "referencePart": {
+      "type": "object",
+      "required": ["partNumber", "representativeness"],
+      "additionalProperties": true,
+      "properties": {
+        "partNumber": { "type": "string" },
+        "representativeness": {
+          "type": "string",
+          "minLength": 10,
+          "description": "**1 件の図面を 3.5mm ジャック一般へ広げない。** 代表性を主張していないことを明文で持つ"
+        }
+      }
+    },
+    "contactPositions": {
+      "type": "object",
+      "required": ["unit", "datum", "assumed", "drawing", "deltaMm"],
+      "additionalProperties": false,
+      "properties": {
+        "unit": { "type": "string" },
+        "datum": { "type": "string" },
+        "assumed": { "$ref": "#/definitions/positions" },
+        "drawing": { "$ref": "#/definitions/positions" },
+        "deltaMm": { "$ref": "#/definitions/positions" }
+      }
+    },
+    "scaleCheck": {
+      "type": "object",
+      "description": "図面が縮尺どおりで、同じ基準面を使っていることの照合。ここが崩れると比較の前提そのものが崩れる",
+      "required": ["method", "measuredFromDrawingMm", "predictedByModelMm"],
+      "additionalProperties": true,
+      "properties": {
+        "method": { "type": "string" },
+        "measuredFromDrawingMm": { "type": "array", "minItems": 1, "items": { "type": "number" } },
+        "predictedByModelMm": { "type": "array", "minItems": 1, "items": { "type": "number" } }
+      }
+    },
+    "result": {
+      "type": "object",
+      "required": ["assumed", "drawing", "verdict"],
+      "additionalProperties": false,
+      "properties": {
+        "assumed": { "$ref": "#/definitions/sideResult" },
+        "drawing": { "$ref": "#/definitions/sideResult" },
+        "verdict": { "type": "string", "minLength": 10 }
+      }
+    },
+    "whyItDisappears": { "type": "object", "additionalProperties": true },
+    "decision": {
+      "type": "object",
+      "required": ["chosen", "rejected", "reasoning"],
+      "additionalProperties": false,
+      "properties": {
+        "chosen": {
+          "enum": ["compare-only", "replace-assumption", "add-variant"],
+          "description": "compare-only = 比較対象として持つだけで、モデルの値は差し替えない"
+        },
+        "rejected": { "type": "array", "items": { "type": ["string", "object"] } },
+        "reasoning": { "type": ["string", "array", "object"] }
+      }
+    },
+    "lumbergTerminalScenario": {
+      "type": "object",
+      "description": "**実在資料 2 件が逆を指している。** PS000001 は区間なし、Lumberg 1503 28 の端子位置は区間あり。片方だけ残して「決着した」と書けないようにする",
+      "required": ["terminalsFromNoseMm", "caveat", "fullInsertionOk", "differenceWindows"],
+      "additionalProperties": true,
+      "properties": {
+        "terminalsFromNoseMm": { "type": "object", "additionalProperties": { "type": "number" } },
+        "caveat": { "type": "string", "minLength": 10 },
+        "fullInsertionOk": { "type": "boolean" },
+        "differenceWindows": { "type": "array", "items": { "$ref": "#/definitions/window" } }
+      }
+    },
+    "testerPredictions": {
+      "type": "object",
+      "required": ["note", "variantId", "assumed", "drawing"],
+      "additionalProperties": false,
+      "properties": {
+        "note": { "type": "string" },
+        "variantId": { "type": "string" },
+        "assumed": { "$ref": "#/definitions/predictionSet" },
+        "drawing": { "$ref": "#/definitions/predictionSet" }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "description": "**空にできない。** 未確認事項を消させない",
+      "items": { "type": "string" }
+    }
+  },
+  "definitions": {
+    "positions": {
+      "type": "object",
+      "additionalProperties": { "type": "number" }
+    },
+    "window": {
+      "type": "object",
+      "required": ["fromMm", "toMm"],
+      "additionalProperties": true,
+      "properties": { "fromMm": { "type": "number" }, "toMm": { "type": "number" } }
+    },
+    "sideResult": {
+      "type": "object",
+      "required": ["differenceWindows"],
+      "additionalProperties": true,
+      "properties": {
+        "differenceWindows": { "type": "array", "items": { "$ref": "#/definitions/window" } }
+      }
+    },
+    "predictionSet": {
+      "type": "object",
+      "description": "実物で確かめるときの対抗予測。役割ごとに肩からの隙間を出す",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["shoulderGapMm"],
+        "additionalProperties": true,
+        "properties": { "shoulderGapMm": { "type": "number" } }
+      }
+    }
+  }
+}

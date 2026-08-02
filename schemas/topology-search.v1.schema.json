@@ -1,0 +1,223 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/topology-search.v1.schema.json",
+  "title": "目標トポロジー探索の結果 v1",
+  "description": "npm run search:topology の出力。**見つからないことも結果として保存する。** 反証を消させないための構造になっている (件数を出した分類は必ず標本も出す・廃止した集計は removedMeasures に残す)。",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedBy",
+    "targetCode",
+    "searchSpace",
+    "representativenessDisclaimer",
+    "found",
+    "foundWithWorkingJack",
+    "usableWitnesses",
+    "realizability",
+    "brokenJackWitnesses",
+    "witnessCount",
+    "witnessCountByVariant",
+    "usableWitnessCount"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "generatedBy": { "type": "string" },
+    "targetCode": { "type": "string" },
+    "searchSpace": {
+      "type": "object",
+      "required": ["variants", "axesByJack", "axesUsedPerVariant", "variantBasis", "coarseStepMm", "configurationsTried", "buildFailed"],
+      "additionalProperties": false,
+      "properties": {
+        "variants": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "axesByJack": {
+          "type": "object",
+          "description": "走査軸。shipped は実行時の既定値で、check:stale がこれを現在のモデルと突き合わせる",
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["key", "levels", "shipped"],
+              "additionalProperties": false,
+              "properties": {
+                "key": { "type": "string" },
+                "levels": { "type": "array", "minItems": 2, "items": { "type": "number" } },
+                "shipped": { "type": "number" }
+              }
+            }
+          }
+        },
+        "axesUsedPerVariant": {
+          "type": "object",
+          "additionalProperties": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        },
+        "variantBasis": {
+          "type": "object",
+          "description": "variant ごとの土台。断り書きが 1 本だと 3極×3極の話に見えてしまう",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["variantId", "basePartOrConstructedProfile", "sourceBasis", "unverifiedAssumptions", "representativenessDisclaimer"],
+            "additionalProperties": false,
+            "properties": {
+              "variantId": { "type": "string" },
+              "basePartOrConstructedProfile": { "type": "string" },
+              "sourceBasis": { "type": "string" },
+              "unverifiedAssumptions": { "type": "array", "items": { "type": "string" } },
+              "representativenessDisclaimer": { "type": "string" }
+            }
+          }
+        },
+        "coarseStepMm": { "type": "number", "exclusiveMinimum": 0 },
+        "configurationsTried": { "type": "integer", "minimum": 0 },
+        "buildFailed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "representativenessDisclaimer": { "type": "string", "minLength": 20 },
+    "found": { "type": "boolean" },
+    "foundWithWorkingJack": { "type": "boolean" },
+    "usableWitnesses": { "$ref": "#/definitions/category" },
+    "brokenJackWitnesses": { "$ref": "#/definitions/category" },
+    "removedMeasures": {
+      "type": "array",
+      "description": "廃止した集計。**黙って消すと「前は別の数字があった」ことが分からなくなる。**",
+      "items": {
+        "type": "object",
+        "required": ["key", "removedOn", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string" },
+          "removedOn": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+          "reason": { "type": "string", "minLength": 40 }
+        }
+      }
+    },
+    "realizability": {
+      "type": "object",
+      "description": "**「作れるか」の答えではない。** モデル上どこまで絞れるかである",
+      "required": ["note", "heuristic", "passesPadWidthHeuristic", "matchesCurrentNominalParameters", "counterEvidence"],
+      "additionalProperties": false,
+      "properties": {
+        "note": { "type": "string", "minLength": 40 },
+        "heuristic": {
+          "type": "object",
+          "required": ["name", "thresholdMm", "source", "manufacturingVerified"],
+          "additionalProperties": true,
+          "properties": {
+            "name": { "type": "string" },
+            "thresholdMm": { "type": "number", "exclusiveMinimum": 0 },
+            "source": {
+              "type": ["string", "null"],
+              "description": "出典。**無ければ null。** 探索用の閾値であることを隠さない"
+            },
+            "manufacturingVerified": {
+              "const": false,
+              "description": "**true にできない。** 材料・応力・耐久性・成形・公差・接触圧・工程のいずれも確認していない"
+            }
+          }
+        },
+        "passesPadWidthHeuristic": { "$ref": "#/definitions/count" },
+        "matchesCurrentNominalParameters": {
+          "type": "object",
+          "required": ["total", "byVariant", "samples"],
+          "additionalProperties": false,
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "byVariant": { "$ref": "#/definitions/byVariant" },
+            "samples": { "type": "array", "items": { "$ref": "#/definitions/witness" } }
+          }
+        },
+        "counterEvidence": {
+          "type": "object",
+          "description": "**反対証拠を同じ可視性で置く。** 成立件数だけを載せない",
+          "required": ["note", "ref"],
+          "additionalProperties": false,
+          "properties": {
+            "note": { "type": "string", "minLength": 40 },
+            "ref": { "type": "string" }
+          }
+        }
+      }
+    },
+    "witnessCount": { "type": "integer", "minimum": 0 },
+    "witnessCountByVariant": { "$ref": "#/definitions/byVariant" },
+    "usableWitnessCount": { "type": "integer", "minimum": 0 },
+    "robustIntervalWidthMmAmongUsable": { "type": ["number", "null"] },
+    "robustIntervalWidthMm": { "type": ["number", "null"] },
+    "sensitivity": {
+      "type": "array",
+      "description": "軸ごとに、どの水準が witness に現れたか。shippedValueAppearsInWitness が false なら既定値では成立しない",
+      "items": {
+        "type": "object",
+        "required": ["key", "shipped", "levelsTried", "valuesAmongWitnesses", "valuesAmongUsableWitnesses", "shippedValueAppearsInWitness"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string" },
+          "shipped": { "type": "number" },
+          "levelsTried": { "type": "array", "minItems": 1, "items": { "type": "number" } },
+          "valuesAmongWitnesses": { "type": "array", "items": { "type": "number" } },
+          "valuesAmongUsableWitnesses": { "type": "array", "items": { "type": "number" } },
+          "shippedValueAppearsInWitness": { "type": "boolean" }
+        }
+      }
+    },
+    "requiredAssumptions": { "type": "array", "items": { "type": ["string", "object"] } },
+    "notFoundReason": { "type": ["string", "null"] }
+  },
+  "definitions": {
+    "byVariant": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "count": {
+      "type": "object",
+      "required": ["total", "byVariant"],
+      "additionalProperties": false,
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "byVariant": { "$ref": "#/definitions/byVariant" }
+      }
+    },
+    "category": {
+      "type": "object",
+      "description": "件数を出した分類は、必ず標本も出す。切り捨てた件数も明示する",
+      "required": ["note", "total", "byVariant", "samples", "droppedFromListing"],
+      "additionalProperties": false,
+      "properties": {
+        "note": { "type": "string" },
+        "total": { "type": "integer", "minimum": 0 },
+        "byVariant": { "$ref": "#/definitions/byVariant" },
+        "samples": { "type": "array", "items": { "$ref": "#/definitions/witness" } },
+        "droppedFromListing": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "witness": {
+      "type": "object",
+      "required": ["variantId", "overrides", "constructed", "evidenceGrade", "fullInsertionOk", "matchesCurrentNominalParameters", "passesPadWidthHeuristic", "windows", "robustIntervalWidthMm"],
+      "additionalProperties": false,
+      "properties": {
+        "variantId": { "type": "string" },
+        "overrides": { "type": "object", "additionalProperties": { "type": "number" } },
+        "constructed": { "type": "boolean" },
+        "evidenceGrade": {
+          "const": "ASSUMPTION",
+          "description": "**構成は実在部品ではない。** ここが FACT や DERIVED になることはない"
+        },
+        "fullInsertionOk": { "type": "boolean" },
+        "matchesCurrentNominalParameters": { "type": "boolean" },
+        "passesPadWidthHeuristic": { "type": "boolean" },
+        "windows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["fromMm", "toMm"],
+            "additionalProperties": false,
+            "properties": { "fromMm": { "type": "number" }, "toMm": { "type": "number" } }
+          }
+        },
+        "robustIntervalWidthMm": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

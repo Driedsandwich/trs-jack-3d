@@ -2,13 +2,26 @@
  * Half-Plug Topology Profile v1 の互換性試験。
  * 統合オーダー (2026-08-01) §3 P0「Schemaと互換性試験」の 10 項目に対応する。
  *
- * JSON Schema の検証は自前で書いている。ajv を足すと依存が増えるためで、
- * 使っている機能 (required / type / enum / const / additionalProperties / $ref /
- * minItems / minimum) の範囲だけを実装している。**汎用の実装ではない。**
+ * ## 自前の検証器をやめた (2026-08-03・統合オーダー P0-6)
+ *
+ * 2026-08-03 まで、JSON Schema の検証を自前で書いていた。
+ * 実装していたのは required / type / enum / const / additionalProperties / $ref /
+ * minItems / minimum だけで、**`pattern` を実装していなかった。**
+ *
+ * ところが 2026-08-03 の P0-1 で、provenance に `pattern` 制約を 5 本足していた
+ * (inputDigest の sha256、generatedFromCommit の 40 桁 hex、artifactDate の日付形式、
+ * inputFiles[].sha256、profileId)。**そのどれも検証されていなかった。**
+ * schema に書いたから守られている、と report に書いたが、実際には素通りしていた。
+ *
+ * 実測: 意図的な違反 10 種のうち **5 種が自前の検証器を素通り**した
+ * (ajv はすべて検出)。**現物の artifact に違反は 0 件だった**ので、
+ * 誤った値が公開されたことは無い。守りが効いていなかっただけである。
  */
 
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import Ajv from 'ajv'
 import { describe, expect, it } from 'vitest'
 import { getModel } from '../src/data'
 
@@ -29,76 +42,64 @@ const profile = profiles[0][1]
 const trrsProfile = profiles[1][1]
 
 // ---------------------------------------------------------------------------
-// 最小限の JSON Schema 検証
+// JSON Schema 検証 — draft-07 の完全実装 (ajv)
 // ---------------------------------------------------------------------------
 
-function deref(node: Record<string, unknown>): Record<string, unknown> {
-  if (typeof node.$ref !== 'string') return node
-  const path = node.$ref.replace(/^#\//, '').split('/')
-  let cur: unknown = schema
-  for (const seg of path) cur = (cur as Record<string, unknown>)[seg]
-  return { ...(cur as Record<string, unknown>), ...node, $ref: undefined }
-}
+// strict:false は schema の `description` など ajv が知らない注釈を許すため。
+// **検証の厳しさは落ちない** (未知のキーワードを無視するのではなく、注釈を許すだけ)。
+const ajv = new Ajv({ allErrors: true, strict: false })
+const compiled = ajv.compile(schema)
 
-function validate(value: unknown, node: Record<string, unknown>, path = '$'): string[] {
-  const s = deref(node)
-  const errs: string[] = []
-  const push = (m: string) => errs.push(`${path}: ${m}`)
-
-  if (s.const !== undefined && value !== s.const) push(`const ${JSON.stringify(s.const)} でない`)
-  if (Array.isArray(s.enum) && !s.enum.includes(value as never)) push(`enum 外 (${JSON.stringify(value)})`)
-
-  const types = s.type === undefined ? [] : Array.isArray(s.type) ? s.type : [s.type]
-  const actual = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value
-  const ok = types.length === 0 || types.some((t) => (t === 'integer' ? Number.isInteger(value) : t === actual))
-  if (!ok) {
-    push(`型が ${types.join('|')} でなく ${actual}`)
-    return errs // 型が違えば以降は見ない
-  }
-
-  if (typeof value === 'number') {
-    if (typeof s.minimum === 'number' && value < s.minimum) push(`minimum ${s.minimum} 未満`)
-    if (typeof s.maximum === 'number' && value > s.maximum) push(`maximum ${s.maximum} 超過`)
-    if (typeof s.exclusiveMinimum === 'number' && value <= s.exclusiveMinimum) push(`exclusiveMinimum 違反`)
-  }
-
-  if (Array.isArray(value)) {
-    if (typeof s.minItems === 'number' && value.length < s.minItems) push(`minItems ${s.minItems} 未満`)
-    if (typeof s.maxItems === 'number' && value.length > s.maxItems) push(`maxItems ${s.maxItems} 超過`)
-    if (s.items) value.forEach((v, i) => errs.push(...validate(v, s.items as Record<string, unknown>, `${path}[${i}]`)))
-  }
-
-  if (actual === 'object' && value !== null) {
-    const obj = value as Record<string, unknown>
-    for (const r of (s.required as string[]) ?? [])
-      if (!(r in obj)) push(`必須 "${r}" が無い`)
-    const props = (s.properties as Record<string, Record<string, unknown>>) ?? {}
-    for (const [k, v] of Object.entries(obj)) {
-      if (props[k]) errs.push(...validate(v, props[k], `${path}.${k}`))
-      else if (s.additionalProperties === false) push(`未知のキー "${k}"`)
-      else if (typeof s.additionalProperties === 'object')
-        errs.push(...validate(v, s.additionalProperties as Record<string, unknown>, `${path}.${k}`))
-    }
-  }
-  return errs
+/** 違反の一覧を人が読める形で返す。空配列なら適合 */
+function validate(value: unknown): string[] {
+  return compiled(value)
+    ? []
+    : (compiled.errors ?? []).map((e) => `${e.instancePath || '(root)'}: ${e.keyword} — ${e.message}`)
 }
 
 // ---------------------------------------------------------------------------
 
 describe('Half-Plug Topology Profile v1', () => {
-  // 1. JSON Schema validation
+  // 1. JSON Schema validation (draft-07 の完全実装)
   it.each(profiles.map(([id]) => id))('1. schema に適合する (%s)', (id) => {
     const p = profiles.find(([x]) => x === id)![1]
-    expect(validate(p, schema)).toEqual([])
+    expect(validate(p)).toEqual([])
   })
 
   it('1b. 検証器そのものが働く (壊した profile を弾ける)', () => {
     // 通るだけの検証器では意味がないので、確かに落ちることを見る
-    expect(validate({ ...profile, schemaVersion: 2 }, schema).length).toBeGreaterThan(0)
-    expect(validate({ ...profile, intervals: [] }, schema).length).toBeGreaterThan(0)
+    expect(validate({ ...profile, schemaVersion: 2 }).length).toBeGreaterThan(0)
+    expect(validate({ ...profile, intervals: [] }).length).toBeGreaterThan(0)
     const bad = structuredClone(profile)
     bad.intervals[0].normalizedStart = 1.5
-    expect(validate(bad, schema).length).toBeGreaterThan(0)
+    expect(validate(bad).length).toBeGreaterThan(0)
+  })
+
+  it('**1d. `npm run validate:profiles` が全成果物で通る**', () => {
+    // schema 検証と意味検証を、テストスイートの一部としても回す。
+    // 別コマンドにしか無いと「回し忘れても緑」になる (→ CONTRIBUTING §7)。
+    // 対象は profile 2 件 / 探索 / 実部品比較 / テスト件数 の 5 件
+    const out = execFileSync('node', ['scripts/validateProfiles.mjs'], { cwd: ROOT, encoding: 'utf8' })
+    expect(out).toMatch(/5 件すべてが schema と意味規則の両方に適合しています/)
+  }, 30_000)
+
+  it('**1c. `pattern` 制約が実際に効いている**', () => {
+    // 2026-08-03 まで自前の検証器を使っており、**`pattern` を実装していなかった。**
+    // P0-1 で足した 5 本の pattern 制約はどれも検証されていなかった。
+    // 現物に違反は 0 件だったが、守りが効いていなかった (→ ファイル冒頭)。
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const cases: [string, (p: any) => void][] = [
+      ['inputDigest が非 hex', (p) => { p.provenance.inputDigest = 'これは sha256 ではない' }],
+      ['inputDigest が 63 桁', (p) => { p.provenance.inputDigest = 'a'.repeat(63) }],
+      ['generatedFromCommit が短い', (p) => { p.provenance.generatedFromCommit = 'abc123' }],
+      ['artifactDate の形式が違う', (p) => { p.provenance.artifactDate = '2026/08/03' }],
+      ['inputFiles[].sha256 が非 hex', (p) => { p.provenance.inputFiles[0].sha256 = 'nope' }],
+    ]
+    for (const [name, mutate] of cases) {
+      const bad = structuredClone(profile)
+      mutate(bad)
+      expect({ name, caught: validate(bad).length > 0 }).toEqual({ name, caught: true })
+    }
   })
 
   // 2. 同一入力・同一日・同一 revision で byte-identical

@@ -24,11 +24,11 @@ Half-Plug Lab 側から受けた監査オーダーへの対応記録です。
 | ✅ | **P0-3** `events[].spreadMm` を event 固有に | **完了** |
 | ✅ | **P0-4** 電気トポロジー分類の一本化 | **完了**（→ §1） |
 | ✅ | **P0-5** 探索結果の表現を弱める | **完了**（→ §1） |
+| ✅ | **P0-6** Draft-07 の完全検証（Ajv） | **完了**（→ §1） |
 | ✅ | **P0-7** 文書と公開表現の整合 | **完了** |
-| ⏸ | **P0-6** Draft-07 の完全検証（Ajv） | **依存追加の承認待ち**（→ §3） |
 | ⏸ | **P0-8** immutable release | **tag / push の承認待ち**（→ §3） |
 
-**着手できる P0 は出揃いました。**残る 2 件はどちらも承認事項です。
+**残るのは P0-8 だけです。**それは承認事項です。
 ただし、**リポジトリにコミットされている profile は `artifactKind: "local"` /
 `workingTreeDirty: true`** です（開発中に生成しているため）。
 Half-Plug Lab 側が正本にできるのは、clean な入力から `--release` で作った
@@ -339,6 +339,76 @@ variant ごとに `variantId` / `basePartOrConstructedProfile` / `sourceBasis` /
 
 ---
 
+### P0-6 — 自前の検証器が `pattern` を実装していなかった
+
+指摘は「部分 validator を使っている」でしたが、**実害の中身が特定できました。**
+
+自前の検証器が実装していたのは
+`required` / `type` / `enum` / `const` / `additionalProperties` / `$ref` / `minItems` / `minimum`
+の 8 種で、**`pattern` がありませんでした。**
+
+ところが同じ 2026-08-03 の P0-1 で、provenance に `pattern` 制約を **5 本**足していました。
+
+```
+inputDigest            ^[0-9a-f]{64}$
+generatedFromCommit    ^([0-9a-f]{40}|UNKNOWN)$
+artifactDate           ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+inputFiles[].sha256    ^[0-9a-f]{64}$
+```
+
+**そのどれも検証されていませんでした。**「schema に書いたから守られている」と
+報告しましたが、実際には素通りしていました。
+
+#### 実測
+
+意図的な違反 10 種で突き合わせました。
+
+| | 自前 | ajv |
+|---|---|---|
+| `inputDigest` が非 hex | **素通** | 検出 |
+| `inputDigest` が 63 桁 | **素通** | 検出 |
+| `generatedFromCommit` が短い | **素通** | 検出 |
+| `artifactDate` の形式違い | **素通** | 検出 |
+| `inputFiles[].sha256` が非 hex | **素通** | 検出 |
+| `minimum` / `integer` / `enum` / 未知キー / 必須欠落 (5 種) | 検出 | 検出 |
+
+**10 種のうち 5 種が素通りしていました。**
+
+> **現物の artifact に違反は 0 件でした。**誤った値が公開されたことはありません。
+> 守りが効いていなかっただけです。
+
+#### 何を足したか
+
+| | |
+|---|---|
+| 依存 | `ajv` ^8.20.0 を **devDependencies のみ**に追加（実行時依存には入れない） |
+| コマンド | **`npm run validate:profiles`** |
+| 対象 | profile 2 件 / 探索 / 実部品比較 / テスト件数 の **5 件** |
+| 新規 schema | `topology-search.v1` / `real-jack-comparison.v1` / `test-counts.v1` |
+
+**schema 検証と意味検証を分けています。**落ちたときにどちらの種類か即座に分かるためです
+（形の問題と中身の問題では直し方が違います）。
+
+意味規則は **45 本**あります。区間の連続性、`intervalId` / `eventId` の一意性、
+`sourceRevision` が 40 桁 hex か `UNKNOWN` か、`inputDigest` が sha256 か、
+**`profileId` の末尾が `inputDigest` の先頭 12 桁と一致するか**、
+生成物自身が入力に混ざっていないか、反対証拠が消えていないか、など。
+
+`npm run test` からも回るようにしました（別コマンドにしか無いと回し忘れても緑になるため）。
+
+#### 変異試験 — 到達しない規則が無いことまで確かめた
+
+意味規則 45 本のうち **44 本に個別の変異を当て、全部が狙った規則を発火**させました。
+（残る 1 本は 44 本目の鏡像で、同じ集合の交わりを逆から見ているだけなので
+単独では発火しません。無害な重複です。）
+
+> **検証器そのものが自分の記録に引っかかりました。**
+> 「廃止した名前が復活していないか」を全文検索で見ていたため、
+> `removedMeasures` に残した廃止記録そのものを違反として拾いました。
+> 記録を除いて検索するよう直しています。
+
+---
+
 ## 2. 未着手（次にやること）
 
 **着手できる P0 は残っていません。**
@@ -356,27 +426,24 @@ P2（3D 同期 API）は static 統合が安定してからと、オーダー自
 
 ## 3. 承認が要る項目
 
-**この 2 件は着手しません。**
-
-### P0-6 — Ajv（または Python jsonschema）の導入
-
-現在の `test/halfPlugProfile.test.ts` は **自前の部分 validator** を使っています
-（`required` / `type` / `enum` / `const` / `additionalProperties` / `$ref` / `minItems` /
-`minimum` だけを実装。汎用ではないとファイル冒頭に明記してあります）。
-
-| | |
-|---|---|
-| 何が要るか | dev dependency として `ajv`（draft-07）を 1 つ追加 |
-| 影響 | dev-only。実行時依存には入らない。`package-lock.json` が変わる |
-| 代替 | 現在の部分 validator を広げる（`pattern` / `oneOf` 等）。依存は増えないが、**汎用実装ではないという弱点は残る** |
-| 戻し方 | `npm uninstall ajv` と `git checkout package.json package-lock.json` |
-
-**新規の依存追加なので、承認をもらってから入れます。**
-
 ### P0-8 — immutable release（tag / GitHub Release）
 
-オーダー自身が「このオーダーは tag、release、push の自動実行承認ではない」と書いています。
-P0-1〜P0-7 の完了後に、対象・影響・可逆性・削除方法を示して別途確認します。
+**P0-1〜P0-7 は完了しました。**オーダーの完了条件のうち、コマンドで確かめられる分は
+すべて通っています。
+
+```
+npm ci / npm run typecheck / npm run test / npm run build
+npm run validate:profiles / npm run verify:provenance
+npm run check:stale / npm run check:vacuity
+```
+
+残るのは tag と GitHub Release の作成です。
+オーダー自身が「このオーダーは tag、release、push の自動実行承認ではない」と
+書いているため、**着手しません。**対象・影響・可逆性・削除方法を示して別途確認します。
+
+> `verify:half-plug-release` は作っていません。上の 8 コマンドで完了条件を満たすため、
+> それらを束ねるだけの入口を増やしても守りが増えないと判断しました
+> （→ CONTRIBUTING §2「先に数えてから決める」）。
 
 ---
 

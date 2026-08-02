@@ -17,6 +17,42 @@
 
 ## [Unreleased]
 
+### 訂正 — 自前の schema 検証器が `pattern` を実装していなかった（統合オーダー P0-6）
+
+2026-08-03 まで JSON Schema の検証を自前で書いていた。実装していたのは
+`required` / `type` / `enum` / `const` / `additionalProperties` / `$ref` /
+`minItems` / `minimum` の 8 種で、**`pattern` が無かった。**
+
+ところが同じ日の P0-1 で、provenance に `pattern` 制約を **5 本**足していた
+（`inputDigest` の sha256、`generatedFromCommit` の 40 桁 hex、`artifactDate` の
+日付形式、`inputFiles[].sha256`）。**そのどれも検証されていなかった。**
+「schema に書いたから守られている」と報告したが、実際には素通りしていた。
+
+実測: 意図的な違反 10 種のうち **5 種が自前の検証器を素通り**した（ajv は全部検出）。
+
+> **現物の artifact に違反は 0 件だった。**誤った値が公開されたことはない。
+> 守りが効いていなかっただけである。
+
+### 追加 — `npm run validate:profiles`（ajv / draft-07）
+
+- `ajv` ^8.20.0 を **devDependencies のみ**に追加（実行時依存には入れない）
+- 対象を **5 件**へ広げた（profile 2 件 / 探索 / 実部品比較 / テスト件数）
+- 新規 schema 3 本: `topology-search.v1` / `real-jack-comparison.v1` / `test-counts.v1`
+- **schema 検証と意味検証を分けた。**落ちたときにどちらの種類か即座に分かる
+  （形の問題と中身の問題では直し方が違う）
+- 意味規則は 45 本。区間の連続性、`intervalId` / `eventId` の一意性、
+  `sourceRevision` が 40 桁 hex か `UNKNOWN` か、`inputDigest` が sha256 か、
+  **`profileId` の末尾が `inputDigest` の先頭 12 桁と一致するか**、
+  生成物自身が入力に混ざっていないか、反対証拠が消えていないか
+- `npm run test` からも回る（別コマンドにしか無いと回し忘れても緑になるため）
+
+変異試験: 意味規則 45 本のうち **44 本に個別の変異を当て、全部が狙った規則を発火**させた。
+残る 1 本は 44 本目の鏡像で、単独では発火しない（無害な重複）。
+
+> 検証器そのものが自分の記録に引っかかった。「廃止した名前が復活していないか」を
+> 全文検索で見ていたため、`removedMeasures` に残した廃止記録を違反として拾った。
+> 記録を除いて検索するよう直した。
+
 ### 訂正 — 型検査を 3 セッション「何も検査しない形」で回していた
 
 `npx tsc --noEmit -p tsconfig.json` を使っていたが、`tsconfig.json` は

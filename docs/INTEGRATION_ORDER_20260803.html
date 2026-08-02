@@ -102,8 +102,8 @@
 <div class="note"><p><strong>監査対象が HEAD より手前だったので、8 件すべてを現在の木で引き直しました。</strong></p><p>「もう直っている」で済ませられた項目は <strong>0 件</strong>で、8 件とも当時のまま残っていました。</p><p>間の 3 commit は CONTRIBUTING と検査の追加で、profile や exporter に触れていません。</p></div>
 <hr>
 <h2 id="s0">0. 現在の状態</h2>
-<div class="tw"><table><thead><tr><th></th><th>P0</th><th>状態</th></tr></thead><tbody><tr><td>✅</td><td><strong>P0-1</strong> artifact provenance</td><td><strong>完了</strong>（受入試験 7 項目・→ §1）</td></tr><tr><td>✅</td><td><strong>P0-2</strong> TRRS の basis / limitations</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-3</strong> <code>events[].spreadMm</code> を event 固有に</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-4</strong> 電気トポロジー分類の一本化</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-5</strong> 探索結果の表現を弱める</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-7</strong> 文書と公開表現の整合</td><td><strong>完了</strong></td></tr><tr><td>⏸</td><td><strong>P0-6</strong> Draft-07 の完全検証（Ajv）</td><td><strong>依存追加の承認待ち</strong>（→ §3）</td></tr><tr><td>⏸</td><td><strong>P0-8</strong> immutable release</td><td><strong>tag / push の承認待ち</strong>（→ §3）</td></tr></tbody></table></div>
-<p><strong>着手できる P0 は出揃いました。</strong>残る 2 件はどちらも承認事項です。 ただし、<strong>リポジトリにコミットされている profile は <code>artifactKind: "local"</code> / <code>workingTreeDirty: true</code></strong> です（開発中に生成しているため）。 Half-Plug Lab 側が正本にできるのは、clean な入力から <code>--release</code> で作った release asset だけです。それは P0-8（承認待ち）で作ります。</p>
+<div class="tw"><table><thead><tr><th></th><th>P0</th><th>状態</th></tr></thead><tbody><tr><td>✅</td><td><strong>P0-1</strong> artifact provenance</td><td><strong>完了</strong>（受入試験 7 項目・→ §1）</td></tr><tr><td>✅</td><td><strong>P0-2</strong> TRRS の basis / limitations</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-3</strong> <code>events[].spreadMm</code> を event 固有に</td><td><strong>完了</strong></td></tr><tr><td>✅</td><td><strong>P0-4</strong> 電気トポロジー分類の一本化</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-5</strong> 探索結果の表現を弱める</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-6</strong> Draft-07 の完全検証（Ajv）</td><td><strong>完了</strong>（→ §1）</td></tr><tr><td>✅</td><td><strong>P0-7</strong> 文書と公開表現の整合</td><td><strong>完了</strong></td></tr><tr><td>⏸</td><td><strong>P0-8</strong> immutable release</td><td><strong>tag / push の承認待ち</strong>（→ §3）</td></tr></tbody></table></div>
+<p><strong>残るのは P0-8 だけです。</strong>それは承認事項です。 ただし、<strong>リポジトリにコミットされている profile は <code>artifactKind: "local"</code> / <code>workingTreeDirty: true</code></strong> です（開発中に生成しているため）。 Half-Plug Lab 側が正本にできるのは、clean な入力から <code>--release</code> で作った release asset だけです。それは P0-8（承認待ち）で作ります。</p>
 <hr>
 <h2 id="s1">1. 完了した項目</h2>
 <h3>P0-1 — artifact provenance</h3>
@@ -203,19 +203,42 @@ sweptParameters: [jack.contact.sleeve.axialCenter, jack.contact.sleeve.padWidth]
 <p><strong>反対証拠を同じ可視性で置きました。</strong>README のその表の直下に、 PS000001（Tip 12.75 → 区間 0 件）と Lumberg 1503 28（Tip 11.30 → 区間あり）が 逆を指していることを表で置いています。artifact 側にも <code>realizability.counterEvidence</code> を追加しました。</p>
 <p>variant ごとに <code>variantId</code> / <code>basePartOrConstructedProfile</code> / <code>sourceBasis</code> / <code>unverifiedAssumptions</code> / <code>representativenessDisclaimer</code> を記録しました （断り書きが 1 本だと 3極×3極の話に見えてしまうため）。</p>
 <hr>
+<h3>P0-6 — 自前の検証器が <code>pattern</code> を実装していなかった</h3>
+<p>指摘は「部分 validator を使っている」でしたが、<strong>実害の中身が特定できました。</strong></p>
+<p>自前の検証器が実装していたのは <code>required</code> / <code>type</code> / <code>enum</code> / <code>const</code> / <code>additionalProperties</code> / <code>$ref</code> / <code>minItems</code> / <code>minimum</code> の 8 種で、<strong><code>pattern</code> がありませんでした。</strong></p>
+<p>ところが同じ 2026-08-03 の P0-1 で、provenance に <code>pattern</code> 制約を <strong>5 本</strong>足していました。</p>
+<pre><code>inputDigest            ^[0-9a-f]{64}$
+generatedFromCommit    ^([0-9a-f]{40}|UNKNOWN)$
+artifactDate           ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+inputFiles[].sha256    ^[0-9a-f]{64}$</code></pre>
+<p><strong>そのどれも検証されていませんでした。</strong>「schema に書いたから守られている」と 報告しましたが、実際には素通りしていました。</p>
+<h4>実測</h4>
+<p>意図的な違反 10 種で突き合わせました。</p>
+<div class="tw"><table><thead><tr><th></th><th>自前</th><th>ajv</th></tr></thead><tbody><tr><td><code>inputDigest</code> が非 hex</td><td><strong>素通</strong></td><td>検出</td></tr><tr><td><code>inputDigest</code> が 63 桁</td><td><strong>素通</strong></td><td>検出</td></tr><tr><td><code>generatedFromCommit</code> が短い</td><td><strong>素通</strong></td><td>検出</td></tr><tr><td><code>artifactDate</code> の形式違い</td><td><strong>素通</strong></td><td>検出</td></tr><tr><td><code>inputFiles[].sha256</code> が非 hex</td><td><strong>素通</strong></td><td>検出</td></tr><tr><td><code>minimum</code> / <code>integer</code> / <code>enum</code> / 未知キー / 必須欠落 (5 種)</td><td>検出</td><td>検出</td></tr></tbody></table></div>
+<p><strong>10 種のうち 5 種が素通りしていました。</strong></p>
+<div class="note"><p><strong>現物の artifact に違反は 0 件でした。</strong>誤った値が公開されたことはありません。</p><p>守りが効いていなかっただけです。</p></div>
+<h4>何を足したか</h4>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>依存</td><td><code>ajv</code> ^8.20.0 を <strong>devDependencies のみ</strong>に追加（実行時依存には入れない）</td></tr><tr><td>コマンド</td><td><strong><code>npm run validate:profiles</code></strong></td></tr><tr><td>対象</td><td>profile 2 件 / 探索 / 実部品比較 / テスト件数 の <strong>5 件</strong></td></tr><tr><td>新規 schema</td><td><code>topology-search.v1</code> / <code>real-jack-comparison.v1</code> / <code>test-counts.v1</code></td></tr></tbody></table></div>
+<p><strong>schema 検証と意味検証を分けています。</strong>落ちたときにどちらの種類か即座に分かるためです （形の問題と中身の問題では直し方が違います）。</p>
+<p>意味規則は <strong>45 本</strong>あります。区間の連続性、<code>intervalId</code> / <code>eventId</code> の一意性、 <code>sourceRevision</code> が 40 桁 hex か <code>UNKNOWN</code> か、<code>inputDigest</code> が sha256 か、 <strong><code>profileId</code> の末尾が <code>inputDigest</code> の先頭 12 桁と一致するか</strong>、 生成物自身が入力に混ざっていないか、反対証拠が消えていないか、など。</p>
+<p><code>npm run test</code> からも回るようにしました（別コマンドにしか無いと回し忘れても緑になるため）。</p>
+<h4>変異試験 — 到達しない規則が無いことまで確かめた</h4>
+<p>意味規則 45 本のうち <strong>44 本に個別の変異を当て、全部が狙った規則を発火</strong>させました。 （残る 1 本は 44 本目の鏡像で、同じ集合の交わりを逆から見ているだけなので 単独では発火しません。無害な重複です。）</p>
+<div class="note"><p><strong>検証器そのものが自分の記録に引っかかりました。</strong></p><p>「廃止した名前が復活していないか」を全文検索で見ていたため、</p><p><code>removedMeasures</code> に残した廃止記録そのものを違反として拾いました。</p><p>記録を除いて検索するよう直しています。</p></div>
+<hr>
 <h2 id="s2">2. 未着手（次にやること）</h2>
 <p><strong>着手できる P0 は残っていません。</strong></p>
 <p>P1（contact observation manifest）は実物の入手が前提で、 P2（3D 同期 API）は static 統合が安定してからと、オーダー自身が定めています。</p>
 <p><strong>P0-4 について 1 点補足</strong>: オーダーは「<code>searchTopology.ts</code> の説明が旧実装を前提にしている」と 指摘しています。現在の木で確認したところ、そのとおりでした（<code>scripts/searchTopology.ts:130-140</code>）。 <code>src/model/circuit.ts:227</code> には「2026-08-02 まで、この 2 つを区別せず <code>GROUND_OPEN</code> にまとめていた」 とあり、<strong>実装は直っているのに探索側の説明とヘルパが取り残されています。</strong> これは §1 (c)「逆向きの陳腐化」そのものです。</p>
 <hr>
 <h2 id="s3">3. 承認が要る項目</h2>
-<p><strong>この 2 件は着手しません。</strong></p>
-<h3>P0-6 — Ajv（または Python jsonschema）の導入</h3>
-<p>現在の <code>test/halfPlugProfile.test.ts</code> は <strong>自前の部分 validator</strong> を使っています （<code>required</code> / <code>type</code> / <code>enum</code> / <code>const</code> / <code>additionalProperties</code> / <code>$ref</code> / <code>minItems</code> / <code>minimum</code> だけを実装。汎用ではないとファイル冒頭に明記してあります）。</p>
-<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>何が要るか</td><td>dev dependency として <code>ajv</code>（draft-07）を 1 つ追加</td></tr><tr><td>影響</td><td>dev-only。実行時依存には入らない。<code>package-lock.json</code> が変わる</td></tr><tr><td>代替</td><td>現在の部分 validator を広げる（<code>pattern</code> / <code>oneOf</code> 等）。依存は増えないが、<strong>汎用実装ではないという弱点は残る</strong></td></tr><tr><td>戻し方</td><td><code>npm uninstall ajv</code> と <code>git checkout package.json package-lock.json</code></td></tr></tbody></table></div>
-<p><strong>新規の依存追加なので、承認をもらってから入れます。</strong></p>
 <h3>P0-8 — immutable release（tag / GitHub Release）</h3>
-<p>オーダー自身が「このオーダーは tag、release、push の自動実行承認ではない」と書いています。 P0-1〜P0-7 の完了後に、対象・影響・可逆性・削除方法を示して別途確認します。</p>
+<p><strong>P0-1〜P0-7 は完了しました。</strong>オーダーの完了条件のうち、コマンドで確かめられる分は すべて通っています。</p>
+<pre><code>npm ci / npm run typecheck / npm run test / npm run build
+npm run validate:profiles / npm run verify:provenance
+npm run check:stale / npm run check:vacuity</code></pre>
+<p>残るのは tag と GitHub Release の作成です。 オーダー自身が「このオーダーは tag、release、push の自動実行承認ではない」と 書いているため、<strong>着手しません。</strong>対象・影響・可逆性・削除方法を示して別途確認します。</p>
+<div class="note"><p><code>verify:half-plug-release</code> は作っていません。上の 8 コマンドで完了条件を満たすため、</p><p>それらを束ねるだけの入口を増やしても守りが増えないと判断しました</p><p>（→ CONTRIBUTING §2「先に数えてから決める」）。</p></div>
 <hr>
 <h2 id="s4">4. 採用が見送られた要求はありません</h2>
 <p>オーダーが「変更しない」と定めた項目 （都合よく差分信号を発生させる形状の追加／反対証拠の削除／<code>verifiedPhysical</code> の昇格／ DSP 係数生成／音響録音の保存／メーカー CAD の再配布／自動 push）は、 いずれもこのリポジトリの方針と一致しており、<strong>今回の変更でも触れていません。</strong></p>

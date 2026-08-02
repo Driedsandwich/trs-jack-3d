@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/test-counts.v1.schema.json",
+  "title": "テスト件数 v1",
+  "description": "npm run test:count の出力。docs/TEST_RESULTS.md の件数と機械照合し、npm run check:vacuity の下限としても使う。",
+  "type": "object",
+  "required": ["schemaVersion", "generatedAt", "note", "total", "byFile", "skipped", "allPassed"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "generatedAt": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "note": { "type": "string" },
+    "total": { "type": "integer", "minimum": 1 },
+    "byFile": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "skipped": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "飛ばされたテストの件数。**0 でないと check:vacuity が落ちる。** skip は「通った」ではなく「見ていない」"
+    },
+    "allPassed": { "type": "boolean" }
+  }
+}
