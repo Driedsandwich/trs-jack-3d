@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>非阻害フォローアップオーダー (2026-08-03) への対応状況</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">0-1. 対応状況（2026-08-03 追記・trs-jack-3d 側）</a></li>
+    <li><a href="#s1">0. 結論</a></li>
+    <li><a href="#s2">1. P1 — sensitivity artifact単体のprovenance</a></li>
+    <li><a href="#s3">2. P1 — sensitivity artifact専用Schema</a></li>
+    <li><a href="#s4">3. P1 — 感度availabilityの分離</a></li>
+    <li><a href="#s5">4. P1 — 目標トポロジーの存在・区間幅に対する多軸ロバストネス</a></li>
+    <li><a href="#s6">5. P1 — Schema契約のversioning</a></li>
+    <li><a href="#s7">6. P2 — 用語の整理</a></li>
+    <li><a href="#s8">7. P2 — Release evidenceの自己完結性</a></li>
+    <li><a href="#s9">8. P2 — Source provenanceの下流検算</a></li>
+    <li><a href="#s10">9. 変更禁止</a></li>
+    <li><a href="#s11">10. 優先順位</a></li>
+    <li><a href="#s12">11. Half-Plug側の状態</a></li>
+  </ol>
+</nav>
+<h1>trs-jack-3d v0.1.1 非阻害フォローアップ開発オーダー</h1>
+<p>作成日: 2026-08-03 対象: <code>Driedsandwich/trs-jack-3d</code> 対象release: <code>v0.1.1</code></p>
+<h2 id="s0">0-1. 対応状況（2026-08-03 追記・trs-jack-3d 側）</h2>
+<p><strong>優先 1〜3 を実装しました。4 以降は未着手です。</strong>v0.1.1 の asset は上書きしていません。</p>
+<div class="tw"><table><thead><tr><th></th><th>項目</th><th>状態</th></tr></thead><tbody><tr><td>1</td><td>sensitivity artifact の provenance</td><td><strong>実装</strong> — profile と同型。<code>inputSettings</code> を新設し、<strong>variant 別 digest</strong> にした</td></tr><tr><td>2</td><td>sensitivity artifact 専用 Schema</td><td><strong>実装</strong> — <code>schemas/event-sensitivity.v1.schema.json</code>。<code>validate:profiles</code> は 5 件 → <strong>7 件</strong></td></tr><tr><td>3</td><td>感度 availability の分離</td><td><strong>実装</strong> — <code>eventSpreadAvailable</code> / <code>globalSummaryAvailable</code> / <code>basis</code> を追加。<code>available</code> は別名として残置</td></tr><tr><td>4〜8</td><td>多軸ロバストネス以降</td><td>未着手</td></tr></tbody></table></div>
+<p><strong>版の扱い</strong>: 今回は<strong>追加のみ</strong>で、enum の値も項目の意味も変えていないため <code>schemaVersion</code> は 1 のままです。 変わったことは <code>provenance.generatorVersion</code> が <strong>3 → 4</strong> になったことで機械可読になります。 語の改名（項目 6〜8）は引き続き Schema v2 送りです。</p>
+<p><strong>やったが、オーダーに書かれていなかったこと</strong>を 3 つ挙げます。</p>
+<ol><li><strong><code>inputSettings</code> に値そのものを記録した。</strong> 「先頭に setting 行を置く」と説明だけ書いても、 その中身が分からなければ<strong>第三者は digest を再計算できません</strong>。再計算できない digest は provenance の役に立ちません。</li><li><strong><code>inputDigest</code> を作り直して一致するかの検査を新設した。</strong> これまで digest の<strong>形</strong>（sha256 らしいか）しか見ておらず、 <strong>その値が inputFiles から本当に導けるか</strong>を profile 側も含めて一度も検査していませんでした。</li><li><strong><code>check:stale</code> を感度 artifact へ広げた。</strong> provenance を足しただけでは何も守れず、 現在の入力と突き合わせて初めて意味が出ます。profile 側で同じ穴が実際に開いていました。</li></ol>
+<p><strong>見つかった食い違いが 1 件あります。</strong><code>docs/HALF_PLUG_ADAPTER.md</code> は v0.1.1 の時点で <code>sensitivitySummary.basis</code> を約束していましたが、<strong>profile にその項目はありませんでした</strong>（読むと <code>undefined</code>）。 文書と artifact を突き合わせる検査が <code>sensitivitySummary</code> に無かったためです。項目 3 の実装で実在するようになりました。</p>
+<p><strong>次の release で必要な作業</strong>（今回は release を作らないので未実施）: <code>schemas/event-sensitivity.v1.schema.json</code> を release asset と <code>SHA256SUMS</code> に含めること。</p>
+<p>検査はすべて変異させて確認しました。<strong>意味規則 23 件・テスト 8 件を壊して、狙った検査が鳴ることを確かめています</strong> （rc≠0 だけでは別の検査に助けられている可能性があるため、artifact ごとの節と、その検査だけが持つ文言で照合）。</p>
+<hr>
+<h2 id="s1">0. 結論</h2>
+<p>v0.1.1はHalf-Plug Labのstatic mechanism integrationに使用可能であり、追加修正を統合の停止線にはしない。</p>
+<p>以下は、次回の保守releaseまたはSchema v2で対応すると再現性・意味明瞭性が上がる非阻害項目である。v0.1.1 assetは上書きしない。</p>
+<hr>
+<h2 id="s2">1. P1 — sensitivity artifact単体のprovenance</h2>
+<h3>現在</h3>
+<p>両sensitivity assetは次を記録する。</p>
+<pre><code>generatedFromCommit = ba2ad6cc7f9287cb5daa38fda153bce0948c57d1</code></pre>
+<p>release commitは:</p>
+<pre><code>eeda5f1c28b9223430606de61dbbb1f9f8f19d2a</code></pre>
+<p>profile側はvariant別sensitivity assetのSHA-256を<code>provenance.inputFiles[]</code>へ入れ、profile input digestでexact bytesを固定している。このため下流importは阻害されない。</p>
+<p>一方、sensitivity artifact単体では、何のsource filesから生成したかを再計算できない。</p>
+<h3>推奨対応</h3>
+<p>sensitivity artifactへprofileと同型の縮小provenanceを追加する。</p>
+<pre><code>provenance:
+  generatorVersion
+  generatedFromCommit
+  workingTreeDirty
+  artifactKind
+  inputDigestAlgorithm
+  inputDigest
+  inputFiles[]
+  command
+  artifactDate</code></pre>
+<p>入力候補:</p>
+<pre><code>scripts/sensitivityEvents.ts
+src/data/**
+src/model/**
+package-lock.json
+variant-specific settings</code></pre>
+<p>要件:</p>
+<ul><li>生成物自身をdigestへ入れない</li><li>variant別input digest</li><li>dirty treeのrelease生成を拒否</li><li>exact release assetとsource input digestを別概念として保持</li><li>profile側の<code>eventSpreadSource</code>にsensitivity input digestを保持</li></ul>
+<p>これは<code>generatedFromCommit == release commit</code>を要求するものではない。自己参照を避け、入力内容で固定する。</p>
+<hr>
+<h2 id="s3">2. P1 — sensitivity artifact専用Schema</h2>
+<h3>現在</h3>
+<p>releaseにはprofile Schemaはあるが、次のasset専用Schemaはない。</p>
+<pre><code>sensitivity.trs_jack_trs.json
+sensitivity.trs_jack_trrs.json</code></pre>
+<p>Half-Plug側では、<code>variantId</code>、<code>analysisScope</code>、<code>basis</code>、走査軸、config数、<code>byKind</code>、profileの<code>eventSpreadSource</code>との一致を独自検査した。</p>
+<h3>推奨対応</h3>
+<p>追加:</p>
+<pre><code>schemas/event-sensitivity.v1.schema.json</code></pre>
+<p>最低必須:</p>
+<pre><code>schemaVersion
+variantId
+analysisScope
+basis
+generatedFromCommit
+sweptParameters
+sweep
+byKind</code></pre>
+<p>意味規則:</p>
+<ul><li><code>basis == MODEL_PARAMETER_SWEEP</code></li><li><code>configurationsUsable &gt; 0</code></li><li><code>shippedInsideSweptRange == true</code></li><li><code>minMm &lt;= maxMm</code></li><li>profileのvariantと一致</li><li>profileのevent-specific spreadが<code>byKind</code>と一致</li></ul>
+<p>release assetと<code>SHA256SUMS</code>へSchemaを追加する。</p>
+<hr>
+<h2 id="s4">3. P1 — 感度availabilityの分離</h2>
+<h3>現在</h3>
+<p>TRS×TRRS profileは:</p>
+<pre><code>sensitivitySummary.available = false</code></pre>
+<p>だが、7件のevent-specific model-sweep spreadを持つ。</p>
+<p>現在の<code>available</code>は「TRS固有の総合summaryがあるか」を意味するが、「感度情報が一切無い」と読める。</p>
+<h3>推奨対応</h3>
+<p>Schema v2または後方互換fieldで分離する。</p>
+<pre><code>sensitivitySummary:
+  eventSpreadAvailable: true
+  globalSummaryAvailable: false
+  basis: MODEL_PARAMETER_SWEEP</code></pre>
+<p>既存<code>available</code>を残す場合は、descriptionでglobal summary限定と明記する。</p>
+<p>notesの:</p>
+<pre><code>感度情報は出していない</code></pre>
+<p>に相当する表現は、event spreadとの矛盾を避けて次へ変える。</p>
+<pre><code>variant固有のglobal summaryは出していない。
+event-specific model-sweep spreadはeventSpreadSourceから提供する。</code></pre>
+<hr>
+<h2 id="s5">4. P1 — 目標トポロジーの存在・区間幅に対する多軸ロバストネス</h2>
+<h3>現在</h3>
+<p>v0.1.1のevent-specific感度はvariant別になり、TRS×TRRSでは主に次の2軸を走査している。</p>
+<pre><code>trrs.jack.contact.sleeve.axialCenter
+trrs.jack.contact.narrowPadWidth</code></pre>
+<p>これはイベント深度の局所感度として有用だが、Half-Plug Labが重視する:</p>
+<pre><code>ground-open-differentialが存在するか
+その区間幅がどの程度残るか</code></pre>
+<p>の総合不確実性を表すものではない。とくにTip接点位置、beam offset、他接点位置、plug geometry、break contact条件など、候補トポロジーの存否を反転させうる仮定を同時には走査していない。</p>
+<p>PS000001のTip接点値では候補区間が消える反対証拠も残っているため、event spreadを候補トポロジーの実在確率または頑健性として解釈してはならない。</p>
+<h3>推奨対応</h3>
+<p>候補トポロジー専用のrobustness artifactを追加する。</p>
+<pre><code>artifacts/topology-robustness.trs_jack_trrs.json
+schemas/topology-robustness.v1.schema.json</code></pre>
+<p>最低限の出力:</p>
+<pre><code>variantId
+targetTopologyClass
+basis: MODEL_PARAMETER_SWEEP
+sweptParameters[]
+parameterRanges
+configurationsTotal
+configurationsUsable
+configurationsWithTarget
+presenceFractionWithinConstructedSweep
+intervalWidthMm:
+  min
+  median
+  max
+counterExamples[]
+necessaryConditions[]
+sourceEvidenceBoundary
+physicalProbabilityClaim: false</code></pre>
+<p>要件:</p>
+<ul><li><code>presenceFractionWithinConstructedSweep</code>を実物で起こる確率と表現しない</li><li>探索範囲の根拠・任意性を明示する</li><li>Tip位置、beam offset、主要接点位置を少なくとも含める</li><li>PS000001等の反対証拠を同じartifactへ残す</li><li>targetが0件でも正常な反証結果として保存する</li><li>event depth spreadとtopology existence robustnessを別物として保持する</li><li>実物導通測定後はmodel sweepとempirical evidenceを別fieldへ保存する</li></ul>
+<p>この項目はstatic importの停止線ではない。Half-Plug側では、完了まで<code>IV028</code>を:</p>
+<pre><code>UNVERIFIED_MECHANISM_MODEL
+UNCALIBRATED_REFERENCE_CANDIDATE</code></pre>
+<p>として維持する。</p>
+<hr>
+<h2 id="s6">5. P1 — Schema契約のversioning</h2>
+<h3>現在</h3>
+<p>v0.1.0→v0.1.1で<code>spreadStatus</code> enumが破壊的変更されたが、profileは引き続き:</p>
+<pre><code>schemaVersion: 1</code></pre>
+<p>である。</p>
+<p>release asset hashを固定する下流では安全だが、<code>schemaVersion</code>だけを見るconsumerは旧profileと新profileを区別できない。</p>
+<h3>推奨対応</h3>
+<p>次のいずれかを採用する。</p>
+<pre><code>A. schemaVersionを2へ上げる
+B. contractRevisionを追加する
+C. schema URIへversionを含める</code></pre>
+<p>推奨:</p>
+<pre><code>schemaVersion: 2
+schemaId: half-plug-topology-profile.v2</code></pre>
+<p>v1 assetはimmutableに維持する。</p>
+<hr>
+<h2 id="s7">6. P2 — 用語の整理</h2>
+<h3>6.1 <code>fully-seated</code></h3>
+<p>現在のclassは、機械的な肩当たりではなく:</p>
+<pre><code>ALL_EXPECTED_FUNCTIONS_MATCH</code></pre>
+<p>を意味する。</p>
+<p>Schema v2候補:</p>
+<pre><code>electrically-normal
+all-expected-functions-match</code></pre>
+<p>または別field:</p>
+<pre><code>mechanicalInsertionComplete: false</code></pre>
+<h3>6.2 normalized</h3>
+<p>次を明示する。</p>
+<pre><code>profile-local model-relative coordinate
+not cross-profile physical equivalence</code></pre>
+<hr>
+<h2 id="s8">7. P2 — Release evidenceの自己完結性</h2>
+<h3>現在</h3>
+<p>公式v0.1.1 tagの<code>artifacts/test_counts.json</code>は258件、現在のmainは260件である。ユーザー報告の260件はcurrent mainに対応する。</p>
+<h3>推奨対応</h3>
+<p>次回release assetへ次を含める。</p>
+<pre><code>test_counts.json
+validation-results.json
+source-input-manifest.json</code></pre>
+<p>release notesでは:</p>
+<pre><code>exact tag test count
+post-release main test count</code></pre>
+<p>を混ぜない。</p>
+<h3>package version</h3>
+<p>v0.1.1 tagの<code>package.json</code>は<code>0.1.0</code>である。private packageのため阻害しないが、release tooling用にtagと合わせるか、package versionを配布versionとして使わないことを明記する。</p>
+<hr>
+<h2 id="s9">8. P2 — Source provenanceの下流検算</h2>
+<p>Half-Plug側のproduction importはrelease asset exact bytes、profile input digestの<strong>記録値再計算</strong>、Schemaを検証できる。</p>
+<p>ただし、<code>provenance.inputFiles[].sha256</code>がtag sourceの実ファイルと一致するかを完全に独立検算するには、tag source treeが必要である。</p>
+<p>次回releaseで任意に追加するもの:</p>
+<pre><code>source-input-manifest.json
+source archive SHA-256</code></pre>
+<p>またはGitHub tag source archiveを正本として、CIで全input file hashを再計算する。</p>
+<hr>
+<h2 id="s10">9. 変更禁止</h2>
+<ul><li>v0.1.1 assetの差し替え</li><li><code>verifiedPhysical</code>の昇格</li><li>event model sweepを物理公差と表現</li><li>反対証拠PS000001の削除</li><li>topologyからDSP係数を生成</li><li>mm/normalizedの普遍化</li><li>実測なしの音響一致主張</li><li>承認なしのpush/tag/release</li></ul>
+<hr>
+<h2 id="s11">10. 優先順位</h2>
+<pre><code>次回maintenance:
+1. sensitivity artifact provenance
+2. sensitivity artifact Schema
+3. availability分離
+4. target topology robustness
+5. release test evidence
+
+Schema v2:
+6. spread contract versioning
+7. fully-seated rename
+8. normalized semantics</code></pre>
+<h2 id="s12">11. Half-Plug側の状態</h2>
+<pre><code>v0.1.1 production import: PASS
+TRS negative control: imported
+TRRS mechanism candidate: imported
+v0.1.0 references: migrated
+model-sweep event spreads: enabled with nonphysical label
+physical/audio validation: pending</code></pre>
+</div>
+</body>
+</html>

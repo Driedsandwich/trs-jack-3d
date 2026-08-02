@@ -196,6 +196,11 @@ physicalClaimStatus      未実測なら "unverified"</code></pre>
 <h3>⚠ <code>spreadStatus</code> の語を変えました（v0.1.1・<strong>破壊的変更</strong>）</h3>
 <div class="tw"><table><thead><tr><th>旧（v0.1.0）</th><th>新（v0.1.1）</th></tr></thead><tbody><tr><td><code>MEASURED</code></td><td><strong><code>MODEL_SWEEP_EVENT_SPECIFIC</code></strong></td></tr><tr><td><code>NOT_EVENT_SPECIFIC</code></td><td><strong><code>MODEL_SWEEP_NOT_EVENT_SPECIFIC</code></strong></td></tr><tr><td><code>NOT_MEASURED</code></td><td><strong><code>NOT_ANALYZED</code></strong></td></tr></tbody></table></div>
 <p><strong><code>MEASURED</code> は実物の測定と誤認されます。</strong>実際にはモデルのパラメータを振った結果です。 <code>sensitivitySummary.basis</code> にも <code>MODEL_PARAMETER_SWEEP</code> と書いてあります。</p>
+<div class="note"><p><strong>⚠ v0.1.1 ではこの <code>basis</code> が実在しませんでした。</strong></p><p>この文書は v0.1.1 の時点で <code>sensitivitySummary.basis</code> を約束していましたが、</p><p><strong>profile にその項目はありませんでした</strong>（読むと <code>undefined</code> になります）。</p><p>次の release から実在します。**この文書と artifact の食い違いは、</p><p>文書と artifact を突き合わせる検査が <code>sensitivitySummary</code> に無かったために起きました。**</p></div>
+<h3>感度の「有無」は 2 つに分かれます（次の release から）</h3>
+<p><code>sensitivitySummary.available</code> は <strong>global summary があるかどうかだけ</strong>を表します。 <strong>これが <code>false</code> でも event 単位の幅は存在しえます。</strong></p>
+<div class="tw"><table><thead><tr><th>項目</th><th>意味</th></tr></thead><tbody><tr><td><code>globalSummaryAvailable</code></td><td>variant 固有の総合解析（プラトー間隔・Tip 橋絡しきい値・挿抜力）があるか。3極のみ <code>true</code></td></tr><tr><td><code>eventSpreadAvailable</code></td><td>event 単位の model-sweep 幅があるか</td></tr><tr><td><code>available</code></td><td><code>globalSummaryAvailable</code> の別名（後方互換のために残しています）</td></tr></tbody></table></div>
+<p>TRS×TRRS は <code>available: false</code> でありながら幅を 7 件持ちます。 v0.1.1 まで 1 つの真偽値に潰していたため、<strong>「感度情報が一切無い」と読まれました。</strong> <code>available</code> を感度情報の有無の判定に使わないでください。</p>
 <p>移行は次のとおりです。</p>
 <pre><code>if (s === 'MEASURED')            -&gt; 'MODEL_SWEEP_EVENT_SPECIFIC'
 if (s === 'NOT_EVENT_SPECIFIC')  -&gt; 'MODEL_SWEEP_NOT_EVENT_SPECIFIC'

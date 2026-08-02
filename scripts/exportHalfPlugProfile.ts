@@ -357,6 +357,12 @@ try {
     basis: ev.basis ?? null,
     sweptParameters: ev.sweptParameters ?? null,
     generatedFromCommit: ev.generatedFromCommit ?? null,
+    /**
+     * **感度 artifact 側の入力指紋**（非阻害オーダー P1-1）。
+     * `generatedFromCommit` は参考値でしかない（release commit より前を指す）。
+     * 感度解析を回し直したかどうかは、commit ではなくこちらで見る。
+     */
+    inputDigest: ev.provenance?.inputDigest ?? null,
     configurationsUsable: ev.sweep?.configurationsUsable ?? null,
     shippedInsideSweptRange: ev.sweep?.shippedInsideSweptRange ?? null,
   }
@@ -369,8 +375,20 @@ try {
  * プラトー間隔・Tip 橋絡しきい値・挿抜力はいずれも 3極の幾何に結びついており、
  * 他の variant へ持ち出すと、まさに今回直した誤りをもう一度作ることになる。
  */
+/**
+ * **`available` は 2 つの別々の事実を 1 つの真偽値に潰していた**（非阻害オーダー P1-3）。
+ *
+ * TRS×TRRS は `available: false` でありながら event-specific spread を 7 件持っていた。
+ * 受け手からは「感度情報が一切無い」と読めてしまう。実際に読み違えられた。
+ *
+ * 分ける。`available` は互換のため残すが、**意味は global summary の有無だけ**である。
+ */
+const eventSpreadAvailable = spreadSource !== null
 let sens: Record<string, unknown> = {
   available: false,
+  globalSummaryAvailable: false,
+  eventSpreadAvailable,
+  basis: eventSpreadAvailable ? 'MODEL_PARAMETER_SWEEP' : null,
   bridgeDepthJointRangeMm: null,
   tipBridgeComplianceThreshold: null,
   tipBridgeWorstCornerThreshold: null,
@@ -378,8 +396,12 @@ let sens: Record<string, unknown> = {
   eventSpreadSource: spreadSource,
   notes: [
     spreadRejectedBecause ?? 'この variant 固有の総合感度解析はまだ無い。',
-    '**variant 固有の解析が無いので、感度情報は出していない (fail-closed)。**'
-      + '別 variant の値を流用するより、無いほうが害が小さい。',
+    eventSpreadAvailable
+      ? 'variant 固有の global summary は出していない。'
+        + 'event-specific な model-sweep spread は eventSpreadSource から提供している。'
+        + '**「感度情報が無い」ではない。**'
+      : '**variant 固有の解析が無いので、感度情報は出していない (fail-closed)。**'
+        + '別 variant の値を流用するより、無いほうが害が小さい。',
   ],
 }
 try {
@@ -387,6 +409,9 @@ try {
   const s = JSON.parse(readFileSync(resolve(ROOT, 'artifacts/sensitivity.json'), 'utf8'))
   sens = {
     available: true,
+    globalSummaryAvailable: true,
+    eventSpreadAvailable,
+    basis: 'MODEL_PARAMETER_SWEEP',
     bridgeDepthJointRangeMm: [s.bridgeDepthRange.joint.minMm, s.bridgeDepthRange.joint.maxMm],
     tipBridgeComplianceThreshold: s.tipBridge.complianceThreshold,
     tipBridgeWorstCornerThreshold: s.tipBridge.toleranceBox.worstCorner.tipThreshold,

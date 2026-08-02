@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRS:ea318f0c5b6c",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:64481274f5e9",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -35,16 +35,16 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
+ "sourceRevision": "9260632c9c3695d0c4a91c22033edd2f283f5eb5",
  "generatedAt": "2026-08-02",
  "provenance": {
-  "generatorVersion": 3,
-  "generatedFromCommit": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
+  "generatorVersion": 4,
+  "generatedFromCommit": "9260632c9c3695d0c4a91c22033edd2f283f5eb5",
   "workingTreeDirty": true,
   "revisionOverride": false,
   "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "ea318f0c5b6c8cc3b4d6d13f506ad7f425fc5709b4fafc537e44c976a38268c3",
+  "inputDigest": "64481274f5e97bd4060b3f5ba2e9e04c6fb6cc0e9732523d6b58fb8e4ab8bdbb",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -54,7 +54,7 @@
    },
    {
     "path": "artifacts/sensitivity.trs_jack_trs.json",
-    "sha256": "c0cf0a295d5c66f797bbc226cb0130f77ad8c27ca6dceb0483174ed6a0a167a1",
+    "sha256": "ba1f9189c56e4255863af2206a4965b7605c8181232379e4e2fe8667acb05c07",
     "role": "sensitivity-input"
    },
    {
@@ -64,17 +64,17 @@
    },
    {
     "path": "schemas/half-plug-topology-profile.v1.schema.json",
-    "sha256": "57a10fc69c698c971a73122db3557803009877748d91491568d8b20094fa0b59",
+    "sha256": "dec56082e2dfcf22c382b88fd96d750b47cdbd296aa7fe5d24db9940d77e3c4b",
     "role": "schema"
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "8794051aeb0a773893c4c17cc47c809b3209bbd369b36e560abc503469bd72b8",
+    "sha256": "8f85670cc17fba42677cd71bafa5568d7c2cf152d797fe52f972472730eb63a1",
     "role": "generator"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "f8d51176ac5e10f865c7effc5f288bcb4dcb7940748aeaa4facacaad4bc01663",
+    "sha256": "885ddcddf9fa5616f8645b8f7f3d8763e3e995c9a60907d7a009b833d54a1cea",
     "role": "generator"
    },
    {
@@ -3667,6 +3667,9 @@
  ],
  "sensitivitySummary": {
   "available": true,
+  "globalSummaryAvailable": true,
+  "eventSpreadAvailable": true,
+  "basis": "MODEL_PARAMETER_SWEEP",
   "bridgeDepthJointRangeMm": [
    6.96,
    13.1392
@@ -3738,7 +3741,8 @@
     "jack.contact.sleeve.axialCenter",
     "jack.contact.sleeve.padWidth"
    ],
-   "generatedFromCommit": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
+   "generatedFromCommit": "9260632c9c3695d0c4a91c22033edd2f283f5eb5",
+   "inputDigest": "c6c34770cc4d3d002c2cca9d1b61fb4285074897104f7bc1b308fc3de41875a4",
    "configurationsUsable": 869,
    "shippedInsideSweptRange": true
   },

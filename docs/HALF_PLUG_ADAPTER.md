@@ -309,6 +309,27 @@ physicalClaimStatus      未実測なら "unverified"
 **`MEASURED` は実物の測定と誤認されます。**実際にはモデルのパラメータを振った結果です。
 `sensitivitySummary.basis` にも `MODEL_PARAMETER_SWEEP` と書いてあります。
 
+> **⚠ v0.1.1 ではこの `basis` が実在しませんでした。**
+> この文書は v0.1.1 の時点で `sensitivitySummary.basis` を約束していましたが、
+> **profile にその項目はありませんでした**（読むと `undefined` になります）。
+> 次の release から実在します。**この文書と artifact の食い違いは、
+> 文書と artifact を突き合わせる検査が `sensitivitySummary` に無かったために起きました。**
+
+### 感度の「有無」は 2 つに分かれます（次の release から）
+
+`sensitivitySummary.available` は **global summary があるかどうかだけ**を表します。
+**これが `false` でも event 単位の幅は存在しえます。**
+
+| 項目 | 意味 |
+|---|---|
+| `globalSummaryAvailable` | variant 固有の総合解析（プラトー間隔・Tip 橋絡しきい値・挿抜力）があるか。3極のみ `true` |
+| `eventSpreadAvailable` | event 単位の model-sweep 幅があるか |
+| `available` | `globalSummaryAvailable` の別名（後方互換のために残しています） |
+
+TRS×TRRS は `available: false` でありながら幅を 7 件持ちます。
+v0.1.1 まで 1 つの真偽値に潰していたため、**「感度情報が一切無い」と読まれました。**
+`available` を感度情報の有無の判定に使わないでください。
+
 移行は次のとおりです。
 
 ```

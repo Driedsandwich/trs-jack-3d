@@ -24,9 +24,9 @@
  * 実物のばらつきでも製造公差でもない。
  */
 
-import { execFileSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { buildProvenance, listSensitivityInputs } from './provenance'
 import { buildModelWithOverrides, getModel, type VariantId } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import { extractEvents, sweep } from '../src/model/sweep'
@@ -43,6 +43,7 @@ const argOf = (name: string, dflt: string): string => {
 // その型は `VariantId | undefined` になり、buildModelWithOverrides へ渡すと型エラーになる
 const VARIANT = argOf('variant', 'TRS|JACK-TRS') as VariantId
 const slug = String(VARIANT).toLowerCase().replace(/[^a-z0-9]+/g, '_')
+const RELEASE = argv.includes('--release')
 
 /**
  * variant ごとの走査軸。**キーを取り違えると override が効かず、
@@ -56,6 +57,16 @@ const AXES_BY_JACK: Record<string, { axial: string; pad: string }> = {
 const jackId = String(VARIANT).split('|')[1]
 const AX = AXES_BY_JACK[jackId]
 if (!AX) throw new Error(`${VARIANT}: 走査軸の定義が無い`)
+
+/**
+ * 走査の設定。**digest に混ぜるので、直書きせずここに集める**（非阻害オーダー P1-1）。
+ * 同じ値が「実際に振る範囲」「既定値が範囲内かの判定」「出力の sweep 欄」で使われる。
+ * 散らしておくと、片方だけ直したときに記録と実際が食い違う。
+ */
+const AXIAL_RANGE_MM: readonly [number, number] = [0.45, 4.55]
+const PAD_RANGE_MM: readonly [number, number] = [0.01, 5.0]
+const DIVISIONS = 30
+const STEP_MM = 0.02
 
 const base = getModel(VARIANT)
 
@@ -80,11 +91,11 @@ let configs = 0
 let buildFailed = 0
 let notFullOk = 0
 
-const N = 30
+const N = DIVISIONS
 for (let i = 0; i <= N; i++) {
-  const a = +(0.45 + (4.55 - 0.45) * (i / N)).toFixed(4)
+  const a = +(AXIAL_RANGE_MM[0] + (AXIAL_RANGE_MM[1] - AXIAL_RANGE_MM[0]) * (i / N)).toFixed(4)
   for (let j = 0; j <= N; j++) {
-    const w = +(0.01 + (5.0 - 0.01) * (j / N)).toFixed(4)
+    const w = +(PAD_RANGE_MM[0] + (PAD_RANGE_MM[1] - PAD_RANGE_MM[0]) * (j / N)).toFixed(4)
     let m: TrsModel
     try {
       m = buildModelWithOverrides(VARIANT, { [AX.axial]: a, [AX.pad]: w })
@@ -97,7 +108,7 @@ for (let i = 0; i <= N; i++) {
       continue
     }
     configs++
-    for (const ev of extractEvents(m, sweep(m, { stepMm: 0.02 }))) {
+    for (const ev of extractEvents(m, sweep(m, { stepMm: STEP_MM }))) {
       const cur = spread.get(ev.kind) ?? { min: Infinity, max: -Infinity, n: 0 }
       cur.min = Math.min(cur.min, ev.depthMm)
       cur.max = Math.max(cur.max, ev.depthMm)
@@ -115,15 +126,38 @@ if (configs === 0)
 const shippedA = base.dims.entry(AX.axial).value
 const shippedW = base.dims.entry(AX.pad).value
 const inRange = (v: number, lo: number, hi: number) => v >= lo - 1e-9 && v <= hi + 1e-9
-const shippedInside = inRange(shippedA, 0.45, 4.55) && inRange(shippedW, 0.01, 5.0)
+const shippedInside = inRange(shippedA, ...AXIAL_RANGE_MM) && inRange(shippedW, ...PAD_RANGE_MM)
 
-const git = (args: string[]) => {
-  try {
-    return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
-  } catch {
-    return 'UNKNOWN'
-  }
-}
+/**
+ * **感度 artifact 自身の provenance**（非阻害オーダー P1-1）。
+ *
+ * v0.1.1 まで、この artifact は `generatedFromCommit` を 1 行持つだけだった。
+ * その commit は release commit より前を指す（artifact をコミットすると HEAD が進むので当然）。
+ * profile 側は `inputFiles[].sha256` でこの artifact の bytes を固定しているので
+ * 取り込みは安全だったが、**この artifact だけを見て「何から作られたか」を再計算できなかった。**
+ *
+ * profile と同じ方式にする。commit の一致は要求せず、**入力の中身で固定する。**
+ * `settings` を混ぜるのは、3極と4極が同じファイル群から作られるため
+ * ファイルの指紋だけでは 2 つの variant が同じ digest になってしまうから。
+ */
+const provenance = buildProvenance({
+  root: ROOT,
+  inputs: listSensitivityInputs(ROOT),
+  settings: {
+    variantId: String(VARIANT),
+    sweptParameters: `${AX.axial},${AX.pad}`,
+    axialRangeMm: AXIAL_RANGE_MM.join('..'),
+    padRangeMm: PAD_RANGE_MM.join('..'),
+    divisions: String(DIVISIONS),
+    stepMm: String(STEP_MM),
+  },
+  // 呼び出し方で変わらない正規化した形を記録する (byte-identical を壊さないため)
+  command: `npm run sensitivity:events -- --variant "${VARIANT}"${RELEASE ? ' --release' : ''}`,
+  artifactDate: process.env.ARTIFACT_DATE ?? new Date().toISOString().slice(0, 10),
+  release: RELEASE,
+  allowRevisionOverride: argv.includes('--unsafe-revision-override'),
+  envRevision: process.env.SOURCE_REVISION,
+})
 
 const out = {
   schemaVersion: 1 as const,
@@ -132,7 +166,8 @@ const out = {
   variantId: String(VARIANT),
   analysisScope: 'EVENT_DEPTH_SPREAD_ONLY',
   sweptParameters: [AX.axial, AX.pad],
-  generatedFromCommit: git(['rev-parse', 'HEAD']),
+  generatedFromCommit: provenance.generatedFromCommit,
+  provenance,
   generatedAt: process.env.ARTIFACT_DATE ?? new Date().toISOString().slice(0, 10),
   basis: 'MODEL_PARAMETER_SWEEP',
   note:
@@ -140,10 +175,10 @@ const out = {
     + '帰線接点の軸位置とパッド幅を同時に振り、完全挿入が成立する構成にわたって'
     + '主要イベントの深さの最小・最大を集めたもの。',
   sweep: {
-    axialRangeMm: [0.45, 4.55],
-    padRangeMm: [0.01, 5.0],
-    divisions: N,
-    stepMm: 0.02,
+    axialRangeMm: AXIAL_RANGE_MM,
+    padRangeMm: PAD_RANGE_MM,
+    divisions: DIVISIONS,
+    stepMm: STEP_MM,
     configurationsTried: (N + 1) * (N + 1),
     configurationsUsable: configs,
     buildFailed,

@@ -37,8 +37,10 @@ import { resolve, join } from 'node:path'
  *   1 … 初版
  *   2 … eventId / eventIdentity / spreadStatus を追加、jackBasis.detail を追加 (2026-08-03)
  *   3 … provenance を追加 (2026-08-03)
+ *   4 … 感度 artifact にも provenance を付け、profile の sensitivitySummary へ
+ *       eventSpreadAvailable / globalSummaryAvailable を追加 (2026-08-03・非阻害オーダー P1-1/P1-3)
  */
-export const GENERATOR_VERSION = 3
+export const GENERATOR_VERSION = 4
 
 export interface InputFile {
   path: string
@@ -55,6 +57,14 @@ export interface Provenance {
   inputDigestAlgorithm: 'sha256'
   inputDigest: string
   inputDigestScope: string
+  /**
+   * digest に混ぜた**ファイル以外の入力**。無い場合は項目ごと出さない。
+   *
+   * **値を記録しないと第三者が digest を再計算できない。**
+   * 「先頭に setting 行を置く」と説明だけ書いても、その中身が分からなければ再現不能で、
+   * 再計算できない digest は provenance の役に立たない。
+   */
+  inputSettings?: Record<string, string>
   inputFiles: InputFile[]
   command: string
   artifactDate: string
@@ -112,6 +122,33 @@ export function listInputs(root: string, variantSlug?: string): InputFile[] {
   return files.sort((a, b) => a.path.localeCompare(b.path))
 }
 
+/**
+ * **感度 artifact の入力**（非阻害フォローアップ P1-1）。
+ *
+ * profile 用の `listInputs` とは対象が違う。感度 artifact は
+ * `scripts/sensitivityEvents.ts` がモデルを振って作るので、schema も exporter も入力ではない。
+ *
+ * **ここに `artifacts/sensitivity.*.json` を入れてはいけない**（自分自身が入力になる）。
+ * profile 側は感度 artifact を入力として読むので入れて正しいが、向きが逆である。
+ */
+export function listSensitivityInputs(root: string): InputFile[] {
+  const files: InputFile[] = []
+  const add = (path: string, role: string) => {
+    try {
+      files.push({ path, sha256: sha256(readFileSync(resolve(root, path))), role })
+    } catch {
+      // 読めないものは記録しない
+    }
+  }
+  add('schemas/event-sensitivity.v1.schema.json', 'schema')
+  add('scripts/sensitivityEvents.ts', 'generator')
+  add('scripts/provenance.ts', 'generator')
+  for (const f of walk(root, 'src/data')) add(f, 'model-data')
+  for (const f of walk(root, 'src/model')) add(f, 'model-code')
+  add('package-lock.json', 'lockfile')
+  return files.sort((a, b) => a.path.localeCompare(b.path))
+}
+
 const git = (root: string, args: string[]): string | null => {
   try {
     return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
@@ -151,6 +188,17 @@ export interface ProvenanceOptions {
   root: string
   /** 感度 artifact を variant 単位で入力に含めるためのスラグ */
   variantSlug?: string
+  /** 既定 (profile 用 `listInputs`) ではなくこの一覧を入力とする。感度 artifact 用 */
+  inputs?: InputFile[]
+  /**
+   * **ファイルに現れない variant 固有の設定**を digest に混ぜる。
+   *
+   * 感度 artifact は 3極も4極も同じスクリプト・同じモデルデータから作られるので、
+   * ファイルの中身だけを指紋にすると **2 つの variant の digest が同一になる**。
+   * それでは「どちらの解析か」を digest で固定できない
+   * （非阻害オーダー P1-1 の「variant別input digest」要件）。
+   */
+  settings?: Record<string, string>
   command: string
   artifactDate: string
   release: boolean
@@ -160,7 +208,7 @@ export interface ProvenanceOptions {
 }
 
 export function buildProvenance(o: ProvenanceOptions): Provenance {
-  const inputFiles = listInputs(o.root, o.variantSlug)
+  const inputFiles = o.inputs ?? listInputs(o.root, o.variantSlug)
   const head = git(o.root, ['rev-parse', 'HEAD']) ?? 'UNKNOWN'
   const dirty = inputsAreDirty(o.root, inputFiles)
 
@@ -187,7 +235,11 @@ export function buildProvenance(o: ProvenanceOptions): Provenance {
   // --- release モードは clean な入力からしか作らせない -----------------------
   assertReleaseAllowed(o.release, dirty, git(o.root, ['status', '--porcelain', '--', ...inputFiles.map((f) => f.path)]) ?? '')
 
-  const manifest = inputFiles.map((f) => `${f.sha256}  ${f.path}`).join('\n')
+  // settings 行は先頭に置き、キーの昇順で並べる（並び順で digest が変わらないようにする）
+  const settingLines = Object.entries(o.settings ?? {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `setting  ${k}=${v}`)
+  const manifest = [...settingLines, ...inputFiles.map((f) => `${f.sha256}  ${f.path}`)].join('\n')
   return {
     generatorVersion: GENERATOR_VERSION,
     generatedFromCommit: commit,
@@ -197,8 +249,15 @@ export function buildProvenance(o: ProvenanceOptions): Provenance {
     inputDigestAlgorithm: 'sha256',
     inputDigest: sha256(manifest),
     inputDigestScope:
-      'inputFiles を path の昇順に並べ、"<sha256>  <path>" を改行で連結した文字列の sha256。'
-      + 'variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**',
+      (settingLines.length
+        ? `先頭に "setting  <key>=<value>" を key 昇順で ${settingLines.length} 行置き、続けて `
+        : '')
+      + 'inputFiles を path の昇順に並べ、"<sha256>  <path>" を改行で連結した文字列の sha256。'
+      + (settingLines.length
+        ? 'setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。'
+        : 'variant は含まない (profileId 側が持つ)。')
+      + '**生成される artifact 自身は含まない。**',
+    ...(settingLines.length ? { inputSettings: o.settings } : {}),
     inputFiles,
     command: o.command,
     artifactDate: o.artifactDate,

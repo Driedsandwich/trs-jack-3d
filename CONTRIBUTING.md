@@ -50,6 +50,7 @@
 | `artifacts/verification_summary.json` の区分件数 → README / REPORT の根拠区分表 | **機械照合**（`docs.test.ts`） |
 | 「ジャック内部の寸法は N 件の仮定を含み」（README 2 か所） | **機械照合**（`docs.test.ts`） |
 | `artifacts/half_plug_topology_profile.v1.*.json`（区分は接点から伝播する） | **機械照合**（`halfPlugProfile.test.ts`） |
+| `artifacts/sensitivity.trs_jack_*.json`（走査軸に載っている寸法を変えたとき） | **機械判定**（`check:stale` が `provenance.inputDigest` で照合。→ 下） |
 | 接点まわりの区分 | **不変条件**（`uiStrings.test.ts`） |
 | 画面の variant 説明文・材質ラベル | **不変条件**（`uiStrings.test.ts`） |
 | **テスト件数**（README / UNKNOWNS / `docs/TEST_RESULTS.md`） | **機械照合**（`artifacts/test_counts.json` と突き合わせ。→ §4） |
@@ -63,7 +64,8 @@
 5. `npm run test` — **ここで連動漏れが落ちます**
 6. `npm run test:count` — テスト件数の artifact を更新する
 7. **`npm run check:vacuity`** — 空振りしているテストが無いかを機械が判定します（→ §7）
-8. **`npm run validate:profiles`** — 成果物 5 件を schema と意味規則で検証します
+8. **`npm run validate:profiles`** — 成果物 7 件を schema と意味規則で検証します
+   （2026-08-03 に感度 artifact 2 件を追加。それまで schema が無く、受け手が独自に構造検査を書いていました）
 9. `npm run docs:html` — HTML を作り直す
 
 > **`npm run verify:provenance` は手順に入れません。**

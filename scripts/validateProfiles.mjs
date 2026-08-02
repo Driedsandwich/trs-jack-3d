@@ -72,6 +72,18 @@ const TARGETS = [
     schema: 'schemas/test-counts.v1.schema.json',
     semantic: 'testCounts',
   },
+  // 感度 artifact。**2026-08-03 まで schema が無く、下流が独自に構造検査を書いていた**
+  // (非阻害フォローアップ P1-2)
+  {
+    artifact: 'artifacts/sensitivity.trs_jack_trs.json',
+    schema: 'schemas/event-sensitivity.v1.schema.json',
+    semantic: 'sensitivity',
+  },
+  {
+    artifact: 'artifacts/sensitivity.trs_jack_trrs.json',
+    schema: 'schemas/event-sensitivity.v1.schema.json',
+    semantic: 'sensitivity',
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -80,6 +92,62 @@ const TARGETS = [
 
 const SHA256 = /^[0-9a-f]{64}$/
 const HEX40_OR_UNKNOWN = /^([0-9a-f]{40}|UNKNOWN)$/
+
+/**
+ * provenance の共通検査。profile と感度 artifact の両方から呼ぶ。
+ *
+ * `selfMarker` は「生成物自身が入力に混ざっていないか」を見るための語。
+ * **向きが artifact ごとに逆になる**ので引数にしてある——
+ * profile は感度 artifact を入力として読むので入っていて正しいが、
+ * 感度 artifact に自分自身が入っていたら自己参照である。
+ */
+function checkProvenance(p, selfMarker, errs) {
+  if (!p) {
+    errs.push('provenance が無い')
+    return
+  }
+  if (!SHA256.test(p.inputDigest)) errs.push(`inputDigest が sha256 の形ではない: ${p.inputDigest}`)
+  if (!HEX40_OR_UNKNOWN.test(p.generatedFromCommit))
+    errs.push(`generatedFromCommit が 40 桁 hex でも UNKNOWN でもない: ${p.generatedFromCommit}`)
+
+  for (const f of p.inputFiles ?? [])
+    if (f.path.includes(selfMarker)) errs.push(`生成物自身が入力に入っている: ${f.path}`)
+
+  // **inputFiles の sha256 が実ファイルと一致するか。**
+  // provenance の話は全部これに乗っている。ここが嘘なら inputDigest は無意味で、
+  // 受け手の再計算も無意味になる。
+  // 手元にファイルがある場合だけ見る (release asset を受け取った側では原理的に見られない)
+  let mismatched = 0
+  for (const f of p.inputFiles ?? []) {
+    const abs = resolve(ROOT, f.path)
+    if (!existsSync(abs)) continue
+    if (sha256File(abs) !== f.sha256) {
+      mismatched++
+      if (mismatched <= 3) errs.push(`inputFiles の sha256 が実ファイルと違う: ${f.path}`)
+    }
+  }
+  if (mismatched > 3) errs.push(`inputFiles の sha256 不一致は他に ${mismatched - 3} 件`)
+
+  /**
+   * **inputDigest を実際に作り直して一致するか**（2026-08-03 追加）。
+   *
+   * これまで digest の**形**（sha256 らしいか）しか見ておらず、
+   * 「その値が inputFiles から本当に導けるか」を一度も検査していなかった。
+   * inputFiles を正しく記録しても digest が別物なら、受け手の固定は成り立たない。
+   */
+  const lines = [
+    ...Object.entries(p.inputSettings ?? {})
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `setting  ${k}=${v}`),
+    ...(p.inputFiles ?? []).map((f) => `${f.sha256}  ${f.path}`),
+  ]
+  const recomputed = createHash('sha256').update(lines.join('\n')).digest('hex')
+  if (recomputed !== p.inputDigest)
+    errs.push(`inputDigest を inputFiles から作り直すと違う値になる (記録 ${p.inputDigest.slice(0, 12)} / 再計算 ${recomputed.slice(0, 12)})`)
+
+  if (p.workingTreeDirty === true && p.artifactKind === 'release')
+    errs.push('dirty な入力から release artifact が作られている')
+}
 
 const SEMANTIC = {
   profile(a, errs) {
@@ -172,11 +240,8 @@ const SEMANTIC = {
 
     // --- provenance ---
     const p = a.provenance
-    if (!p) errs.push('provenance が無い')
-    else {
-      if (!SHA256.test(p.inputDigest)) errs.push(`inputDigest が sha256 の形ではない: ${p.inputDigest}`)
-      if (!HEX40_OR_UNKNOWN.test(p.generatedFromCommit))
-        errs.push(`generatedFromCommit が 40 桁 hex でも UNKNOWN でもない: ${p.generatedFromCommit}`)
+    checkProvenance(p, 'half_plug_topology_profile', errs)
+    if (p) {
       if (!HEX40_OR_UNKNOWN.test(a.sourceRevision))
         errs.push(`sourceRevision が 40 桁 hex でも UNKNOWN でもない: ${a.sourceRevision}`)
       // **profileId の末尾は inputDigest の先頭 12 桁でなければならない。**
@@ -184,28 +249,25 @@ const SEMANTIC = {
       const want = p.inputDigest.slice(0, 12)
       if (!String(a.profileId).endsWith(want))
         errs.push(`profileId の末尾が inputDigest の先頭 12 桁と違う (${a.profileId} / 期待 ...${want})`)
-      // 生成物自身を入力に混ぜていないこと (自己参照になる)
-      for (const f of p.inputFiles ?? [])
-        if (f.path.includes('half_plug_topology_profile'))
-          errs.push(`生成物自身が入力に入っている: ${f.path}`)
-
-      // **inputFiles の sha256 が実ファイルと一致するか。**
-      // provenance の話は全部これに乗っている。ここが嘘なら inputDigest は無意味で、
-      // 受け手の再計算も無意味になる。**それを一度も検査していなかった。**
-      // 手元にファイルがある場合だけ見る (release asset を受け取った側では原理的に見られない)
-      let mismatched = 0
-      for (const f of p.inputFiles ?? []) {
-        const abs = resolve(ROOT, f.path)
-        if (!existsSync(abs)) continue
-        if (sha256File(abs) !== f.sha256) {
-          mismatched++
-          if (mismatched <= 3) errs.push(`inputFiles の sha256 が実ファイルと違う: ${f.path}`)
-        }
-      }
-      if (mismatched > 3) errs.push(`inputFiles の sha256 不一致は他に ${mismatched - 3} 件`)
-      if (p.workingTreeDirty === true && p.artifactKind === 'release')
-        errs.push('dirty な入力から release artifact が作られている')
     }
+
+    /**
+     * --- 感度の availability（非阻害フォローアップ P1-3）---
+     *
+     * `available` を 1 つで済ませていたため、TRS×TRRS が spread を 7 件持ちながら
+     * `available: false` を名乗り、「感度情報が一切無い」と読まれていた。
+     * **2 つの事実が食い違わないこと**をここで守る。
+     */
+    const ss = a.sensitivitySummary ?? {}
+    if (ss.available !== ss.globalSummaryAvailable)
+      errs.push(`available (${ss.available}) と globalSummaryAvailable (${ss.globalSummaryAvailable}) が違う。available は global summary の別名でなければならない`)
+    if (ss.eventSpreadAvailable !== (ss.eventSpreadSource !== null && ss.eventSpreadSource !== undefined))
+      errs.push(`eventSpreadAvailable (${ss.eventSpreadAvailable}) が eventSpreadSource の有無と食い違う`)
+    const hasEventSpread = (a.events ?? []).some((e) => e.spreadStatus === 'MODEL_SWEEP_EVENT_SPECIFIC')
+    if (hasEventSpread && ss.eventSpreadAvailable !== true)
+      errs.push('event に MODEL_SWEEP_EVENT_SPECIFIC の幅があるのに eventSpreadAvailable が true でない')
+    if (ss.eventSpreadAvailable === true && ss.basis !== 'MODEL_PARAMETER_SWEEP')
+      errs.push(`event spread があるのに basis が ${ss.basis}。実測と誤認されないよう由来を明記する`)
 
     // --- 根拠件数が台帳と一致するか (テストにはあったが検証器には無かった) ---
     try {
@@ -314,6 +376,73 @@ const SEMANTIC = {
     const sum = Object.values(a.byFile ?? {}).reduce((x, y) => x + y, 0)
     if (sum !== a.total) errs.push(`byFile の合計が total と違う (${sum} ≠ ${a.total})`)
     if (a.skipped !== 0) errs.push(`飛ばされたテストが ${a.skipped} 件ある (skip は「見ていない」)`)
+  },
+
+  /**
+   * 感度 artifact（非阻害フォローアップ P1-2）。
+   *
+   * この artifact は profile の spreadMm の**元データ**である。
+   * ここが壊れていると、profile 側の検査を全部通っても中身が嘘になる。
+   */
+  sensitivity(a, errs) {
+    // --- 走査そのものが成立しているか ---
+    const sw = a.sweep ?? {}
+    if (sw.shippedInsideSweptRange !== true)
+      errs.push('既定値が走査範囲の外にある。**名目値が自分の幅の外に出る** (2026-08-03 に実際に起きた形)')
+    if (sw.configurationsUsable > sw.configurationsTried)
+      errs.push(`成立 ${sw.configurationsUsable} 構成が走査 ${sw.configurationsTried} 構成を超えている`)
+    const accounted = (sw.configurationsUsable ?? 0) + (sw.buildFailed ?? 0) + (sw.fullInsertionNotOk ?? 0)
+    if (sw.configurationsTried !== undefined && accounted !== sw.configurationsTried)
+      errs.push(`構成の内訳が合わない (成立+組めず+不成立 = ${accounted} ≠ 走査 ${sw.configurationsTried})`)
+    if (sw.configurationsTried !== undefined && sw.divisions !== undefined
+      && sw.configurationsTried !== (sw.divisions + 1) ** 2)
+      errs.push(`configurationsTried が divisions と合わない (${sw.configurationsTried} ≠ (${sw.divisions}+1)^2)`)
+
+    // --- 幅そのものの整合 ---
+    for (const [k, v] of Object.entries(a.byKind ?? {})) {
+      if (v.minMm > v.maxMm) errs.push(`${k}: minMm ${v.minMm} > maxMm ${v.maxMm}`)
+      const moves = +(v.maxMm - v.minMm).toFixed(4)
+      if (Math.abs(v.movesMm - moves) > 1e-6)
+        errs.push(`${k}: movesMm ${v.movesMm} が maxMm-minMm (${moves}) と合わない`)
+    }
+
+    // --- 記録した走査軸が、digest に混ぜた設定と一致するか ---
+    const setAxes = a.provenance?.inputSettings?.sweptParameters
+    if (setAxes !== undefined && setAxes !== (a.sweptParameters ?? []).join(','))
+      errs.push(`sweptParameters (${(a.sweptParameters ?? []).join(',')}) が provenance.inputSettings (${setAxes}) と違う`)
+    const setVariant = a.provenance?.inputSettings?.variantId
+    if (setVariant !== undefined && setVariant !== a.variantId)
+      errs.push(`variantId (${a.variantId}) が provenance.inputSettings (${setVariant}) と違う`)
+
+    // --- provenance。**自分自身を入力にしていないこと** ---
+    checkProvenance(a.provenance, 'artifacts/sensitivity', errs)
+
+    /**
+     * --- profile との整合 ---
+     *
+     * これが本題。profile が配っている幅が、本当にこの artifact の値かを突き合わせる。
+     * **v0.1.0 ではここが食い違っていた**（3極の幅が 4極 profile に付いていた）が、
+     * 突き合わせる検査がどこにも無かったので通ってしまった。
+     */
+    const slug = String(a.variantId).toLowerCase().replace(/[^a-z0-9]+/g, '_')
+    const profilePath = `artifacts/half_plug_topology_profile.v1.${slug}.json`
+    if (!existsSync(resolve(ROOT, profilePath))) return
+    const prof = read(profilePath)
+    if (prof.variantId !== a.variantId)
+      errs.push(`${profilePath} の variantId (${prof.variantId}) と違う`)
+    const src = prof.sensitivitySummary?.eventSpreadSource
+    if (src && src.inputDigest && src.inputDigest !== a.provenance?.inputDigest)
+      errs.push(`profile が参照している感度の inputDigest と違う (profile を作り直していない疑い)`)
+    for (const e of prof.events ?? []) {
+      if (e.spreadStatus !== 'MODEL_SWEEP_EVENT_SPECIFIC' || !e.spreadMm) continue
+      const b = a.byKind?.[e.kind]
+      if (!b) {
+        errs.push(`profile の ${e.eventId} が幅を持つが、byKind に ${e.kind} が無い`)
+        continue
+      }
+      if (e.spreadMm.minMm !== b.minMm || e.spreadMm.maxMm !== b.maxMm)
+        errs.push(`profile の ${e.eventId} の幅 ${e.spreadMm.minMm}〜${e.spreadMm.maxMm} が byKind の ${b.minMm}〜${b.maxMm} と違う`)
+    }
   },
 }
 

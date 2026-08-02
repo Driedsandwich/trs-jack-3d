@@ -15,12 +15,13 @@
  *   **成果物自身が「どの値の上で作られたか」を記録している。**それを現在のモデルと突き合わせる。
  *   - topology_search_*.json … searchSpace.axesByJack[*].shipped
  *   - sensitivity.json       … inputs（schemaVersion 5 から）
+ *   - sensitivity.<slug>.json … provenance.inputDigest（2026-08-03 追加）
  *   キーの一覧を人が保守しないので、走査軸が増えても勝手に追随する。
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { buildProvenance } from './provenance'
+import { buildProvenance, listSensitivityInputs } from './provenance'
 
 const ROOT = process.cwd()
 const dims = JSON.parse(readFileSync(resolve(ROOT, 'src/data/dimensions.json'), 'utf8')).entries as Record<
@@ -68,6 +69,38 @@ if (!existsSync(sp)) {
       if (now(k) !== undefined && now(k) !== v)
         stale.push({ artifact: 'sensitivity.json', reason: `${k} が ${v} → ${now(k)} に変わっている`, cmd: 'npm run sensitivity' })
   }
+}
+
+// --- 2b. 感度 event artifact が入力より古くなっていないか -------------------
+//
+// **provenance を足しただけでは何も守れない。**現在の入力と突き合わせて初めて意味が出る。
+// profile 側で同じ穴が実際に開いていた（記録は目の前にあったのに使っていなかった）ので、
+// 感度 artifact にも同じ日に同じ検査を付ける（非阻害フォローアップ P1-1）。
+for (const f of readdirSync(resolve(ROOT, 'artifacts')).filter((x) => /^sensitivity\.trs_jack_/.test(x))) {
+  const a = JSON.parse(readFileSync(resolve(ROOT, 'artifacts', f), 'utf8'))
+  const got = a.provenance?.inputDigest
+  if (!got) {
+    stale.push({ artifact: f, reason: 'provenance.inputDigest が無い', cmd: 'npm run sensitivity:events:all' })
+    continue
+  }
+  // 記録された設定をそのまま使う。走査軸や刻みを変えた場合は
+  // scripts/sensitivityEvents.ts 自身が入力なので、ファイルの指紋の側で捕まる
+  const wanted = buildProvenance({
+    root: ROOT,
+    inputs: listSensitivityInputs(ROOT),
+    settings: a.provenance.inputSettings,
+    command: 'check:stale',
+    artifactDate: '1970-01-01',
+    release: false,
+    allowRevisionOverride: false,
+  }).inputDigest
+  checked.push(`${f}: inputDigest ${String(got).slice(0, 12)}`)
+  if (got !== wanted)
+    stale.push({
+      artifact: f,
+      reason: `入力が変わっている (記録 ${String(got).slice(0, 12)} → 現在 ${wanted.slice(0, 12)})`,
+      cmd: `npm run sensitivity:events -- --variant "${a.variantId}"`,
+    })
 }
 
 // --- 3. profile が入力より古くなっていないか -------------------------------

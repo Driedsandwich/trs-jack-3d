@@ -4,6 +4,42 @@
 対象: `Driedsandwich/trs-jack-3d`  
 対象release: `v0.1.1`
 
+## 0-1. 対応状況（2026-08-03 追記・trs-jack-3d 側）
+
+**優先 1〜3 を実装しました。4 以降は未着手です。**v0.1.1 の asset は上書きしていません。
+
+| | 項目 | 状態 |
+|---|---|---|
+| 1 | sensitivity artifact の provenance | **実装** — profile と同型。`inputSettings` を新設し、**variant 別 digest** にした |
+| 2 | sensitivity artifact 専用 Schema | **実装** — `schemas/event-sensitivity.v1.schema.json`。`validate:profiles` は 5 件 → **7 件** |
+| 3 | 感度 availability の分離 | **実装** — `eventSpreadAvailable` / `globalSummaryAvailable` / `basis` を追加。`available` は別名として残置 |
+| 4〜8 | 多軸ロバストネス以降 | 未着手 |
+
+**版の扱い**: 今回は**追加のみ**で、enum の値も項目の意味も変えていないため `schemaVersion` は 1 のままです。
+変わったことは `provenance.generatorVersion` が **3 → 4** になったことで機械可読になります。
+語の改名（項目 6〜8）は引き続き Schema v2 送りです。
+
+**やったが、オーダーに書かれていなかったこと**を 3 つ挙げます。
+
+1. **`inputSettings` に値そのものを記録した。** 「先頭に setting 行を置く」と説明だけ書いても、
+   その中身が分からなければ**第三者は digest を再計算できません**。再計算できない digest は provenance の役に立ちません。
+2. **`inputDigest` を作り直して一致するかの検査を新設した。** これまで digest の**形**（sha256 らしいか）しか見ておらず、
+   **その値が inputFiles から本当に導けるか**を profile 側も含めて一度も検査していませんでした。
+3. **`check:stale` を感度 artifact へ広げた。** provenance を足しただけでは何も守れず、
+   現在の入力と突き合わせて初めて意味が出ます。profile 側で同じ穴が実際に開いていました。
+
+**見つかった食い違いが 1 件あります。**`docs/HALF_PLUG_ADAPTER.md` は v0.1.1 の時点で
+`sensitivitySummary.basis` を約束していましたが、**profile にその項目はありませんでした**（読むと `undefined`）。
+文書と artifact を突き合わせる検査が `sensitivitySummary` に無かったためです。項目 3 の実装で実在するようになりました。
+
+**次の release で必要な作業**（今回は release を作らないので未実施）:
+`schemas/event-sensitivity.v1.schema.json` を release asset と `SHA256SUMS` に含めること。
+
+検査はすべて変異させて確認しました。**意味規則 23 件・テスト 8 件を壊して、狙った検査が鳴ることを確かめています**
+（rc≠0 だけでは別の検査に助けられている可能性があるため、artifact ごとの節と、その検査だけが持つ文言で照合）。
+
+---
+
 ## 0. 結論
 
 v0.1.1はHalf-Plug Labのstatic mechanism integrationに使用可能であり、追加修正を統合の停止線にはしない。

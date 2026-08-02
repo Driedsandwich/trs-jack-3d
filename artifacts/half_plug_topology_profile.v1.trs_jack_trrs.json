@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:49b2ef8d7a13",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:9485cae5cc97",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -39,21 +39,21 @@
    ]
   }
  },
- "sourceRevision": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
+ "sourceRevision": "9260632c9c3695d0c4a91c22033edd2f283f5eb5",
  "generatedAt": "2026-08-02",
  "provenance": {
-  "generatorVersion": 3,
-  "generatedFromCommit": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
+  "generatorVersion": 4,
+  "generatedFromCommit": "9260632c9c3695d0c4a91c22033edd2f283f5eb5",
   "workingTreeDirty": true,
   "revisionOverride": false,
   "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "49b2ef8d7a13eae15a161dff1382b948cd780deee0333ab669d6e2c88a9935db",
+  "inputDigest": "9485cae5cc97de406eb3d6ec9629739cb3927e3b143dd24574b3ff6c124f12d0",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "29116b394ce438fe5efdd93f7d3a1c012b7545b2d46c738401d77ae0e687a979",
+    "sha256": "d6adf3fa904c29f4b7a69c194677ea3368dfc070b543578afe5895cf4a1c7eec",
     "role": "sensitivity-input"
    },
    {
@@ -63,17 +63,17 @@
    },
    {
     "path": "schemas/half-plug-topology-profile.v1.schema.json",
-    "sha256": "57a10fc69c698c971a73122db3557803009877748d91491568d8b20094fa0b59",
+    "sha256": "dec56082e2dfcf22c382b88fd96d750b47cdbd296aa7fe5d24db9940d77e3c4b",
     "role": "schema"
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "8794051aeb0a773893c4c17cc47c809b3209bbd369b36e560abc503469bd72b8",
+    "sha256": "8f85670cc17fba42677cd71bafa5568d7c2cf152d797fe52f972472730eb63a1",
     "role": "generator"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "f8d51176ac5e10f865c7effc5f288bcb4dcb7940748aeaa4facacaad4bc01663",
+    "sha256": "885ddcddf9fa5616f8645b8f7f3d8763e3e995c9a60907d7a009b833d54a1cea",
     "role": "generator"
    },
    {
@@ -5354,6 +5354,9 @@
  ],
  "sensitivitySummary": {
   "available": false,
+  "globalSummaryAvailable": false,
+  "eventSpreadAvailable": true,
+  "basis": "MODEL_PARAMETER_SWEEP",
   "bridgeDepthJointRangeMm": null,
   "tipBridgeComplianceThreshold": null,
   "tipBridgeWorstCornerThreshold": null,
@@ -5367,13 +5370,14 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
+   "generatedFromCommit": "9260632c9c3695d0c4a91c22033edd2f283f5eb5",
+   "inputDigest": "fa0007b9133f6667bcdd920efcf09b55c1b571044b8773855ef252d32087a260",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
   },
   "notes": [
    "この variant 固有の総合感度解析はまだ無い。",
-   "**variant 固有の解析が無いので、感度情報は出していない (fail-closed)。**別 variant の値を流用するより、無いほうが害が小さい。"
+   "variant 固有の global summary は出していない。event-specific な model-sweep spread は eventSpreadSource から提供している。**「感度情報が無い」ではない。**"
   ]
  }
 }

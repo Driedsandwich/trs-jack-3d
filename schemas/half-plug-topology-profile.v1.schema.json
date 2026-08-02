@@ -293,12 +293,34 @@
       "type": "object",
       "required": [
         "available",
+        "globalSummaryAvailable",
+        "eventSpreadAvailable",
         "notes"
       ],
       "additionalProperties": false,
       "properties": {
         "available": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "**global summary があるかどうかだけ**を表す (後方互換のために残している別名)。`globalSummaryAvailable` と常に等しい。**これが false でも event spread は存在しうる。** 感度情報の有無を判定する用途に使ってはならない"
+        },
+        "globalSummaryAvailable": {
+          "type": "boolean",
+          "description": "variant 固有の総合解析 (プラトー間隔・Tip 橋絡しきい値・挿抜力) があるか。3極でのみ true"
+        },
+        "eventSpreadAvailable": {
+          "type": "boolean",
+          "description": "event 単位の model-sweep spread があるか。**`available` とは別の事実。** 2026-08-03 まで両者を `available` 1 つに潰しており、TRS×TRRS が spread を 7 件持ちながら false を名乗っていた"
+        },
+        "basis": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "MODEL_PARAMETER_SWEEP",
+            null
+          ],
+          "description": "感度情報が何に由来するか。**実測ではない。** モデルのパラメータを振った結果である"
         },
         "bridgeDepthJointRangeMm": {
           "type": [
@@ -514,6 +536,13 @@
           "type": "string",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "description": "**UTC の日付**（`toISOString()` 由来）。生成した人の現地時刻より 1 日手前になることがある。commit の日付と 1 日ずれていても陳腐化ではない。ARTIFACT_DATE で固定できる"
+        },
+        "inputSettings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "digest に混ぜたファイル以外の入力 (variant 固有の走査設定など)。**値そのものを記録する。** 記録しないと第三者が inputDigest を再計算できない。この項目が無い artifact は setting 行を使っていない"
         }
       }
     },

@@ -7,7 +7,134 @@
   "trrs.jack.contact.sleeve.axialCenter",
   "trrs.jack.contact.narrowPadWidth"
  ],
- "generatedFromCommit": "ba2ad6cc7f9287cb5daa38fda153bce0948c57d1",
+ "generatedFromCommit": "9260632c9c3695d0c4a91c22033edd2f283f5eb5",
+ "provenance": {
+  "generatorVersion": 4,
+  "generatedFromCommit": "9260632c9c3695d0c4a91c22033edd2f283f5eb5",
+  "workingTreeDirty": true,
+  "revisionOverride": false,
+  "artifactKind": "local",
+  "inputDigestAlgorithm": "sha256",
+  "inputDigest": "fa0007b9133f6667bcdd920efcf09b55c1b571044b8773855ef252d32087a260",
+  "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 6 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
+  "inputSettings": {
+   "variantId": "TRS|JACK-TRRS",
+   "sweptParameters": "trrs.jack.contact.sleeve.axialCenter,trrs.jack.contact.narrowPadWidth",
+   "axialRangeMm": "0.45..4.55",
+   "padRangeMm": "0.01..5",
+   "divisions": "30",
+   "stepMm": "0.02"
+  },
+  "inputFiles": [
+   {
+    "path": "package-lock.json",
+    "sha256": "5a62467e286df6334967859b48449b633b61148930934f32b3b1b66849f11589",
+    "role": "lockfile"
+   },
+   {
+    "path": "schemas/event-sensitivity.v1.schema.json",
+    "sha256": "8d4b8732b2dc531aa66a496a5f1b331e94bd5eb57837201d4f9d4b0776675285",
+    "role": "schema"
+   },
+   {
+    "path": "scripts/provenance.ts",
+    "sha256": "885ddcddf9fa5616f8645b8f7f3d8763e3e995c9a60907d7a009b833d54a1cea",
+    "role": "generator"
+   },
+   {
+    "path": "scripts/sensitivityEvents.ts",
+    "sha256": "7a322385eb93919d5de375f21b6e72bd6845306ccb58b2adf34bfff393cb65b5",
+    "role": "generator"
+   },
+   {
+    "path": "src/data/dimensions.json",
+    "sha256": "318f0bb993030e0ebe936e21adb2ea4e952f5e0a7a18709e4227bc8a1e56dee7",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/faultPresets.json",
+    "sha256": "ee586e1bf7e15b55398e148612b9ef6ad4b1f98a849d455d477b1c65a97f70ff",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/index.ts",
+    "sha256": "1c2922b6698713f72c241b6f49809e3654ee909ddd94116cad6f90a57f124dd4",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/jackContacts.json",
+    "sha256": "52e255dfbb3d0344b1aa922ac8092518395ed441c9ce69dcf7274434a19349db",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/jackContacts.trrs.json",
+    "sha256": "f5443dcdda800abef9b928fde166f1930393f2e85c59b50851906d910e0d8e8f",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/materials.json",
+    "sha256": "709bd006cc055bd44058c40f6ca8011c81e04ce3e795297e6edfeeebadb7889c",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/plugSegments.json",
+    "sha256": "7d51e6f5a5a3961fca92039e217bf631a78e779a7fe1847078e3dd42a2347102",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/plugSegments.trrs.json",
+    "sha256": "f5715e080d34a29fd93ab4f0a5e4bdc14d47cf77a5bc199c3b5ce8b7fb509ce2",
+    "role": "model-data"
+   },
+   {
+    "path": "src/data/sourceReferences.json",
+    "sha256": "b21590bdb56f65343c99512fad0ecd72b2c9200ed234b12f8428843dfa8f40de",
+    "role": "model-data"
+   },
+   {
+    "path": "src/model/circuit.ts",
+    "sha256": "bfc407f8921aaf230cc736c6a368f9490d59f0da9acca16dabfbc9ba49ca3025",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/contact.ts",
+    "sha256": "e4a4e78b14fd2f7d1c0148a968617d4eb9c8395ed1f08b4e3eae355d31a4ae67",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/engine.ts",
+    "sha256": "7ecd30ba22d3b587f8782c7469e1c9cfedcb6fc5b098436e0e75b902c0b938aa",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/force.ts",
+    "sha256": "1f6bc966eba29a27091d7d55afc278a365396aa690302b0492d3a5734e9974c1",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/resolve.ts",
+    "sha256": "73e197830e9c0b5f7e46ffedba781f3689fd8e21fbc73ad63cea955075d1a7cb",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/sweep.ts",
+    "sha256": "bb88036fd8d757e652b66f36861b3b72a4abc6e9fd0f501761c785ff0a5472a4",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/topology.ts",
+    "sha256": "85594e701a195a574238853bcdf3bc5e421a9f860703443ee7ae123e953de478",
+    "role": "model-code"
+   },
+   {
+    "path": "src/model/types.ts",
+    "sha256": "9f4770aad4e05cdf0f3f2a4e3ad4a91992a76b91dac8cbf5a0df4975b3131e70",
+    "role": "model-code"
+   }
+  ],
+  "command": "npm run sensitivity:events -- --variant \"TRS|JACK-TRRS\"",
+  "artifactDate": "2026-08-02"
+ },
  "generatedAt": "2026-08-02",
  "basis": "MODEL_PARAMETER_SWEEP",
  "note": "モデル内部の感度であって、実物のばらつきでも製造公差でもない。帰線接点の軸位置とパッド幅を同時に振り、完全挿入が成立する構成にわたって主要イベントの深さの最小・最大を集めたもの。",

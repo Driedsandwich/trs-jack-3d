@@ -1,0 +1,264 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/event-sensitivity.v1.schema.json",
+  "title": "trs-jack-3d event sensitivity artifact v1",
+  "description": "variant ごとの主要イベント深さの幅。**モデルのパラメータを振った結果であって、実物のばらつきでも製造公差でもない。** 2026-08-03 の非阻害フォローアップオーダー P1-2 で新設。それまでこの artifact だけ schema が無く、下流が独自に構造検査を書いていた",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "variantId",
+    "analysisScope",
+    "basis",
+    "generatedFromCommit",
+    "provenance",
+    "sweptParameters",
+    "sweep",
+    "byKind"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "generatedBy": {
+      "type": "string"
+    },
+    "variantId": {
+      "type": "string",
+      "description": "どの variant の解析か。**profile 側と一致しなければ取り込んではならない (fail-closed)。** これが無かったため 3極の幅が 4極 profile へ配られていた"
+    },
+    "analysisScope": {
+      "enum": [
+        "EVENT_DEPTH_SPREAD_ONLY"
+      ],
+      "description": "この artifact が扱う範囲。総合解析 (プラトー間隔・Tip 橋絡しきい値・挿抜力) は含まない"
+    },
+    "basis": {
+      "const": "MODEL_PARAMETER_SWEEP",
+      "description": "**実測ではない。** モデルのパラメータを振った結果であることを機械可読にする"
+    },
+    "generatedFromCommit": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{40}|UNKNOWN)$",
+      "description": "生成時点の HEAD。**参考値。** 固定には provenance.inputDigest を使う"
+    },
+    "provenance": {
+      "type": "object",
+      "description": "何から作られたか。**`generatedFromCommit` ではなく `inputDigest` で固定してください。** artifact を含めてコミットすると HEAD は変わりますが、入力は変わっていないので `inputDigest` は変わりません",
+      "required": [
+        "generatorVersion",
+        "generatedFromCommit",
+        "workingTreeDirty",
+        "revisionOverride",
+        "artifactKind",
+        "inputDigestAlgorithm",
+        "inputDigest",
+        "inputDigestScope",
+        "inputFiles",
+        "command",
+        "artifactDate"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generatorVersion": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "生成器の版。出力の形を変えたときだけ上がる。データが変わっただけでは上がらない (それは inputDigest が表す)"
+        },
+        "generatedFromCommit": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{40}|UNKNOWN)$",
+          "description": "生成時点の HEAD。**参考値。** 一致を要求してはならない"
+        },
+        "workingTreeDirty": {
+          "type": "boolean",
+          "description": "**入力ファイルに**未コミットの変更があったか。true の artifact は release asset にできない。artifact 自身の変更は見ない"
+        },
+        "revisionOverride": {
+          "type": "boolean",
+          "description": "SOURCE_REVISION による上書きが使われたか。通常モードでは常に false"
+        },
+        "artifactKind": {
+          "enum": [
+            "local",
+            "release"
+          ],
+          "description": "local = 手元で生成 (リポジトリにコミットされているものはこちら)。release = clean な入力から --release で生成した配布物"
+        },
+        "inputDigestAlgorithm": {
+          "const": "sha256"
+        },
+        "inputDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "inputDigestScope": {
+          "type": "string",
+          "description": "digest の作り方。第三者が同じ値を再計算できるように書く"
+        },
+        "inputFiles": {
+          "type": "array",
+          "minItems": 1,
+          "description": "digest の対象。**生成される artifact 自身は含まない** (含めると自己参照になる)",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "sha256",
+              "role"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "role": {
+                "enum": [
+                  "schema",
+                  "generator",
+                  "model-data",
+                  "model-code",
+                  "lockfile",
+                  "sensitivity-input"
+                ]
+              }
+            }
+          }
+        },
+        "command": {
+          "type": "string",
+          "description": "再生成に使うコマンド。呼び出し経路によらない正規形"
+        },
+        "artifactDate": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "**UTC の日付**（`toISOString()` 由来）。生成した人の現地時刻より 1 日手前になることがある。commit の日付と 1 日ずれていても陳腐化ではない。ARTIFACT_DATE で固定できる"
+        },
+        "inputSettings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "digest に混ぜたファイル以外の入力 (variant 固有の走査設定など)。**値そのものを記録する。** 記録しないと第三者が inputDigest を再計算できない。この項目が無い artifact は setting 行を使っていない"
+        }
+      }
+    },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "note": {
+      "type": "string"
+    },
+    "sweptParameters": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "description": "実際に振った寸法キー。**直書きせず、走査に使った値をそのまま記録する。** キーを取り違えると override が効かず、同じ構成を数百回繰り返すだけの空振りになる"
+    },
+    "sweep": {
+      "type": "object",
+      "required": [
+        "axialRangeMm",
+        "padRangeMm",
+        "divisions",
+        "stepMm",
+        "configurationsTried",
+        "configurationsUsable",
+        "shippedValues",
+        "shippedInsideSweptRange"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "axialRangeMm": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "padRangeMm": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "divisions": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "stepMm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "configurationsTried": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "configurationsUsable": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "完全挿入が成立した構成の数。**0 なら幅を報告してはならない** (軸の取り違えの疑い)"
+        },
+        "buildFailed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fullInsertionNotOk": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shippedValues": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "shippedInsideSweptRange": {
+          "type": "boolean",
+          "description": "既定値の構成が走査範囲に入っているか。**false だと名目値が幅の外に出る** (2026-08-03 に実際に起きた形)"
+        }
+      }
+    },
+    "byKind": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "イベント種別ごとの深さの幅。**個々の事象へそのまま当てはめてはならない**ものも含む",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "minMm",
+          "maxMm",
+          "configs",
+          "movesMm"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "minMm": {
+            "type": "number"
+          },
+          "maxMm": {
+            "type": "number"
+          },
+          "configs": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "movesMm": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}
