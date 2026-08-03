@@ -1,7 +1,7 @@
 /**
  * release asset を 1 か所へ集め、`SHA256SUMS` を作る。
- *   npm run release:stage -- --version v0.2.0
- *   npm run release:stage -- --version v0.2.0 --allow-local   (下見用)
+ *   npm run release:stage -- --version v0.2.1
+ *   npm run release:stage -- --version v0.2.1 --allow-local   (下見用)
  *
  * ## 何を防ぐか（非阻害フォローアップ P2-7）
  *
@@ -27,7 +27,7 @@ const argOf = (n, d) => {
   const i = argv.indexOf(`--${n}`)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d
 }
-const VERSION = argOf('version', 'v0.2.0')
+const VERSION = argOf('version', 'v0.2.1')
 const ALLOW_LOCAL = argv.includes('--allow-local')
 const OUT = resolve(ROOT, argOf('out', `dist/release/${VERSION}`))
 
@@ -74,21 +74,34 @@ if (localOnes.length && !ALLOW_LOCAL) {
   process.exit(1)
 }
 
-// --- 索引が tag を知っているか ------------------------------------------------
-// **知らないまま配ると、受け手は「どの tag の配布物か」を索引から引けない。**
-const idxPath = resolve(ROOT, 'artifacts/trs-jack-3d-release-index.v1.json')
-if (existsSync(idxPath)) {
-  const idx = read(idxPath)
-  if (!idx.releaseTag || !idx.releaseCommit) {
-    console.log('**release index が tag を知らない。**（releaseTag / releaseCommit が null）')
-    console.log('  RELEASE_TAG と RELEASE_COMMIT を渡して npm run release:evidence を回し直すこと。')
-    console.log('  例: RELEASE_TAG=v0.2.1 RELEASE_COMMIT=$(git rev-parse HEAD) npm run release:evidence')
+/**
+ * --- 索引の tag 情報は**ここで埋める** ------------------------------------------
+ *
+ * **artifact は、自分を含む commit の hash を持てない。**
+ * 索引をコミットしてから tag を打つので、生成時点では tag も commit も存在しない。
+ * リポジトリに置く索引は `null` のままが正しい（分からないものを埋めない）。
+ *
+ * 配布物では受け手が「どの tag のものか」を引けたほうがよいので、
+ * **staged copy にだけ** `--commit` の値を書き込む。リポジトリ側は触らない。
+ */
+const INDEX_REL = 'artifacts/trs-jack-3d-release-index.v1.json'
+const COMMIT = argOf('commit', null)
+let stagedIndex = null
+if (existsSync(resolve(ROOT, INDEX_REL))) {
+  const idx = read(resolve(ROOT, INDEX_REL))
+  const tag = idx.releaseTag ?? VERSION
+  const commit = idx.releaseCommit ?? COMMIT
+  if (!commit) {
+    console.log('**tag が指す commit が分からない。**')
+    console.log('  索引の releaseCommit は null のままで正しい（自分を含む commit の hash は持てない）。')
+    console.log(`  配布時に渡すこと: npm run release:stage -- --version ${VERSION} --commit $(git rev-parse HEAD)`)
     process.exit(1)
   }
-  if (idx.releaseTag !== VERSION) {
-    console.log(`**release index の tag (${idx.releaseTag}) が --version (${VERSION}) と違う。**`)
+  if (tag !== VERSION) {
+    console.log(`**release index の tag (${tag}) が --version (${VERSION}) と違う。**`)
     process.exit(1)
   }
+  stagedIndex = { ...idx, releaseTag: tag, releaseCommit: commit }
 }
 
 // --- 集める -----------------------------------------------------------------
@@ -97,8 +110,13 @@ const rows = []
 for (const a of RELEASE_ASSETS) {
   const src = resolve(ROOT, a.path)
   const dst = resolve(OUT, basename(a.path))
-  copyFileSync(src, dst)
-  rows.push({ name: basename(a.path), sha256: sha256(src), role: a.role })
+  if (a.path === INDEX_REL && stagedIndex) {
+    // **配布する索引にだけ tag を書き込む。**リポジトリ側は null のまま
+    writeFileSync(dst, JSON.stringify(stagedIndex, null, 1) + '\n')
+  } else {
+    copyFileSync(src, dst)
+  }
+  rows.push({ name: basename(a.path), sha256: sha256(dst), role: a.role })
 }
 
 // --- SHA256SUMS --------------------------------------------------------------
