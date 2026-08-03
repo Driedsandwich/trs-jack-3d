@@ -39,13 +39,13 @@
  "variantId": "TRS|JACK-TRRS",
  "targetTopologyClass": "ground-open-differential",
  "basis": "MODEL_PARAMETER_SWEEP",
- "generatedFromCommit": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
+ "generatedFromCommit": "b66a3017c65005a7ba3803418faecb48622176a9",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
-  "workingTreeDirty": true,
+  "generatedFromCommit": "b66a3017c65005a7ba3803418faecb48622176a9",
+  "workingTreeDirty": false,
   "revisionOverride": false,
-  "artifactKind": "local",
+  "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
   "inputDigest": "b4f9bc250168cddbd673eac47047fff81d02fe5bd73b13549f94c6719200acb8",
   "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 4 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
@@ -162,7 +162,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run search:robustness",
+  "command": "npm run search:robustness -- --release",
   "artifactDate": "2026-08-03"
  },
  "generatedAt": "2026-08-03",
