@@ -21,6 +21,7 @@
 #   half_plug_topology_profile.v1.trs_jack_trrs.json — 同上
 #
 # 検算: shasum -a 256 -c SHA256SUMS
+00f67312a9968f5e26c388d4adc72243b1383208b2c3fc797de65641d3435509  trs-jack-3d-release-index.v1.json
 042bfeaa3710a8f995918ff8e53e1ac64416b606bf5b020d4b85e25f47970dc2  sensitivity.trs_jack_trrs.json
 08fedb7278915386cc7e97619f4831b072b3ef03f3389bc6bf5bb92bdf8bb677  half_plug_topology_profile.v2.trs_jack_trs.json
 13a30e136448d7c8641a62dbdebb4ab040c935f1151bb38271ead1549ee51b69  topology-robustness.v2.schema.json
@@ -30,7 +31,6 @@
 1d3591a71aeba46171a6478759c697f7f902657a42606cfac89efdcfda2d06a3  source-input-manifest.json
 24d85873781f23c9f81da25676cbf98c2b9ea5a0de90a81275f936e5f4a93be4  real-jack-comparison.v1.schema.json
 4ffa084e3c998a067594bac4982d850a81372146cff73f6f996d3254de90ac64  validation-results.v1.schema.json
-52cd6d99ba508d14a1ebb9eed4d56ac186978c360fc857c22e718f8583d62448  trs-jack-3d-release-index.v1.json
 607b7f6ce9c39500e2f479941ae723d04ae761047ec1ba68ed4f0b84b0b2b2a6  source-input-scope.v1.schema.json
 6385d4c81efc1c97ec6e289a80fa28819a34262564652fe3a17955a1ddac1d1d  test_counts.json
 6623781cb98f2f9fb12f48b13cdd551883783b051df49579f83ea3ee2ad87b93  half_plug_topology_profile.v2.trs_jack_trrs.json
