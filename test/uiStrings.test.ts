@@ -170,6 +170,8 @@ describe('公開物の文体', () => {
     'docs/release/v0.1.1-notes.md',
     // 提出用プロンプト。**相手は本人の AI セッションなので、依頼文でなく作業指示で書く**
     'docs/release/v0.1.1-chatgpt-prompt.md',
+    'docs/release/v0.2.0-notes.md',
+    'docs/release/v0.2.0-chatgpt-prompt.md',
   ]
 
   it('**社交辞令を書いていない**（読者は不特定多数で、相手は AI セッションである）', () => {
