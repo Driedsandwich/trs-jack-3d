@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-03",
- "generatedFromCommit": "bdd7d706b25727ee6bcf54a4bb34877f0305ef8f",
+ "generatedFromCommit": "3966dc6cf693365923d632da26ed24760d6a9012",
  "command": "npm run validate:profiles",
  "targetsTotal": 9,
  "targetsPassed": 9,

@@ -74,7 +74,7 @@
   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。旧語彙のまま読むと、値で絞り込む箇所が「そのデータが 1 件も無い」と区別できず、沈黙して壊れる。",
   "versionSelectionEvidence": "下流 release-verifier.mjs は schemaVersion を見て拒否するが contractRevision はどこも読まない。2026-08-03 に両方を実際に import させて確かめた (A: 停止 / B: PASS)。"
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRS:3df4fe2b1879",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:abca1dfb5b5f",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -109,16 +109,16 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
+ "sourceRevision": "3966dc6cf693365923d632da26ed24760d6a9012",
  "generatedAt": "2026-08-03",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
-  "workingTreeDirty": true,
+  "generatedFromCommit": "3966dc6cf693365923d632da26ed24760d6a9012",
+  "workingTreeDirty": false,
   "revisionOverride": false,
-  "artifactKind": "local",
+  "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "3df4fe2b1879f576f9bf453fcbdc395780a1f313830073a67fa4d0d77685d3a8",
+  "inputDigest": "abca1dfb5b5fe20faba0ad696956a1b2a26baab25e85d563bd8b1aa22c08db7b",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -128,7 +128,7 @@
    },
    {
     "path": "artifacts/sensitivity.trs_jack_trs.json",
-    "sha256": "58b136f9036f495648fe164348cbd19ad4542f3a7b51457d9b361003e0844e7a",
+    "sha256": "71e8133975d28df14173814b14eadea20e5f762190dddd54665e425956152d35",
     "role": "sensitivity-input"
    },
    {
@@ -237,7 +237,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\"",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" --release",
   "artifactDate": "2026-08-03"
  },
  "fullInsertionDepthMm": 14,
@@ -3824,7 +3824,7 @@
     "jack.contact.sleeve.axialCenter",
     "jack.contact.sleeve.padWidth"
    ],
-   "generatedFromCommit": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
+   "generatedFromCommit": "b66a3017c65005a7ba3803418faecb48622176a9",
    "inputDigest": "50e680a51a3cdc4c2afb43f2dd957e1183e64a270d962cdcd63f98aa61a9261c",
    "configurationsUsable": 869,
    "shippedInsideSweptRange": true

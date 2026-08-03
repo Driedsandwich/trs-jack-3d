@@ -74,7 +74,7 @@
   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。旧語彙のまま読むと、値で絞り込む箇所が「そのデータが 1 件も無い」と区別できず、沈黙して壊れる。",
   "versionSelectionEvidence": "下流 release-verifier.mjs は schemaVersion を見て拒否するが contractRevision はどこも読まない。2026-08-03 に両方を実際に import させて確かめた (A: 停止 / B: PASS)。"
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:7fe66ff3f6c4",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:01ac02bdcb7b",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -113,21 +113,21 @@
    ]
   }
  },
- "sourceRevision": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
+ "sourceRevision": "3966dc6cf693365923d632da26ed24760d6a9012",
  "generatedAt": "2026-08-03",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
-  "workingTreeDirty": true,
+  "generatedFromCommit": "3966dc6cf693365923d632da26ed24760d6a9012",
+  "workingTreeDirty": false,
   "revisionOverride": false,
-  "artifactKind": "local",
+  "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "7fe66ff3f6c43d737f704688c26ad9f2fbdc1168330feb2315ae165d1e409a7c",
+  "inputDigest": "01ac02bdcb7b0884f431958610115da8bbe0dd457c8d02754cb545456f9db028",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "b653bbe2a55bb610b4402830dcf0f2fb2e8d92f7da01b715a0eb9eecce4fd98c",
+    "sha256": "1c7349c831ca744859c65b71a32cdff120db17c0e9a20925b00148549cd84405",
     "role": "sensitivity-input"
    },
    {
@@ -236,7 +236,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\" --release",
   "artifactDate": "2026-08-03"
  },
  "fullInsertionDepthMm": 14,
@@ -5453,7 +5453,7 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
+   "generatedFromCommit": "b66a3017c65005a7ba3803418faecb48622176a9",
    "inputDigest": "3700639db8a6728fe5c5983f03c76559674eb7c4172764d8a53084ae98f75fa3",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
