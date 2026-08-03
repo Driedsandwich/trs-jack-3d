@@ -1,3 +1,15 @@
+# ⚠ この版数は使いませんでした（採番のやり直し）
+#
+# **v0.2.1 として tag も release も作っていません。**
+# topology-robustness の schemaVersion を 1 → 2 に上げており、その artifact の
+# 消費側にとっては破壊的変更です。パッチ番号では変更の重さを実際より小さく見せるため、
+# **v0.3.0 へ採番し直しました**（→ v0.3.0-SHA256SUMS.txt）。
+#
+# **消さずに残しています。**消すと「何を、なぜ変えたか」が分からなくなるためです。
+# 下の値は v0.2.1 として staging したときのもので、配布していません。
+# artifact そのものは v0.3.0 と同一（版数の変更は artifact の入力ではない）で、
+# 違うのは索引の releaseTag / releaseCommit だけです。
+#
 # trs-jack-3d v0.2.1 — release asset の sha256
 #
 # **固定には inputDigest を使ってください。**

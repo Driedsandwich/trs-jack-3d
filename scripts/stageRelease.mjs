@@ -1,7 +1,7 @@
 /**
  * release asset を 1 か所へ集め、`SHA256SUMS` を作る。
- *   npm run release:stage -- --version v0.2.1
- *   npm run release:stage -- --version v0.2.1 --allow-local   (下見用)
+ *   npm run release:stage -- --version v0.3.0
+ *   npm run release:stage -- --version v0.3.0 --allow-local   (下見用)
  *
  * ## 何を防ぐか（非阻害フォローアップ P2-7）
  *
@@ -27,7 +27,7 @@ const argOf = (n, d) => {
   const i = argv.indexOf(`--${n}`)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d
 }
-const VERSION = argOf('version', 'v0.2.1')
+const VERSION = argOf('version', 'v0.3.0')
 const ALLOW_LOCAL = argv.includes('--allow-local')
 const OUT = resolve(ROOT, argOf('out', `dist/release/${VERSION}`))
 
