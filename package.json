@@ -26,6 +26,7 @@
     "release:evidence": "node scripts/buildReleaseEvidence.mjs",
     "release:stage": "node scripts/stageRelease.mjs",
     "verify:provenance": "node scripts/verifyProvenance.mjs",
+    "verify:release-source-inputs": "node scripts/verifyReleaseSourceInputs.mjs",
     "artifacts:all": "npm run artifacts && npm run export:half-plug:all && npm run compare:real-jack && npm run test:count",
     "perf": "node scripts/perf.mjs",
     "touch": "node scripts/touch.mjs",

@@ -59,7 +59,7 @@ Error: Expected exactly one all-expected-functions-match interval, found 0
 ---
 ## 0-2. 対応状況（2026-08-03・trs-jack-3d 側）
 
-**項目 1〜4 を実装しました。5 は未着手です。**tag / release 作成は承認待ちです。
+**項目 1〜5 をすべて実装しました。**tag / release 作成は承認待ちです。
 
 | | 項目 | 状態 |
 |---|---|---|
@@ -67,7 +67,46 @@ Error: Expected exactly one all-expected-functions-match interval, found 0
 | 2 | Evidence asset 専用 Schema | **実装** — validation-results / source-input-manifest / release index の 3 本。`validate:profiles` は 8 → **9 件** |
 | 3 | Validation target の配布区分 | **実装** — 各 target へ `distribution`（`RELEASE_ASSET` / `SOURCE_ONLY`）と件数を追加 |
 | 4 | Robustness window の区間表現 | **実装** — `startMm` / `lastSampleMm` / `endExclusiveMm` / `widthMm` へ分離。schemaVersion 1 → **2**（破壊的変更） |
-| 5 | Tag source 検証 helper | 未着手 |
+| 5 | Tag source 検証 helper | **実装** — `npm run verify:release-source-inputs`。**v0.2.0 tag に対して 28/28 一致を実測** |
+
+### 項目 5 — network は既定で使わない
+
+オーダーの要件は「network access なし」です。既定は 2 経路とも通信しません。
+
+```
+--source <dir>   受け手が展開済みの source
+--tag <tag>      手元の git object から git archive
+--fetch github   **明示したときだけ**取りに行く
+```
+
+v0.2.0 tag に対して両経路で走らせ、**どちらも 28/28 一致**しました（GitHub 経路も一致するので、
+手元の tag と GitHub の source が同じであることも同時に確かめられます）。
+
+**結末を 5 つに分けています。**「取れなかった」と「合わなかった」を潰しません。
+
+| status | exit | 意味 |
+|---|---:|---|
+| `OK` | 0 | 全件一致 |
+| `MISMATCH` | 1 | 不一致・欠落・**記録漏れの入力**がある |
+| `SOURCE_UNAVAILABLE` | 2 | source を取れなかった。**検証していないだけで、不一致ではない** |
+| `MANIFEST_UNAVAILABLE` | 2 | manifest を読めなかった |
+| `NOTHING_TO_VERIFY` | 2 | 入力 0 件。**何も見ていないのに OK と言わない** |
+
+**read-only を機械で固定しています。**書き込み API を 1 つも使わず（tar は展開せずメモリ上で読む）、
+外部コマンドは `git archive` / `git rev-parse` / `gh api` だけです。
+テストが API 名と許可コマンドの両方を検査し、**実行前後で作業ツリーが変わらないこと**も見ます。
+
+`unrecordedInputCandidates` も出します。`src/data` / `src/model` にあるのに manifest に無いファイルで、
+**digest が覆っていない入力**を意味します（モデルのファイルを足して入力一覧へ入れ忘れた場合に出る）。
+
+### 項目 5 で見つけたテストの弱さ
+
+変異検査で 1 件素通りしました。`independentVerification.checked` を
+`results.length` から `manifest.inputFilesTotal` の**写し**に差し替えても落ちなかったのです。
+正しい manifest では両者が同値なので区別できません。
+
+**自己申告だけを嘘にした manifest**（`inputFilesTotal: 999`）で測る試験を足し、
+独立検証がそれに引きずられないことを確かめるようにしました。等価変異ではなく、テストの弱さでした。
 
 ### 項目 1 — `artifactGenerationCommit` を 1 つにしなかった
 

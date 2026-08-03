@@ -70,7 +70,7 @@
 9. `npm run docs:html` — HTML を作り直す
 
 > **release を作るときは、さらに 2 つ回します。**
-> `npm run release:evidence`（検証結果と入力一覧を artifact にする）→
+> `npm run release:evidence`（検証結果・入力一覧・索引を artifact にする）→
 > `npm run release:stage -- --version vX.Y.Z`（asset を集めて `SHA256SUMS` を作る）。
 > **asset の一覧は `scripts/releaseAssets.mjs` が正本です。**その場で選ばないでください——
 > v0.1.1 では選び忘れて `event-sensitivity` schema を落とし、受け手が感度 artifact を

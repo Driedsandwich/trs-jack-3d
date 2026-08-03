@@ -17,6 +17,20 @@
 
 ## [Unreleased]
 
+### 追加 — tag source の独立検算 helper（v0.2.0 フォローアップ §5）
+
+`npm run verify:release-source-inputs`。**受け手がこちらの自己申告を信じずに確かめるための道具**です。
+`source-input-manifest.json` の記録を tag の source と突き合わせて sha256 を計算し直します。
+
+**v0.2.0 tag に対して 28/28 一致**しました（手元の git 経由と GitHub tarball 経由の両方で）。
+
+**network は既定で使いません**（オーダーの要件）。`--fetch github` を明示したときだけ取りに行きます。
+
+**「取れなかった」と「合わなかった」を潰しません。**`SOURCE_UNAVAILABLE`(2) と `MISMATCH`(1) は別で、
+入力 0 件は `NOTHING_TO_VERIFY`(2) にします。**0 件を検証して OK と言うのが一番危ない**ためです。
+
+**read-only を機械で固定**しています。書き込み API を 1 つも使わず、tar は展開せずメモリ上で読みます。
+
 ### 追加 — release index と evidence schema（v0.2.0 フォローアップ §1〜§3）
 
 **下流が報告文から値を手で転記しなくて済むようにしました。**v0.2.0 では手入力で lock を作っており、

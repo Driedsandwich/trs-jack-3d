@@ -124,8 +124,21 @@ profile / evidence     0a0e124   ← 第 1 段階
 <p>で停止します。沈黙しません。<strong>報告する前に測って良かったものです。</strong></p>
 <hr>
 <h2 id="s1">0-2. 対応状況（2026-08-03・trs-jack-3d 側）</h2>
-<p><strong>項目 1〜4 を実装しました。5 は未着手です。</strong>tag / release 作成は承認待ちです。</p>
-<div class="tw"><table><thead><tr><th></th><th>項目</th><th>状態</th></tr></thead><tbody><tr><td>1</td><td>Machine-readable release index</td><td><strong>実装</strong> — <code>artifacts/trs-jack-3d-release-index.v1.json</code> + schema。<strong>生成 commit を 1 つに潰さない</strong></td></tr><tr><td>2</td><td>Evidence asset 専用 Schema</td><td><strong>実装</strong> — validation-results / source-input-manifest / release index の 3 本。<code>validate:profiles</code> は 8 → <strong>9 件</strong></td></tr><tr><td>3</td><td>Validation target の配布区分</td><td><strong>実装</strong> — 各 target へ <code>distribution</code>（<code>RELEASE_ASSET</code> / <code>SOURCE_ONLY</code>）と件数を追加</td></tr><tr><td>4</td><td>Robustness window の区間表現</td><td><strong>実装</strong> — <code>startMm</code> / <code>lastSampleMm</code> / <code>endExclusiveMm</code> / <code>widthMm</code> へ分離。schemaVersion 1 → <strong>2</strong>（破壊的変更）</td></tr><tr><td>5</td><td>Tag source 検証 helper</td><td>未着手</td></tr></tbody></table></div>
+<p><strong>項目 1〜5 をすべて実装しました。</strong>tag / release 作成は承認待ちです。</p>
+<div class="tw"><table><thead><tr><th></th><th>項目</th><th>状態</th></tr></thead><tbody><tr><td>1</td><td>Machine-readable release index</td><td><strong>実装</strong> — <code>artifacts/trs-jack-3d-release-index.v1.json</code> + schema。<strong>生成 commit を 1 つに潰さない</strong></td></tr><tr><td>2</td><td>Evidence asset 専用 Schema</td><td><strong>実装</strong> — validation-results / source-input-manifest / release index の 3 本。<code>validate:profiles</code> は 8 → <strong>9 件</strong></td></tr><tr><td>3</td><td>Validation target の配布区分</td><td><strong>実装</strong> — 各 target へ <code>distribution</code>（<code>RELEASE_ASSET</code> / <code>SOURCE_ONLY</code>）と件数を追加</td></tr><tr><td>4</td><td>Robustness window の区間表現</td><td><strong>実装</strong> — <code>startMm</code> / <code>lastSampleMm</code> / <code>endExclusiveMm</code> / <code>widthMm</code> へ分離。schemaVersion 1 → <strong>2</strong>（破壊的変更）</td></tr><tr><td>5</td><td>Tag source 検証 helper</td><td><strong>実装</strong> — <code>npm run verify:release-source-inputs</code>。<strong>v0.2.0 tag に対して 28/28 一致を実測</strong></td></tr></tbody></table></div>
+<h3>項目 5 — network は既定で使わない</h3>
+<p>オーダーの要件は「network access なし」です。既定は 2 経路とも通信しません。</p>
+<pre><code>--source &lt;dir&gt;   受け手が展開済みの source
+--tag &lt;tag&gt;      手元の git object から git archive
+--fetch github   **明示したときだけ**取りに行く</code></pre>
+<p>v0.2.0 tag に対して両経路で走らせ、<strong>どちらも 28/28 一致</strong>しました（GitHub 経路も一致するので、 手元の tag と GitHub の source が同じであることも同時に確かめられます）。</p>
+<p><strong>結末を 5 つに分けています。</strong>「取れなかった」と「合わなかった」を潰しません。</p>
+<div class="tw"><table><thead><tr><th>status</th><th class="num">exit</th><th>意味</th></tr></thead><tbody><tr><td><code>OK</code></td><td class="num">0</td><td>全件一致</td></tr><tr><td><code>MISMATCH</code></td><td class="num">1</td><td>不一致・欠落・<strong>記録漏れの入力</strong>がある</td></tr><tr><td><code>SOURCE_UNAVAILABLE</code></td><td class="num">2</td><td>source を取れなかった。<strong>検証していないだけで、不一致ではない</strong></td></tr><tr><td><code>MANIFEST_UNAVAILABLE</code></td><td class="num">2</td><td>manifest を読めなかった</td></tr><tr><td><code>NOTHING_TO_VERIFY</code></td><td class="num">2</td><td>入力 0 件。<strong>何も見ていないのに OK と言わない</strong></td></tr></tbody></table></div>
+<p><strong>read-only を機械で固定しています。</strong>書き込み API を 1 つも使わず（tar は展開せずメモリ上で読む）、 外部コマンドは <code>git archive</code> / <code>git rev-parse</code> / <code>gh api</code> だけです。 テストが API 名と許可コマンドの両方を検査し、<strong>実行前後で作業ツリーが変わらないこと</strong>も見ます。</p>
+<p><code>unrecordedInputCandidates</code> も出します。<code>src/data</code> / <code>src/model</code> にあるのに manifest に無いファイルで、 <strong>digest が覆っていない入力</strong>を意味します（モデルのファイルを足して入力一覧へ入れ忘れた場合に出る）。</p>
+<h3>項目 5 で見つけたテストの弱さ</h3>
+<p>変異検査で 1 件素通りしました。<code>independentVerification.checked</code> を <code>results.length</code> から <code>manifest.inputFilesTotal</code> の<strong>写し</strong>に差し替えても落ちなかったのです。 正しい manifest では両者が同値なので区別できません。</p>
+<p><strong>自己申告だけを嘘にした manifest</strong>（<code>inputFilesTotal: 999</code>）で測る試験を足し、 独立検証がそれに引きずられないことを確かめるようにしました。等価変異ではなく、テストの弱さでした。</p>
 <h3>項目 1 — <code>artifactGenerationCommit</code> を 1 つにしなかった</h3>
 <p>オーダーは <code>artifactGenerationCommit</code>（単数）を必須項目に挙げていますが、<strong>1 つでは足りません。</strong> release 工程が 2 段階なので、profile と 感度・頑健性 は別の commit で生成されます。</p>
 <p>そこで 3 つに分けました。</p>
