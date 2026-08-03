@@ -17,6 +17,47 @@
 
 ## [Unreleased]
 
+### 追加 — release index と evidence schema（v0.2.0 フォローアップ §1〜§3）
+
+**下流が報告文から値を手で転記しなくて済むようにしました。**v0.2.0 では手入力で lock を作っており、
+転記ミスの余地がありました。
+
+`artifacts/trs-jack-3d-release-index.v1.json` を新設し、profile / 感度 / 全 asset の
+`filename` / `profileId` / `inputDigest` / `sha256` / `generatedFromCommit` を持たせています。
+
+**`artifactGenerationCommit` を 1 つにしていません。**release 工程が 2 段階なので、
+profile と 感度・頑健性 は別の commit で生成されます。`artifactGenerationCommits[]` が完全な事実です。
+
+**`releaseTag` / `releaseCommit` は既定で `null` です。**索引を作る時点では tag が存在しないためで、
+分からないものを埋めません。`release:stage` は `null` のままの索引を拒みます。
+
+evidence 3 種（validation-results / source-input-manifest / release index）に Draft-07 schema を付け、
+配布物に入れました。`validate:profiles` の対象は 8 → **9 件**です。
+
+`validation-results.json` の各対象へ `distribution`（`RELEASE_ASSET` / `SOURCE_ONLY`）を追加しました。
+**9 対象のうち 2 件は配布しません。**受け手が「全対象を bundle だけで独立再検証できる」と読まないためです。
+
+### 破壊的変更 — 頑健性の窓の端点（`topology-robustness` schemaVersion 1 → 2）
+
+| 旧 | 新 |
+|---|---|
+| `fromMm` | **`startMm`** |
+| `toMm` | **`lastSampleMm`** |
+| （無し） | **`endExclusiveMm`** |
+
+**旧 `toMm` は「最後に当たった標本の位置」で、区間の終端ではありませんでした。**
+profile の `nominalEndMm`（13.52 mm）と 1 刻みずれて見え、**同じ語で 2 つの違う量を指していました。**
+
+項目名を変えるのは破壊的変更なので `schemaVersion` を上げ、`contractMigration` も持たせました。
+据え置いたまま名前を変えると、読む側は `undefined` を受け取り**沈黙して壊れます**
+（v0.1.0 → v0.1.1 の `spreadStatus` で実際に起きた型）。
+
+### 訂正 — 索引が「一つ前の検証結果」を指していた
+
+索引を `validation-results.json` より先に書いていたため、その sha256 と `generatedFromCommit` が
+古いままでした。生成順を入れ替えて直しました。**生成物を数えて気づいたもので、
+「動いた」だけでは出てきませんでした。**
+
 ### 破壊的変更 — Schema v2（非阻害フォローアップ P1-5 / P2-6）
 
 **v1 とは非互換です。**v1 を期待する実装は `schemaVersion` を見て停止してください。

@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/source-input-manifest.v1.schema.json",
+  "title": "trs-jack-3d source input manifest v1",
+  "description": "artifact の入力ファイルを tag source と独立に検算するための一覧。**この manifest 自身は証明ではない。**tag source archive を取って自分で計算すること",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "generatedFromCommit",
+    "purpose",
+    "inputFilesTotal",
+    "inconsistentAcrossArtifacts",
+    "mismatchedWithWorkingTreeAtBuild",
+    "inputFiles",
+    "verificationRecipe",
+    "note"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "generatedBy": {
+      "type": "string"
+    },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "generatedFromCommit": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{40}|UNKNOWN)$"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "inputFilesTotal": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "inconsistentAcrossArtifacts": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "同じパスが artifact 間で違う sha256 で現れた数。**0 でなければどれかが古い入力から作られている**"
+    },
+    "mismatchedWithWorkingTreeAtBuild": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "inputFiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "role",
+          "recordedSha256",
+          "consistentAcrossArtifacts",
+          "actualSha256AtBuild",
+          "matchesWorkingTree",
+          "consumedBy"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "recordedSha256": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "array",
+                "minItems": 2,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            ],
+            "description": "**配列なら artifact 間で食い違っている。**先勝ちで潰さず両方を残す"
+          },
+          "consistentAcrossArtifacts": {
+            "type": "boolean"
+          },
+          "actualSha256AtBuild": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "matchesWorkingTree": {
+            "type": "boolean"
+          },
+          "consumedBy": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "verificationRecipe": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "note": {
+      "type": "string"
+    }
+  }
+}

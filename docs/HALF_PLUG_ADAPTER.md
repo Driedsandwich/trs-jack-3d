@@ -363,6 +363,42 @@ TRS×TRRS  電気的に全機能が揃う  13.52 mm   ← all-expected-functions
 
 `IV028` の `evidenceGrade` は **`ASSUMPTION` のまま**です。頑健性を測っても仮定は事実になりません。
 
+### lock は索引から作れます（次の release から）
+
+`trs-jack-3d-release-index.v1.json` を同梱します。**報告文から手で転記しないでください。**
+
+| 項目 | 意味 |
+|---|---|
+| `releaseTag` / `releaseCommit` | **null なら未 tag。**evidence をコミットしてから tag を打つので、生成時点では知りようがない |
+| `evidenceBuiltAtCommit` | 索引を作った時点の HEAD |
+| `artifactGenerationCommit` | **profile の生成 commit。**`releaseCommit` とは違う |
+| `artifactGenerationCommits` | **生成 commit は 1 つではない。**release 工程が 2 段階なので、profile と感度・頑健性で違う |
+| `profiles[variantId]` | `filename` / `profileId` / `inputDigest` / `sha256` / `generatedFromCommit` / `sensitivityAsset` |
+| `assets[]` | 配布物の一覧と sha256。**索引自身は含みません**（自己参照になるため。索引の sha256 は `SHA256SUMS` にあります） |
+
+> **`generatedFromCommit` と `releaseCommit` の一致を要求しないでください。**
+> artifact をコミットしてから tag を打つ順序なので、artifact は必ず tag より前の commit から作られます。
+
+### 頑健性の窓は端点を 3 つに分けました（`schemaVersion: 2`・**破壊的変更**）
+
+| 旧（v1） | 新（v2） |
+|---|---|
+| `fromMm` | **`startMm`** |
+| `toMm` | **`lastSampleMm`** |
+| （無し） | **`endExclusiveMm`** |
+
+**旧 `toMm` は「最後に当たった標本の位置」で、区間の終端ではありませんでした。**
+profile の `nominalEndMm`（13.52 mm）と 1 刻みずれて見えます。
+
+```
+startMm        13.30   ← profile の nominalStartMm と一致
+lastSampleMm   13.50   ← 観測の最後の点。**区間の終端ではない**
+endExclusiveMm 13.52   ← profile の nominalEndMm と一致
+widthMm         0.22
+```
+
+`windowEndConvention: "EXCLUSIVE"` を持たせてあります。UI で最後の標本と区間境界を混同しないでください。
+
 ### 感度の「有無」は 2 つに分かれます（次の release から）
 
 `sensitivitySummary.available` は **global summary があるかどうかだけ**を表します。

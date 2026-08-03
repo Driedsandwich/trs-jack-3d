@@ -140,7 +140,7 @@ export function listSensitivityInputs(root: string): InputFile[] {
  * 感度 artifact と同じ形。schema と生成器だけが違う。
  */
 export function listRobustnessInputs(root: string): InputFile[] {
-  return listGeneratorInputs(root, 'schemas/topology-robustness.v1.schema.json', 'scripts/searchTopologyRobustness.ts')
+  return listGeneratorInputs(root, 'schemas/topology-robustness.v2.schema.json', 'scripts/searchTopologyRobustness.ts')
 }
 
 /** モデルを振って作る artifact の共通入力。**出力先は絶対に入れない** */

@@ -57,6 +57,65 @@ Error: Expected exactly one all-expected-functions-match interval, found 0
 で停止します。沈黙しません。**報告する前に測って良かったものです。**
 
 ---
+## 0-2. 対応状況（2026-08-03・trs-jack-3d 側）
+
+**項目 1〜4 を実装しました。5 は未着手です。**tag / release 作成は承認待ちです。
+
+| | 項目 | 状態 |
+|---|---|---|
+| 1 | Machine-readable release index | **実装** — `artifacts/trs-jack-3d-release-index.v1.json` + schema。**生成 commit を 1 つに潰さない** |
+| 2 | Evidence asset 専用 Schema | **実装** — validation-results / source-input-manifest / release index の 3 本。`validate:profiles` は 8 → **9 件** |
+| 3 | Validation target の配布区分 | **実装** — 各 target へ `distribution`（`RELEASE_ASSET` / `SOURCE_ONLY`）と件数を追加 |
+| 4 | Robustness window の区間表現 | **実装** — `startMm` / `lastSampleMm` / `endExclusiveMm` / `widthMm` へ分離。schemaVersion 1 → **2**（破壊的変更） |
+| 5 | Tag source 検証 helper | 未着手 |
+
+### 項目 1 — `artifactGenerationCommit` を 1 つにしなかった
+
+オーダーは `artifactGenerationCommit`（単数）を必須項目に挙げていますが、**1 つでは足りません。**
+release 工程が 2 段階なので、profile と 感度・頑健性 は別の commit で生成されます。
+
+そこで 3 つに分けました。
+
+| 項目 | 意味 |
+|---|---|
+| `artifactGenerationCommit` | **profile の**生成 commit。下流の lock が既定で照合する値 |
+| `artifactGenerationCommits[]` | `{ commit, assets[] }` の配列。**これが完全な事実** |
+| `assets[].generatedFromCommit` | asset ごとの生成 commit |
+
+「索引に載る全 asset が `artifactGenerationCommits` のどれかに現れること」を機械で守っています。
+
+### 項目 1 — `releaseTag` / `releaseCommit` は既定で `null`
+
+**索引を作る時点では tag は存在しません。**evidence をコミットしてから tag を打つためです。
+分からないものを埋めると「この索引は tag を指している」という嘘になるので、`null` のままにします。
+
+release 時は `RELEASE_TAG` / `RELEASE_COMMIT` を渡して作り直します。
+**`npm run release:stage` は `null` のままの索引を拒みます**（版が食い違う場合も拒みます）。
+
+### 項目 4 — 版を上げた
+
+項目名を変えるのは破壊的変更です。`schemaVersion` を据え置いたまま名前を変えると、
+読む側は `undefined` を受け取り、**エラーも警告も出ないまま壊れます**。
+v0.1.0 → v0.1.1 の `spreadStatus` で実際に起きた型なので、同じことを別 artifact で繰り返しませんでした。
+
+`contractMigration` も持たせ、**旧項目名が本体に残っていないこと**を機械で確かめています。
+
+なお下流の現行コードは窓の項目を読んでいない（要約項目だけを使っている）ことを、
+配布物のコードで確認したうえで変更しました。
+
+### この回の実装で見つけた自分の欠陥 2 件
+
+1. **索引が「一つ前の `validation-results`」を指していた。**索引を validation-results より先に書いていたため、
+   sha256 と `generatedFromCommit` が古いままだった。生成順を入れ替えて直した。
+2. **知らない値を埋めていた。**`releaseCommit` に HEAD を入れていたが、tag はまだ存在しない。`null` に直した。
+
+どちらも生成物を目視で数えて気づいたもので、**「動いた」だけでは出てこなかった**。
+
+**変異検査**: 意味規則 16 件・テスト 13 件を壊し、狙った検査が鳴ることを確認（等価変異 0 件）。
+rc≠0 だけでは別の検査に助けられている可能性があるため、artifact ごとの節とその検査だけが持つ文言で照合しています。
+
+---
+
 ## 結論
 
 v0.2.0はHalf-Plug Labへ採用可能であり、blocking修正はない。以下は次回maintenanceまたはv0.2.1以降で検討する非阻害改善である。

@@ -222,11 +222,15 @@ describe('profile と食い違わない', () => {
       (x) => x.electricalTopology.topologyClass === rob.targetTopologyClass,
       `profile の ${rob.targetTopologyClass} 区間`,
     )
-    const w = mustBeNonEmpty(rob.nominalConfiguration.windows as { fromMm: number; toMm: number }[], '無改造の区間')
+    const w = mustBeNonEmpty(
+      rob.nominalConfiguration.windows as { startMm: number; lastSampleMm: number; endExclusiveMm: number }[],
+      '無改造の区間',
+    )
     expect(rob.nominalConfiguration.targetPresent).toBe(true)
-    expect(w[0].fromMm).toBeCloseTo(iv.nominalStartMm, 4)
-    // 走査は最後に当たった標本を持つので、区間の終わりは 1 刻み先
-    expect(+(w[0].toMm + rob.stepMm).toFixed(4)).toBeCloseTo(iv.nominalEndMm, 4)
+    // **v2 で端点を分けたので、そのまま突き合わせられる**（v1 では 1 刻みずれて見えた）
+    expect(w[0].startMm).toBeCloseTo(iv.nominalStartMm, 4)
+    expect(w[0].endExclusiveMm).toBeCloseTo(iv.nominalEndMm, 4)
+    expect(w[0].lastSampleMm).toBeCloseTo(iv.nominalEndMm - rob.stepMm, 4)
   })
 
   it('区間の evidenceGrade は上がっていない', () => {

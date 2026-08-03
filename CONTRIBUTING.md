@@ -65,8 +65,8 @@
 5. `npm run test` — **ここで連動漏れが落ちます**
 6. `npm run test:count` — テスト件数の artifact を更新する
 7. **`npm run check:vacuity`** — 空振りしているテストが無いかを機械が判定します（→ §7）
-8. **`npm run validate:profiles`** — 成果物 8 件を schema と意味規則で検証します
-   （2026-08-03 に感度 artifact 2 件と頑健性 artifact 1 件を追加。それまで schema が無く、受け手が独自に構造検査を書いていました）
+8. **`npm run validate:profiles`** — 成果物 9 件を schema と意味規則で検証します
+   （2026-08-03 に感度 2 件・頑健性 1 件・入力一覧 1 件を追加。それまで schema が無く、受け手が独自に構造検査を書いていました）
 9. `npm run docs:html` — HTML を作り直す
 
 > **release を作るときは、さらに 2 つ回します。**

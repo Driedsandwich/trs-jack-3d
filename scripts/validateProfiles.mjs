@@ -88,8 +88,16 @@ const TARGETS = [
   // 目標トポロジーの頑健性 (非阻害フォローアップ P1-4)
   {
     artifact: 'artifacts/topology-robustness.trs_jack_trrs.json',
-    schema: 'schemas/topology-robustness.v1.schema.json',
+    schema: 'schemas/topology-robustness.v2.schema.json',
     semantic: 'robustness',
+  },
+  // release evidence (v0.2.0 フォローアップ §2)。
+  // **validation-results と release index はここに入れない。**自分自身を記述できず、
+  // 1 回の実行で収束しないため。あちらは buildReleaseEvidence が書いた直後に schema で見る
+  {
+    artifact: 'artifacts/source-input-manifest.json',
+    schema: 'schemas/source-input-manifest.v1.schema.json',
+    semantic: 'sourceInputManifest',
   },
 ]
 
@@ -496,6 +504,36 @@ const SEMANTIC = {
   },
 
   /**
+   * 入力ファイル一覧（v0.2.0 フォローアップ §2）。
+   *
+   * **この artifact は「受け手が独立検算するための材料」である。**
+   * 件数が中身と食い違っていると、受け手は 0 件を「問題なし」と読んでしまう。
+   */
+  sourceInputManifest(a, errs) {
+    const files = a.inputFiles ?? []
+    if (a.inputFilesTotal !== files.length)
+      errs.push(`inputFilesTotal ${a.inputFilesTotal} が inputFiles の実数 ${files.length} と違う`)
+    const inconsistent = files.filter((x) => !x.consistentAcrossArtifacts).length
+    if (a.inconsistentAcrossArtifacts !== inconsistent)
+      errs.push(`inconsistentAcrossArtifacts ${a.inconsistentAcrossArtifacts} が実数 ${inconsistent} と違う`)
+    const mismatched = files.filter((x) => !x.matchesWorkingTree).length
+    if (a.mismatchedWithWorkingTreeAtBuild !== mismatched)
+      errs.push(`mismatchedWithWorkingTreeAtBuild ${a.mismatchedWithWorkingTreeAtBuild} が実数 ${mismatched} と違う`)
+    for (const x of files) {
+      if (Array.isArray(x.recordedSha256) !== !x.consistentAcrossArtifacts)
+        errs.push(`${x.path}: consistentAcrossArtifacts と recordedSha256 の形が食い違う`)
+      // **記録した sha256 が実ファイルと一致するか。**ここが嘘なら受け手の検算は無意味
+      const abs = resolve(ROOT, x.path)
+      if (!existsSync(abs) || Array.isArray(x.recordedSha256)) continue
+      const actual = sha256File(abs)
+      if (x.matchesWorkingTree && actual !== x.recordedSha256)
+        errs.push(`${x.path}: matchesWorkingTree が true なのに実ファイルの sha256 と違う`)
+      if (x.actualSha256AtBuild !== null && x.actualSha256AtBuild !== actual)
+        errs.push(`${x.path}: actualSha256AtBuild が現在の実ファイルと違う`)
+    }
+  },
+
+  /**
    * 目標トポロジーの頑健性（非阻害フォローアップ P1-4）。
    *
    * この artifact は「どの仮定を動かしても目標が残るか」を主張する。
@@ -610,6 +648,59 @@ const SEMANTIC = {
         : null
       if (prof && prof.modelLimitations?.verifiedPhysical === false)
         errs.push('empiricalEvidence が入っているのに profile の verifiedPhysical が false のまま')
+    }
+
+    /**
+     * --- 窓の端点（v0.2.0 フォローアップ §4）---
+     *
+     * v1 では `toMm` が最後に当たった標本位置なのに「終わり」と読める名前だった。
+     * profile の区間終端と 1 刻み分ずれて見え、**同じ語で 2 つの違う量を指していた。**
+     */
+    if (a.windowEndConvention !== 'EXCLUSIVE') errs.push(`windowEndConvention が ${a.windowEndConvention}`)
+    const allWindows = [
+      ...(a.nominalConfiguration?.windows ?? []).map((w) => ['nominalConfiguration', w]),
+      ...(a.counterExamples ?? []).flatMap((c) => (c.windows ?? []).map((w) => [c.label ?? c.kind, w])),
+    ]
+    for (const [where, w] of allWindows) {
+      if (w.lastSampleMm < w.startMm) errs.push(`${where}: lastSampleMm ${w.lastSampleMm} が startMm ${w.startMm} より小さい`)
+      const wantEnd = +(w.lastSampleMm + a.stepMm).toFixed(4)
+      if (Math.abs(w.endExclusiveMm - wantEnd) > 1e-6)
+        errs.push(`${where}: endExclusiveMm ${w.endExclusiveMm} が lastSampleMm + stepMm (${wantEnd}) と合わない`)
+      const wantWidth = +(w.endExclusiveMm - w.startMm).toFixed(4)
+      if (Math.abs(w.widthMm - wantWidth) > 1e-6)
+        errs.push(`${where}: widthMm ${w.widthMm} が endExclusiveMm − startMm (${wantWidth}) と合わない`)
+    }
+
+    /**
+     * **無改造の窓は profile の区間そのものでなければならない。**
+     * ここがずれていたら、頑健性 artifact は別のモデルの話をしている。
+     * v1 では `toMm` と `nominalEndMm` が 1 刻みずれていて、突き合わせようがなかった。
+     */
+    const rprof = existsSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json'))
+      ? read('artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json')
+      : null
+    const nomW = a.nominalConfiguration?.windows?.[0]
+    if (rprof && nomW) {
+      const iv = (rprof.intervals ?? []).find((x) => x.electricalTopology?.topologyClass === a.targetTopologyClass)
+      if (!iv) errs.push(`profile に ${a.targetTopologyClass} の区間が無いのに無改造の窓がある`)
+      else {
+        if (Math.abs(nomW.startMm - iv.nominalStartMm) > 1e-6)
+          errs.push(`無改造の startMm ${nomW.startMm} が profile の ${iv.intervalId} の開始 ${iv.nominalStartMm} と違う`)
+        if (Math.abs(nomW.endExclusiveMm - iv.nominalEndMm) > 1e-6)
+          errs.push(`無改造の endExclusiveMm ${nomW.endExclusiveMm} が profile の ${iv.intervalId} の終端 ${iv.nominalEndMm} と違う`)
+      }
+    }
+
+    // --- 移行表（項目名を変えたのに宣言していない、を防ぐ）---
+    const rcm = a.contractMigration ?? {}
+    if (rcm.toSchemaVersion !== a.schemaVersion)
+      errs.push(`contractMigration.toSchemaVersion (${rcm.toSchemaVersion}) が schemaVersion (${a.schemaVersion}) と違う`)
+    const rbody = JSON.stringify({ n: a.nominalConfiguration, c: a.counterExamples })
+    for (const r of rcm.renamedFields ?? []) {
+      if (rbody.includes(`"${r.from}":`))
+        errs.push(`contractMigration が ${r.from} → ${r.to} と宣言しているのに、旧項目 "${r.from}" が本体に残っている`)
+      if (!rbody.includes(`"${r.to}":`))
+        errs.push(`contractMigration が ${r.to} へ改名したと宣言しているのに、本体に "${r.to}" が無い`)
     }
 
     // --- provenance。**自分自身を入力にしていないこと** ---

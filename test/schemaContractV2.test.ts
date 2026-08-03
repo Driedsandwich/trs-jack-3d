@@ -187,7 +187,7 @@ describe('P2-7 release evidence が自己完結している', () => {
   it('**v0.1.1 で入れ忘れた schema が入っている**', () => {
     // 入れ忘れの再発をここで止める。受け手は感度 artifact を検証できなかった
     expect(paths).toContain('schemas/event-sensitivity.v1.schema.json')
-    expect(paths).toContain('schemas/topology-robustness.v1.schema.json')
+    expect(paths).toContain('schemas/topology-robustness.v2.schema.json')
     expect(paths).toContain('schemas/half-plug-topology-profile.v2.schema.json')
   })
 

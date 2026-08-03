@@ -74,6 +74,23 @@ if (localOnes.length && !ALLOW_LOCAL) {
   process.exit(1)
 }
 
+// --- 索引が tag を知っているか ------------------------------------------------
+// **知らないまま配ると、受け手は「どの tag の配布物か」を索引から引けない。**
+const idxPath = resolve(ROOT, 'artifacts/trs-jack-3d-release-index.v1.json')
+if (existsSync(idxPath)) {
+  const idx = read(idxPath)
+  if (!idx.releaseTag || !idx.releaseCommit) {
+    console.log('**release index が tag を知らない。**（releaseTag / releaseCommit が null）')
+    console.log('  RELEASE_TAG と RELEASE_COMMIT を渡して npm run release:evidence を回し直すこと。')
+    console.log('  例: RELEASE_TAG=v0.2.1 RELEASE_COMMIT=$(git rev-parse HEAD) npm run release:evidence')
+    process.exit(1)
+  }
+  if (idx.releaseTag !== VERSION) {
+    console.log(`**release index の tag (${idx.releaseTag}) が --version (${VERSION}) と違う。**`)
+    process.exit(1)
+  }
+}
+
 // --- 集める -----------------------------------------------------------------
 mkdirSync(OUT, { recursive: true })
 const rows = []

@@ -74,7 +74,7 @@
   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。旧語彙のまま読むと、値で絞り込む箇所が「そのデータが 1 件も無い」と区別できず、沈黙して壊れる。",
   "versionSelectionEvidence": "下流 release-verifier.mjs は schemaVersion を見て拒否するが contractRevision はどこも読まない。2026-08-03 に両方を実際に import させて確かめた (A: 停止 / B: PASS)。"
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:9f0e60abac2a",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:7fe66ff3f6c4",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -113,21 +113,21 @@
    ]
   }
  },
- "sourceRevision": "0a0e124b03994feb8913cf92854701aea39392e6",
+ "sourceRevision": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
  "generatedAt": "2026-08-03",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "0a0e124b03994feb8913cf92854701aea39392e6",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "9f0e60abac2a921cc798af514a95e4619f4be4b2eb2bc86e2791c198c23d872f",
+  "inputDigest": "7fe66ff3f6c43d737f704688c26ad9f2fbdc1168330feb2315ae165d1e409a7c",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "6f57944e02959fb5b4505080c59f19605d6ca506221082b77d53b6cae0b59577",
+    "sha256": "b653bbe2a55bb610b4402830dcf0f2fb2e8d92f7da01b715a0eb9eecce4fd98c",
     "role": "sensitivity-input"
    },
    {
@@ -147,7 +147,7 @@
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "204132bf64251a3ff74d6ae298a8718b13384547d6c084130ef88c2716c22033",
+    "sha256": "29a7ef04b84f0446f7148b2d06c69f865a7a8c0c465b8cbcc84edf4cc9f75ed9",
     "role": "generator"
    },
    {
@@ -236,7 +236,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\" --release",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
   "artifactDate": "2026-08-03"
  },
  "fullInsertionDepthMm": 14,
@@ -5453,8 +5453,8 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "756943fb5711adea2f58cfe754c4a7fc8cc3fe57",
-   "inputDigest": "35ff83e2dbd8c7b7fe112e2d7f53698c39ef4d8eee3e05d5ad0b968d17de3e62",
+   "generatedFromCommit": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
+   "inputDigest": "3700639db8a6728fe5c5983f03c76559674eb7c4172764d8a53084ae98f75fa3",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
   },

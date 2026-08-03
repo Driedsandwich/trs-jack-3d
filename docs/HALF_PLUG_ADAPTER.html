@@ -212,6 +212,18 @@ physicalClaimStatus      未実測なら "unverified"</code></pre>
 <div class="note"><p><strong>58.7% は実物で起きる確率ではありません。</strong>この構成空間の中での割合であり、</p><p>走査範囲の取り方は任意です（<code>searchRangeBasis</code> に根拠と任意性を書いてあります）。</p><p><code>physicalProbabilityClaim: false</code> を artifact 自身が持っています。</p></div>
 <p>「消える単独水準が 0 件」を「どの仮定も効かない」と読まないでください。 効いている軸は <code>presenceByLevel</code> に出ます（Tip を +2mm ずらすと 71% → <strong>24%</strong>）。</p>
 <p><code>IV028</code> の <code>evidenceGrade</code> は <strong><code>ASSUMPTION</code> のまま</strong>です。頑健性を測っても仮定は事実になりません。</p>
+<h3>lock は索引から作れます（次の release から）</h3>
+<p><code>trs-jack-3d-release-index.v1.json</code> を同梱します。<strong>報告文から手で転記しないでください。</strong></p>
+<div class="tw"><table><thead><tr><th>項目</th><th>意味</th></tr></thead><tbody><tr><td><code>releaseTag</code> / <code>releaseCommit</code></td><td><strong>null なら未 tag。</strong>evidence をコミットしてから tag を打つので、生成時点では知りようがない</td></tr><tr><td><code>evidenceBuiltAtCommit</code></td><td>索引を作った時点の HEAD</td></tr><tr><td><code>artifactGenerationCommit</code></td><td><strong>profile の生成 commit。</strong><code>releaseCommit</code> とは違う</td></tr><tr><td><code>artifactGenerationCommits</code></td><td><strong>生成 commit は 1 つではない。</strong>release 工程が 2 段階なので、profile と感度・頑健性で違う</td></tr><tr><td><code>profiles[variantId]</code></td><td><code>filename</code> / <code>profileId</code> / <code>inputDigest</code> / <code>sha256</code> / <code>generatedFromCommit</code> / <code>sensitivityAsset</code></td></tr><tr><td><code>assets[]</code></td><td>配布物の一覧と sha256。<strong>索引自身は含みません</strong>（自己参照になるため。索引の sha256 は <code>SHA256SUMS</code> にあります）</td></tr></tbody></table></div>
+<div class="note"><p><strong><code>generatedFromCommit</code> と <code>releaseCommit</code> の一致を要求しないでください。</strong></p><p>artifact をコミットしてから tag を打つ順序なので、artifact は必ず tag より前の commit から作られます。</p></div>
+<h3>頑健性の窓は端点を 3 つに分けました（<code>schemaVersion: 2</code>・<strong>破壊的変更</strong>）</h3>
+<div class="tw"><table><thead><tr><th>旧（v1）</th><th>新（v2）</th></tr></thead><tbody><tr><td><code>fromMm</code></td><td><strong><code>startMm</code></strong></td></tr><tr><td><code>toMm</code></td><td><strong><code>lastSampleMm</code></strong></td></tr><tr><td>（無し）</td><td><strong><code>endExclusiveMm</code></strong></td></tr></tbody></table></div>
+<p><strong>旧 <code>toMm</code> は「最後に当たった標本の位置」で、区間の終端ではありませんでした。</strong> profile の <code>nominalEndMm</code>（13.52 mm）と 1 刻みずれて見えます。</p>
+<pre><code>startMm        13.30   ← profile の nominalStartMm と一致
+lastSampleMm   13.50   ← 観測の最後の点。**区間の終端ではない**
+endExclusiveMm 13.52   ← profile の nominalEndMm と一致
+widthMm         0.22</code></pre>
+<p><code>windowEndConvention: "EXCLUSIVE"</code> を持たせてあります。UI で最後の標本と区間境界を混同しないでください。</p>
 <h3>感度の「有無」は 2 つに分かれます（次の release から）</h3>
 <p><code>sensitivitySummary.available</code> は <strong>global summary があるかどうかだけ</strong>を表します。 <strong>これが <code>false</code> でも event 単位の幅は存在しえます。</strong></p>
 <div class="tw"><table><thead><tr><th>項目</th><th>意味</th></tr></thead><tbody><tr><td><code>globalSummaryAvailable</code></td><td>variant 固有の総合解析（プラトー間隔・Tip 橋絡しきい値・挿抜力）があるか。3極のみ <code>true</code></td></tr><tr><td><code>eventSpreadAvailable</code></td><td>event 単位の model-sweep 幅があるか</td></tr><tr><td><code>available</code></td><td><code>globalSummaryAvailable</code> の別名（後方互換のために残しています）</td></tr></tbody></table></div>

@@ -181,23 +181,52 @@ function topologySequence(m: TrsModel): string {
     .join(',')
 }
 
-/** 目標クラスが現れる区間。複数あれば全部返す */
-function targetWindows(m: TrsModel): { fromMm: number; toMm: number; widthMm: number }[] {
+interface Window {
+  startMm: number
+  lastSampleMm: number
+  endExclusiveMm: number
+  widthMm: number
+}
+
+/**
+ * 目標クラスが現れる区間。複数あれば全部返す。
+ *
+ * ## 端点の意味を分けた（v0.2.0 フォローアップ §4）
+ *
+ * v1 では `fromMm` / `toMm` / `widthMm` の 3 項目だった。
+ * `toMm` は**最後に当たった標本の位置**で、`widthMm` はその次の刻みまで含む幅だったため、
+ * profile の区間終端（13.52mm）と `toMm`（13.50mm）が食い違って見えた。
+ * **同じ「終わり」という語で 2 つの違う量を指していた。**
+ *
+ * v2 では 3 つを別々に持つ。
+ *
+ *   startMm        区間の始まり（profile の nominalStartMm と一致する）
+ *   lastSampleMm   目標クラスが観測された最後の標本位置
+ *   endExclusiveMm lastSampleMm + stepMm。**profile の nominalEndMm と一致する**
+ *   widthMm        endExclusiveMm − startMm
+ */
+function targetWindows(m: TrsModel): Window[] {
   const rows = sweep(m, { stepMm: STEP_MM }).filter((r) => r.depthMm >= 0)
-  const out: { fromMm: number; toMm: number; widthMm: number }[] = []
-  let cur: { fromMm: number; toMm: number } | null = null
+  const out: Window[] = []
+  let cur: { startMm: number; lastSampleMm: number } | null = null
+  const close = (c: { startMm: number; lastSampleMm: number }): Window => {
+    const startMm = +c.startMm.toFixed(2)
+    const lastSampleMm = +c.lastSampleMm.toFixed(2)
+    const endExclusiveMm = +(lastSampleMm + STEP_MM).toFixed(4)
+    return { startMm, lastSampleMm, endExclusiveMm, widthMm: +(endExclusiveMm - startMm).toFixed(4) }
+  }
   for (const r of rows) {
     const cls = classifyFromEvaluation(m.jack.terminals, m.plug.netFunctions, m.evaluate(r.depthMm, DEFAULT_FAULTS)).topologyClass
     if (cls === TARGET_CLASS) {
-      if (cur) cur.toMm = r.depthMm
-      else cur = { fromMm: r.depthMm, toMm: r.depthMm }
+      if (cur) cur.lastSampleMm = r.depthMm
+      else cur = { startMm: r.depthMm, lastSampleMm: r.depthMm }
     } else if (cur) {
-      out.push({ ...cur, widthMm: +(cur.toMm - cur.fromMm + STEP_MM).toFixed(4) })
+      out.push(close(cur))
       cur = null
     }
   }
-  if (cur) out.push({ ...cur, widthMm: +(cur.toMm - cur.fromMm + STEP_MM).toFixed(4) })
-  return out.map((w) => ({ fromMm: +w.fromMm.toFixed(2), toMm: +w.toMm.toFixed(2), widthMm: w.widthMm }))
+  if (cur) out.push(close(cur))
+  return out
 }
 
 const fullInsertionOk = (m: TrsModel) => m.evaluate(m.fullDepthMm, DEFAULT_FAULTS).acoustic.code === 'NORMAL'
@@ -251,7 +280,7 @@ interface Row {
   overrides: Record<string, number>
   levels: Record<string, number>
   usable: boolean
-  windows: { fromMm: number; toMm: number; widthMm: number }[]
+  windows: Window[]
 }
 
 function* grid(): Generator<Record<string, number>> {
@@ -422,9 +451,47 @@ const provenance = buildProvenance({
   envRevision: process.env.SOURCE_REVISION,
 })
 
+/**
+ * **v1 → v2 の移行表。**profile と同じ方針で、旧語彙を読む消費側が沈黙しないようにする。
+ *
+ * 項目名を変えるのは破壊的変更である。`schemaVersion` を据え置いたまま名前を変えると、
+ * 値を読む側は `undefined` を受け取り、**エラーも警告も出ないまま壊れる。**
+ * v0.1.0 → v0.1.1 の `spreadStatus` で実際に起きた。同じことを別 artifact で繰り返さない。
+ */
+const CONTRACT_MIGRATION = {
+  fromSchemaVersion: 1,
+  toSchemaVersion: 2,
+  breaking: true,
+  renamedFields: [
+    {
+      field: 'nominalConfiguration.windows[].fromMm / counterExamples[].windows[].fromMm',
+      from: 'fromMm',
+      to: 'startMm',
+      reason: '始まりは profile の nominalStartMm と一致する。名前を揃えた',
+    },
+    {
+      field: 'windows[].toMm',
+      from: 'toMm',
+      to: 'lastSampleMm',
+      reason: '**「終わり」という語で 2 つの違う量を指していた。**旧 toMm は最後に当たった標本位置であって区間の終端ではない',
+    },
+  ],
+  addedFields: [
+    { field: 'windows[].endExclusiveMm', reason: 'profile の nominalEndMm と一致する本当の終端。旧 toMm + stepMm' },
+    { field: 'windowEndConvention', reason: '端点の規約を機械可読にする' },
+    { field: 'contractMigration', reason: 'この表そのもの' },
+  ],
+  consumerAction:
+    '**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。'
+    + '区間の終端が要るなら endExclusiveMm を、観測の最後の点が要るなら lastSampleMm を使う。',
+} as const
+
 const out = {
-  schemaVersion: 1 as const,
+  schemaVersion: 2 as const,
   generatedBy: 'npm run search:robustness',
+  contractMigration: CONTRACT_MIGRATION,
+  /** 端点の規約。`endExclusiveMm` は含まない側の端で、profile の `nominalEndMm` と一致する */
+  windowEndConvention: 'EXCLUSIVE' as const,
   variantId: VARIANT,
   targetTopologyClass: TARGET_CLASS,
   basis: 'MODEL_PARAMETER_SWEEP',
@@ -492,7 +559,7 @@ console.log(`\n  ${VARIANT} — ${TARGET_CLASS}`)
 console.log(`  走査 ${total} 構成 / 成立 ${usable.length} (組めず ${buildFailed} / 完全挿入不成立 ${notFullOk})`)
 console.log(`  目標が現れた構成: ${withTarget.length} (${(out.presenceFractionWithinConstructedSweep * 100).toFixed(1)}% ※実物の確率ではない)`)
 console.log(`  区間幅: 最小 ${out.intervalWidthMm.min} / 中央 ${out.intervalWidthMm.median} / 最大 ${out.intervalWidthMm.max} mm`)
-console.log(`  無改造の構成: ${nominalWindows.length ? `${nominalWindows[0].fromMm}〜${nominalWindows[0].toMm} mm` : '目標なし'}`)
+console.log(`  無改造の構成: ${nominalWindows.length ? `${nominalWindows[0].startMm}〜${nominalWindows[0].endExclusiveMm} mm (最後の標本 ${nominalWindows[0].lastSampleMm})` : '目標なし'}`)
 console.log(`  目標が消える単独水準: ${necessaryConditions.length} 件`)
 for (const c of necessaryConditions) console.log(`    ${c.statement}`)
 console.log('  水準ごとの出現率:')

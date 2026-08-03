@@ -26,7 +26,10 @@ export const RELEASE_ASSETS = [
   // --- 受け手が検証するための schema ---
   { path: 'schemas/half-plug-topology-profile.v2.schema.json', role: 'schema' },
   { path: 'schemas/event-sensitivity.v1.schema.json', role: 'schema' },
-  { path: 'schemas/topology-robustness.v1.schema.json', role: 'schema' },
+  { path: 'schemas/topology-robustness.v2.schema.json', role: 'schema' },
+  { path: 'schemas/trs-jack-3d-release-index.v1.schema.json', role: 'schema' },
+  { path: 'schemas/validation-results.v1.schema.json', role: 'schema' },
+  { path: 'schemas/source-input-manifest.v1.schema.json', role: 'schema' },
   { path: 'schemas/topology-search.v1.schema.json', role: 'schema' },
   { path: 'schemas/real-jack-comparison.v1.schema.json', role: 'schema' },
   { path: 'schemas/test-counts.v1.schema.json', role: 'schema' },
@@ -35,12 +38,26 @@ export const RELEASE_ASSETS = [
   { path: 'artifacts/test_counts.json', role: 'evidence' },
   { path: 'artifacts/validation-results.json', role: 'evidence' },
   { path: 'artifacts/source-input-manifest.json', role: 'evidence' },
+  // **索引。**下流が報告文から値を手で転記しなくて済むようにする（v0.2.0 では手入力だった）
+  { path: 'artifacts/trs-jack-3d-release-index.v1.json', role: 'index' },
 ]
 
 /**
  * v0.1.1 の release に入っていたが v0.2.0 では入れないもの。
  * **消えた理由を書く。**黙って消えると「落とした」のか「意図」なのか分からない。
  */
+/**
+ * **配布しない検証対象。**`validate:profiles` は 9 件を見るが、そのうち 2 件は bundle に入らない。
+ *
+ * 受け手が「9 件すべてを bundle だけで独立再検証できる」と読まないよう、
+ * `validation-results.json` の各 target へ `distribution` を持たせている（v0.2.0 フォローアップ §3）。
+ * ここに並ぶのは runtime 入力ではない成果物で、配布しても受け手の役に立たない。
+ */
+export const SOURCE_ONLY_TARGETS = [
+  { path: 'artifacts/topology_search_difference_signal.json', reason: '目標トポロジーの探索記録。runtime 入力ではない' },
+  { path: 'artifacts/real_jack_comparison.json', reason: '実在部品図面との突き合わせ記録。runtime 入力ではない' },
+]
+
 export const REMOVED_SINCE_V011 = [
   {
     path: 'half-plug-topology-profile.v1.schema.json',

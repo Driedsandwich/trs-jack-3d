@@ -1,18 +1,53 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
  "generatedBy": "npm run search:robustness",
+ "contractMigration": {
+  "fromSchemaVersion": 1,
+  "toSchemaVersion": 2,
+  "breaking": true,
+  "renamedFields": [
+   {
+    "field": "nominalConfiguration.windows[].fromMm / counterExamples[].windows[].fromMm",
+    "from": "fromMm",
+    "to": "startMm",
+    "reason": "始まりは profile の nominalStartMm と一致する。名前を揃えた"
+   },
+   {
+    "field": "windows[].toMm",
+    "from": "toMm",
+    "to": "lastSampleMm",
+    "reason": "**「終わり」という語で 2 つの違う量を指していた。**旧 toMm は最後に当たった標本位置であって区間の終端ではない"
+   }
+  ],
+  "addedFields": [
+   {
+    "field": "windows[].endExclusiveMm",
+    "reason": "profile の nominalEndMm と一致する本当の終端。旧 toMm + stepMm"
+   },
+   {
+    "field": "windowEndConvention",
+    "reason": "端点の規約を機械可読にする"
+   },
+   {
+    "field": "contractMigration",
+    "reason": "この表そのもの"
+   }
+  ],
+  "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。区間の終端が要るなら endExclusiveMm を、観測の最後の点が要るなら lastSampleMm を使う。"
+ },
+ "windowEndConvention": "EXCLUSIVE",
  "variantId": "TRS|JACK-TRRS",
  "targetTopologyClass": "ground-open-differential",
  "basis": "MODEL_PARAMETER_SWEEP",
- "generatedFromCommit": "756943fb5711adea2f58cfe754c4a7fc8cc3fe57",
+ "generatedFromCommit": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "756943fb5711adea2f58cfe754c4a7fc8cc3fe57",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "8ebeed7386c2e96f17f2d72379b259ebd0ce9f0d",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "9e4b238d6f9fed87f3b27b97a8bb8b72c84069e6cecffa7c80ed05a51d5d7de6",
+  "inputDigest": "b4f9bc250168cddbd673eac47047fff81d02fe5bd73b13549f94c6719200acb8",
   "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 4 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
   "inputSettings": {
    "variantId": "TRS|JACK-TRRS",
@@ -27,18 +62,18 @@
     "role": "lockfile"
    },
    {
-    "path": "schemas/topology-robustness.v1.schema.json",
-    "sha256": "853a19f3234f2bf91d9c4519f5439c8cf5888391b1125d87b7ea97300e1bd776",
+    "path": "schemas/topology-robustness.v2.schema.json",
+    "sha256": "9c2e3ce931f8571124ea15685ff76bc4ab53870be77d5b508c4399c713eb54da",
     "role": "schema"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "204132bf64251a3ff74d6ae298a8718b13384547d6c084130ef88c2716c22033",
+    "sha256": "29a7ef04b84f0446f7148b2d06c69f865a7a8c0c465b8cbcc84edf4cc9f75ed9",
     "role": "generator"
    },
    {
     "path": "scripts/searchTopologyRobustness.ts",
-    "sha256": "4901a5956852e1ecc3147603f3cd50d2b0402915b4ae9091d7ba21a964a3485b",
+    "sha256": "e8cb5417bca813f223374e571c296f6d3d7d1c17e2851a66e8abca3c5f62923b",
     "role": "generator"
    },
    {
@@ -127,7 +162,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run search:robustness -- --release",
+  "command": "npm run search:robustness",
   "artifactDate": "2026-08-03"
  },
  "generatedAt": "2026-08-03",
@@ -494,8 +529,9 @@
   "targetPresent": true,
   "windows": [
    {
-    "fromMm": 13.3,
-    "toMm": 13.5,
+    "startMm": 13.3,
+    "lastSampleMm": 13.5,
+    "endExclusiveMm": 13.52,
     "widthMm": 0.22
    }
   ],
