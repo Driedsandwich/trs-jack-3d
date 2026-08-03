@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/source-verification-result.v1.schema.json",
+  "title": "trs-jack-3d source verification result v1",
+  "description": "**こちらで verify:release-source-inputs を回した記録。自己申告である。**受け手の独立検証を置き換えない。判定の境界（取れなかった／合わなかった／検証していない）を受け手が読み取れるようにするためのもの",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "schemaId",
+    "isSelfReport",
+    "replacesRecipientVerification",
+    "note",
+    "tool",
+    "sourceOrigin",
+    "generatedFromCommit",
+    "releaseCommit",
+    "generatedAt",
+    "status",
+    "exitCode",
+    "unrecordedInputDetection",
+    "counts",
+    "howToVerifyYourself"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "schemaId": { "const": "trs-jack-3d-source-verification-result.v1" },
+
+    "isSelfReport": {
+      "const": true,
+      "description": "**必ず true。**この artifact が独立検証を名乗れる状況は存在しない——作った側が作った側を検証した記録だから"
+    },
+    "replacesRecipientVerification": {
+      "const": false,
+      "description": "**必ず false。**受け手が自分で回すこと。同梱の verifyReleaseSourceInputs.mjs でできる"
+    },
+    "note": { "type": "string", "minLength": 1 },
+
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["script", "toolVersion", "sha256"],
+      "properties": {
+        "script": { "type": "string" },
+        "toolVersion": { "type": "integer", "minimum": 1 },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "**同梱の script と同じものか受け手が確かめられるように。**違っていたら、この記録は今の道具の出力ではない"
+        }
+      }
+    },
+
+    "sourceOrigin": {
+      "type": "string",
+      "description": "何と突き合わせたか。`working-tree` は生成時の作業ツリー。**tag の source ではない**"
+    },
+    "generatedFromCommit": { "type": "string", "pattern": "^([0-9a-f]{40}|UNKNOWN)$" },
+    "releaseCommit": {
+      "type": ["string", "null"],
+      "description": "**null が正しい。**artifact は自分を含む commit の hash を持てない。受け手が tag に対して回せば、その値で検証できる"
+    },
+    "generatedAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+
+    "status": {
+      "type": "string",
+      "enum": ["OK", "MISMATCH", "SOURCE_UNAVAILABLE", "MANIFEST_UNAVAILABLE", "NOTHING_TO_VERIFY"],
+      "description": "**取れなかった (SOURCE_UNAVAILABLE) と合わなかった (MISMATCH) を潰していない。**0 件を OK にしないため NOTHING_TO_VERIFY も別にしてある"
+    },
+    "exitCode": { "type": "integer", "enum": [0, 1, 2] },
+
+    "unrecordedInputDetection": {
+      "type": "object",
+      "required": ["performed"],
+      "properties": {
+        "performed": {
+          "type": "boolean",
+          "description": "**記録漏れの探索を実行したか。**false なら「候補 0 件」ではなく「探していない」"
+        },
+        "scopeSource": { "type": ["string", "null"] }
+      }
+    },
+
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checked", "matched", "mismatched", "missingInSource", "unrecordedInputCandidates", "selfReferencingInputs"],
+      "properties": {
+        "checked": { "type": "integer", "minimum": 0 },
+        "matched": { "type": "integer", "minimum": 0 },
+        "mismatched": { "type": "integer", "minimum": 0 },
+        "missingInSource": { "type": "integer", "minimum": 0 },
+        "unrecordedInputCandidates": { "type": "integer", "minimum": 0 },
+        "selfReferencingInputs": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "howToVerifyYourself": {
+      "type": "array",
+      "minItems": 1,
+      "description": "**受け手が同じことを自分でやるための手順。**これが無いと、この artifact はただの自慢になる",
+      "items": { "type": "string" }
+    }
+  }
+}

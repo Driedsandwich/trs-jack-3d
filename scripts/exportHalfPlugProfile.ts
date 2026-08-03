@@ -576,6 +576,12 @@ const CONTRACT_MIGRATION = {
     { field: 'sensitivitySummary.eventSpreadAvailable', introducedIn: 'v0.1.2 (追加のみ)' },
     { field: 'sensitivitySummary.globalSummaryAvailable', introducedIn: 'v0.1.2 (追加のみ)' },
     { field: 'sensitivitySummary.basis', introducedIn: 'v0.1.2 (追加のみ)' },
+    /**
+     * 値の**追加**であって改名ではない。旧語彙が消えたわけではないので、
+     * role で絞り込む実装が沈黙して壊れることはない。
+     * ただし v0.3.0 の schema を pin して新しい artifact を検証すると enum で落ちる（**明示的に落ちる**）。
+     */
+    { field: 'provenance.inputFiles[].role に "input-scope" を追加', introducedIn: 'v0.3.0 フォローアップ P1-2 (追加のみ)' },
   ],
   consumerAction:
     '**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。'

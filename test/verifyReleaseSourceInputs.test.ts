@@ -128,8 +128,19 @@ describe('§5-2 v0.2.0 tag の source と一致する', () => {
     expect(String(r.json.origin)).toMatch(/^git-archive:/)
   })
 
-  it('記録漏れの入力候補が 0 件', () => {
-    expect(r.json.unrecordedInputCandidates).toEqual([])
+  /**
+   * **`--scope` を渡さないと、この検査は空振りする**（v0.3.0 フォローアップ P1-2）。
+   *
+   * v0.2.0 の source には範囲定義が入っていないので、範囲を外から渡さないかぎり
+   * 記録漏れの検出は**実行されない**。実行していないのに「候補 0 件」を合格の根拠にすると、
+   * それは 0 件を見て安心する典型的な空振りになる。
+   * だから `performed` を先に見て、そのうえで 0 件を見る。
+   */
+  it('記録漏れの入力候補が 0 件（**検出を実行したうえで** 0 件）', () => {
+    const out = run(['--manifest', tagManifest(), '--tag', 'v0.2.0', '--scope', 'source-input-scope.v1.json'])
+    expect((out.json.unrecordedInputDetection as { performed: boolean }).performed).toBe(true)
+    expect(out.json.unrecordedInputCandidates).toEqual([])
+    expect(out.json.status).toBe('OK')
   })
 })
 
@@ -171,13 +182,21 @@ describe('§5-3 取れなかったのと合わなかったのを混ぜない', (
     expect(bad.some((b) => b.outcome === 'MISSING_IN_SOURCE')).toBe(true)
   })
 
+  /**
+   * **範囲定義が要る**（v0.3.0 フォローアップ P1-2）。
+   * v0.2.0 の source には入っていないので `--scope` で渡す。
+   *
+   * この検査は 2026-08-03 まで `src/model/` を落とす変異しか見ておらず、
+   * **範囲の外（`scripts/`・`schemas/`・`package-lock.json`）は素通りしていた。**
+   * 範囲の外側からの変異は `test/sourceInputScope.test.ts` の回帰に入れてある。
+   */
   it('**記録漏れの入力を見つける**（digest が覆っていない入力）', () => {
     const p = tagManifest((d) => {
       const o = d as { inputFiles: { path: string }[]; inputFilesTotal: number }
       o.inputFiles = o.inputFiles.filter((f) => !f.path.startsWith('src/model/'))
       o.inputFilesTotal = o.inputFiles.length
     })
-    const r = run(['--manifest', p, '--tag', 'v0.2.0'])
+    const r = run(['--manifest', p, '--tag', 'v0.2.0', '--scope', 'source-input-scope.v1.json'])
     expect(r.json.status).toBe('MISMATCH')
     const extra = mustBeNonEmpty(r.json.unrecordedInputCandidates as string[], '記録漏れの入力候補')
     expect(extra.every((x) => x.startsWith('src/model/'))).toBe(true)

@@ -27,9 +27,10 @@
 
 import Ajv from 'ajv'
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { checkWindowInvariants } from './robustnessWindows.mjs'
 
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
@@ -98,6 +99,34 @@ const TARGETS = [
     artifact: 'artifacts/source-input-manifest.json',
     schema: 'schemas/source-input-manifest.v1.schema.json',
     semantic: 'sourceInputManifest',
+  },
+  // 入力の範囲定義 (v0.3.0 フォローアップ P1-2)。
+  // **生成側と検証側が同じこれを読む**ので、ここが壊れると両方が同時に狂う
+  {
+    artifact: 'source-input-scope.v1.json',
+    schema: 'schemas/source-input-scope.v1.schema.json',
+    semantic: 'sourceInputScope',
+  },
+  /**
+   * package.json ↔ package-lock.json の version 一致（v0.3.0 フォローアップ P1-1）。
+   *
+   * **`check:stale` ではなくここへ入れた。実測して決めた。**
+   * `check:stale` が見るのは `inputDigest` で、`package.json` は入力ではない。
+   * だから **package.json の version だけを上げても check:stale は「再実行は不要です」と言う**
+   * （複製したリポジトリで 0.3.0 → 0.9.9 に変えて実測。rc=0・出力に一言も出ない）。
+   * v0.2.0 で不一致が生まれ、v0.3.0 まで気づかなかったのは、まさにこの経路だった。
+   *
+   * `validate:profiles` は毎回のテストで走り、release evidence の門にもなっている。
+   * **鳴らない場所に置いても意味が無い**ので、鳴る側へ置く。
+   *
+   * `package.json` を入力に加える案は採らなかった。scripts や依存の範囲指定を直すたびに
+   * 全 artifact の digest が動いてしまい、**「中身が変わっていないのに ID が変わる」**を
+   * 自分から作ることになる（統合フォローアップ P1-2 で一度直した問題の再発）。
+   */
+  {
+    artifact: 'package.json',
+    schema: null,
+    semantic: 'packageVersionParity',
   },
 ]
 
@@ -534,6 +563,109 @@ const SEMANTIC = {
   },
 
   /**
+   * 入力の範囲定義（v0.3.0 フォローアップ P1-2）。
+   *
+   * **この定義が壊れると、生成側と検証側が同時に狂う。**片方だけ直しても気づけないのが
+   * 元の問題だったので、1 か所にした代わりに、その 1 か所を強く検査する。
+   *
+   * いちばん大事なのは最後の突き合わせ——**範囲から導いた集合と、実際に記録された入力が
+   * ちょうど一致すること。**ここがずれていたら、範囲定義は飾りになっている。
+   */
+  sourceInputScope(a, errs) {
+    const required = new Set(a.requiredExactFiles ?? [])
+
+    // --- 範囲定義自身が入力になっていること -------------------------------
+    // ここを外すと、範囲を書き換えても digest が変わらない＝定義が効かなくなる
+    if (!required.has('source-input-scope.v1.json'))
+      errs.push('範囲定義自身が requiredExactFiles に無い。範囲を変えても inputDigest が変わらなくなる')
+
+    // --- generators は requiredExactFiles の射影であること -----------------
+    for (const [key, g] of Object.entries(a.generators ?? {})) {
+      for (const [what, p] of [['schema', g.schema], ['generator', g.generator]])
+        if (!required.has(p)) errs.push(`generators.${key}.${what} (${p}) が requiredExactFiles に無い`)
+    }
+    for (const p of a.commonInputs ?? [])
+      if (!required.has(p)) errs.push(`commonInputs の ${p} が requiredExactFiles に無い`)
+
+    // --- 例外は本当に例外の位置にあるか -----------------------------------
+    // allowedGeneratedInputs は excludedOutputs の下にあってこそ「例外」になる。
+    // そうでないなら、そもそも除外対象ではないので例外として書く意味がない
+    for (const p of a.allowedGeneratedInputs ?? [])
+      if (!(a.excludedOutputs ?? []).some((d) => p.startsWith(`${d}/`)))
+        errs.push(`allowedGeneratedInputs の ${p} が excludedOutputs のどの接頭辞の下にも無い（例外になっていない）`)
+
+    // --- 実在するか -------------------------------------------------------
+    for (const p of required) if (!existsSync(resolve(ROOT, p))) errs.push(`requiredExactFiles の ${p} が存在しない`)
+    for (const d of a.recursiveDirectories ?? [])
+      if (!existsSync(resolve(ROOT, d))) errs.push(`recursiveDirectories の ${d} が存在しない`)
+
+    // --- **範囲と実際の入力が一致するか（本題）** --------------------------
+    const mfPath = 'artifacts/source-input-manifest.json'
+    if (!existsSync(resolve(ROOT, mfPath))) return
+    const recorded = new Set((read(mfPath).inputFiles ?? []).map((f) => f.path))
+
+    const expected = new Set()
+    for (const d of a.recursiveDirectories ?? []) {
+      const abs = resolve(ROOT, d)
+      if (!existsSync(abs)) continue
+      const walk = (rel) => {
+        for (const n of readdirSync(resolve(ROOT, rel)).sort()) {
+          const r = `${rel}/${n}`
+          if (statSync(resolve(ROOT, r)).isDirectory()) walk(r)
+          else expected.add(r)
+        }
+      }
+      walk(d)
+    }
+    for (const p of [...required, ...(a.allowedGeneratedInputs ?? [])])
+      if (existsSync(resolve(ROOT, p))) expected.add(p)
+
+    const notRecorded = [...expected].filter((p) => !recorded.has(p)).sort()
+    const notInScope = [...recorded].filter((p) => !expected.has(p)).sort()
+    if (notRecorded.length)
+      errs.push(`範囲内なのに ${mfPath} へ記録されていない入力が ${notRecorded.length} 件: ${notRecorded.join(', ')}`)
+    if (notInScope.length)
+      errs.push(`${mfPath} に記録されているのに範囲定義の外にある入力が ${notInScope.length} 件: ${notInScope.join(', ')}`)
+
+    // --- 出力を入力にしていないか（自己参照） -----------------------------
+    const allowed = new Set(a.allowedGeneratedInputs ?? [])
+    const selfRef = [...recorded]
+      .filter((p) => (a.excludedOutputs ?? []).some((d) => p.startsWith(`${d}/`)) && !allowed.has(p))
+      .sort()
+    if (selfRef.length) errs.push(`出力を入力として記録している (自己参照): ${selfRef.join(', ')}`)
+  },
+
+  /**
+   * package.json ↔ package-lock.json の version 一致（v0.3.0 フォローアップ P1-1）。
+   *
+   * v0.2.0 で `package.json` だけを 0.2.0 へ上げ、lockfile は 0.1.0 のまま残った。
+   * v0.3.0 まで 2 版にわたって気づかなかった。`npm ci` は止まらないので実害は出ないが、
+   * SBOM・provenance 表示・release tooling が食い違う版数を見ることになる。
+   *
+   * **なぜ気づけなかったか。**当時「package.json の version が配布版と揃っている」という名前の
+   * テストがあったが、見ていたのは `stageRelease.mjs` の既定値だけで lockfile を参照していなかった。
+   * 名前のほうが検査範囲より広く、**その名前を根拠に「守られている」と判断していた。**
+   */
+  packageVersionParity(a, errs) {
+    const lockPath = 'package-lock.json'
+    if (!existsSync(resolve(ROOT, lockPath))) {
+      errs.push(`${lockPath} が無い`)
+      return
+    }
+    const lock = read(lockPath)
+    // **3 か所すべてを見る。**root だけ直して packages[""] を忘れる形が実際にありうる
+    const self = lock.packages?.['']
+    if (!self) {
+      errs.push(`${lockPath} に packages[""] が無い（lockfileVersion ${lock.lockfileVersion}）`)
+      return
+    }
+    for (const [what, got] of [['root の version', lock.version], ['packages[""].version', self.version]])
+      if (got !== a.version)
+        errs.push(`package.json の version (${a.version}) と ${lockPath} の ${what} (${got}) が違う`)
+    if (lock.name !== a.name) errs.push(`package.json の name (${a.name}) と ${lockPath} の name (${lock.name}) が違う`)
+  },
+
+  /**
    * 目標トポロジーの頑健性（非阻害フォローアップ P1-4）。
    *
    * この artifact は「どの仮定を動かしても目標が残るか」を主張する。
@@ -656,20 +788,9 @@ const SEMANTIC = {
      * v1 では `toMm` が最後に当たった標本位置なのに「終わり」と読める名前だった。
      * profile の区間終端と 1 刻み分ずれて見え、**同じ語で 2 つの違う量を指していた。**
      */
-    if (a.windowEndConvention !== 'EXCLUSIVE') errs.push(`windowEndConvention が ${a.windowEndConvention}`)
-    const allWindows = [
-      ...(a.nominalConfiguration?.windows ?? []).map((w) => ['nominalConfiguration', w]),
-      ...(a.counterExamples ?? []).flatMap((c) => (c.windows ?? []).map((w) => [c.label ?? c.kind, w])),
-    ]
-    for (const [where, w] of allWindows) {
-      if (w.lastSampleMm < w.startMm) errs.push(`${where}: lastSampleMm ${w.lastSampleMm} が startMm ${w.startMm} より小さい`)
-      const wantEnd = +(w.lastSampleMm + a.stepMm).toFixed(4)
-      if (Math.abs(w.endExclusiveMm - wantEnd) > 1e-6)
-        errs.push(`${where}: endExclusiveMm ${w.endExclusiveMm} が lastSampleMm + stepMm (${wantEnd}) と合わない`)
-      const wantWidth = +(w.endExclusiveMm - w.startMm).toFixed(4)
-      if (Math.abs(w.widthMm - wantWidth) > 1e-6)
-        errs.push(`${where}: widthMm ${w.widthMm} が endExclusiveMm − startMm (${wantWidth}) と合わない`)
-    }
+    // **本番の検証と fixture の実演が同じ関数を呼ぶ**（scripts/robustnessWindows.mjs）。
+    // 別々に書くと、fixture が落ちても本番が落ちるとは限らなくなる
+    errs.push(...checkWindowInvariants(a))
 
     /**
      * **無改造の窓は profile の区間そのものでなければならない。**
@@ -728,9 +849,12 @@ export function validateAll() {
     const a = read(t.artifact)
     const schemaErrors = []
     const semanticErrors = []
-    const v = compile(t.schema)
-    if (!v(a))
-      for (const e of v.errors) schemaErrors.push(`${e.instancePath || '(root)'}: ${e.keyword} — ${e.message}`)
+    // schema が無い対象は意味規則だけ回す（package.json のように、こちらが形を決めていないもの）
+    if (t.schema) {
+      const v = compile(t.schema)
+      if (!v(a))
+        for (const e of v.errors) schemaErrors.push(`${e.instancePath || '(root)'}: ${e.keyword} — ${e.message}`)
+    }
     SEMANTIC[t.semantic](a, semanticErrors)
     return { artifact: t.artifact, schema: t.schema, missing: false, schemaErrors, semanticErrors }
   })

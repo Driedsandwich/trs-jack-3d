@@ -2,11 +2,66 @@
  "schemaVersion": 1,
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-03",
- "generatedFromCommit": "5900015f1b5fcfdbff76a7999a0c4144e0b0f348",
+ "generatedFromCommit": "86aebb6d02d85ea97afd106db8c988dd39451ab9",
  "purpose": "release asset の provenance.inputFiles[].sha256 を、tag source の実ファイルと独立に検算するための一覧。**この manifest 自身は証明ではない。**GitHub の tag source archive を取得して、ここに並ぶ path の sha256 を自分で計算し、突き合わせること。",
- "inputFilesTotal": 28,
+ "inputFilesTotal": 29,
  "inconsistentAcrossArtifacts": 0,
  "mismatchedWithWorkingTreeAtBuild": 0,
+ "inputScope": {
+  "file": "source-input-scope.v1.json",
+  "sha256": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+  "recursiveDirectories": [
+   "src/data",
+   "src/model"
+  ],
+  "requiredExactFiles": [
+   "package-lock.json",
+   "schemas/event-sensitivity.v1.schema.json",
+   "schemas/half-plug-topology-profile.v2.schema.json",
+   "schemas/topology-robustness.v2.schema.json",
+   "scripts/exportHalfPlugProfile.ts",
+   "scripts/provenance.ts",
+   "scripts/searchTopologyRobustness.ts",
+   "scripts/sensitivityEvents.ts",
+   "source-input-scope.v1.json"
+  ],
+  "allowedGeneratedInputs": [
+   "artifacts/sensitivity.json",
+   "artifacts/sensitivity.trs_jack_trrs.json",
+   "artifacts/sensitivity.trs_jack_trs.json"
+  ],
+  "excludedOutputs": [
+   "artifacts"
+  ],
+  "notCovered": [
+   {
+    "what": "Node.js の実行系そのもの（node / tsx のバージョン）",
+    "why": "package-lock.json は依存パッケージを固定するが、それを動かす Node 本体は固定しない",
+    "consequence": "同じ入力でも Node のバージョンが変われば、浮動小数の丸めや JSON の出力順で結果が変わりうる。**inputDigest はこの差を検出しない**"
+   },
+   {
+    "what": "OS・ロケール・タイムゾーン",
+    "why": "ファイルの中身ではないので digest に入れようがない",
+    "consequence": "数値の書式や日付の解釈が環境で変われば artifact も変わるが、digest は同じままになる"
+   },
+   {
+    "what": "環境変数（SOURCE_REVISION など）",
+    "why": "生成時の外部状態であってファイルではない",
+    "consequence": "provenance.revisionOverride に上書きの有無は残るが、値そのものは digest に入らない"
+   },
+   {
+    "what": "src/ のうち src/data・src/model 以外（UI・描画・アプリ本体）",
+    "why": "artifact の生成に読み込まれないため、意図的に範囲外にしている",
+    "consequence": "UI を直しても artifact の digest は変わらない。**これは正しい挙動**だが、もし将来 artifact 生成が UI 側のコードを読み始めたら、この範囲を広げないと digest が覆わなくなる"
+   },
+   {
+    "what": "test/ 配下",
+    "why": "検証コードであって生成入力ではない",
+    "consequence": "テストを変えても artifact は変わらない"
+   }
+  ],
+  "verifyCommand": "node scripts/verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --source <dir> --scope source-input-scope.v1.json"
+ },
  "inputFiles": [
   {
    "path": "artifacts/sensitivity.json",
@@ -22,9 +77,9 @@
   {
    "path": "artifacts/sensitivity.trs_jack_trrs.json",
    "role": "sensitivity-input",
-   "recordedSha256": "1c7349c831ca744859c65b71a32cdff120db17c0e9a20925b00148549cd84405",
+   "recordedSha256": "7796923ee2e09dfad80374310ea307b2ff1a25dde6c2ae4c08b5cda89a6c7b53",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "1c7349c831ca744859c65b71a32cdff120db17c0e9a20925b00148549cd84405",
+   "actualSha256AtBuild": "7796923ee2e09dfad80374310ea307b2ff1a25dde6c2ae4c08b5cda89a6c7b53",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json"
@@ -33,9 +88,9 @@
   {
    "path": "artifacts/sensitivity.trs_jack_trs.json",
    "role": "sensitivity-input",
-   "recordedSha256": "71e8133975d28df14173814b14eadea20e5f762190dddd54665e425956152d35",
+   "recordedSha256": "5e211e131d4315a584d1c128f4b89da89a982088649acd852f53fc54c69a2442",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "71e8133975d28df14173814b14eadea20e5f762190dddd54665e425956152d35",
+   "actualSha256AtBuild": "5e211e131d4315a584d1c128f4b89da89a982088649acd852f53fc54c69a2442",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json"
@@ -44,9 +99,9 @@
   {
    "path": "package-lock.json",
    "role": "lockfile",
-   "recordedSha256": "5a62467e286df6334967859b48449b633b61148930934f32b3b1b66849f11589",
+   "recordedSha256": "86732e9386e9b89c0dfb2e89243733052b0ad8b347a4dd991136d80d9f0ace7d",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "5a62467e286df6334967859b48449b633b61148930934f32b3b1b66849f11589",
+   "actualSha256AtBuild": "86732e9386e9b89c0dfb2e89243733052b0ad8b347a4dd991136d80d9f0ace7d",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
@@ -59,9 +114,9 @@
   {
    "path": "schemas/event-sensitivity.v1.schema.json",
    "role": "schema",
-   "recordedSha256": "8d4b8732b2dc531aa66a496a5f1b331e94bd5eb57837201d4f9d4b0776675285",
+   "recordedSha256": "b859a1a04583e7a2d16925b9ba09d6ac329149f593796585f82ae7fa2b4ca5b5",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "8d4b8732b2dc531aa66a496a5f1b331e94bd5eb57837201d4f9d4b0776675285",
+   "actualSha256AtBuild": "b859a1a04583e7a2d16925b9ba09d6ac329149f593796585f82ae7fa2b4ca5b5",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/sensitivity.trs_jack_trrs.json",
@@ -71,9 +126,9 @@
   {
    "path": "schemas/half-plug-topology-profile.v2.schema.json",
    "role": "schema",
-   "recordedSha256": "6b13f53d0e73ce0dc13ecb71ba72a0c7dc9fc8dc8f6cc72f0970dc22ea0769a8",
+   "recordedSha256": "ecc48eab261d60169ec8e124736a909258a590cfd77817fe340d5804ad827152",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "6b13f53d0e73ce0dc13ecb71ba72a0c7dc9fc8dc8f6cc72f0970dc22ea0769a8",
+   "actualSha256AtBuild": "ecc48eab261d60169ec8e124736a909258a590cfd77817fe340d5804ad827152",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
@@ -83,9 +138,9 @@
   {
    "path": "schemas/topology-robustness.v2.schema.json",
    "role": "schema",
-   "recordedSha256": "9c2e3ce931f8571124ea15685ff76bc4ab53870be77d5b508c4399c713eb54da",
+   "recordedSha256": "13a30e136448d7c8641a62dbdebb4ab040c935f1151bb38271ead1549ee51b69",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "9c2e3ce931f8571124ea15685ff76bc4ab53870be77d5b508c4399c713eb54da",
+   "actualSha256AtBuild": "13a30e136448d7c8641a62dbdebb4ab040c935f1151bb38271ead1549ee51b69",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -94,9 +149,9 @@
   {
    "path": "scripts/exportHalfPlugProfile.ts",
    "role": "generator",
-   "recordedSha256": "0dc7041abee048898e5f51c6f68ec435e37b3eb53391e0b84194fde4aa066e57",
+   "recordedSha256": "ad61ad252be658eaf36a07214f9aa0434c3d9255387d405649a1cf8f3d19b22a",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "0dc7041abee048898e5f51c6f68ec435e37b3eb53391e0b84194fde4aa066e57",
+   "actualSha256AtBuild": "ad61ad252be658eaf36a07214f9aa0434c3d9255387d405649a1cf8f3d19b22a",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
@@ -106,9 +161,9 @@
   {
    "path": "scripts/provenance.ts",
    "role": "generator",
-   "recordedSha256": "29a7ef04b84f0446f7148b2d06c69f865a7a8c0c465b8cbcc84edf4cc9f75ed9",
+   "recordedSha256": "f79999ce246974086348a8b77b791e16895c377e58294e88d2a09471dd3e1ebb",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "29a7ef04b84f0446f7148b2d06c69f865a7a8c0c465b8cbcc84edf4cc9f75ed9",
+   "actualSha256AtBuild": "f79999ce246974086348a8b77b791e16895c377e58294e88d2a09471dd3e1ebb",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
@@ -121,9 +176,9 @@
   {
    "path": "scripts/searchTopologyRobustness.ts",
    "role": "generator",
-   "recordedSha256": "e8cb5417bca813f223374e571c296f6d3d7d1c17e2851a66e8abca3c5f62923b",
+   "recordedSha256": "c6b5c18d98abd745621dc1cc384f13934e6c0fc2aa728137255e90755c4af562",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "e8cb5417bca813f223374e571c296f6d3d7d1c17e2851a66e8abca3c5f62923b",
+   "actualSha256AtBuild": "c6b5c18d98abd745621dc1cc384f13934e6c0fc2aa728137255e90755c4af562",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -139,6 +194,21 @@
    "consumedBy": [
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json"
+   ]
+  },
+  {
+   "path": "source-input-scope.v1.json",
+   "role": "input-scope",
+   "recordedSha256": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+   "consistentAcrossArtifacts": true,
+   "actualSha256AtBuild": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+   "matchesWorkingTree": true,
+   "consumedBy": [
+    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/sensitivity.trs_jack_trrs.json",
+    "artifacts/sensitivity.trs_jack_trs.json",
+    "artifacts/topology-robustness.trs_jack_trrs.json"
    ]
   },
   {

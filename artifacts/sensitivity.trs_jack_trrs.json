@@ -7,15 +7,15 @@
   "trrs.jack.contact.sleeve.axialCenter",
   "trrs.jack.contact.narrowPadWidth"
  ],
- "generatedFromCommit": "b66a3017c65005a7ba3803418faecb48622176a9",
+ "generatedFromCommit": "86aebb6d02d85ea97afd106db8c988dd39451ab9",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "b66a3017c65005a7ba3803418faecb48622176a9",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "86aebb6d02d85ea97afd106db8c988dd39451ab9",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "3700639db8a6728fe5c5983f03c76559674eb7c4172764d8a53084ae98f75fa3",
+  "inputDigest": "676a1c45655550ba97abe21a90da7180bd891f3bf1eedb5c081a2f5616f60019",
   "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 6 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
   "inputSettings": {
    "variantId": "TRS|JACK-TRRS",
@@ -28,23 +28,28 @@
   "inputFiles": [
    {
     "path": "package-lock.json",
-    "sha256": "5a62467e286df6334967859b48449b633b61148930934f32b3b1b66849f11589",
+    "sha256": "86732e9386e9b89c0dfb2e89243733052b0ad8b347a4dd991136d80d9f0ace7d",
     "role": "lockfile"
    },
    {
     "path": "schemas/event-sensitivity.v1.schema.json",
-    "sha256": "8d4b8732b2dc531aa66a496a5f1b331e94bd5eb57837201d4f9d4b0776675285",
+    "sha256": "b859a1a04583e7a2d16925b9ba09d6ac329149f593796585f82ae7fa2b4ca5b5",
     "role": "schema"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "29a7ef04b84f0446f7148b2d06c69f865a7a8c0c465b8cbcc84edf4cc9f75ed9",
+    "sha256": "f79999ce246974086348a8b77b791e16895c377e58294e88d2a09471dd3e1ebb",
     "role": "generator"
    },
    {
     "path": "scripts/sensitivityEvents.ts",
     "sha256": "7a322385eb93919d5de375f21b6e72bd6845306ccb58b2adf34bfff393cb65b5",
     "role": "generator"
+   },
+   {
+    "path": "source-input-scope.v1.json",
+    "sha256": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+    "role": "input-scope"
    },
    {
     "path": "src/data/dimensions.json",
@@ -132,7 +137,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run sensitivity:events -- --variant \"TRS|JACK-TRRS\" --release",
+  "command": "npm run sensitivity:events -- --variant \"TRS|JACK-TRRS\"",
   "artifactDate": "2026-08-03"
  },
  "generatedAt": "2026-08-03",

@@ -44,6 +44,15 @@ import { gunzipSync } from 'node:zlib'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
+/**
+ * 道具の版。**判定の意味を変えたら上げる。**
+ *
+ *   1 … 初版 (v0.2.0 フォローアップ §5)
+ *   2 … 範囲定義 (source-input-scope.v1.json) から未記録入力を探すようにした。
+ *       範囲定義が無い場合に既定へ戻さず performed:false を出す (v0.3.0 フォローアップ P1-2)
+ */
+export const TOOL_VERSION = 2
+
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
 const argOf = (n, d = null) => {
@@ -55,8 +64,12 @@ const SOURCE_DIR = argOf('source')
 const TAG = argOf('tag')
 const FETCH = argOf('fetch', 'none')
 const REPO = argOf('repo', 'Driedsandwich/trs-jack-3d')
-/** 入力になりうるディレクトリ。ここに未記録のファイルがあれば digest が覆っていない */
-const INPUT_DIRS = ['src/data', 'src/model']
+/**
+ * 入力の範囲定義。**既定では検証対象の source から読む**（その tag で有効だった範囲を使う）。
+ * 範囲定義が入る前の tag (v0.3.0 以前) を検証するときだけ `--scope <file>` で外から渡す。
+ */
+const SCOPE_FILE = 'source-input-scope.v1.json'
+const SCOPE_OVERRIDE = argOf('scope')
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
@@ -123,7 +136,17 @@ function loadFromDir(dir) {
     }
   }
   walk('')
-  return { files, origin: `directory:${dir}` }
+  /**
+   * **展開した tarball を直接渡せるようにする（v0.3.0 フォローアップ P1-3）。**
+   *
+   * GitHub の release ページに付く "Source code (tar.gz)" を展開すると
+   * `Driedsandwich-trs-jack-3d-<sha>/` という階層が 1 枚できる。
+   * 受け手がそこを剥がし忘れると **29 件すべてが MISSING_IN_SOURCE になり、
+   * 「壊れている」と読めてしまう。**単一の親しか無いときだけ剥がす
+   * （リポジトリの root は複数の親を持つので、そちらは何も起きない）。
+   */
+  const stripped = stripTopLevel(files)
+  return { files: stripped, origin: `directory:${dir}${stripped === files ? '' : ' (先頭の 1 階層を剥がした)'}` }
 }
 
 function loadFromLocalTag(tag) {
@@ -208,14 +231,65 @@ for (const f of manifest.inputFiles ?? []) {
   })
 }
 
+// ---------------------------------------------------------------------------
+// 記録漏れの検出（v0.3.0 フォローアップ P1-2）
+// ---------------------------------------------------------------------------
+
 /**
- * **記録されていない入力候補。**`src/data` / `src/model` にあるのに manifest に無いファイルは、
- * digest が覆っていない。モデルのファイルを足したのに入力一覧へ入れ忘れた場合に出る。
+ * **範囲定義は生成側と共有する。**
+ *
+ * 2026-08-03 まで、ここには `['src/data','src/model']` が直書きされていた。
+ * 生成側 (`provenance.ts`) が読む入力はもっと広かったので、
+ * **manifest から `scripts/`・`schemas/`・`package-lock.json` を落としても素通りした**
+ * （入力 28 件のうち検出できたのは 8 件だけ）。
+ *
+ * **見つからなければ既定値へ戻さない。**戻すと範囲が狭いまま黙って動く——塞いだはずの穴に戻る。
  */
+function loadScope() {
+  if (SCOPE_OVERRIDE) {
+    try {
+      return { scope: JSON.parse(readFileSync(resolve(ROOT, SCOPE_OVERRIDE), 'utf8')), origin: `override:${SCOPE_OVERRIDE}` }
+    } catch (e) {
+      return { error: `--scope ${SCOPE_OVERRIDE} を読めない: ${e.message}` }
+    }
+  }
+  const buf = src.get(SCOPE_FILE)
+  if (buf === undefined)
+    return {
+      error: `検証対象の source に ${SCOPE_FILE} が無い`
+        + '（v0.3.0 以前の tag には入っていない）。--scope <file> で明示すれば検出できる。',
+    }
+  try {
+    return { scope: JSON.parse(buf.toString('utf8')), origin: `source:${SCOPE_FILE}` }
+  } catch (e) {
+    return { error: `${SCOPE_FILE} を parse できない: ${e.message}` }
+  }
+}
+
 const recordedPaths = new Set((manifest.inputFiles ?? []).map((f) => f.path))
-const extra = [...src.keys()]
-  .filter((p) => INPUT_DIRS.some((d) => p.startsWith(`${d}/`)) && !recordedPaths.has(p))
-  .sort()
+const loadedScope = loadScope()
+const scope = loadedScope.scope ?? null
+
+/**
+ * **記録されていない入力候補。**範囲定義の中にあるのに manifest へ載っていないファイルは、
+ * digest が覆っていない。モデル・生成器・schema・lockfile のどれを足し忘れても出る。
+ */
+let extra = []
+/** 出力にしてはいけないものを入力に記録している＝自己参照の事故 */
+let selfReferencing = []
+if (scope) {
+  const inScope = new Set()
+  for (const d of scope.recursiveDirectories ?? [])
+    for (const p of src.keys()) if (p.startsWith(`${d}/`)) inScope.add(p)
+  for (const p of [...(scope.requiredExactFiles ?? []), ...(scope.allowedGeneratedInputs ?? [])])
+    if (src.has(p)) inScope.add(p)
+  extra = [...inScope].filter((p) => !recordedPaths.has(p)).sort()
+
+  const allowed = new Set(scope.allowedGeneratedInputs ?? [])
+  selfReferencing = [...recordedPaths]
+    .filter((p) => (scope.excludedOutputs ?? []).some((d) => p.startsWith(`${d}/`)) && !allowed.has(p))
+    .sort()
+}
 
 /**
  * **0 件を検証して「OK」と言わない。**
@@ -232,10 +306,36 @@ if (!results.length) {
 
 const counts = results.reduce((m, r) => ({ ...m, [r.outcome]: (m[r.outcome] ?? 0) + 1 }), {})
 const bad = results.filter((r) => r.outcome !== 'MATCH')
-const status = bad.length || extra.length ? 'MISMATCH' : 'OK'
+const status = bad.length || extra.length || selfReferencing.length ? 'MISMATCH' : 'OK'
+
+/**
+ * **記録漏れの検出をやったのか、やらなかったのか。**
+ *
+ * 範囲定義が無いときに黙って「候補 0 件」と出すと、受け手には
+ * 「探して見つからなかった」と読める。**探していないなら探していないと書く。**
+ */
+const detection = scope
+  ? {
+      performed: true,
+      scopeSource: loadedScope.origin,
+      scopeSchemaId: scope.schemaId,
+      recursiveDirectories: scope.recursiveDirectories ?? [],
+      requiredExactFiles: (scope.requiredExactFiles ?? []).length,
+      allowedGeneratedInputs: (scope.allowedGeneratedInputs ?? []).length,
+      excludedOutputs: scope.excludedOutputs ?? [],
+    }
+  : {
+      performed: false,
+      scopeSource: null,
+      reason: loadedScope.error,
+      note: '**記録漏れの検出はしていない。**既定の範囲へ戻すことは意図的にしていない——'
+        + '狭い範囲のまま黙って通すのが、この範囲定義で塞いだ穴そのものだから。'
+        + `sha256 の突き合わせ（${results.length} 件）は実施済みで、そちらの結果は有効である。`,
+    }
 
 done({
   status,
+  toolVersion: TOOL_VERSION,
   origin: loaded.origin,
   networkUsed: loaded.origin.startsWith('github-tarball'),
   manifest: MANIFEST,
@@ -255,14 +355,23 @@ done({
     missingInSource: counts.MISSING_IN_SOURCE ?? 0,
     recordedInconsistent: counts.RECORDED_INCONSISTENT ?? 0,
     unrecordedInputCandidates: extra.length,
+    selfReferencingInputs: selfReferencing.length,
   },
+  unrecordedInputDetection: detection,
   mismatches: bad,
   unrecordedInputCandidates: extra,
+  /** 出力を入力として記録している＝artifact を作り直すたびに digest が変わる */
+  selfReferencingInputs: selfReferencing,
+  /** **digest が覆っていない範囲。**「一致した」を「全部同じだった」と読ませない */
+  notCoveredByDigest: scope?.notCovered ?? null,
   notes: [
     '**自己申告 (selfReported) と独立検証 (independentVerification) を分けてある。**'
       + '前者は manifest がそう名乗っているだけで、後者がこの実行で計算し直した結果である。',
-    'unrecordedInputCandidates は src/data・src/model にあるのに manifest へ載っていないファイル。'
-      + '**digest が覆っていない入力**を意味する。',
+    'unrecordedInputCandidates は範囲定義 (source-input-scope.v1.json) の中にあるのに'
+      + ' manifest へ載っていないファイル。**digest が覆っていない入力**を意味する。'
+      + '**範囲は生成側 (provenance.ts) と共有している。**',
+    'notCoveredByDigest は、範囲定義が「覆えない」と自己申告しているもの'
+      + '（Node のバージョン・ロケール・環境変数など）。**一致は、これらが同じだったことを意味しない。**',
     'この検証はファイルを 1 つも書かない。tar は展開せずメモリ上で読んでいる。',
   ],
 }, status === 'OK' ? 0 : 1)

@@ -1,0 +1,93 @@
+{
+ "schemaVersion": 1,
+ "schemaId": "trs-jack-3d-source-input-scope.v1",
+ "purpose": "artifact の inputDigest が覆う入力の範囲を、生成側と検証側が同じ 1 か所から読むための定義。**この定義自身も入力である**（requiredExactFiles に入っている）。ここを変えれば digest が変わるのが正しい。",
+ "why": "2026-08-03 まで、検証側の未記録入力の探索範囲は verifyReleaseSourceInputs.mjs に直書きされた ['src/data','src/model'] だけだった。manifest から scripts/・schemas/・package-lock.json を落としても exit 0 で素通りし、**入力 28 件のうち記録漏れを検出できるのは 8 件だけだった**。生成側の一覧（provenance.ts の add 呼び出し）と検証側の探索範囲が別々に書かれていたのが原因で、片方だけ増やしても気づけない。",
+
+ "recursiveDirectories": [
+  "src/data",
+  "src/model"
+ ],
+
+ "requiredExactFiles": [
+  "package-lock.json",
+  "schemas/event-sensitivity.v1.schema.json",
+  "schemas/half-plug-topology-profile.v2.schema.json",
+  "schemas/topology-robustness.v2.schema.json",
+  "scripts/exportHalfPlugProfile.ts",
+  "scripts/provenance.ts",
+  "scripts/searchTopologyRobustness.ts",
+  "scripts/sensitivityEvents.ts",
+  "source-input-scope.v1.json"
+ ],
+
+ "allowedGeneratedInputs": [
+  "artifacts/sensitivity.json",
+  "artifacts/sensitivity.trs_jack_trrs.json",
+  "artifacts/sensitivity.trs_jack_trs.json"
+ ],
+
+ "excludedOutputs": [
+  "artifacts"
+ ],
+
+ "excludedOutputsNote": "ディレクトリ接頭辞。**artifacts/ は生成物なので入力にしてはいけない**（自己参照になり、artifact を作り直すたびに digest が変わって固定できなくなる）。唯一の例外が allowedGeneratedInputs の 3 件で、profile が感度解析の結果を実際に読んでいる。ここに挙げた接頭辞の下のファイルが allowedGeneratedInputs 以外で入力に記録されていたら、それは事故である。",
+
+ "generators": {
+  "profile": {
+   "schema": "schemas/half-plug-topology-profile.v2.schema.json",
+   "generator": "scripts/exportHalfPlugProfile.ts",
+   "usesGeneratedInputs": true,
+   "note": "variant ごとの感度 artifact を入力に読む。どれを読むかは variantSlug で決まる"
+  },
+  "sensitivity": {
+   "schema": "schemas/event-sensitivity.v1.schema.json",
+   "generator": "scripts/sensitivityEvents.ts",
+   "usesGeneratedInputs": false,
+   "note": "自分自身が出力なので、artifacts/sensitivity.*.json を入力にしてはいけない"
+  },
+  "robustness": {
+   "schema": "schemas/topology-robustness.v2.schema.json",
+   "generator": "scripts/searchTopologyRobustness.ts",
+   "usesGeneratedInputs": false
+  }
+ },
+
+ "generatorsNote": "generators は requiredExactFiles の**部分集合を役割別に見た射影**であり、別の一覧ではない。ここに現れる schema / generator のパスはすべて requiredExactFiles に載っていなければならない（validate:profiles が照合する）。増やすときは両方に足す。",
+
+ "commonInputs": [
+  "scripts/provenance.ts",
+  "source-input-scope.v1.json",
+  "package-lock.json"
+ ],
+ "commonInputsNote": "どの生成器も読む入力。recursiveDirectories 配下と合わせて、全 artifact に共通で入る。",
+
+ "notCovered": [
+  {
+   "what": "Node.js の実行系そのもの（node / tsx のバージョン）",
+   "why": "package-lock.json は依存パッケージを固定するが、それを動かす Node 本体は固定しない",
+   "consequence": "同じ入力でも Node のバージョンが変われば、浮動小数の丸めや JSON の出力順で結果が変わりうる。**inputDigest はこの差を検出しない**"
+  },
+  {
+   "what": "OS・ロケール・タイムゾーン",
+   "why": "ファイルの中身ではないので digest に入れようがない",
+   "consequence": "数値の書式や日付の解釈が環境で変われば artifact も変わるが、digest は同じままになる"
+  },
+  {
+   "what": "環境変数（SOURCE_REVISION など）",
+   "why": "生成時の外部状態であってファイルではない",
+   "consequence": "provenance.revisionOverride に上書きの有無は残るが、値そのものは digest に入らない"
+  },
+  {
+   "what": "src/ のうち src/data・src/model 以外（UI・描画・アプリ本体）",
+   "why": "artifact の生成に読み込まれないため、意図的に範囲外にしている",
+   "consequence": "UI を直しても artifact の digest は変わらない。**これは正しい挙動**だが、もし将来 artifact 生成が UI 側のコードを読み始めたら、この範囲を広げないと digest が覆わなくなる"
+  },
+  {
+   "what": "test/ 配下",
+   "why": "検証コードであって生成入力ではない",
+   "consequence": "テストを変えても artifact は変わらない"
+  }
+ ],
+ "notCoveredNote": "**ここに挙げたものは inputDigest が覆っていない。**「digest が一致した」は「これらも同じだった」を意味しない。検証側の出力（verifyReleaseSourceInputs.mjs）にもこの一覧を載せて、受け手が覆っていない範囲を黙って全件保証と読まないようにする。"
+}

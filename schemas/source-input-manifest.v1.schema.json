@@ -9,6 +9,7 @@
     "generatedAt",
     "generatedFromCommit",
     "purpose",
+    "inputScope",
     "inputFilesTotal",
     "inconsistentAcrossArtifacts",
     "mismatchedWithWorkingTreeAtBuild",
@@ -34,6 +35,84 @@
     },
     "purpose": {
       "type": "string"
+    },
+    "inputScope": {
+      "type": "object",
+      "description": "**この一覧が「全部」なのかを確かめるための範囲**（v0.3.0 フォローアップ P1-2）。件数と sha256 だけでは記録漏れを見つけられない——落ちている入力があっても、残った分は全部一致する。範囲を渡せば受け手は自分の source を歩いて探せる",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "sha256",
+        "recursiveDirectories",
+        "requiredExactFiles",
+        "allowedGeneratedInputs",
+        "excludedOutputs",
+        "notCovered",
+        "verifyCommand"
+      ],
+      "properties": {
+        "file": {
+          "const": "source-input-scope.v1.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "recursiveDirectories": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "requiredExactFiles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowedGeneratedInputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excludedOutputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "notCovered": {
+          "type": "array",
+          "minItems": 1,
+          "description": "**inputDigest が覆っていないもの。**「一致した」は「これらも同じだった」を意味しない",
+          "items": {
+            "type": "object",
+            "required": [
+              "what",
+              "why",
+              "consequence"
+            ],
+            "properties": {
+              "what": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "consequence": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "verifyCommand": {
+          "type": "string"
+        }
+      }
     },
     "inputFilesTotal": {
       "type": "integer",

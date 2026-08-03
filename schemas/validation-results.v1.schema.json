@@ -78,7 +78,11 @@
             "type": "string"
           },
           "schema": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "**null なら schema を持たない対象**（package.json のように、こちらが形を決めていないもの）。意味規則だけを回している"
           },
           "missing": {
             "type": "boolean"

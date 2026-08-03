@@ -31,7 +31,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { resolve, join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { assertReleaseAllowed, buildProvenance, listInputs } from '../scripts/provenance'
+import { INPUT_SCOPE_FILE, assertReleaseAllowed, buildProvenance, listInputs } from '../scripts/provenance'
 import { getModel } from '../src/data'
 import { mustFind } from './_must'
 
@@ -53,6 +53,9 @@ function cloneInputs(): string {
   for (const sub of ['schemas', 'scripts', 'src/data', 'src/model', 'artifacts'])
     cpSync(resolve(ROOT, sub), join(d, sub), { recursive: true })
   cpSync(resolve(ROOT, 'package-lock.json'), join(d, 'package-lock.json'))
+  // **範囲定義も入力である**（v0.3.0 フォローアップ P1-2）。
+  // 無いと listInputs が落ちる——既定値へ黙って戻さない設計なので、それが正しい
+  cpSync(resolve(ROOT, INPUT_SCOPE_FILE), join(d, INPUT_SCOPE_FILE))
   return d
 }
 

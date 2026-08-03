@@ -25,6 +25,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import Ajv from 'ajv'
 import { describe, expect, it } from 'vitest'
+import { TARGET_COUNT } from '../scripts/validateProfiles.mjs'
 import { getModel } from '../src/data'
 
 const ROOT = resolve(__dirname, '..')
@@ -80,10 +81,12 @@ describe('Half-Plug Topology Profile v2', () => {
   it('**1d. `npm run validate:profiles` が全成果物で通る**', () => {
     // schema 検証と意味検証を、テストスイートの一部としても回す。
     // 別コマンドにしか無いと「回し忘れても緑」になる (→ CONTRIBUTING §7)。
-    // 対象は profile 2 / 探索 / 実部品比較 / テスト件数 / 感度 2 / 頑健性 / 入力一覧 の 9 件
-    // (感度は P1-2、頑健性は P1-4、入力一覧は v0.2.0 フォローアップ §2)
+    // 対象は profile 2 / 探索 / 実部品比較 / テスト件数 / 感度 2 / 頑健性 / 入力一覧 /
+    // 入力範囲 / version parity。**件数は直書きしない**——対象を足すたびにここが落ちて、
+    // 「数字を書き換えて緑にする」作業になる。正本 (TARGET_COUNT) から引く
     const out = execFileSync('node', ['scripts/validateProfiles.mjs'], { cwd: ROOT, encoding: 'utf8' })
-    expect(out).toMatch(/9 件すべてが schema と意味規則の両方に適合しています/)
+    expect(TARGET_COUNT, '検証対象が 1 件も無い').toBeGreaterThan(0)
+    expect(out).toMatch(new RegExp(`${TARGET_COUNT} 件すべてが schema と意味規則の両方に適合しています`))
   }, 30_000)
 
   it('**1c. `pattern` 制約が実際に効いている**', () => {

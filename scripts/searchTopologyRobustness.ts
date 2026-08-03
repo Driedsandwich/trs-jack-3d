@@ -480,6 +480,12 @@ const CONTRACT_MIGRATION = {
     { field: 'windows[].endExclusiveMm', reason: 'profile の nominalEndMm と一致する本当の終端。旧 toMm + stepMm' },
     { field: 'windowEndConvention', reason: '端点の規約を機械可読にする' },
     { field: 'contractMigration', reason: 'この表そのもの' },
+    {
+      field: 'provenance.inputFiles[].role に "input-scope" を追加',
+      reason: '入力の範囲定義 (source-input-scope.v1.json) が入力になった。**追加のみで改名ではない**ので、'
+        + 'role で絞り込む実装が沈黙して壊れることはない。v0.3.0 の schema を pin して新しい artifact を'
+        + '検証すると enum で落ちるが、それは明示的に落ちる (v0.3.0 フォローアップ P1-2)',
+    },
   ],
   consumerAction:
     '**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。'

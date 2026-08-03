@@ -30,6 +30,21 @@ import { RELEASE_ASSETS, SOURCE_ONLY_TARGETS } from './releaseAssets.mjs'
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 const sha256File = (p) => createHash('sha256').update(readFileSync(resolve(ROOT, p))).digest('hex')
+
+/**
+ * 入力の範囲定義（v0.3.0 フォローアップ P1-2）。
+ * `scripts/provenance.ts` と `scripts/verifyReleaseSourceInputs.mjs` が読むのと同じファイル。
+ * **無ければ止める。**範囲を書かずに evidence を作ると、受け手は記録漏れを確かめられない。
+ */
+const INPUT_SCOPE_FILE = 'source-input-scope.v1.json'
+if (!existsSync(resolve(ROOT, INPUT_SCOPE_FILE))) {
+  console.log(`**${INPUT_SCOPE_FILE} が無い。**入力の範囲を書けないので evidence を作らない。`)
+  process.exit(1)
+}
+const inputScope = JSON.parse(readFileSync(resolve(ROOT, INPUT_SCOPE_FILE), 'utf8'))
+
+/** 検証を回した記録の置き場（v0.3.0 フォローアップ P1-3） */
+const SOURCE_VERIFICATION_PATH = 'artifacts/source-verification-result.json'
 const ARTIFACT_DATE = process.env.ARTIFACT_DATE ?? new Date().toISOString().slice(0, 10)
 
 const git = (args) => {
@@ -113,6 +128,26 @@ const manifest = {
   inputFilesTotal: inputs.length,
   inconsistentAcrossArtifacts: inconsistent.length,
   mismatchedWithWorkingTreeAtBuild: mismatched.length,
+  /**
+   * **この一覧が「全部」なのかを受け手が確かめるための範囲（v0.3.0 フォローアップ P1-2）。**
+   *
+   * 件数と sha256 だけ渡しても、受け手は**記録漏れを見つけられない。**
+   * 落ちている入力があっても、残った分は全部一致するからである。
+   * 範囲を一緒に渡せば、受け手は自分の source を歩いて「載っていない入力」を自分で探せる。
+   *
+   * `notCovered` は **digest が覆えないもの**。「一致した」を「全部同じだった」と読ませない。
+   */
+  inputScope: {
+    file: INPUT_SCOPE_FILE,
+    sha256: sha256File(INPUT_SCOPE_FILE),
+    recursiveDirectories: inputScope.recursiveDirectories,
+    requiredExactFiles: inputScope.requiredExactFiles,
+    allowedGeneratedInputs: inputScope.allowedGeneratedInputs,
+    excludedOutputs: inputScope.excludedOutputs,
+    notCovered: inputScope.notCovered,
+    verifyCommand:
+      `node scripts/verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --source <dir> --scope ${INPUT_SCOPE_FILE}`,
+  },
   inputFiles: inputs,
   verificationRecipe: [
     'gh release download <tag>  # asset を取る',
@@ -125,6 +160,84 @@ const manifest = {
 }
 
 writeFileSync(resolve(ROOT, 'artifacts/source-input-manifest.json'), JSON.stringify(manifest, null, 1) + '\n')
+
+// ---------------------------------------------------------------------------
+// 2. 検証を実際に回した記録（v0.3.0 フォローアップ P1-3）
+//
+// **これは自己申告である。**作った側が作った側を検証した記録でしかない。
+// それでも配る理由は、**判定の境界を受け手に見せるため**——
+// 「取れなかった」「合わなかった」「そもそも探していない」が別物であることは、
+// 実際の出力を 1 つ見るのがいちばん早い。
+//
+// 突き合わせ先は**作業ツリー**であって tag の source ではない。
+// tag はこの時点でまだ存在しない（evidence をコミットしてから打つ）ので、
+// 原理的にここでは検証できない。受け手が同梱の script を tag に対して回すこと。
+// ---------------------------------------------------------------------------
+
+const VERIFIER = 'scripts/verifyReleaseSourceInputs.mjs'
+let verifyOut
+try {
+  verifyOut = JSON.parse(execFileSync('node', [
+    VERIFIER,
+    '--manifest', 'artifacts/source-input-manifest.json',
+    '--source', '.',
+    '--scope', INPUT_SCOPE_FILE,
+  ], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 }))
+} catch (e) {
+  // **落ちても JSON は出る。**status を握りつぶさずそのまま記録する
+  verifyOut = JSON.parse(String(e.stdout ?? '{}'))
+  if (!verifyOut.status) {
+    console.log(`\n  **${VERIFIER} が JSON を出さずに失敗した。**`)
+    console.log(`    ${String(e.message).split('\n')[0]}`)
+    process.exit(1)
+  }
+}
+
+const EXIT_OF = { OK: 0, MISMATCH: 1, SOURCE_UNAVAILABLE: 2, MANIFEST_UNAVAILABLE: 2, NOTHING_TO_VERIFY: 2 }
+const iv = verifyOut.independentVerification ?? {}
+const sourceVerification = {
+  schemaVersion: 1,
+  schemaId: 'trs-jack-3d-source-verification-result.v1',
+  isSelfReport: true,
+  replacesRecipientVerification: false,
+  note:
+    '**これは自己申告である。**こちらのリポジトリで verify:release-source-inputs を回した結果でしかなく、'
+    + '受け手の独立検証を置き換えない。**突き合わせ先は生成時の作業ツリーであって tag の source ではない。**'
+    + 'tag は evidence をコミットした後に打つので、この時点では存在しない。'
+    + '受け手は同梱の verifyReleaseSourceInputs.mjs を tag に対して回すこと（howToVerifyYourself を参照）。',
+  tool: { script: VERIFIER, toolVersion: verifyOut.toolVersion ?? null, sha256: sha256File(VERIFIER) },
+  sourceOrigin: verifyOut.origin ?? 'unknown',
+  generatedFromCommit: git(['rev-parse', 'HEAD']),
+  /** **null が正しい。**artifact は自分を含む commit の hash を持てない（索引の releaseCommit と同じ理由） */
+  releaseCommit: null,
+  generatedAt: ARTIFACT_DATE,
+  status: verifyOut.status,
+  exitCode: EXIT_OF[verifyOut.status] ?? 2,
+  unrecordedInputDetection: {
+    performed: verifyOut.unrecordedInputDetection?.performed ?? false,
+    scopeSource: verifyOut.unrecordedInputDetection?.scopeSource ?? null,
+  },
+  counts: {
+    checked: iv.checked ?? 0,
+    matched: iv.matched ?? 0,
+    mismatched: iv.mismatched ?? 0,
+    missingInSource: iv.missingInSource ?? 0,
+    unrecordedInputCandidates: iv.unrecordedInputCandidates ?? 0,
+    selfReferencingInputs: iv.selfReferencingInputs ?? 0,
+  },
+  howToVerifyYourself: [
+    '# bundle に同梱してある script をそのまま使う（通信しない）',
+    'node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --source <展開した source> --scope source-input-scope.v1.json',
+    '# 手元に tag があるなら（これも通信しない）',
+    'node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --tag <tag> --scope source-input-scope.v1.json',
+    '# 明示したときだけ GitHub から source を取る',
+    'node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --tag <tag> --fetch github --scope source-input-scope.v1.json',
+    '# status は OK(0) / MISMATCH(1) / SOURCE_UNAVAILABLE(2) / MANIFEST_UNAVAILABLE(2) / NOTHING_TO_VERIFY(2)。',
+    '# **取れなかった(2) と 合わなかった(1) を同じ失敗に潰さないこと。**',
+    '# **unrecordedInputDetection.performed が false なら「候補 0 件」ではなく「探していない」。**',
+  ],
+}
+writeFileSync(resolve(ROOT, SOURCE_VERIFICATION_PATH), JSON.stringify(sourceVerification, null, 1) + '\n')
 
 // ---------------------------------------------------------------------------
 // 4. 検証結果 — 上の 2 つを含めて回す
@@ -262,6 +375,8 @@ let selfBad = 0
 for (const [artifactPath, schemaPath] of [
   ['artifacts/validation-results.json', 'schemas/validation-results.v1.schema.json'],
   [INDEX_PATH, 'schemas/trs-jack-3d-release-index.v1.schema.json'],
+  // 検証を回した記録も同じ扱い。**validateAll の対象に入れると、その回の自分自身を見ることになる**
+  [SOURCE_VERIFICATION_PATH, 'schemas/source-verification-result.v1.schema.json'],
 ]) {
   const v = ajv.compile(read(schemaPath))
   if (!v(read(artifactPath))) {
@@ -276,6 +391,9 @@ for (const [artifactPath, schemaPath] of [
 console.log(`\n  validation-results.json     ${validation.targetsPassed}/${validation.targetsTotal} 適合`
   + ` (配布 ${validation.distributedTargets} / 非配布 ${validation.sourceOnlyTargets})`)
 console.log(`  source-input-manifest.json  入力 ${inputs.length} 件`)
+console.log(`  source-verification-result  ${sourceVerification.status}`
+  + ` (検算 ${sourceVerification.counts.checked} 件 / 記録漏れ探索 ${sourceVerification.unrecordedInputDetection.performed ? '実行' : '**未実行**'})`
+  + ' — **自己申告**')
 console.log(`  release-index               asset ${assets.length} 件 / 生成 commit ${index.artifactGenerationCommits.length} 種`)
 if (inconsistent.length) console.log(`  **artifact 間で sha256 が食い違う入力が ${inconsistent.length} 件**`)
 if (mismatched.length) console.log(`  **作業ツリーと一致しない入力が ${mismatched.length} 件** (作り直しが要る)`)

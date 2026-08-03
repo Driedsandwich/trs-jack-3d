@@ -123,8 +123,10 @@
                   "model-data",
                   "model-code",
                   "lockfile",
-                  "sensitivity-input"
-                ]
+                  "sensitivity-input",
+                  "input-scope"
+                ],
+                "description": "**`input-scope` は入力の範囲定義 (source-input-scope.v1.json)。v0.3.0 フォローアップ P1-2 で追加。**"
               }
             }
           }

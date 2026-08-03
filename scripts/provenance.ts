@@ -83,43 +83,156 @@ function walk(root: string, dir: string): string[] {
   return out
 }
 
+// ---------------------------------------------------------------------------
+// 入力の範囲定義（v0.3.0 フォローアップ P1-2）
+// ---------------------------------------------------------------------------
+
+/**
+ * **入力の範囲は 1 か所にしか書かない。**
+ *
+ * 2026-08-03 まで、生成側（このファイルの `add` 呼び出し）と検証側
+ * （`verifyReleaseSourceInputs.mjs` の `INPUT_DIRS`）に別々の範囲が直書きされていた。
+ * 検証側は `src/data` / `src/model` しか見ておらず、**manifest から `scripts/`・`schemas/`・
+ * `package-lock.json` を落としても exit 0 で素通りした**（28 件中 8 件しか検出できない）。
+ *
+ * 片方だけを直しても、もう片方は黙ったままになる。だから両方がこのファイルを読む。
+ */
+export const INPUT_SCOPE_FILE = 'source-input-scope.v1.json'
+
+export interface InputScopeGenerator {
+  schema: string
+  generator: string
+  usesGeneratedInputs: boolean
+  note?: string
+}
+
+export interface InputScope {
+  schemaVersion: number
+  schemaId: string
+  recursiveDirectories: string[]
+  requiredExactFiles: string[]
+  allowedGeneratedInputs: string[]
+  excludedOutputs: string[]
+  generators: Record<string, InputScopeGenerator>
+  commonInputs: string[]
+  notCovered: { what: string; why: string; consequence: string }[]
+}
+
+/**
+ * 範囲定義を読む。**無ければ落とす。**
+ *
+ * 既定値へ黙って戻してはいけない。戻した瞬間、それは「範囲が狭いまま動いている」状態で、
+ * まさに今回塞いだ穴そのものになる。
+ */
+export function loadInputScope(root: string): InputScope {
+  const p = resolve(root, INPUT_SCOPE_FILE)
+  let raw: string
+  try {
+    raw = readFileSync(p, 'utf8')
+  } catch {
+    throw new Error(
+      `入力の範囲定義 ${INPUT_SCOPE_FILE} が読めない (${p})。\n`
+        + '  既定値へ戻すことはしない。範囲が狭いまま黙って動くのが、この定義で塞いだ穴だから。',
+    )
+  }
+  const scope = JSON.parse(raw) as InputScope
+  if (scope.schemaId !== 'trs-jack-3d-source-input-scope.v1')
+    throw new Error(`${INPUT_SCOPE_FILE} の schemaId が想定と違う: ${scope.schemaId}`)
+  return scope
+}
+
+/**
+ * パスから role を決める。**範囲定義から機械的に導く**ので、
+ * ファイルを足したときに role を書き忘れることがない。
+ */
+export function roleOfInput(scope: InputScope, path: string): string {
+  if (path === INPUT_SCOPE_FILE) return 'input-scope'
+  if (path === 'package-lock.json') return 'lockfile'
+  if (scope.allowedGeneratedInputs.includes(path)) return 'sensitivity-input'
+  if (path.startsWith('src/data/')) return 'model-data'
+  if (path.startsWith('src/model/')) return 'model-code'
+  if (path.startsWith('schemas/')) return 'schema'
+  if (path.startsWith('scripts/')) return 'generator'
+  return 'other'
+}
+
+/**
+ * ある生成器が読む入力の一覧を、範囲定義から組み立てる。
+ *
+ * 共通入力（`commonInputs` + `recursiveDirectories` 配下）に、
+ * その生成器固有の schema と generator を足したもの。
+ * **`usesGeneratedInputs: false` の生成器には、感度 artifact を絶対に足さない**
+ * （自分自身が出力になり、生成するたびに digest が変わる）。
+ */
+function listScopedInputs(root: string, generatorKey: string, variantSlug?: string): InputFile[] {
+  const scope = loadInputScope(root)
+  const g = scope.generators[generatorKey]
+  if (!g) throw new Error(`${INPUT_SCOPE_FILE} に生成器 "${generatorKey}" の定義が無い`)
+
+  const files: InputFile[] = []
+  const seen = new Set<string>()
+  const required = new Set(scope.requiredExactFiles)
+  /**
+   * @param path 入力のパス
+   *
+   * **`requiredExactFiles` のものが読めなければ落とす。**
+   * 黙って飛ばすと、その入力**抜きの** digest ができあがる。
+   * 値は変わるのに理由がどこにも残らないので、あとから追えない。
+   * 範囲外（`recursiveDirectories` 配下や生成物）は、無くても digest に影響させない。
+   */
+  const add = (path: string) => {
+    if (seen.has(path)) return
+    try {
+      files.push({ path, sha256: sha256(readFileSync(resolve(root, path))), role: roleOfInput(scope, path) })
+      seen.add(path)
+    } catch (e) {
+      if (required.has(path))
+        throw new Error(
+          `必須の入力 ${path} が読めない (${resolve(root, path)}): ${(e as Error).message}\n`
+            + '  黙って飛ばすと、この入力を含まない inputDigest ができる。\n'
+            + `  範囲定義から外すなら ${INPUT_SCOPE_FILE} の requiredExactFiles を直すこと。`,
+        )
+      // 範囲外のものは記録しない。存在しない入力は digest に影響させない
+    }
+  }
+
+  for (const f of scope.commonInputs) add(f)
+  add(g.schema)
+  add(g.generator)
+  for (const dir of scope.recursiveDirectories) {
+    try {
+      for (const f of walk(root, dir)) add(f)
+    } catch {
+      // 範囲定義にあるがこの木には無いディレクトリ。digest には影響させない
+    }
+  }
+  if (g.usesGeneratedInputs && variantSlug) {
+    add(`artifacts/sensitivity.${variantSlug}.json`)
+    // 3極 profile は総合解析も使う (プラトー間隔・Tip 橋絡しきい値・挿抜力)
+    if (variantSlug === 'trs_jack_trs') add('artifacts/sensitivity.json')
+  }
+  return files.sort((a, b) => a.path.localeCompare(b.path))
+}
+
 /**
  * digest の対象。**ここに artifact の出力先を入れてはいけない**（自己参照になる）。
  *
  * `artifacts/sensitivity.json` だけは例外で、**入力として読んでいる**ので入れる
  * （events[].spreadMm の元データ）。感度解析を回し直せば digest が変わるのが正しい。
  */
+/**
+ * profile の入力。
+ *
+ * **感度 artifact は variant のものだけを入力にする（統合フォローアップ P1-2）。**
+ * 2026-08-03 まで、全 variant が単一の `artifacts/sensitivity.json` を入力にしていた。
+ * そのため **3極の感度を測り直しただけで 4極 profile の ID まで変わって**いた。
+ * 中身が変わっていないのに ID が変わるのは、受け手に無駄な引き直しをさせる。
+ *
+ * variantSlug を渡さない場合は、どの感度 artifact も入力にしない
+ * （check:stale のように variant を跨いで digest を比べる用途で使う）。
+ */
 export function listInputs(root: string, variantSlug?: string): InputFile[] {
-  const files: InputFile[] = []
-  const add = (path: string, role: string) => {
-    try {
-      files.push({ path, sha256: sha256(readFileSync(resolve(root, path))), role })
-    } catch {
-      // 読めないものは記録しない。存在しない入力は digest に影響させない
-    }
-  }
-  add('schemas/half-plug-topology-profile.v2.schema.json', 'schema')
-  add('scripts/exportHalfPlugProfile.ts', 'generator')
-  add('scripts/provenance.ts', 'generator')
-  for (const f of walk(root, 'src/data')) add(f, 'model-data')
-  for (const f of walk(root, 'src/model')) add(f, 'model-code')
-  add('package-lock.json', 'lockfile')
-  /**
-   * **感度 artifact は variant のものだけを入力にする（統合フォローアップ P1-2）。**
-   *
-   * 2026-08-03 まで、全 variant が単一の `artifacts/sensitivity.json` を入力にしていた。
-   * そのため **3極の感度を測り直しただけで 4極 profile の ID まで変わって**いた。
-   * 中身が変わっていないのに ID が変わるのは、受け手に無駄な引き直しをさせる。
-   *
-   * variantSlug を渡さない場合は、どの感度 artifact も入力にしない
-   * （check:stale のように variant を跨いで digest を比べる用途で使う）。
-   */
-  if (variantSlug) {
-    add(`artifacts/sensitivity.${variantSlug}.json`, 'sensitivity-input')
-    // 3極 profile は総合解析も使う (プラトー間隔・Tip 橋絡しきい値・挿抜力)
-    if (variantSlug === 'trs_jack_trs') add('artifacts/sensitivity.json', 'sensitivity-input')
-  }
-  return files.sort((a, b) => a.path.localeCompare(b.path))
+  return listScopedInputs(root, 'profile', variantSlug)
 }
 
 /**
@@ -132,7 +245,7 @@ export function listInputs(root: string, variantSlug?: string): InputFile[] {
  * profile 側は感度 artifact を入力として読むので入れて正しいが、向きが逆である。
  */
 export function listSensitivityInputs(root: string): InputFile[] {
-  return listGeneratorInputs(root, 'schemas/event-sensitivity.v1.schema.json', 'scripts/sensitivityEvents.ts')
+  return listScopedInputs(root, 'sensitivity')
 }
 
 /**
@@ -140,26 +253,7 @@ export function listSensitivityInputs(root: string): InputFile[] {
  * 感度 artifact と同じ形。schema と生成器だけが違う。
  */
 export function listRobustnessInputs(root: string): InputFile[] {
-  return listGeneratorInputs(root, 'schemas/topology-robustness.v2.schema.json', 'scripts/searchTopologyRobustness.ts')
-}
-
-/** モデルを振って作る artifact の共通入力。**出力先は絶対に入れない** */
-function listGeneratorInputs(root: string, schemaPath: string, generatorPath: string): InputFile[] {
-  const files: InputFile[] = []
-  const add = (path: string, role: string) => {
-    try {
-      files.push({ path, sha256: sha256(readFileSync(resolve(root, path))), role })
-    } catch {
-      // 読めないものは記録しない
-    }
-  }
-  add(schemaPath, 'schema')
-  add(generatorPath, 'generator')
-  add('scripts/provenance.ts', 'generator')
-  for (const f of walk(root, 'src/data')) add(f, 'model-data')
-  for (const f of walk(root, 'src/model')) add(f, 'model-code')
-  add('package-lock.json', 'lockfile')
-  return files.sort((a, b) => a.path.localeCompare(b.path))
+  return listScopedInputs(root, 'robustness')
 }
 
 const git = (root: string, args: string[]): string | null => {

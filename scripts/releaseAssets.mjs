@@ -30,6 +30,8 @@ export const RELEASE_ASSETS = [
   { path: 'schemas/trs-jack-3d-release-index.v1.schema.json', role: 'schema' },
   { path: 'schemas/validation-results.v1.schema.json', role: 'schema' },
   { path: 'schemas/source-input-manifest.v1.schema.json', role: 'schema' },
+  { path: 'schemas/source-input-scope.v1.schema.json', role: 'schema' },
+  { path: 'schemas/source-verification-result.v1.schema.json', role: 'schema' },
   { path: 'schemas/topology-search.v1.schema.json', role: 'schema' },
   { path: 'schemas/real-jack-comparison.v1.schema.json', role: 'schema' },
   { path: 'schemas/test-counts.v1.schema.json', role: 'schema' },
@@ -38,6 +40,38 @@ export const RELEASE_ASSETS = [
   { path: 'artifacts/test_counts.json', role: 'evidence' },
   { path: 'artifacts/validation-results.json', role: 'evidence' },
   { path: 'artifacts/source-input-manifest.json', role: 'evidence' },
+  /**
+   * **入力の範囲定義（v0.3.0 フォローアップ P1-2）。**
+   *
+   * これが無いと、受け手は `source-input-manifest.json` の 29 件を検算できても
+   * **「29 件で全部なのか」を確かめられない。**記録漏れがあっても一致してしまう。
+   * 範囲定義を配ることで、受け手は自分の source を歩いて「載っていない入力」を自分で探せる。
+   *
+   * 生成側 (`scripts/provenance.ts`) が読むのと同じファイルである。
+   */
+  { path: 'source-input-scope.v1.json', role: 'evidence' },
+  /**
+   * **検証を実際に回した記録（v0.3.0 フォローアップ P1-3）。自己申告である。**
+   * 配る理由は自慢のためではなく、**判定の境界を実物で見せるため**——
+   * 「取れなかった」「合わなかった」「そもそも探していない」が別物だということは、
+   * 出力を 1 つ見るのがいちばん早い。artifact 自身に
+   * `isSelfReport: true` / `replacesRecipientVerification: false` を持たせてある。
+   */
+  { path: 'artifacts/source-verification-result.json', role: 'evidence' },
+  /**
+   * **検証ツールそのもの。**
+   *
+   * v0.3.0 では「入力 28 件を自分で検算せよ」と書いておきながら、
+   * **この script も tag source も bundle に入っていなかった。**
+   * 受け手は当然 `SOURCE_UNAVAILABLE` を返してきた——欠陥はこちらの指示にあった。
+   *
+   * tag source のほうは GitHub が release ページへ自動で付ける
+   * "Source code (tar.gz)" がそのまま使える（同じページから取れる）。
+   * 展開すると `<repo>-<sha>/` が 1 枚かぶるが、`--source` はそれを剥がす。
+   *
+   * node の標準モジュールしか使っていないので、単体で置いて動く。
+   */
+  { path: 'scripts/verifyReleaseSourceInputs.mjs', role: 'tool' },
   // **索引。**下流が報告文から値を手で転記しなくて済むようにする（v0.2.0 では手入力だった）
   { path: 'artifacts/trs-jack-3d-release-index.v1.json', role: 'index' },
 ]
@@ -56,6 +90,11 @@ export const RELEASE_ASSETS = [
 export const SOURCE_ONLY_TARGETS = [
   { path: 'artifacts/topology_search_difference_signal.json', reason: '目標トポロジーの探索記録。runtime 入力ではない' },
   { path: 'artifacts/real_jack_comparison.json', reason: '実在部品図面との突き合わせ記録。runtime 入力ではない' },
+  {
+    path: 'package.json',
+    reason: 'package.json ↔ package-lock.json の version 一致を見るための対象 (v0.3.0 フォローアップ P1-1)。'
+      + 'artifact ではないので配布しない。受け手が確かめたいなら tag source を見ること',
+  },
 ]
 
 export const REMOVED_SINCE_V011 = [

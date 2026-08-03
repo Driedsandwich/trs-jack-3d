@@ -69,12 +69,16 @@
    {
     "field": "sensitivitySummary.basis",
     "introducedIn": "v0.1.2 (追加のみ)"
+   },
+   {
+    "field": "provenance.inputFiles[].role に \"input-scope\" を追加",
+    "introducedIn": "v0.3.0 フォローアップ P1-2 (追加のみ)"
    }
   ],
   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。旧語彙のまま読むと、値で絞り込む箇所が「そのデータが 1 件も無い」と区別できず、沈黙して壊れる。",
   "versionSelectionEvidence": "下流 release-verifier.mjs は schemaVersion を見て拒否するが contractRevision はどこも読まない。2026-08-03 に両方を実際に import させて確かめた (A: 停止 / B: PASS)。"
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:01ac02bdcb7b",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:50e9c5aaab4c",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -113,42 +117,47 @@
    ]
   }
  },
- "sourceRevision": "3966dc6cf693365923d632da26ed24760d6a9012",
+ "sourceRevision": "86aebb6d02d85ea97afd106db8c988dd39451ab9",
  "generatedAt": "2026-08-03",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "3966dc6cf693365923d632da26ed24760d6a9012",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "86aebb6d02d85ea97afd106db8c988dd39451ab9",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "01ac02bdcb7b0884f431958610115da8bbe0dd457c8d02754cb545456f9db028",
+  "inputDigest": "50e9c5aaab4ccbb41a89213bc40ef93712c8c1989b923e16fca6dc3085064b65",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "1c7349c831ca744859c65b71a32cdff120db17c0e9a20925b00148549cd84405",
+    "sha256": "7796923ee2e09dfad80374310ea307b2ff1a25dde6c2ae4c08b5cda89a6c7b53",
     "role": "sensitivity-input"
    },
    {
     "path": "package-lock.json",
-    "sha256": "5a62467e286df6334967859b48449b633b61148930934f32b3b1b66849f11589",
+    "sha256": "86732e9386e9b89c0dfb2e89243733052b0ad8b347a4dd991136d80d9f0ace7d",
     "role": "lockfile"
    },
    {
     "path": "schemas/half-plug-topology-profile.v2.schema.json",
-    "sha256": "6b13f53d0e73ce0dc13ecb71ba72a0c7dc9fc8dc8f6cc72f0970dc22ea0769a8",
+    "sha256": "ecc48eab261d60169ec8e124736a909258a590cfd77817fe340d5804ad827152",
     "role": "schema"
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "0dc7041abee048898e5f51c6f68ec435e37b3eb53391e0b84194fde4aa066e57",
+    "sha256": "ad61ad252be658eaf36a07214f9aa0434c3d9255387d405649a1cf8f3d19b22a",
     "role": "generator"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "29a7ef04b84f0446f7148b2d06c69f865a7a8c0c465b8cbcc84edf4cc9f75ed9",
+    "sha256": "f79999ce246974086348a8b77b791e16895c377e58294e88d2a09471dd3e1ebb",
     "role": "generator"
+   },
+   {
+    "path": "source-input-scope.v1.json",
+    "sha256": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+    "role": "input-scope"
    },
    {
     "path": "src/data/dimensions.json",
@@ -236,7 +245,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\" --release",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
   "artifactDate": "2026-08-03"
  },
  "fullInsertionDepthMm": 14,
@@ -5453,8 +5462,8 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "b66a3017c65005a7ba3803418faecb48622176a9",
-   "inputDigest": "3700639db8a6728fe5c5983f03c76559674eb7c4172764d8a53084ae98f75fa3",
+   "generatedFromCommit": "86aebb6d02d85ea97afd106db8c988dd39451ab9",
+   "inputDigest": "676a1c45655550ba97abe21a90da7180bd891f3bf1eedb5c081a2f5616f60019",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
   },

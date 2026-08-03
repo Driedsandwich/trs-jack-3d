@@ -1,0 +1,41 @@
+{
+ "schemaVersion": 1,
+ "schemaId": "trs-jack-3d-source-verification-result.v1",
+ "isSelfReport": true,
+ "replacesRecipientVerification": false,
+ "note": "**これは自己申告である。**こちらのリポジトリで verify:release-source-inputs を回した結果でしかなく、受け手の独立検証を置き換えない。**突き合わせ先は生成時の作業ツリーであって tag の source ではない。**tag は evidence をコミットした後に打つので、この時点では存在しない。受け手は同梱の verifyReleaseSourceInputs.mjs を tag に対して回すこと（howToVerifyYourself を参照）。",
+ "tool": {
+  "script": "scripts/verifyReleaseSourceInputs.mjs",
+  "toolVersion": 2,
+  "sha256": "c7bd8cb7738250db89fe9086fb3da0f1d460b6764553fd8d8808ddcdf8855a66"
+ },
+ "sourceOrigin": "directory:.",
+ "generatedFromCommit": "86aebb6d02d85ea97afd106db8c988dd39451ab9",
+ "releaseCommit": null,
+ "generatedAt": "2026-08-03",
+ "status": "OK",
+ "exitCode": 0,
+ "unrecordedInputDetection": {
+  "performed": true,
+  "scopeSource": "override:source-input-scope.v1.json"
+ },
+ "counts": {
+  "checked": 29,
+  "matched": 29,
+  "mismatched": 0,
+  "missingInSource": 0,
+  "unrecordedInputCandidates": 0,
+  "selfReferencingInputs": 0
+ },
+ "howToVerifyYourself": [
+  "# bundle に同梱してある script をそのまま使う（通信しない）",
+  "node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --source <展開した source> --scope source-input-scope.v1.json",
+  "# 手元に tag があるなら（これも通信しない）",
+  "node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --tag <tag> --scope source-input-scope.v1.json",
+  "# 明示したときだけ GitHub から source を取る",
+  "node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --tag <tag> --fetch github --scope source-input-scope.v1.json",
+  "# status は OK(0) / MISMATCH(1) / SOURCE_UNAVAILABLE(2) / MANIFEST_UNAVAILABLE(2) / NOTHING_TO_VERIFY(2)。",
+  "# **取れなかった(2) と 合わなかった(1) を同じ失敗に潰さないこと。**",
+  "# **unrecordedInputDetection.performed が false なら「候補 0 件」ではなく「探していない」。**"
+ ]
+}

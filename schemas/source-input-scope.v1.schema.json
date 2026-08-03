@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/source-input-scope.v1.schema.json",
+  "title": "trs-jack-3d source input scope v1",
+  "description": "artifact の inputDigest が覆う入力の範囲。**生成側 (provenance.ts) と検証側 (verifyReleaseSourceInputs.mjs) が同じこの 1 か所から読む。**片方だけに書かれた範囲は、もう片方から見えないまま穴になる",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "schemaId",
+    "purpose",
+    "recursiveDirectories",
+    "requiredExactFiles",
+    "allowedGeneratedInputs",
+    "excludedOutputs",
+    "generators",
+    "commonInputs",
+    "notCovered"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "schemaId": { "const": "trs-jack-3d-source-input-scope.v1" },
+    "purpose": { "type": "string", "minLength": 1 },
+    "why": { "type": "string", "minLength": 1 },
+
+    "recursiveDirectories": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "**配下のファイルは全部が入力。**ここに 1 つでもディレクトリを挙げたら、その中の未記録ファイルは MISMATCH になる",
+      "items": { "type": "string", "pattern": "^[^/].*[^/]$" }
+    },
+
+    "requiredExactFiles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "**個別に必ず入力になるファイル。**source にあるのに manifest へ記録されていなければ MISMATCH",
+      "items": { "type": "string", "pattern": "^[^/].*[^/]$" }
+    },
+
+    "allowedGeneratedInputs": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "**生成物だが入力として読んでよいもの。**excludedOutputs の唯一の例外。ここを増やすときは、なぜ自己参照にならないかを書く",
+      "items": { "type": "string" }
+    },
+
+    "excludedOutputs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "**入力にしてはいけないディレクトリ接頭辞。**allowedGeneratedInputs 以外がここの下から入力に記録されていたら自己参照の事故",
+      "items": { "type": "string", "pattern": "^[^/].*[^/]$" }
+    },
+    "excludedOutputsNote": { "type": "string" },
+
+    "generators": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "requiredExactFiles を役割別に見た射影。**別の一覧ではない**",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema", "generator", "usesGeneratedInputs"],
+        "properties": {
+          "schema": { "type": "string" },
+          "generator": { "type": "string" },
+          "usesGeneratedInputs": {
+            "type": "boolean",
+            "description": "allowedGeneratedInputs を読むか。**自分自身が出力の生成器は必ず false**"
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "generatorsNote": { "type": "string" },
+
+    "commonInputs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "どの生成器も読む入力。requiredExactFiles の部分集合でなければならない",
+      "items": { "type": "string" }
+    },
+    "commonInputsNote": { "type": "string" },
+
+    "notCovered": {
+      "type": "array",
+      "minItems": 1,
+      "description": "**inputDigest が覆っていないもの。**空にしてはいけない——覆えないものは必ずあり、無いと書くのは嘘になる。「digest が一致した」を「全部同じだった」と読ませないための欄",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["what", "why", "consequence"],
+        "properties": {
+          "what": { "type": "string", "minLength": 1 },
+          "why": { "type": "string", "minLength": 1 },
+          "consequence": {
+            "type": "string",
+            "minLength": 1,
+            "description": "**覆っていないことで何が起きるか。**「対象外」とだけ書くと、読み手は影響が無いと解釈する"
+          }
+        }
+      }
+    },
+    "notCoveredNote": { "type": "string" }
+  }
+}

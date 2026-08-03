@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>v0.3.0 非阻害フォローアップオーダー (2026-08-03)</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc"><h2>目次</h2><ol><li><a href="#s1">0-1. 受領時の検証記録（2026-08-03・trs-jack-3d 側）</a></li><li><a href="#s11">結論（受領原文）</a></li><li><a href="#s12">P1-1 package.json / package-lock.json version parity</a></li><li><a href="#s13">P1-2 source input candidate scopeを機械可読化</a></li><li><a href="#s14">P1-3 release source verification evidence</a></li><li><a href="#s15">P1-4 robustness window test vectors</a></li><li><a href="#s16">変更禁止</a></li><li><a href="#s17">完了報告</a></li></ol></nav>
+<h1>trs-jack-3d v0.3.0 非阻害フォローアップ開発オーダー</h1>
+<p>作成日: 2026-08-03</p>
+<h2 id="s1">0-1. 受領時の検証記録（2026-08-03・trs-jack-3d 側）</h2>
+<p><strong>受け取った内容は実測で裏を取りました。</strong>自己申告は使っていません。</p>
+<div class="tw"><table><thead><tr><th>確認</th><th>方法</th><th>結果</th></tr></thead><tbody><tr><td>配布 zip</td><td><code>shasum -c</code></td><td><strong>一致</strong>（2,777,274 bytes・CRC OK・429 ファイル）</td></tr><tr><td>このオーダー本体</td><td>zip 内から直接読み出し</td><td>sha256 <code>dbf6dc59b199ffda…</code></td></tr><tr><td>数値・構造の主張</td><td>配布物と 1 件ずつ照合</td><td><strong>23 項目すべて一致・食い違い 0</strong></td></tr><tr><td>指摘 P1-1（version 不一致）</td><td><code>git show &lt;tag&gt;:package*.json</code></td><td><strong>正しい</strong>（下の 0-3 に追加事実あり）</td></tr><tr><td>指摘 P1-2（探索範囲）</td><td><strong>manifest を 4 通りに変異させて helper を実走</strong></td><td><strong>正しい。実際の穴だった</strong>（0-2）</td></tr></tbody></table></div>
+<p>照合した主な値（すべて一致）:</p>
+<pre><code>profileId TRS      trs-jack-3d:TRS|JACK-TRS:abca1dfb5b5f
+profileId TRRS     trs-jack-3d:TRS|JACK-TRRS:01ac02bdcb7b
+releaseCommit      4c5fce8b23147dc03cd5b18ac855cc51e4c7b179  = git rev-parse v0.3.0^{commit}
+生成 commit         3966dc6(profile 2) / 5900015(evidence 2) / b66a301(感度・頑健性 3)
+索引 assets 17 / SHA256SUMS 18 / 配布ファイル 19
+TRS   intervals 23  events 32  ground-open-differential 0
+TRRS  intervals 30  events 36  ground-open-differential 1
+IV028 13.30–13.52mm  normalized 0.950000–0.965714  ASSUMPTION
+頑健性 5184 / 3920 / 2300 / 0.586735
+窓     13.30 / 13.50 / 13.52 / 0.22   step 0.02   EXCLUSIVE
+移行   interval 53/53  event 68/68（ID 完全一致・profileId は変化）
+検証   9 対象 = RELEASE_ASSET 7 + SOURCE_ONLY 2
+test   408 / skipped 0</code></pre>
+<p>§5-1 に挙げられた窓の不変条件 6 件はすべて成立しています （<code>lastSampleMm + stepMm == endExclusiveMm</code>、<code>endExclusiveMm == profile IV028 nominalEndMm</code> を含む）。</p>
+<p><code>SOURCE_UNAVAILABLE</code> の扱いも設計どおりに読まれました。受領した <code>TRS_JACK_3D_V030_SOURCE_INPUT_VERIFICATION_RESULT_20260803.json</code> は <code>status: SOURCE_UNAVAILABLE</code> / <code>exitCode: 2</code> / <code>notAMismatch: true</code> / <code>independentVerification: false</code> を分けて記録しており、<strong>「取れなかった」を「合わなかった」に潰していません。</strong></p>
+<h3 id="s2">0-2. P1-2 は実際の穴でした（変異で実証）</h3>
+<p><code>verifyReleaseSourceInputs.mjs</code> の未記録入力検出を、manifest から入力を落として実走した結果:</p>
+<div class="tw"><table><thead><tr><th>落とした入力</th><th>status</th><th>exit</th></tr></thead><tbody><tr><td><code>src/model/</code> 8 件</td><td>MISMATCH</td><td>1</td></tr><tr><td><code>scripts/</code> 4 件（generator 本体）</td><td><strong>OK</strong></td><td><strong>0</strong></td></tr><tr><td><code>schemas/</code> 3 件</td><td><strong>OK</strong></td><td><strong>0</strong></td></tr><tr><td><code>package-lock.json</code></td><td><strong>OK</strong></td><td><strong>0</strong></td></tr></tbody></table></div>
+<p><strong>入力 28 件のうち、記録漏れを検出できるのは 8 件だけです。</strong>残り 20 件は落としても「全件一致」を返します。</p>
+<p><strong>なぜ自分で見つけられなかったか。</strong>この機能には変異試験を 7 件書いて全部落としていましたが、 <strong>変異がすべて <code>INPUT_DIRS</code> の内側（<code>src/model/</code>）だった</strong>からです。 探索範囲そのものが仮定なので、内側から叩いても仮定は揺れません。 <strong>変異が全部落ちること自体は、範囲が正しいことの証拠になりません。</strong></p>
+<p>→ 恒久化済み（メモリ <code>feedback-mutate-outside-detector-scope</code>）。P1-2 の受入条件に反映します。</p>
+<h3 id="s3">0-3. P1-1 について、オーダーに無い追加事実</h3>
+<p><strong>不一致は v0.3.0 で始まったのではなく、v0.2.0 から続いています。</strong></p>
+<pre><code>v0.1.0   package.json 0.1.0 / lock 0.1.0
+v0.1.1   package.json 0.1.0 / lock 0.1.0
+v0.2.0   package.json 0.2.0 / lock 0.1.0   ← 起点（commit 756943f）
+v0.3.0   package.json 0.3.0 / lock 0.1.0</code></pre>
+<p><code>756943f</code> で <code>package.json</code> だけを上げたのが起点です。</p>
+<p>影響範囲の実測:</p>
+<ul><li><code>package-lock.json</code> は <strong>5 つの生成物すべての入力</strong>（<code>consumedBy</code>: profile 2 / 感度 2 / 頑健性 1）</li><li><code>profileId</code> は <code>provenance.inputDigest.slice(0, 12)</code> なので、<strong>直せば profileId まで変わる</strong></li><li><code>npm ci --dry-run --offline</code> は <strong>rc=0</strong>。止まらないという判定は正しい</li><li><code>artifacts/*.json</code> に version の記載は無く、<strong>成果物へ染み出していない</strong></li></ul>
+<p><strong>さらに、こちらには既に検査があるのに素通りしていました。</strong> <code>test/schemaContractV2.test.ts:230</code>「package.json の version が配布版と揃っている」は、 実際には <code>stageRelease.mjs</code> の既定値しか見ておらず、<code>package-lock.json</code> を一切参照していません。 <strong>テスト名のほうが検査範囲より広く、その名前で「守られている」と判断していました。</strong> P1-1 ではこのテストの名前か assertion のどちらかを直します。</p>
+<h3 id="s4">0-4. こちらの作業指示の欠陥</h3>
+<p><strong>「やること 4（<code>verify:release-source-inputs</code> で入力 28 件を自分で検算する）」は、 添付 19 件だけでは実行できませんでした。</strong><code>verifyReleaseSourceInputs.mjs</code> も tag source も bundle にありません。 受け取った <code>SOURCE_UNAVAILABLE</code> は<strong>正しい報告</strong>で、欠陥は指示側にあります。 P1-3 と併せて、配布に足すか clone 経路を明記するかを決めます。</p>
+<h3 id="s5">0-5. 対応状況（2026-08-03・trs-jack-3d 側）</h3>
+<div class="tw"><table><thead><tr><th></th><th>状態</th></tr></thead><tbody><tr><td><strong>P1-2</strong> source input scope の機械可読化</td><td><strong>実装済み</strong>（下の 0-6）</td></tr><tr><td><strong>P1-4</strong> 窓の test vector 3 件</td><td><strong>実装済み</strong>（下の 0-7）</td></tr><tr><td><strong>P1-1</strong> version parity</td><td><strong>実装済み・再生成済み</strong>（下の 0-9）</td></tr><tr><td><strong>P1-3</strong> source verification evidence</td><td><strong>実装済み</strong>（下の 0-10）</td></tr></tbody></table></div>
+<p>4 件とも入っている。<strong>release はまだ作っていない</strong>（採番と公開は承認待ち）。</p>
+<p><strong>P1-1 を最後にした理由。</strong><code>package-lock.json</code> は 5 つの生成物すべての入力なので、 version を直すと感度・頑健性・profile を作り直すことになる。 P1-2 も <code>scripts/provenance.ts</code> と範囲定義を入力に加えるため、同じ再生成が要る。 <strong>先に P1-1 をやると、重い走査（<code>search:robustness</code>）を 2 回回すことになる。</strong> 入力の集合を P1-2 で確定させてから、P1-1 でまとめて 1 回作り直す。</p>
+<p>そのため現在、artifact は<strong>意図的に古い状態</strong>にある。<code>npm run check:stale</code> が 5 件すべてを 名指しで再実行対象に挙げており、これは P1-1 の作業手順そのものである。</p>
+<p><strong>「再生成すれば直る」を主張ではなく実測にした。</strong>リポジトリを複製し、 そこで再生成の全工程（感度 → 頑健性 → profile → evidence）を通しで流した。</p>
+<pre><code>validation-results.json     10/10 適合 (配布 8 / 非配布 2)
+source-input-manifest.json  入力 29 件
+release-index               asset 19 件
+validate:profiles           10 件すべてが schema と意味規則の両方に適合</code></pre>
+<p>この予行で <strong>schema の enum 漏れが 1 件見つかった</strong>（下の 0-6）。 静的な検査だけでは出ず、実際に作り直して初めて出た。</p>
+<p>現在テストで落ちている 6 件は、すべてこの古さに起因する。</p>
+<div class="tw"><table><thead><tr><th>落ちているテスト</th><th>理由</th></tr></thead><tbody><tr><td><code>sensitivityProvenance</code> × 2</td><td>記録された入力一覧が 28 件（範囲定義が入る前）</td></tr><tr><td><code>releaseIndex</code> 3 件</td><td>索引が asset 17 件のまま／manifest に <code>inputScope</code> が無い</td></tr><tr><td><code>halfPlugProfile</code> 1d</td><td>上記をまとめた <code>validate:profiles</code></td></tr></tbody></table></div>
+<p><strong>再生成で消えることは予行で確認済み。</strong>リポジトリ側では回していない（P1-1 で 1 回だけ回す）。</p>
+<h3 id="s6">0-6. P1-2 でやったこと</h3>
+<p><strong>範囲定義を 1 か所に置き、生成側と検証側の両方がそれを読むようにした。</strong></p>
+<pre><code>source-input-scope.v1.json          範囲定義（**これ自身も入力**）
+schemas/source-input-scope.v1.schema.json</code></pre>
+<div class="tw"><table><thead><tr><th>読む側</th><th>何に使うか</th></tr></thead><tbody><tr><td><code>scripts/provenance.ts</code></td><td>生成器ごとの入力一覧を組み立てる</td></tr><tr><td><code>scripts/verifyReleaseSourceInputs.mjs</code></td><td>記録漏れの探索範囲</td></tr><tr><td><code>scripts/buildReleaseEvidence.mjs</code></td><td>manifest へ範囲を書き込む</td></tr></tbody></table></div>
+<p><code>INPUT_DIRS = [&#x27;src/data&#x27;,&#x27;src/model&#x27;]</code> の直書きは消した。</p>
+<p><strong>回帰試験は範囲の外側から入れた。</strong>今日素通りした 4 件をそのまま入れてある。</p>
+<div class="tw"><table><thead><tr><th>落とした入力</th><th>以前</th><th>現在</th></tr></thead><tbody><tr><td><code>src/model/</code> 8 件</td><td>MISMATCH / 1</td><td>MISMATCH / 1</td></tr><tr><td><code>scripts/</code> 4 件</td><td><strong>OK / 0</strong></td><td><strong>MISMATCH / 1</strong></td></tr><tr><td><code>schemas/</code> 3 件</td><td><strong>OK / 0</strong></td><td><strong>MISMATCH / 1</strong></td></tr><tr><td><code>package-lock.json</code></td><td><strong>OK / 0</strong></td><td><strong>MISMATCH / 1</strong></td></tr></tbody></table></div>
+<p><code>rc</code> だけで判定していない。落としたパスが <code>unrecordedInputCandidates</code> に 名指しで、しかも<strong>その件数ちょうど</strong>出ることまで見ている。 偽陽性が無いこと（変異なしなら <code>OK</code> / 0）と、 <strong>範囲を狭めると検出されなくなること</strong>（範囲定義が判定を動かしている証拠）も入れた。</p>
+<p><strong>生成側も黙らせない。</strong><code>requiredExactFiles</code> のファイルが読めないとき、以前は 黙って飛ばして<strong>その入力抜きの digest</strong> を作っていた。値だけ変わって理由が残らないので追えない。 今は落ちる。範囲外（<code>recursiveDirectories</code> 配下・生成物）は従来どおり無くても影響させない。</p>
+<p><strong>検出できないものは黙らない。</strong></p>
+<ul><li>範囲定義が無い source では <code>unrecordedInputDetection.performed: false</code> と理由を出す。</li></ul>
+<p>  <strong>既定の狭い範囲へ戻すことは意図的にしていない</strong>——それが今回塞いだ穴そのものだから</p>
+<ul><li><code>notCovered</code> に <strong>digest が覆えないもの</strong>（Node のバージョン・ロケール・環境変数・</li></ul>
+<p>  <code>src/</code> のうち UI 側・<code>test/</code>）を書き、検証側の出力にも載せた。   「一致した」を「全部同じだった」と読ませないため</p>
+<p><strong>実装中に自分で同じ形の誤りをもう 1 回やった（再生成の予行で発覚）。</strong></p>
+<p>範囲定義が入力に加わったことで <code>input-scope</code> という role が増えたが、 <strong>artifact schema の <code>role</code> の enum に足し忘れていた。</strong> 着手前に「role に enum があるか」を調べたとき、検出コードの条件を</p>
+<pre><code>o.get(&#x27;type&#x27;) == &#x27;string&#x27; and &#x27;model-code&#x27; in o[&#x27;enum&#x27;]</code></pre>
+<p>と書いていた。実際の schema には <code>enum</code> だけ書かれていて <code>type</code> が無く、 <strong>取りこぼした結果「role に enum は無い（自由文字列）」と誤って読んだ。</strong> 検出条件が狭いと、無いのか見えていないのかが区別できない——今日 3 回目の同じ形である。</p>
+<p>対策として、<strong>実際に生成される role を全部集めて現役 schema 3 件の enum に載っているかを機械照合する</strong> テストを足した（enum から 1 語抜くと落ちることを変異で確認済み）。 <code>role</code> が <code>other</code> に落ちる入力があれば、それも同じテストが落とす。</p>
+<p>enum には <code>input-scope</code> を<strong>追加</strong>した。改名ではないので、role で絞り込む実装が沈黙して壊れることはない。 v0.3.0 の schema を pin して新しい artifact を検証すると enum で落ちるが、<strong>それは明示的に落ちる。</strong> 両 artifact の <code>contractMigration.addedFields</code> に記録した。 <strong>v1 schema（過去の release の契約）には触っていない。</strong></p>
+<p>入力は <strong>28 件 → 29 件</strong>（範囲定義自身が加わる）。 <code>validate:profiles</code> の対象は <strong>9 件 → 10 件</strong>で、増えたのは範囲定義。 そこでは「範囲から導いた集合と、実際に記録された入力がちょうど一致するか」を突き合わせている。</p>
+<h3 id="s7">0-7. P1-4 でやったこと</h3>
+<p><code>test/fixtures/topology-robustness/</code> に 3 件。<strong>どの層が弾くかまで実走で確かめた。</strong></p>
+<div class="tw"><table><thead><tr><th>fixture</th><th>schema</th><th>意味検査</th><th>捕まえた層</th></tr></thead><tbody><tr><td><code>valid-exclusive-window.json</code></td><td>PASS</td><td>PASS</td><td>（通す）</td></tr><tr><td><code>invalid-legacy-toMm.json</code></td><td><strong>FAIL</strong></td><td>—</td><td><strong>schema</strong></td></tr><tr><td><code>invalid-lastSample-equals-endExclusive.json</code></td><td><strong>PASS</strong></td><td><strong>FAIL</strong></td><td><strong>意味検査</strong></td></tr></tbody></table></div>
+<p><strong>3 番目は schema を通る。</strong>draft-07 に項目どうしの大小を書く方法が無いので、 <code>lastSampleMm &lt; endExclusiveMm</code> は schema では表現できない。 つまり「schema を通ったから窓は正しい」は成り立たない——これを実演するための fixture である。</p>
+<p>窓の規則は <code>scripts/robustnessWindows.mjs</code> へ切り出し、 <strong>本番の検証（<code>validateProfiles.mjs</code>）と fixture のテストが同じ関数を呼ぶ</strong>ようにした （二重に書くと、fixture が落ちても本番が落ちるとは限らなくなる）。</p>
+<p>実装中に見つけたこと: <strong><code>counterExamples</code> 側の窓は実データに 1 件も無い</strong>（9 件中 0 件）。 目標が現れない構成には窓ができないので当然だが、<strong>一度も通らない枝は壊れていても気づけない</strong>ので、 テストでは合成した反対証拠を通して枝が生きていることを確かめている。</p>
+<h3 id="s8">0-8. <code>test/schemaContractV2.test.ts</code> の名前を狭めた</h3>
+<p>「package.json の version が配布版と揃っている」→ <strong>「stageRelease の既定 version が package.json と揃っている」</strong>。 実際に見ているのは <code>stageRelease.mjs</code> の既定値だけで、<code>package-lock.json</code> を参照していない。</p>
+<p>そのうえで、<strong>既知の不一致を主張するテストを 1 件足した。</strong> P1-1 で lockfile を直した瞬間に落ちるので、そこで parity 検査へ反転させる。 黙って放置するより、落ちて気づくほうがよい。</p>
+<h3 id="s9">0-9. P1-1 でやったこと</h3>
+<p><code>package-lock.json</code> の version を <strong>0.1.0 → 0.3.0</strong>（root と <code>packages[&quot;&quot;]</code> の 2 か所）。 差分は<strong>2 行だけ</strong>で、<code>npm ci --dry-run --offline</code> は rc=0 のまま。</p>
+<p>そのうえで感度 → 頑健性 → profile → evidence を<strong>1 回だけ</strong>通した。</p>
+<div class="tw"><table><thead><tr><th></th><th>旧（v0.3.0 公開版）</th><th>新</th></tr></thead><tbody><tr><td>`TRS\</td><td>JACK-TRS`</td><td><code>…:abca1dfb5b5f</code></td><td><strong><code>…:b604122db23d</code></strong></td></tr><tr><td>`TRS\</td><td>JACK-TRRS`</td><td><code>…:01ac02bdcb7b</code></td><td><strong><code>…:50e9c5aaab4c</code></strong></td></tr></tbody></table></div>
+<p><strong>parity の判定は <code>check:stale</code> ではなく release validation へ入れた。実測して決めた。</strong></p>
+<p>複製したリポジトリで <code>package.json</code> の version だけを 0.3.0 → 0.9.9 に変え、両方を回した。</p>
+<pre><code>check:stale        「重い成果物は現在のモデルと整合しています。再実行は不要です。」 rc=0
+validate:profiles  11 件すべて適合</code></pre>
+<p><strong><code>check:stale</code> は一言も出ない。</strong>見ているのは <code>inputDigest</code> で、<code>package.json</code> は入力ではないからである。 v0.2.0 で不一致が生まれ v0.3.0 まで気づかなかったのは、まさにこの経路だった。 （<code>package-lock.json</code> を書き換えれば <code>check:stale</code> は鳴る。だが<strong>鳴ってほしいのは package.json だけを上げたときで、そこでは鳴らない。</strong>）</p>
+<p><code>package.json</code> を入力に加える案は採らなかった。scripts や依存の範囲指定を直すたびに 全 artifact の digest が動き、<strong>「中身が変わっていないのに ID が変わる」</strong>を自分から作ることになる。</p>
+<p><code>test/schemaContractV2.test.ts</code> の「まだ揃っていない」テストは<strong>parity 検査へ反転済み</strong> （直した瞬間に落ちる形にしてあったので、忘れずに反転できた）。 判定の本体がテスト側だけに無いことも、別のテストで押さえた。</p>
+<p>検証対象は <strong>10 件 → 11 件</strong>（<code>package.json</code> が加わる。配布はしないので <code>SOURCE_ONLY</code>）。</p>
+<h3 id="s10">0-10. P1-3 でやったこと</h3>
+<p><code>artifacts/source-verification-result.json</code> を新設し、bundle へ入れた。</p>
+<pre><code>isSelfReport                    true   （固定。schema で const にしてある）
+replacesRecipientVerification   false  （固定）
+sourceOrigin                    directory:.  ← **tag の source ではない**
+releaseCommit                   null   （artifact は自分を含む commit の hash を持てない）
+status / exitCode               OK / 0
+counts.checked                  29
+unrecordedInputDetection.performed  true</code></pre>
+<p><strong>突き合わせ先が作業ツリーであることを artifact 自身に書いてある。</strong> tag は evidence をコミットしてから打つので、この時点では存在せず、原理的にここでは検証できない。 <code>howToVerifyYourself</code> に受け手が自分で回すコマンドを入れ、 <strong>「取れなかった(2)」と「合わなかった(1)」を潰さないこと</strong>もそこに書いた。</p>
+<p><strong>「添付だけでは回せない」問題も直した。</strong></p>
+<div class="tw"><table><thead><tr><th>足したもの</th><th>理由</th></tr></thead><tbody><tr><td><code>scripts/verifyReleaseSourceInputs.mjs</code></td><td><strong>道具が bundle に無かった</strong>。node 標準しか使っていないので単体で動く</td></tr><tr><td><code>artifacts/source-verification-result.json</code></td><td>判定の境界を実物で見せる</td></tr><tr><td><code>schemas/source-verification-result.v1.schema.json</code></td><td>形を bundle 内で検証できる</td></tr></tbody></table></div>
+<p>tag source のほうは<strong>新たに配る必要がなかった</strong>。GitHub が release ページへ &quot;Source code (tar.gz)&quot; を自動で付けており、同じページから取れる（v0.3.0 で実測・9.3 MB）。</p>
+<p>ただし展開すると <code>Driedsandwich-trs-jack-3d-&lt;sha&gt;/</code> が 1 枚かぶる。 <strong>剥がし忘れると 29 件すべてが <code>MISSING_IN_SOURCE</code> になり「壊れている」と読める。</strong> <code>--source</code> がその 1 階層を剥がすようにした（親が複数ある普通の root では何も起きない）。 剥がしを止める変異でテストが落ちることを確認済み。</p>
+<p>配布物は <strong>19 件 → 22 件</strong>。</p>
+<hr>
+<h2 id="s11">結論（受領原文）</h2>
+<p>v0.3.0のHalf-Plug production importはPASS。blocking修正はない。以下は次回maintenance/release向けの非阻害事項である。</p>
+<h2 id="s12">P1-1 package.json / package-lock.json version parity</h2>
+<p>現状:</p>
+<pre><code>package.json      0.3.0
+package-lock.json 0.1.0（rootとpackages[&quot;&quot;]）</code></pre>
+<p>対応:</p>
+<ul><li>次回release前にlockfile root versionをpackage.jsonへ一致させる</li><li><code>npm ci</code>後も一致することをテスト</li><li><code>check:stale</code>またはrelease validationへversion parityを追加</li><li>package-lockはprofile等のinputなので、修正後は感度・頑健性・profileを順に再生成</li><li>既存v0.3.0 assetは上書きしない</li></ul>
+<h2 id="s13">P1-2 source input candidate scopeを機械可読化</h2>
+<p>現状のhelperはmanifest記載pathを正確にhash検証するが、未記録候補探索は:</p>
+<pre><code>const INPUT_DIRS = [&#x27;src/data&#x27;, &#x27;src/model&#x27;]</code></pre>
+<p>に限定される。</p>
+<p>改善案:</p>
+<pre><code>source-input-scope.v1.json
+  requiredExactFiles[]
+  recursiveDirectories[]
+  allowedGeneratedInputs[]
+  excludedOutputs[]</code></pre>
+<p>最低限候補:</p>
+<pre><code>package-lock.json
+schemas/**（実際に各artifactが読むschema）
+scripts/provenance.ts
+各artifact generator
+src/data/**
+src/model/**
+各artifactが読む他artifact</code></pre>
+<p>要件:</p>
+<ul><li>provenance builderとverifierが同じscope定義を使用</li><li>scope内にある未記録ファイルをMISMATCHにする</li><li>scope外の文書/UIファイルは誤検出しない</li><li>scope definition自身をrelease evidenceに含める</li><li>mutation testでgenerator/schema/lockfileの記録漏れを検出</li></ul>
+<h2 id="s14">P1-3 release source verification evidence</h2>
+<p>任意だが、release bundleへ次を追加すると受け手がsource取得不能でも判定境界を明確にできる。</p>
+<pre><code>source-verification-result.json
+  source origin
+  tag commit
+  checked/matched/mismatched/missing
+  tool version
+  status</code></pre>
+<p>これは自己申告であり、受け手の独立検証を置換しないと明記する。</p>
+<h2 id="s15">P1-4 robustness window test vectors</h2>
+<p>Schema v2のconsumer実装を簡単にするため、次の3fixtureをrelease sourceへ置く。</p>
+<ol><li>valid exclusive window</li><li>legacy <code>toMm</code>を含むinvalid fixture</li><li><code>lastSampleMm == endExclusiveMm</code>のinvalid fixture</li></ol>
+<h2 id="s16">変更禁止</h2>
+<ul><li>v0.3.0 assetの上書き</li><li>verifiedPhysicalの昇格</li><li>model sweep fractionの物理確率化</li><li>IV028からの直接DSP係数生成</li><li>source取得不能をMISMATCHと記録</li><li>release前の無承認push/tag/publish</li></ul>
+<h2 id="s17">完了報告</h2>
+<ul><li>修正commit/tag</li><li>package version parity結果</li><li>input-scope policy</li><li>mutation test結果</li><li>exact tag test count</li><li>新profile ID/input digest/asset hash（再生成した場合）</li></ul>
+</div>
+</body>
+</html>

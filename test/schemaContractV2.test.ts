@@ -227,10 +227,44 @@ describe('P2-7 release evidence が自己完結している', () => {
     expect(paths).toContain('artifacts/test_counts.json')
   })
 
-  it('package.json の version が配布版と揃っている', () => {
+  /**
+   * **名前を実際の検査範囲まで狭めた**（v0.3.0 フォローアップ P1-1）。
+   *
+   * 2026-08-03 まで、このテストは「package.json の version が配布版と揃っている」という名前だった。
+   * だが見ていたのは `stageRelease.mjs` の既定値だけで、**`package-lock.json` を一切参照していない。**
+   * 名前のほうが広かったので、その名前を根拠に「parity は守られている」と判断し、
+   * **v0.2.0 から続いていた `package.json: 0.3.0` / `package-lock.json: 0.1.0` の不一致を見逃した。**
+   *
+   * 名前が検査範囲より広いと、その名前が穴を隠す。
+   */
+  it('stageRelease の既定 version が package.json と揃っている', () => {
     // v0.1.1 tag では package.json が 0.1.0 のままで、release tooling の判定材料にできなかった
     const pkg = J('package.json')
     const stage = readFileSync(resolve(ROOT, 'scripts/stageRelease.mjs'), 'utf8')
     expect(stage).toContain(`argOf('version', 'v${pkg.version}')`)
+  })
+
+  /**
+   * **lockfile の version が package.json と揃っている（P1-1 で直した）。**
+   *
+   * v0.2.0 で `package.json` だけを上げ、lockfile は 0.1.0 のまま 2 版続いた。
+   * 直前まで、このテストは**不一致が続いていることを主張する形**で置いてあった
+   * （直した瞬間に落ちて、反転を忘れないようにするため）。ここがその反転後である。
+   *
+   * 判定の本体は `validate:profiles` の `packageVersionParity` にある。
+   * **`check:stale` には入れていない**——`package.json` は入力ではないので、
+   * version だけ上げても check:stale は「再実行は不要です」としか言わない（実測で確認した）。
+   */
+  it('**lockfile の version が package.json と揃っている**', () => {
+    const pkg = J('package.json')
+    const lock = J('package-lock.json')
+    expect({ lockRoot: lock.version, lockSelf: lock.packages['']?.version, lockName: lock.name })
+      .toEqual({ lockRoot: pkg.version, lockSelf: pkg.version, lockName: pkg.name })
+  })
+
+  it('parity の判定が release validation 側にある（テストだけの検査にしない）', () => {
+    const src = readFileSync(resolve(ROOT, 'scripts/validateProfiles.mjs'), 'utf8')
+    expect(src).toContain('packageVersionParity')
+    expect(src).toContain("artifact: 'package.json'")
   })
 })
