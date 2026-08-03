@@ -101,6 +101,11 @@ const TARGETS = [
     title: '統合オーダー (2026-08-03) への対応状況',
   },
   {
+    md: 'docs/NONBLOCKING_FOLLOWUP_ORDER_V020_20260803.md',
+    html: 'docs/NONBLOCKING_FOLLOWUP_ORDER_V020_20260803.html',
+    title: 'v0.2.0 非阻害フォローアップオーダー (2026-08-03)',
+  },
+  {
     md: 'docs/NONBLOCKING_FOLLOWUP_ORDER_20260803.md',
     html: 'docs/NONBLOCKING_FOLLOWUP_ORDER_20260803.html',
     title: '非阻害フォローアップオーダー (2026-08-03) への対応状況',
