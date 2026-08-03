@@ -237,11 +237,19 @@ describe('P2-7 release evidence が自己完結している', () => {
    *
    * 名前が検査範囲より広いと、その名前が穴を隠す。
    */
-  it('stageRelease の既定 version が package.json と揃っている', () => {
-    // v0.1.1 tag では package.json が 0.1.0 のままで、release tooling の判定材料にできなかった
-    const pkg = J('package.json')
+  /**
+   * **既定の版数を直書きしていないこと**（v0.4.0 で直した）。
+   *
+   * v0.1.1 tag では package.json が 0.1.0 のままで、release tooling の判定材料にできなかった。
+   * その後は直書きの文字列と package.json を突き合わせていたが、
+   * **採番のたびに手で直す必要があり、v0.4.0 で実際に忘れた。**
+   * 突き合わせるのではなく、引くようにする。
+   */
+  it('stageRelease の既定 version を直書きしていない（package.json から引く）', () => {
     const stage = readFileSync(resolve(ROOT, 'scripts/stageRelease.mjs'), 'utf8')
-    expect(stage).toContain(`argOf('version', 'v${pkg.version}')`)
+    expect(stage).toMatch(/argOf\('version',\s*`v\$\{[^}]*package\.json/)
+    // 直書きの版数が残っていないこと
+    expect(stage).not.toMatch(/argOf\('version',\s*'v[\d.]+'\)/)
   })
 
   /**

@@ -4,11 +4,11 @@
  "generatedAt": "2026-08-03",
  "releaseTag": null,
  "releaseCommit": null,
- "evidenceBuiltAtCommit": "443eaee9790e432dc8a02b0eeea4761427b3ce1a",
+ "evidenceBuiltAtCommit": "42a16bcd062a90d1544fd131a444e2ef4f1381f2",
  "artifactGenerationCommit": "d6ed1b2b6dcef8b8d7f6e077da13578bb7c52632",
  "artifactGenerationCommits": [
   {
-   "commit": "443eaee9790e432dc8a02b0eeea4761427b3ce1a",
+   "commit": "42a16bcd062a90d1544fd131a444e2ef4f1381f2",
    "assets": [
     "source-input-manifest.json",
     "source-verification-result.json",
@@ -109,9 +109,9 @@
   },
   {
    "filename": "source-input-manifest.json",
-   "sha256": "307e636934af0a0e14f8cd95e8d421da7708ca026096eda2e5dc22a41429a1a7",
+   "sha256": "1d3591a71aeba46171a6478759c697f7f902657a42606cfac89efdcfda2d06a3",
    "role": "evidence",
-   "generatedFromCommit": "443eaee9790e432dc8a02b0eeea4761427b3ce1a"
+   "generatedFromCommit": "42a16bcd062a90d1544fd131a444e2ef4f1381f2"
   },
   {
    "filename": "source-input-manifest.v1.schema.json",
@@ -130,9 +130,9 @@
   },
   {
    "filename": "source-verification-result.json",
-   "sha256": "164ac78998869b179205cdac003f20a3957622bef0303ed1c7d01f23ce10a79c",
+   "sha256": "c7a1b6395422f7601a50ebc41d0b3043f285f912e2aea73218399c9b490ea249",
    "role": "evidence",
-   "generatedFromCommit": "443eaee9790e432dc8a02b0eeea4761427b3ce1a"
+   "generatedFromCommit": "42a16bcd062a90d1544fd131a444e2ef4f1381f2"
   },
   {
    "filename": "source-verification-result.v1.schema.json",
@@ -141,7 +141,7 @@
   },
   {
    "filename": "test_counts.json",
-   "sha256": "2f672d17a3fa8f1a36e49c8fb802e9d53843850748500ad7a7e9768c5bd6953e",
+   "sha256": "6385d4c81efc1c97ec6e289a80fa28819a34262564652fe3a17955a1ddac1d1d",
    "role": "evidence"
   },
   {
@@ -173,9 +173,9 @@
   },
   {
    "filename": "validation-results.json",
-   "sha256": "d349f57535db71c247de8d521946f59cae42251ddc383fcafefdfc6435b59ce6",
+   "sha256": "8b2a479f4cf5067d5b2a353b0170479fdf7fd2ff3ea21f47d430038b851a8706",
    "role": "evidence",
-   "generatedFromCommit": "443eaee9790e432dc8a02b0eeea4761427b3ce1a"
+   "generatedFromCommit": "42a16bcd062a90d1544fd131a444e2ef4f1381f2"
   },
   {
    "filename": "validation-results.v1.schema.json",

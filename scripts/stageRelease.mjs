@@ -27,7 +27,14 @@ const argOf = (n, d) => {
   const i = argv.indexOf(`--${n}`)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d
 }
-const VERSION = argOf('version', 'v0.3.0')
+/**
+ * 既定の版数は **package.json から引く**（v0.4.0 で直書きをやめた）。
+ *
+ * 直書きにしていたので、採番のたびにここを手で直す必要があり、
+ * **v0.4.0 へ上げたときに実際に忘れた**（テストが落ちて気づいた）。
+ * 忘れうるものは持たせない。
+ */
+const VERSION = argOf('version', `v${JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).version}`)
 const ALLOW_LOCAL = argv.includes('--allow-local')
 const OUT = resolve(ROOT, argOf('out', `dist/release/${VERSION}`))
 
