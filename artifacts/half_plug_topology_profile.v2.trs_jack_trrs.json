@@ -78,7 +78,7 @@
   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。旧語彙のまま読むと、値で絞り込む箇所が「そのデータが 1 件も無い」と区別できず、沈黙して壊れる。",
   "versionSelectionEvidence": "下流 release-verifier.mjs は schemaVersion を見て拒否するが contractRevision はどこも読まない。2026-08-03 に両方を実際に import させて確かめた (A: 停止 / B: PASS)。"
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:50e9c5aaab4c",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:4923277389e6",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -117,26 +117,26 @@
    ]
   }
  },
- "sourceRevision": "86aebb6d02d85ea97afd106db8c988dd39451ab9",
+ "sourceRevision": "d6ed1b2b6dcef8b8d7f6e077da13578bb7c52632",
  "generatedAt": "2026-08-03",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "86aebb6d02d85ea97afd106db8c988dd39451ab9",
-  "workingTreeDirty": true,
+  "generatedFromCommit": "d6ed1b2b6dcef8b8d7f6e077da13578bb7c52632",
+  "workingTreeDirty": false,
   "revisionOverride": false,
-  "artifactKind": "local",
+  "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "50e9c5aaab4ccbb41a89213bc40ef93712c8c1989b923e16fca6dc3085064b65",
+  "inputDigest": "4923277389e6fd566bb6a4defccef9078e6e1c03c00572753c7359791125e509",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "7796923ee2e09dfad80374310ea307b2ff1a25dde6c2ae4c08b5cda89a6c7b53",
+    "sha256": "042bfeaa3710a8f995918ff8e53e1ac64416b606bf5b020d4b85e25f47970dc2",
     "role": "sensitivity-input"
    },
    {
     "path": "package-lock.json",
-    "sha256": "86732e9386e9b89c0dfb2e89243733052b0ad8b347a4dd991136d80d9f0ace7d",
+    "sha256": "d3f1e876ea7e3583e616bee4ae9d6b68f75a312fbf7501cb794a72a952b6f8f9",
     "role": "lockfile"
    },
    {
@@ -245,7 +245,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\" --release",
   "artifactDate": "2026-08-03"
  },
  "fullInsertionDepthMm": 14,
@@ -5462,8 +5462,8 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "86aebb6d02d85ea97afd106db8c988dd39451ab9",
-   "inputDigest": "676a1c45655550ba97abe21a90da7180bd891f3bf1eedb5c081a2f5616f60019",
+   "generatedFromCommit": "e396af761e41f2a8f4cb7a7f8a77bb42e231d561",
+   "inputDigest": "1c589a04e9690ea02543f15432726aac11165033c19aca7deec0d233bbc568ae",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
   },
