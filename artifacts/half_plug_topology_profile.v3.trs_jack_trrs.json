@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:8f5f459e1037",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:821cc14c605d",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -327,21 +327,21 @@
    ]
   }
  },
- "sourceRevision": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
+ "sourceRevision": "488007bc0773c66f678c36c08882aa54bb30376b",
  "generatedAt": "2026-08-04",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
-  "workingTreeDirty": true,
+  "generatedFromCommit": "488007bc0773c66f678c36c08882aa54bb30376b",
+  "workingTreeDirty": false,
   "revisionOverride": false,
-  "artifactKind": "local",
+  "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "8f5f459e103753da00285dacee4e884a7103732947231e5c00d51f1ada48fa81",
+  "inputDigest": "821cc14c605dd453710878d0e9f51e47391d4e1802d212106b2405091500db92",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "c47a83cfea909211c510c29307336a5d7235bc0e7810f3e9529a230dcc9c22ce",
+    "sha256": "6948165bdc766d1c8ea13afcc0263c2c80a55e23f4a7719697cd40674cd2ce08",
     "role": "sensitivity-input"
    },
    {
@@ -460,7 +460,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\" --release",
   "artifactDate": "2026-08-04"
  },
  "fullInsertionDepthMm": 14,
@@ -5677,7 +5677,7 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
+   "generatedFromCommit": "5e2e381bfa38cd77daaf7dca015637d9443ab7ac",
    "inputDigest": "6db355313884b2edb9dd0d6046b7da47423f7a2104139c3c71330e987e52f300",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
