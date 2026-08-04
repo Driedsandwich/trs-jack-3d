@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>v0.4.1 フォローアップオーダー (2026-08-04)</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc"><h2>目次</h2><ol><li><a href="#s1">0-1. 受領時の検証記録（2026-08-04・trs-jack-3d 側）</a></li><li><a href="#s4">0. 結論</a></li><li><a href="#s5">1. v0.5.0 — Schema migration</a></li><li><a href="#s6">2. Source verificationの自己完結性</a></li><li><a href="#s7">3. Read-only CI（任意）</a></li><li><a href="#s8">4. SECURITY / support policy（任意）</a></li><li><a href="#s9">5. Reusable model core（需要確認後のみ）</a></li><li><a href="#s10">6. 物理検証</a></li><li><a href="#s11">7. 変更禁止</a></li></ol></nav>
+<h1>trs-jack-3d v0.4.1 — 非阻害フォローアップ開発オーダー</h1>
+<p>作成日: 2026-08-04   対象: <code>Driedsandwich/trs-jack-3d v0.4.1</code></p>
+<h2 id="s1">0-1. 受領時の検証記録（2026-08-04・trs-jack-3d 側）</h2>
+<p><strong>受け取った内容は実測で裏を取りました。</strong>自己申告は使っていません。</p>
+<div class="tw"><table><thead><tr><th>確認</th><th>方法</th><th>結果</th></tr></thead><tbody><tr><td>配布 zip</td><td><code>shasum -c</code></td><td><strong>一致</strong>（3,067,910 bytes・CRC OK・512 ファイル）</td></tr><tr><td>このオーダー本体</td><td>zip 内から直接読み出し</td><td>sha256 <code>9205caede85ff659…</code></td></tr><tr><td>数値・構造の主張</td><td>配布 24 件と 1 件ずつ照合</td><td><strong>14 項目すべて一致・食い違い 0</strong></td></tr><tr><td>新しい門「<code>byFile</code> 合計 == <code>total</code>」</td><td>配布物で計算</td><td><strong>476 == 476</strong>（19 ファイル）</td></tr><tr><td><code>testEvidence</code> の一致</td><td><code>validation-results</code> と <code>test_counts</code> を突き合わせ</td><td><strong>一致</strong></td></tr><tr><td>ライセンスの内訳</td><td><code>LICENSING.md</code> を実測</td><td><strong>MIT / CC BY 4.0 / SIL OFL の 3 分割は正しい</strong></td></tr><tr><td>メーカー CAD 非収録</td><td>拡張子で全走査（328 ファイル・対照 <code>.json</code> 148 件）</td><td><strong>0 件。正しい</strong></td></tr><tr><td>README が現行を案内</td><td><strong>v0.4.1 tag の実物</strong>を確認</td><td><strong>正しい</strong>（v0.4.1 / Profile v2 / <code>.v2.*.json</code> / 索引）</td></tr></tbody></table></div>
+<p>照合した主な値（すべて一致）:</p>
+<pre><code>SHA256SUMS 登録 23 / bundle 24 ファイル / 索引 assets 22
+profileId  TRS  trs-jack-3d:TRS|JACK-TRS:796498ebba63
+           TRRS trs-jack-3d:TRS|JACK-TRRS:b61bce36516c
+TRS  intervals 23 / events 32 / ground-open-differential 0
+TRRS intervals 30 / events 36 / ground-open-differential 1   合計 53 / 68
+IV028  13.30–13.52mm  normalized 0.95–0.965714  ASSUMPTION
+       RETURN_OPEN_L_AND_R_ON_DISTINCT_CONDUCTORS
+test  total 476 / failed 0 / failedSuites 0 / skipped 0 / exitCode 0 / allPassed true
+      vitest 4.1.10 / node v22.22.3
+artifactValidationStatus PASS / releaseReadinessStatus READY / reasons []
+検証ツール  外部コマンドは git archive / git rev-parse の 2 つだけ（gh の呼び出し 0 件）</code></pre>
+<h3 id="s2">0-2. v0.4.1 で直した 2 点が、実際に届いていました</h3>
+<p>受領した <code>SOURCE_INPUT_VERIFICATION_RESULT</code> は、こちらのツールの出力そのままです。</p>
+<pre><code>{
+ &quot;toolVersion&quot;: 3,
+ &quot;status&quot;: &quot;SOURCE_UNAVAILABLE&quot;,
+ &quot;reason&quot;: &quot;GitHub へ接続できなかった (https://api.github.com/…/tarball/v0.4.1): fetch failed&quot;
+}</code></pre>
+<p><strong>(b) <code>toolVersion</code> が入っています。</strong>v0.4.0 の同じ記録には版がありませんでした。</p>
+<p><strong>(a) エラーが <code>spawnSync gh ENOENT</code> ではなく <code>fetch failed</code> になっています。</strong> <code>gh</code> 依存は外れており、今回止まったのは<strong>受け手の環境にネットワークが無い</strong>ためです。 上流の不具合ではありません（オーダー §2 の認識と一致）。</p>
+<h3 id="s3">0-3. §2 について — ネットワークが無い環境では、現状どちらの経路も使えない</h3>
+<p><code>--fetch github</code> も、release ページの &quot;Source code (tar.gz)&quot; を落とす経路も、通信が要ります。 <strong>完全にオフラインの受け手は、いまのところ独立検算に着手できません。</strong></p>
+<p>配れる大きさは実測しました。</p>
+<div class="tw"><table><thead><tr><th>案</th><th>実サイズ</th><th>性質</th></tr></thead><tbody><tr><td>入力 29 件だけの snapshot を同梱</td><td><strong>0.45 MB</strong></td><td><strong>循環に近い</strong>——こちらが渡したファイルを、こちらが記録した hash と突き合わせるだけ</td></tr><tr><td>tag source tarball を添付物として渡す</td><td><strong>8.9 MB</strong></td><td><strong>本物の tag source</strong>。循環しない</td></tr></tbody></table></div>
+<p><strong>snapshot は「manifest が自分の入力と自己整合しているか」しか言えません。</strong> それでも <code>SOURCE_UNAVAILABLE</code>（何も見ていない）よりは強く、 「記録した hash が、記録した中身と合っているか」は確かめられます。 同梱するなら、<strong>その限界を artifact 自身に書く</strong>こと（<code>isSelfConsistencyOnly</code> のような明示）。 <code>inputDigest</code> の正本にしないという §2 の条件はそのまま守ります。</p>
+<p><strong>どちらを採るかは v0.5.0 の作業として判断します。</strong></p>
+<hr>
+<h2 id="s4">0. 結論</h2>
+<p>Half-Plug Labへのstatic integrationを止める問題はない。v0.4.1は採用可能であり、blocking修正は不要。</p>
+<p>以下はv0.5.0以降の契約安定性と外部利用性を上げる非阻害事項である。</p>
+<h2 id="s5">1. v0.5.0 — Schema migration</h2>
+<p>予定どおり次をversion bumpする。</p>
+<pre><code>half-plug-topology-profile.v3
+event-sensitivity.v2
+topology-robustness.v3
+source-input-manifest.v2</code></pre>
+<p>必須条件:</p>
+<ul><li>全artifactに<code>contractMigration</code></li><li>renamed/added/removed fieldsのmachine-readable一覧</li><li>consumerAction</li><li>v0.4.1→v0.5.0 test vector</li><li>v0.4.1のconsumerがv0.5.0を明示的に拒否する試験</li><li>v0.5.0対応consumerがv0.4.1をmigrationまたは明示拒否する試験</li><li>Release indexから契約versionとSchema hashを取得可能にする</li></ul>
+<h2 id="s6">2. Source verificationの自己完結性</h2>
+<p>今回の受け手環境ではbuilt-in fetchでもsource archiveを取得できず、<code>SOURCE_UNAVAILABLE</code>になった。これは上流不具合ではない。</p>
+<p>任意改善:</p>
+<ul><li>Release assetとして29入力だけのread-only source snapshotを同梱</li><li>またはtag source archiveの取得・展開手順をRelease notesへ短く固定</li><li>snapshotを同梱する場合も、producer自己申告とrecipient verificationの区別を維持</li><li>source snapshotをinput digestの正本にしない</li></ul>
+<h2 id="s7">3. Read-only CI（任意）</h2>
+<p>現在のlocal release gateは強い。外部貢献を受ける場合に限り、read-only CIを追加する。</p>
+<pre><code>npm ci
+typecheck
+test
+build
+validate:profiles
+check:stale
+check:vacuity
+release evidence dry-run</code></pre>
+<p>条件:</p>
+<ul><li>GitHub Actionsはfull commit SHA pin</li><li>permissions read-only</li><li>secret不要</li><li>publish/releaseしない</li><li>generated artifact差分があれば失敗</li></ul>
+<h2 id="s8">4. SECURITY / support policy（任意）</h2>
+<p>外部利用者が増えた場合に追加する。</p>
+<ul><li>対応中Release</li><li>脆弱性報告経路</li><li>artifact contractのsupport window</li><li>physical modelの非保証</li><li>breaking migration policy</li></ul>
+<h2 id="s9">5. Reusable model core（需要確認後のみ）</h2>
+<p>現在は<code>private: true</code>のViteアプリで、static JSONが下流統合の正本である。runtime model reuseの実需要が確認された場合のみ分離する。</p>
+<pre><code>packages/model-core</code></pre>
+<p>要件:</p>
+<ul><li>React / Three.js / Zustand非依存</li><li>Browser / Node対応</li><li>versioned exports</li><li>artifact exporterとのgolden parity</li><li>SemVer</li></ul>
+<h2 id="s10">6. 物理検証</h2>
+<p>実物入手後に次を行う。</p>
+<pre><code>導通測定
+→ contact observation manifest
+→ fit
+→ held-out validation
+→ acoustic MIMO measurement</code></pre>
+<p>実測がモデルと合わない場合、反証または別profileとして保存し、既存反対証拠を削除しない。</p>
+<h2 id="s11">7. 変更禁止</h2>
+<ul><li>v0.4.1 assetの上書き</li><li><code>verifiedPhysical</code>の無根拠な昇格</li><li>topologyからDSP係数を生成</li><li>robustnessを発生確率と表現</li><li>反対証拠の削除</li><li>未承認のpush/tag/release</li></ul>
+</div>
+</body>
+</html>
