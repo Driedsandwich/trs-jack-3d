@@ -1,0 +1,980 @@
+{
+ "schemaVersion": 1,
+ "schemaId": "trs-jack-3d-contract-migration.v1",
+ "purpose": "**版と契約変更の対応表の正本。**ここに書いた値が各 artifact の contractMigration へそのまま入る。生成器と検証側が同じ 1 か所から読む。**この定義自身も入力である**（inputDigest に入る）。",
+ "why": "v0.4.0 までの contractMigration は「1 つの遷移を書く単一オブジェクト」だった。そこへ、**版を据え置いたまま入れた変更が後から混ぜ込まれ**、`introducedIn` という自由文の列に \"schemaVersion 2\" と \"v0.1.2 (追加のみ)\" と \"v0.3.0 フォローアップ P1-2 (追加のみ)\" が同居していた。項目名の欄に日本語の文が入っている行もあった。**「据え置いたまま変えた」という事実そのものが記録されていなかった。**history 形式にして、回ごとに versionWasHeld を持たせる。",
+ "policyDocument": "docs/SCHEMA_VERSIONING_POLICY.md",
+ "policyVersion": 1,
+ "verifiedBy": "test/contractMigration.test.ts が、各 history 項目の 2 つの schema 実物へ scripts/schemaLanguageDiff.mjs を当てて policyVerdict と effect を突き合わせる。**手で書いた記録が実物とずれたら落ちる。**",
+ "migrations": {
+  "half-plug-topology-profile.v3": {
+   "schemaId": "half-plug-topology-profile.v3",
+   "previousSchemaId": "half-plug-topology-profile.v2",
+   "fromSchemaVersion": 2,
+   "toSchemaVersion": 3,
+   "breaking": true,
+   "policy": {
+    "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+    "policyVersion": 1,
+    "decisionRule": "language-subset",
+    "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+   },
+   "consumerAction": "**schemaVersion で分岐すること。**2 を期待する実装は 3 を受け取ったら停止し、この表で対応づける。**配布名も変わる**ので、v2 のファイル名で引いている lock は schema 検査へ到達する前に「ファイルが無い」で止まる（renamedAssets）。契約そのもの（区間・event・topology 列・座標系・role の enum）は v2 から変わっていない。",
+   "renamedAssets": [
+    {
+     "from": "half_plug_topology_profile.v2.trs_jack_trs.json",
+     "to": "half_plug_topology_profile.v3.trs_jack_trs.json",
+     "reason": "配布名に schema の版が入っている。**名前で引く lock はここで止まる**"
+    },
+    {
+     "from": "half_plug_topology_profile.v2.trs_jack_trrs.json",
+     "to": "half_plug_topology_profile.v3.trs_jack_trrs.json",
+     "reason": "同上"
+    },
+    {
+     "from": "half-plug-topology-profile.v2.schema.json",
+     "to": "half-plug-topology-profile.v3.schema.json",
+     "reason": "schema ファイル名"
+    }
+   ],
+   "history": [
+    {
+     "shippedIn": "v0.1.1",
+     "previousRelease": "v0.1.0",
+     "previousSchemaPath": "schemas/half-plug-topology-profile.v1.schema.json",
+     "currentSchemaPath": "schemas/half-plug-topology-profile.v1.schema.json",
+     "schemaVersionAtTheTime": 1,
+     "schemaVersionShouldHaveBeen": 2,
+     "versionWasHeld": true,
+     "policyVerdict": "BUMP",
+     "recordedRetroactivelyIn": "v0.5.0",
+     "changes": [
+      {
+       "kind": "enum-value-renamed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/events/items/properties/spreadStatus/enum",
+       "instancePath": "$.events[].spreadStatus",
+       "removed": [
+        "MEASURED",
+        "NOT_EVENT_SPECIFIC",
+        "NOT_MEASURED"
+       ],
+       "added": [
+        "MODEL_SWEEP_EVENT_SPECIFIC",
+        "MODEL_SWEEP_NOT_EVENT_SPECIFIC",
+        "NOT_ANALYZED"
+       ],
+       "reason": "MEASURED が実物の測定と誤読される。実際はモデルのパラメータを振った結果である。**値が入れ替わったので、旧 schema でも新 schema でも一方の artifact は落ちる**"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/sensitivitySummary/properties/eventSpreadSource",
+       "instancePath": "$.sensitivitySummary.eventSpreadSource",
+       "added": [
+        "eventSpreadSource"
+       ],
+       "reason": "幅の出どころを機械可読にした"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.2.0",
+     "previousRelease": "v0.1.1",
+     "previousSchemaPath": "schemas/half-plug-topology-profile.v1.schema.json",
+     "currentSchemaPath": "schemas/half-plug-topology-profile.v1.schema.json",
+     "schemaVersionAtTheTime": 1,
+     "schemaVersionShouldHaveBeen": 2,
+     "versionWasHeld": true,
+     "policyVerdict": "BUMP",
+     "recordedRetroactivelyIn": "v0.5.0",
+     "changes": [
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/provenance/properties/inputSettings",
+       "instancePath": "$.provenance.inputSettings",
+       "added": [
+        "inputSettings"
+       ],
+       "reason": "生成時の設定を残すようにした"
+      },
+      {
+       "kind": "field-reshaped",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/sensitivitySummary",
+       "instancePath": "$.sensitivitySummary",
+       "added": [
+        "basis",
+        "eventSpreadAvailable",
+        "globalSummaryAvailable"
+       ],
+       "reason": "感度の要約に「何を根拠にしたか」「そもそも取れたか」を足し、必須にした"
+      }
+     ],
+     "note": "**v0.2.0 では v2 を新設したが、同時に v1 の schema ファイルも直していた。**v0.2.0 が配った artifact は v2 なので実害は無かったが、条文には反する"
+    },
+    {
+     "shippedIn": "v0.2.0",
+     "previousRelease": "v0.1.1",
+     "previousSchemaPath": "schemas/half-plug-topology-profile.v1.schema.json",
+     "currentSchemaPath": "schemas/half-plug-topology-profile.v2.schema.json",
+     "schemaVersionAtTheTime": 2,
+     "versionWasHeld": false,
+     "policyVerdict": "BUMP",
+     "changes": [
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaVersion/const",
+       "instancePath": "$.schemaVersion",
+       "from": 1,
+       "to": 2,
+       "reason": "版を上げた。**この回は条文どおりに上げている**"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/schemaId",
+       "instancePath": "$.schemaId",
+       "added": [
+        "schemaId"
+       ],
+       "reason": "版だけでなく schema の同一性も持たせた"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/contractMigration",
+       "instancePath": "$.contractMigration",
+       "added": [
+        "contractMigration"
+       ],
+       "reason": "対応表そのもの"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/mechanicalInsertion",
+       "instancePath": "$.mechanicalInsertion",
+       "added": [
+        "mechanicalInsertion"
+       ],
+       "reason": "機械的な挿入量を電気的トポロジーと分けた"
+      },
+      {
+       "kind": "enum-value-renamed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/intervals/items/properties/electricalTopology/properties/topologyClass/enum",
+       "instancePath": "$.intervals[].electricalTopology.topologyClass",
+       "removed": [
+        "fully-seated"
+       ],
+       "added": [
+        "all-expected-functions-match"
+       ],
+       "reason": "「プラグ肩が当たった」と読めたが、実体は reasonCode のとおり ALL_EXPECTED_FUNCTIONS_MATCH でしかない"
+      },
+      {
+       "kind": "field-reshaped",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/coordinateSystem",
+       "instancePath": "$.coordinateSystem",
+       "added": [
+        "crossProfileComparable",
+        "normalizedNote",
+        "normalizedScope"
+       ],
+       "reason": "正規化座標が variant を跨いで比較できないことを明示した"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/provenance/properties/inputSettings",
+       "instancePath": "$.provenance.inputSettings",
+       "added": [
+        "inputSettings"
+       ],
+       "reason": "v1 側と同じ追加"
+      },
+      {
+       "kind": "field-reshaped",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/sensitivitySummary",
+       "instancePath": "$.sensitivitySummary",
+       "added": [
+        "basis",
+        "eventSpreadAvailable",
+        "globalSummaryAvailable"
+       ],
+       "reason": "v1 側と同じ変更"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "NARROW",
+       "schemaPointer": "/required",
+       "instancePath": "$",
+       "added": [
+        "contractMigration",
+        "mechanicalInsertion",
+        "schemaId"
+       ],
+       "reason": "新しい項目を必須にした"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.4.0",
+     "previousRelease": "v0.3.0",
+     "previousSchemaPath": "schemas/half-plug-topology-profile.v2.schema.json",
+     "currentSchemaPath": "schemas/half-plug-topology-profile.v2.schema.json",
+     "schemaVersionAtTheTime": 2,
+     "schemaVersionShouldHaveBeen": 3,
+     "versionWasHeld": true,
+     "policyVerdict": "BUMP",
+     "recordedRetroactivelyIn": "v0.5.0",
+     "changes": [
+      {
+       "kind": "enum-value-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+       "instancePath": "$.provenance.inputFiles[].role",
+       "added": [
+        "input-scope"
+       ],
+       "reason": "入力の範囲定義 source-input-scope.v1.json が入力になった。**追加のみだが、旧 schema を pin した consumer はこの値を拒む**"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.5.0",
+     "previousRelease": "v0.4.1",
+     "previousSchemaPath": "schemas/half-plug-topology-profile.v2.schema.json",
+     "currentSchemaPath": "schemas/half-plug-topology-profile.v3.schema.json",
+     "schemaVersionAtTheTime": 3,
+     "versionWasHeld": false,
+     "policyVerdict": "BUMP",
+     "changes": [
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaVersion/const",
+       "instancePath": "$.schemaVersion",
+       "from": 2,
+       "to": 3,
+       "reason": "版を上げた。**下流はここで分岐して止まる**"
+      },
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaId/const",
+       "instancePath": "$.schemaId",
+       "from": "half-plug-topology-profile.v2",
+       "to": "half-plug-topology-profile.v3",
+       "reason": "schema の同一性も上げた"
+      },
+      {
+       "kind": "field-reshaped",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/contractMigration",
+       "instancePath": "$.contractMigration",
+       "reason": "この履歴そのもの。単一遷移のオブジェクトから history 形式へ変えた。**版を据え置いたまま変えた回を分けて記録できなかった**のが v0.4.0 の取りこぼしの原因"
+      },
+      {
+       "kind": "enum-value-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+       "instancePath": "$.provenance.inputFiles[].role",
+       "added": [
+        "contract-migration"
+       ],
+       "reason": "版と契約変更の対応表の正本 contract-migration.v1.json が入力になった"
+      }
+     ]
+    }
+   ]
+  },
+  "event-sensitivity.v2": {
+   "schemaId": "event-sensitivity.v2",
+   "previousSchemaId": "event-sensitivity.v1",
+   "fromSchemaVersion": 1,
+   "toSchemaVersion": 2,
+   "breaking": true,
+   "policy": {
+    "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+    "policyVersion": 1,
+    "decisionRule": "language-subset",
+    "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+   },
+   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。中身（イベント深さの幅・basis・spreadStatus）は v1 から変わっていない。**artifact の配布名は変わらない**（sensitivity.trs_jack_trs.json 等）。",
+   "renamedAssets": [
+    {
+     "from": "event-sensitivity.v1.schema.json",
+     "to": "event-sensitivity.v2.schema.json",
+     "reason": "schema ファイル名。artifact 側の名前は変わらない"
+    }
+   ],
+   "history": [
+    {
+     "shippedIn": "v0.4.0",
+     "previousRelease": "v0.3.0",
+     "previousSchemaPath": "schemas/event-sensitivity.v1.schema.json",
+     "currentSchemaPath": "schemas/event-sensitivity.v1.schema.json",
+     "schemaVersionAtTheTime": 1,
+     "schemaVersionShouldHaveBeen": 2,
+     "versionWasHeld": true,
+     "policyVerdict": "BUMP",
+     "recordedRetroactivelyIn": "v0.5.0",
+     "changes": [
+      {
+       "kind": "enum-value-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+       "instancePath": "$.provenance.inputFiles[].role",
+       "added": [
+        "input-scope"
+       ],
+       "reason": "入力の範囲定義 source-input-scope.v1.json が入力になった。**追加のみだが、旧 schema を pin した consumer はこの値を拒む**"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.5.0",
+     "previousRelease": "v0.4.1",
+     "previousSchemaPath": "schemas/event-sensitivity.v1.schema.json",
+     "currentSchemaPath": "schemas/event-sensitivity.v2.schema.json",
+     "schemaVersionAtTheTime": 2,
+     "versionWasHeld": false,
+     "policyVerdict": "BUMP",
+     "changes": [
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaVersion/const",
+       "instancePath": "$.schemaVersion",
+       "from": 1,
+       "to": 2,
+       "reason": "版を上げた。**下流はここで分岐して止まる**"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/contractMigration",
+       "instancePath": "$.contractMigration",
+       "added": [
+        "contractMigration"
+       ],
+       "reason": "**この schema には対応表が無かった。**v0.4.0 で契約を変えたのに記録が残っていなかった原因の一つ"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "NARROW",
+       "schemaPointer": "/required",
+       "instancePath": "$",
+       "added": [
+        "contractMigration"
+       ],
+       "reason": "対応表を必須にした。**旧 artifact は新 schema で落ちる**"
+      },
+      {
+       "kind": "enum-value-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+       "instancePath": "$.provenance.inputFiles[].role",
+       "added": [
+        "contract-migration"
+       ],
+       "reason": "版と契約変更の対応表の正本 contract-migration.v1.json が入力になった"
+      }
+     ]
+    }
+   ]
+  },
+  "topology-robustness.v3": {
+   "schemaId": "topology-robustness.v3",
+   "previousSchemaId": "topology-robustness.v2",
+   "fromSchemaVersion": 2,
+   "toSchemaVersion": 3,
+   "breaking": true,
+   "policy": {
+    "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+    "policyVersion": 1,
+    "decisionRule": "language-subset",
+    "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+   },
+   "consumerAction": "**schemaVersion で分岐すること。**2 を期待する実装は 3 を受け取ったら停止する。区間の終端が要るなら endExclusiveMm を、観測の最後の点が要るなら lastSampleMm を使う（v2 から変わっていない）。**artifact の配布名は変わらない**。",
+   "renamedAssets": [
+    {
+     "from": "topology-robustness.v2.schema.json",
+     "to": "topology-robustness.v3.schema.json",
+     "reason": "schema ファイル名。artifact 側の名前は変わらない"
+    }
+   ],
+   "history": [
+    {
+     "shippedIn": "v0.3.0",
+     "previousRelease": "v0.2.0",
+     "previousSchemaPath": "schemas/topology-robustness.v1.schema.json",
+     "currentSchemaPath": "schemas/topology-robustness.v2.schema.json",
+     "schemaVersionAtTheTime": 2,
+     "versionWasHeld": false,
+     "policyVerdict": "BUMP",
+     "changes": [
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaVersion/const",
+       "instancePath": "$.schemaVersion",
+       "from": 1,
+       "to": 2,
+       "reason": "版を上げた。**この回は条文どおりに上げている**"
+      },
+      {
+       "kind": "field-renamed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/nominalConfiguration/properties/windows/items",
+       "instancePath": "$.nominalConfiguration.windows[]",
+       "removed": [
+        "fromMm",
+        "toMm"
+       ],
+       "added": [
+        "startMm",
+        "lastSampleMm",
+        "endExclusiveMm"
+       ],
+       "reason": "**「終わり」という語で 2 つの違う量を指していた。**旧 toMm は最後に当たった標本位置であって区間の終端ではない"
+      },
+      {
+       "kind": "field-renamed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/counterExamples/items/properties/windows/items",
+       "instancePath": "$.counterExamples[].windows[]",
+       "removed": [
+        "fromMm",
+        "toMm"
+       ],
+       "added": [
+        "startMm",
+        "lastSampleMm",
+        "endExclusiveMm"
+       ],
+       "reason": "同上"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/windowEndConvention",
+       "instancePath": "$.windowEndConvention",
+       "added": [
+        "windowEndConvention"
+       ],
+       "reason": "端点の規約を機械可読にした"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/contractMigration",
+       "instancePath": "$.contractMigration",
+       "added": [
+        "contractMigration"
+       ],
+       "reason": "対応表そのもの"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "NARROW",
+       "schemaPointer": "/required",
+       "instancePath": "$",
+       "added": [
+        "contractMigration",
+        "windowEndConvention"
+       ],
+       "reason": "新しい項目を必須にした"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.4.0",
+     "previousRelease": "v0.3.0",
+     "previousSchemaPath": "schemas/topology-robustness.v2.schema.json",
+     "currentSchemaPath": "schemas/topology-robustness.v2.schema.json",
+     "schemaVersionAtTheTime": 2,
+     "schemaVersionShouldHaveBeen": 3,
+     "versionWasHeld": true,
+     "policyVerdict": "BUMP",
+     "recordedRetroactivelyIn": "v0.5.0",
+     "changes": [
+      {
+       "kind": "enum-value-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+       "instancePath": "$.provenance.inputFiles[].role",
+       "added": [
+        "input-scope"
+       ],
+       "reason": "入力の範囲定義 source-input-scope.v1.json が入力になった。**追加のみだが、旧 schema を pin した consumer はこの値を拒む**"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.5.0",
+     "previousRelease": "v0.4.1",
+     "previousSchemaPath": "schemas/topology-robustness.v2.schema.json",
+     "currentSchemaPath": "schemas/topology-robustness.v3.schema.json",
+     "schemaVersionAtTheTime": 3,
+     "versionWasHeld": false,
+     "policyVerdict": "BUMP",
+     "changes": [
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaVersion/const",
+       "instancePath": "$.schemaVersion",
+       "from": 2,
+       "to": 3,
+       "reason": "版を上げた。**下流はここで分岐して止まる**"
+      },
+      {
+       "kind": "field-reshaped",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/contractMigration",
+       "instancePath": "$.contractMigration",
+       "reason": "単一遷移のオブジェクトから history 形式へ変えた"
+      },
+      {
+       "kind": "enum-value-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+       "instancePath": "$.provenance.inputFiles[].role",
+       "added": [
+        "contract-migration"
+       ],
+       "reason": "版と契約変更の対応表の正本 contract-migration.v1.json が入力になった"
+      }
+     ]
+    }
+   ]
+  },
+  "source-input-manifest.v2": {
+   "schemaId": "source-input-manifest.v2",
+   "previousSchemaId": "source-input-manifest.v1",
+   "fromSchemaVersion": 1,
+   "toSchemaVersion": 2,
+   "breaking": true,
+   "policy": {
+    "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+    "policyVersion": 1,
+    "decisionRule": "language-subset",
+    "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+   },
+   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。inputDigest の意味と検算手順は v1 から変わっていない。**artifact の配布名は変わらない**。**この manifest は producer の申告であり、受け手の独立検証を置き換えない。**",
+   "renamedAssets": [
+    {
+     "from": "source-input-manifest.v1.schema.json",
+     "to": "source-input-manifest.v2.schema.json",
+     "reason": "schema ファイル名。artifact 側の名前は変わらない"
+    }
+   ],
+   "history": [
+    {
+     "shippedIn": "v0.4.0",
+     "previousRelease": "v0.3.0",
+     "previousSchemaPath": "schemas/source-input-manifest.v1.schema.json",
+     "currentSchemaPath": "schemas/source-input-manifest.v1.schema.json",
+     "schemaVersionAtTheTime": 1,
+     "schemaVersionShouldHaveBeen": 2,
+     "versionWasHeld": true,
+     "policyVerdict": "BUMP",
+     "recordedRetroactivelyIn": "v0.5.0",
+     "changes": [
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/inputScope",
+       "instancePath": "$.inputScope",
+       "added": [
+        "inputScope"
+       ],
+       "reason": "入力の範囲定義を manifest 自身に持たせた（v0.3.0 フォローアップ P1-2）"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "NARROW",
+       "schemaPointer": "/required",
+       "instancePath": "$",
+       "added": [
+        "inputScope"
+       ],
+       "reason": "必須にした。**旧 artifact は新 schema で落ちる**"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.5.0",
+     "previousRelease": "v0.4.1",
+     "previousSchemaPath": "schemas/source-input-manifest.v1.schema.json",
+     "currentSchemaPath": "schemas/source-input-manifest.v2.schema.json",
+     "schemaVersionAtTheTime": 2,
+     "versionWasHeld": false,
+     "policyVerdict": "BUMP",
+     "changes": [
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaVersion/const",
+       "instancePath": "$.schemaVersion",
+       "from": 1,
+       "to": 2,
+       "reason": "版を上げた。**下流はここで分岐して止まる**"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/contractMigration",
+       "instancePath": "$.contractMigration",
+       "added": [
+        "contractMigration"
+       ],
+       "reason": "**この schema には対応表が無かった。**v0.4.0 で契約を変えたのに記録が残っていなかった原因の一つ"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "NARROW",
+       "schemaPointer": "/required",
+       "instancePath": "$",
+       "added": [
+        "contractMigration"
+       ],
+       "reason": "対応表を必須にした。**旧 artifact は新 schema で落ちる**"
+      }
+     ]
+    }
+   ]
+  },
+  "validation-results.v2": {
+   "schemaId": "validation-results.v2",
+   "previousSchemaId": "validation-results.v1",
+   "fromSchemaVersion": 1,
+   "toSchemaVersion": 2,
+   "breaking": true,
+   "policy": {
+    "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+    "policyVersion": 1,
+    "decisionRule": "language-subset",
+    "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+   },
+   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。artifactValidationStatus（形と意味が正しいか）と releaseReadinessStatus（配ってよいか）は別の判定である。**両方を見ること。**v0.4.0 は前者が PASS で後者が NOT_READY だった。**artifact の配布名は変わらない**。",
+   "renamedAssets": [
+    {
+     "from": "validation-results.v1.schema.json",
+     "to": "validation-results.v2.schema.json",
+     "reason": "schema ファイル名。artifact 側の名前は変わらない"
+    }
+   ],
+   "history": [
+    {
+     "shippedIn": "v0.4.0",
+     "previousRelease": "v0.3.0",
+     "previousSchemaPath": "schemas/validation-results.v1.schema.json",
+     "currentSchemaPath": "schemas/validation-results.v1.schema.json",
+     "schemaVersionAtTheTime": 1,
+     "schemaVersionShouldHaveBeen": 2,
+     "versionWasHeld": true,
+     "policyVerdict": "BUMP",
+     "recordedRetroactivelyIn": "v0.5.0",
+     "changes": [
+      {
+       "kind": "type-widened",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/results/items/properties/schema/type",
+       "instancePath": "$.results[].schema",
+       "added": [
+        "null"
+       ],
+       "reason": "schema を持たない検証対象（意味規則だけの検査）を表せるようにした"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.4.1",
+     "previousRelease": "v0.4.0",
+     "previousSchemaPath": "schemas/validation-results.v1.schema.json",
+     "currentSchemaPath": "schemas/validation-results.v1.schema.json",
+     "schemaVersionAtTheTime": 1,
+     "schemaVersionShouldHaveBeen": 2,
+     "versionWasHeld": true,
+     "policyVerdict": "BUMP",
+     "recordedRetroactivelyIn": "v0.5.0",
+     "changes": [
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/artifactValidationStatus",
+       "instancePath": "$.artifactValidationStatus",
+       "added": [
+        "artifactValidationStatus"
+       ],
+       "reason": "判定を「artifact が正しいか」と「配ってよいか」へ分けた"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/releaseReadinessStatus",
+       "instancePath": "$.releaseReadinessStatus",
+       "added": [
+        "releaseReadinessStatus"
+       ],
+       "reason": "同上"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/releaseReadinessReasons",
+       "instancePath": "$.releaseReadinessReasons",
+       "added": [
+        "releaseReadinessReasons"
+       ],
+       "reason": "NOT_READY の理由を機械可読で持たせた"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/testEvidence",
+       "instancePath": "$.testEvidence",
+       "added": [
+        "testEvidence"
+       ],
+       "reason": "突き合わせた test の結果を同じ artifact に入れた"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "NARROW",
+       "schemaPointer": "/required",
+       "instancePath": "$",
+       "added": [
+        "artifactValidationStatus",
+        "releaseReadinessReasons",
+        "releaseReadinessStatus",
+        "testEvidence"
+       ],
+       "reason": "必須にした。**旧 artifact は新 schema で落ちる**"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.5.0",
+     "previousRelease": "v0.4.1",
+     "previousSchemaPath": "schemas/validation-results.v1.schema.json",
+     "currentSchemaPath": "schemas/validation-results.v2.schema.json",
+     "schemaVersionAtTheTime": 2,
+     "versionWasHeld": false,
+     "policyVerdict": "BUMP",
+     "changes": [
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaVersion/const",
+       "instancePath": "$.schemaVersion",
+       "from": 1,
+       "to": 2,
+       "reason": "版を上げた。**下流はここで分岐して止まる**"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/contractMigration",
+       "instancePath": "$.contractMigration",
+       "added": [
+        "contractMigration"
+       ],
+       "reason": "**この schema には対応表が無かった。**v0.4.1 で契約を変えたのに記録が残っていなかった原因の一つ"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "NARROW",
+       "schemaPointer": "/required",
+       "instancePath": "$",
+       "added": [
+        "contractMigration"
+       ],
+       "reason": "対応表を必須にした。**旧 artifact は新 schema で落ちる**"
+      }
+     ]
+    }
+   ]
+  },
+  "test-counts.v2": {
+   "schemaId": "test-counts.v2",
+   "previousSchemaId": "test-counts.v1",
+   "fromSchemaVersion": 1,
+   "toSchemaVersion": 2,
+   "breaking": true,
+   "policy": {
+    "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+    "policyVersion": 1,
+    "decisionRule": "language-subset",
+    "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+   },
+   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。allPassed は failed と exitCode の両方から決まる。**allPassed が false の artifact は配布してはいけない**（npm run release:stage が拒否する）。**artifact の配布名は変わらない**。",
+   "renamedAssets": [
+    {
+     "from": "test-counts.v1.schema.json",
+     "to": "test-counts.v2.schema.json",
+     "reason": "schema ファイル名。artifact 側の名前は変わらない"
+    }
+   ],
+   "history": [
+    {
+     "shippedIn": "v0.4.1",
+     "previousRelease": "v0.4.0",
+     "previousSchemaPath": "schemas/test-counts.v1.schema.json",
+     "currentSchemaPath": "schemas/test-counts.v1.schema.json",
+     "schemaVersionAtTheTime": 1,
+     "schemaVersionShouldHaveBeen": 2,
+     "versionWasHeld": true,
+     "policyVerdict": "BUMP",
+     "recordedRetroactivelyIn": "v0.5.0",
+     "changes": [
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/exitCode",
+       "instancePath": "$.exitCode",
+       "added": [
+        "exitCode"
+       ],
+       "reason": "件数を「どの実行から取ったか」まで含めて記録するようにした（v0.4.0 で allPassed:false のまま公開した件の対策）"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/failed",
+       "instancePath": "$.failed",
+       "added": [
+        "failed"
+       ],
+       "reason": "同上"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/failedSuites",
+       "instancePath": "$.failedSuites",
+       "added": [
+        "failedSuites"
+       ],
+       "reason": "同上"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/generatedFromCommit",
+       "instancePath": "$.generatedFromCommit",
+       "added": [
+        "generatedFromCommit"
+       ],
+       "reason": "同上"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/nodeVersion",
+       "instancePath": "$.nodeVersion",
+       "added": [
+        "nodeVersion"
+       ],
+       "reason": "同上"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/runner",
+       "instancePath": "$.runner",
+       "added": [
+        "runner"
+       ],
+       "reason": "同上"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/runnerVersion",
+       "instancePath": "$.runnerVersion",
+       "added": [
+        "runnerVersion"
+       ],
+       "reason": "同上"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/testCommand",
+       "instancePath": "$.testCommand",
+       "added": [
+        "testCommand"
+       ],
+       "reason": "同上"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "NARROW",
+       "schemaPointer": "/required",
+       "instancePath": "$",
+       "added": [
+        "exitCode",
+        "failed",
+        "generatedFromCommit",
+        "nodeVersion",
+        "runner",
+        "runnerVersion",
+        "testCommand"
+       ],
+       "reason": "必須にした。**旧 artifact は新 schema で落ちる**"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.5.0",
+     "previousRelease": "v0.4.1",
+     "previousSchemaPath": "schemas/test-counts.v1.schema.json",
+     "currentSchemaPath": "schemas/test-counts.v2.schema.json",
+     "schemaVersionAtTheTime": 2,
+     "versionWasHeld": false,
+     "policyVerdict": "BUMP",
+     "changes": [
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaVersion/const",
+       "instancePath": "$.schemaVersion",
+       "from": 1,
+       "to": 2,
+       "reason": "版を上げた。**下流はここで分岐して止まる**"
+      },
+      {
+       "kind": "field-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/contractMigration",
+       "instancePath": "$.contractMigration",
+       "added": [
+        "contractMigration"
+       ],
+       "reason": "**この schema には対応表が無かった。**v0.4.1 で契約を変えたのに記録が残っていなかった原因の一つ"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "NARROW",
+       "schemaPointer": "/required",
+       "instancePath": "$",
+       "added": [
+        "contractMigration"
+       ],
+       "reason": "対応表を必須にした。**旧 artifact は新 schema で落ちる**"
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

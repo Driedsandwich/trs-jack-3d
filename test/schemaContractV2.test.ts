@@ -31,11 +31,11 @@ import { mustBeNonEmpty, mustFind } from './_must'
 const ROOT = resolve(__dirname, '..')
 const J = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 
-const v2Schema = J('schemas/half-plug-topology-profile.v2.schema.json')
+const v2Schema = J('schemas/half-plug-topology-profile.v3.schema.json')
 const v1Schema = J('schemas/half-plug-topology-profile.v1.schema.json')
 const PROFILES = [
-  ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json'],
-  ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json'],
+  ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json'],
+  ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json'],
 ] as const
 const profiles = PROFILES.map(([id, p]) => [id, J(p)] as const)
 
@@ -45,9 +45,9 @@ const okV1 = ajv.compile(v1Schema)
 
 describe('P1-5 版が上がっていて、旧版を期待する実装が止まる', () => {
   for (const [id, p] of profiles) {
-    it(`${id}: schemaVersion 2 / schemaId が入っている`, () => {
-      expect(p.schemaVersion).toBe(2)
-      expect(p.schemaId).toBe('half-plug-topology-profile.v2')
+    it(`${id}: schemaVersion 3 / schemaId が入っている`, () => {
+      expect(p.schemaVersion).toBe(3)
+      expect(p.schemaId).toBe('half-plug-topology-profile.v3')
     })
   }
 
@@ -76,28 +76,40 @@ describe('P1-5 版が上がっていて、旧版を期待する実装が止ま�
   })
 })
 
+/**
+ * 移行表は v0.5.0 で **history 形式**になった。
+ * 記録と schema 実物の突き合わせは test/contractMigration.test.ts が見る。
+ * ここで見るのは **profile 本体との整合**——表に書いた改名が本文で済んでいるか、である。
+ */
+interface Change { kind: string, effect: string, schemaPointer: string, added?: string[], removed?: string[] }
+interface History { shippedIn: string, versionWasHeld: boolean, changes: Change[] }
+
 describe('移行表が実態と合っている', () => {
   for (const [id, p] of profiles) {
     const cm = () => p.contractMigration
+    const allChanges = (): Change[] => (cm().history as History[]).flatMap((h) => h.changes)
 
     it(`${id}: 宣言した改名が実際に済んでいる`, () => {
       // **宣言だけして直していない**が一番たちが悪い。表のとおり読んでも合わない
       const body = JSON.stringify({ intervals: p.intervals, events: p.events })
       const renames = mustBeNonEmpty(
-        cm().renamedEnumValues as { from: string; to: string }[],
+        allChanges().filter((c) => c.kind === 'enum-value-renamed'),
         `${id} の改名表`,
       )
       for (const r of renames) {
-        expect(body.includes(`"${r.from}"`), `旧語 ${r.from} が本体に残っている`).toBe(false)
-        expect(r.from).not.toBe(r.to)
+        for (const from of mustBeNonEmpty(r.removed ?? [], `${r.schemaPointer} の旧語`)) {
+          expect(body.includes(`"${from}"`), `旧語 ${from} が本体に残っている`).toBe(false)
+        }
+        expect(r.removed).not.toEqual(r.added)
       }
     })
 
     it(`${id}: topologyClass の改名先が現在の語彙に実在する`, () => {
-      const renames = (cm().renamedEnumValues as { field: string; to: string }[])
-        .filter((r) => r.field.includes('topologyClass'))
+      const renames = allChanges().filter((c) => c.schemaPointer.includes('topologyClass'))
       mustBeNonEmpty(renames, `${id} の topologyClass 改名`)
-      for (const r of renames) expect(ALL_TOPOLOGY_CLASSES).toContain(r.to)
+      for (const r of renames) {
+        for (const to of mustBeNonEmpty(r.added ?? [], '改名先')) expect(ALL_TOPOLOGY_CLASSES).toContain(to)
+      }
     })
 
     it(`${id}: 破壊的変更なら版が上がっている`, () => {
@@ -108,7 +120,8 @@ describe('移行表が実態と合っている', () => {
 
     it(`${id}: 方式を選んだ根拠が書いてある`, () => {
       // 「なんとなく上げた」では、次に同じ判断をする人が同じ調査をやり直す
-      expect(String(cm().versionSelectionEvidence)).toContain('contractRevision')
+      expect(cm().policy.decisionRule).toBe('language-subset')
+      expect(String(cm().policy.document)).toContain('SCHEMA_VERSIONING_POLICY')
       expect(String(cm().consumerAction)).toContain('schemaVersion')
     })
   }
@@ -118,11 +131,26 @@ describe('移行表が実態と合っている', () => {
   for (const [id, p] of profiles) {
     it(`${id}: **v0.1.1 で schemaVersion を据え置いた失敗が表に残っている**`, () => {
       // 記録しておかないと、同じ判断がまた「追加のみだから据え置き」で通る
-      const spread = (p.contractMigration.renamedEnumValues as { field: string; from: string; introducedIn: string }[])
-        .filter((r) => r.field.includes('spreadStatus'))
+      const h = mustFind(
+        p.contractMigration.history as History[],
+        (x) => x.shippedIn === 'v0.1.1',
+        `${id} の v0.1.1 の記録`,
+      )
+      expect(h.versionWasHeld, 'v0.1.1 は版を据え置いた回である').toBe(true)
+      const spread = h.changes.filter((c) => c.schemaPointer.includes('spreadStatus'))
       expect(spread.length).toBeGreaterThan(0)
-      expect(spread.every((r) => r.introducedIn.includes('schemaVersion 1'))).toBe(true)
-      expect(spread.map((r) => r.from)).toContain('MEASURED')
+      expect(spread.flatMap((c) => c.removed ?? [])).toContain('MEASURED')
+    })
+
+    it(`${id}: **v0.4.0 で据え置いた失敗も表に残っている**`, () => {
+      // v0.5.0 で是正した本体。ここが消えると「なぜ 6 本まとめて上げたか」が辿れなくなる
+      const h = mustFind(
+        p.contractMigration.history as History[],
+        (x) => x.shippedIn === 'v0.4.0',
+        `${id} の v0.4.0 の記録`,
+      )
+      expect(h.versionWasHeld).toBe(true)
+      expect(h.changes.flatMap((c) => c.added ?? [])).toContain('input-scope')
     })
   }
 })
@@ -186,9 +214,9 @@ describe('P2-7 release evidence が自己完結している', () => {
 
   it('**v0.1.1 で入れ忘れた schema が入っている**', () => {
     // 入れ忘れの再発をここで止める。受け手は感度 artifact を検証できなかった
-    expect(paths).toContain('schemas/event-sensitivity.v1.schema.json')
-    expect(paths).toContain('schemas/topology-robustness.v2.schema.json')
-    expect(paths).toContain('schemas/half-plug-topology-profile.v2.schema.json')
+    expect(paths).toContain('schemas/event-sensitivity.v2.schema.json')
+    expect(paths).toContain('schemas/topology-robustness.v3.schema.json')
+    expect(paths).toContain('schemas/half-plug-topology-profile.v3.schema.json')
   })
 
   it('配布名が重複していない（片方が黙って上書きされる）', () => {

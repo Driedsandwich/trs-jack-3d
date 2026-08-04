@@ -27,6 +27,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { buildProvenance, listSensitivityInputs } from './provenance'
+import { migrationFor } from './contractMigration.mjs'
 import { buildModelWithOverrides, getModel, type VariantId } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import { extractEvents, sweep } from '../src/model/sweep'
@@ -160,7 +161,8 @@ const provenance = buildProvenance({
 })
 
 const out = {
-  schemaVersion: 1 as const,
+  schemaVersion: 2 as const,
+  contractMigration: migrationFor('event-sensitivity.v2'),
   generatedBy: 'npm run sensitivity:events',
   // **この 3 つが今回の修正の核心。** どの variant の解析かを機械可読にする
   variantId: String(VARIANT),

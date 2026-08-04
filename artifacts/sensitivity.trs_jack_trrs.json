@@ -1,5 +1,101 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
+ "contractMigration": {
+  "schemaId": "event-sensitivity.v2",
+  "previousSchemaId": "event-sensitivity.v1",
+  "fromSchemaVersion": 1,
+  "toSchemaVersion": 2,
+  "breaking": true,
+  "policy": {
+   "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+   "policyVersion": 1,
+   "decisionRule": "language-subset",
+   "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+  },
+  "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。中身（イベント深さの幅・basis・spreadStatus）は v1 から変わっていない。**artifact の配布名は変わらない**（sensitivity.trs_jack_trs.json 等）。",
+  "renamedAssets": [
+   {
+    "from": "event-sensitivity.v1.schema.json",
+    "to": "event-sensitivity.v2.schema.json",
+    "reason": "schema ファイル名。artifact 側の名前は変わらない"
+   }
+  ],
+  "history": [
+   {
+    "shippedIn": "v0.4.0",
+    "previousRelease": "v0.3.0",
+    "previousSchemaPath": "schemas/event-sensitivity.v1.schema.json",
+    "currentSchemaPath": "schemas/event-sensitivity.v1.schema.json",
+    "schemaVersionAtTheTime": 1,
+    "schemaVersionShouldHaveBeen": 2,
+    "versionWasHeld": true,
+    "policyVerdict": "BUMP",
+    "recordedRetroactivelyIn": "v0.5.0",
+    "changes": [
+     {
+      "kind": "enum-value-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+      "instancePath": "$.provenance.inputFiles[].role",
+      "added": [
+       "input-scope"
+      ],
+      "reason": "入力の範囲定義 source-input-scope.v1.json が入力になった。**追加のみだが、旧 schema を pin した consumer はこの値を拒む**"
+     }
+    ]
+   },
+   {
+    "shippedIn": "v0.5.0",
+    "previousRelease": "v0.4.1",
+    "previousSchemaPath": "schemas/event-sensitivity.v1.schema.json",
+    "currentSchemaPath": "schemas/event-sensitivity.v2.schema.json",
+    "schemaVersionAtTheTime": 2,
+    "versionWasHeld": false,
+    "policyVerdict": "BUMP",
+    "changes": [
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaVersion/const",
+      "instancePath": "$.schemaVersion",
+      "from": 1,
+      "to": 2,
+      "reason": "版を上げた。**下流はここで分岐して止まる**"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/contractMigration",
+      "instancePath": "$.contractMigration",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "**この schema には対応表が無かった。**v0.4.0 で契約を変えたのに記録が残っていなかった原因の一つ"
+     },
+     {
+      "kind": "constraint-tightened",
+      "effect": "NARROW",
+      "schemaPointer": "/required",
+      "instancePath": "$",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "対応表を必須にした。**旧 artifact は新 schema で落ちる**"
+     },
+     {
+      "kind": "enum-value-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+      "instancePath": "$.provenance.inputFiles[].role",
+      "added": [
+       "contract-migration"
+      ],
+      "reason": "版と契約変更の対応表の正本 contract-migration.v1.json が入力になった"
+     }
+    ]
+   }
+  ]
+ },
  "generatedBy": "npm run sensitivity:events",
  "variantId": "TRS|JACK-TRRS",
  "analysisScope": "EVENT_DEPTH_SPREAD_ONLY",
@@ -7,15 +103,15 @@
   "trrs.jack.contact.sleeve.axialCenter",
   "trrs.jack.contact.narrowPadWidth"
  ],
- "generatedFromCommit": "06827505d66e13200bae66442f73324f8cc0b5dc",
+ "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "06827505d66e13200bae66442f73324f8cc0b5dc",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "5c91ddaea6deb266624649e2104ab6f3de79eb31a292ca24392891294f58343e",
+  "inputDigest": "6db355313884b2edb9dd0d6046b7da47423f7a2104139c3c71330e987e52f300",
   "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 6 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
   "inputSettings": {
    "variantId": "TRS|JACK-TRRS",
@@ -27,28 +123,33 @@
   },
   "inputFiles": [
    {
+    "path": "contract-migration.v1.json",
+    "sha256": "8b33e236c248543f70ce8d9de06004ef73f8b4e18f434a8c946e482a883665c5",
+    "role": "contract-migration"
+   },
+   {
     "path": "package-lock.json",
-    "sha256": "0cb561622cfcbcc74f76e6dbde5bf645885d4a693a901e692b12e8e5e5eea5e3",
+    "sha256": "f7d1bb2301009c21f4fff8b189f49a6927385fd9dbae0f56ea6cd13b2c88a4d8",
     "role": "lockfile"
    },
    {
-    "path": "schemas/event-sensitivity.v1.schema.json",
-    "sha256": "b859a1a04583e7a2d16925b9ba09d6ac329149f593796585f82ae7fa2b4ca5b5",
+    "path": "schemas/event-sensitivity.v2.schema.json",
+    "sha256": "e9cd21c7cb09e496aa9e5609e126493e06871e0bac99cf9dcec79f8d8e7f80ce",
     "role": "schema"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "f79999ce246974086348a8b77b791e16895c377e58294e88d2a09471dd3e1ebb",
+    "sha256": "ad943f639e4cd9531fc13f1bc549ad891a8f3247911f66c21bc712fca6062f00",
     "role": "generator"
    },
    {
     "path": "scripts/sensitivityEvents.ts",
-    "sha256": "7a322385eb93919d5de375f21b6e72bd6845306ccb58b2adf34bfff393cb65b5",
+    "sha256": "57fa90ae653f687a1438f6417e6db15e2dfc742890096e3f857fe496d132bdea",
     "role": "generator"
    },
    {
     "path": "source-input-scope.v1.json",
-    "sha256": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+    "sha256": "b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5",
     "role": "input-scope"
    },
    {
@@ -137,7 +238,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run sensitivity:events -- --variant \"TRS|JACK-TRRS\" --release",
+  "command": "npm run sensitivity:events -- --variant \"TRS|JACK-TRRS\"",
   "artifactDate": "2026-08-04"
  },
  "generatedAt": "2026-08-04",

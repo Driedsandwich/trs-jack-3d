@@ -15,6 +15,52 @@
 
 ---
 
+## v0.5.0 — schema versioning の是正（**6 本まとめて版を上げた**）
+
+2026-08-05
+
+### 版を上げたもの
+
+| schema | 旧 | 新 | 配布名 |
+|---|---:|---:|---|
+| `half-plug-topology-profile` | 2 | **3** | **変わる**（`.v2.` → `.v3.`） |
+| `event-sensitivity` | 1 | **2** | 変わらない |
+| `topology-robustness` | 2 | **3** | 変わらない |
+| `source-input-manifest` | 1 | **2** | 変わらない |
+| `validation-results` | 1 | **2** | 変わらない |
+| `test-counts` | 1 | **2** | 変わらない |
+
+**下流は 6 か所で止まる。**索引（`trs-jack-3d-release-index.v1`）は上げていないので入口は動く。
+**契約の中身は変わっていない**（区間・event・topology 列・座標系・端点規約）。
+
+### なぜ
+
+全 tag 対を機械で洗ったところ、**版を据え置いたまま契約を変えた回が 9 件**あった。
+v0.4.1 のフォローアップオーダーは 4 本を挙げていたが、
+`validation-results` と `test-counts` も同じ性質だったので足した（**オーダーに無い 2 件**）。
+
+### 足したもの
+
+| | |
+|---|---|
+| `docs/SCHEMA_VERSIONING_POLICY.md` | 条文。「新 schema の言語が旧 schema の言語に収まるか」で判定する |
+| `scripts/schemaLanguageDiff.mjs` | 条文の機械判定。**artifact の中身は見ない** |
+| `contract-migration.v1.json` | 版と契約変更の対応表の正本。9 件の遡及記録を含む |
+| `scripts/buildSourceSnapshot.mjs` | オフラインの受け手のための入力・生成器・schema の写し（1.05 MB） |
+| `schemas/source-snapshot.v1.schema.json` | 同上の schema |
+| `test/schemaVersioningPolicy.test.ts` | 条文の検査（合成 16 / 遡及 9 / 対照 7） |
+| `test/contractMigration.test.ts` | 記録と schema 実物の突き合わせ 4 種 ＋ 変異 8 件 |
+
+### 直したもの
+
+- `contractMigration` が**単一遷移のオブジェクト**だったため、版を据え置いたまま変えた回を
+  分けて記録できなかった。**`history` 形式**にして `versionWasHeld` を持たせた。
+- `SHA256SUMS` の見出しが `schemaVersion 2` を**直書き**していた。artifact から引くようにした。
+- `test/sourceInputScope.test.ts` の回帰試験が **v0.3.0 tag の source** に当てていたため、
+  v0.5.0 で増えた入力を落としても検出できなかった（**実際に空振りした**）。
+  台帳も検証対象も現在に揃え、**無変異の対照**を追加した。
+- `docs/HALF_PLUG_ADAPTER.md` の v0.2.0 の表で、旧側のファイル名が `v2` になっていた（正しくは `v1`）。
+
 ## [Unreleased]
 
 ### 追加 — tag source の独立検算 helper（v0.2.0 フォローアップ §5）

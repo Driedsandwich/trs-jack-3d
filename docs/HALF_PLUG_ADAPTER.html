@@ -100,7 +100,7 @@
 </nav>
 <h1>Half-Plug Lab へ渡すもの — adapter 仕様</h1>
 <div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
-<p>作成 2026-08-02 ／ 対象 <code>Half-Plug Topology Profile v2</code>（2026-08-03 に v1 から更新）</p>
+<p>作成 2026-08-02 ／ 対象 <code>Half-Plug Topology Profile v3</code>（2026-08-05 に v2 から更新）</p>
 <p>統合オーダー §4 が Half-Plug 側へ求めている <code>integrations/trs-jack-3d/</code> の 初期マッピングを、<strong>現在のコード体系で</strong>書き起こしたものです。</p>
 <p>このリポジトリは Half-Plug Lab 側を持っていないので、ここに置いた仕様を 向こうで実装してもらう形になります。</p>
 <hr>
@@ -110,7 +110,7 @@
 <div class="tw"><table><thead><tr><th>してはいけないこと</th><th>なぜ</th></tr></thead><tbody><tr><td><code>topologyClass</code> を係数へ直接写像する</td><td>分類であって量ではない</td></tr><tr><td><code>quality</code> を接触抵抗 Ω やゲインへ換算する</td><td>相対スコアで、Ω に換算していない（profile に含めてもいません）</td></tr><tr><td>1 機種の <code>nominalStartMm</code> を一般的な「挿入深度」として使う</td><td>§4-1 を読むこと。<code>normalized</code> も万能ではない</td></tr><tr><td><strong><code>ground-open-differential</code> を自動的に L−R 係数へ変換する</strong></td><td>§2 を参照</td></tr><tr><td>未実測なのに「実物と同じ」と表示する</td><td>全 profile が <code>verifiedPhysical: false</code></td></tr></tbody></table></div>
 <hr>
 <h2 id="s1">1. 渡す profile は 2 つあります</h2>
-<div class="tw"><table><thead><tr><th>ファイル</th><th>中身</th><th>左右差分</th></tr></thead><tbody><tr><td><code>half_plug_topology_profile.v2.trs_jack_trs.json</code></td><td>3極プラグ × 3極ジャック（Lumberg 実部品）</td><td><strong>現れない</strong></td></tr><tr><td><code>half_plug_topology_profile.v2.trs_jack_trrs.json</code></td><td>3極プラグ × <strong>4極ジャック</strong></td><td><strong>現れる</strong>（<code>IV028</code> / 13.30〜13.52 mm）</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>ファイル</th><th>中身</th><th>左右差分</th></tr></thead><tbody><tr><td><code>half_plug_topology_profile.v3.trs_jack_trs.json</code></td><td>3極プラグ × 3極ジャック（Lumberg 実部品）</td><td><strong>現れない</strong></td></tr><tr><td><code>half_plug_topology_profile.v3.trs_jack_trrs.json</code></td><td>3極プラグ × <strong>4極ジャック</strong></td><td><strong>現れる</strong>（<code>IV028</code> / 13.30〜13.52 mm）</td></tr></tbody></table></div>
 <p><strong>再現したい音が出るのは後者だけです。</strong>前者は「出ない」ことを <code>absentTopologies</code> に記録した反証として持っています。</p>
 <pre><code>npm run export:half-plug -- --variant "TRS|JACK-TRRS"</code></pre>
 <hr>
@@ -132,7 +132,7 @@
 <p>安全な DSP 表現（減衰・mono 化・mute など）へ写像し、 <strong>クラックルやポップのような過渡音を生成しないでください。</strong></p>
 <hr>
 <h2 id="s3">3. 本命の区間</h2>
-<p><code>half_plug_topology_profile.v2.trs_jack_trrs.json</code> の <code>IV028</code>:</p>
+<p><code>half_plug_topology_profile.v3.trs_jack_trrs.json</code> の <code>IV028</code>:</p>
 <pre><code>nominalStartMm  13.30      normalizedStart  0.9500
 nominalEndMm    13.52      normalizedEnd    0.9657
 topologyClass   ground-open-differential
@@ -193,9 +193,16 @@ physicalClaimStatus      未実測なら "unverified"</code></pre>
 <p>現在は <code>spreadStatus</code> で 3 つを区別します。</p>
 <div class="tw"><table><thead><tr><th><code>spreadStatus</code></th><th><code>spreadMm</code></th><th>意味</th></tr></thead><tbody><tr><td><code>MODEL_SWEEP_EVENT_SPECIFIC</code></td><td>値あり</td><td><strong>その事象そのものを走査で求めた幅</strong></td></tr><tr><td><code>MODEL_SWEEP_NOT_EVENT_SPECIFIC</code></td><td><code>null</code></td><td><code>kind</code> 単位の集計しか無く、この事象へは配れない</td></tr><tr><td><code>NOT_ANALYZED</code></td><td><code>null</code></td><td>解析していない</td></tr></tbody></table></div>
 <p><strong>どれも「動かない」の意味ではありません。</strong> <code>kind</code> 単位の集計は捨てず、<code>sensitivitySummary.aggregateSpreadByKind</code> に残してあります。 そちらを個々の事象へ当てはめないでください。</p>
+<h3>⚠ v0.5.0 は <code>schemaVersion: 3</code> です（<strong>破壊的変更・6 本まとめて</strong>）</h3>
+<p><strong>v0.5.0 で 6 本の schema を同時に上げました。</strong>旧版を pin した実装は <strong>6 か所で止まります。</strong></p>
+<div class="tw"><table><thead><tr><th>pin</th><th>旧</th><th>新</th><th class="num">止まる artifact</th></tr></thead><tbody><tr><td>profile</td><td>2</td><td><strong>3</strong></td><td class="num">2</td></tr><tr><td>event-sensitivity</td><td>1</td><td><strong>2</strong></td><td class="num">2</td></tr><tr><td>topology-robustness</td><td>2</td><td><strong>3</strong></td><td class="num">1</td></tr><tr><td>source-input-manifest</td><td>1</td><td><strong>2</strong></td><td class="num">1</td></tr><tr><td>validation-results</td><td>1</td><td><strong>2</strong></td><td class="num">1</td></tr><tr><td>test-counts</td><td>1</td><td><strong>2</strong></td><td class="num">1</td></tr></tbody></table></div>
+<p><strong>契約の中身は変わっていません。</strong>区間・event・topology 列・座標系・<code>role</code> の enum （<code>contract-migration</code> が 1 つ増えたのを除く）はそのままです。 上げたのは、<strong>v0.4.0 と v0.4.1 で版を据え置いたまま契約を変えていたのを是正するため</strong>です。</p>
+<p><strong>profile 本体はファイル名も変わります</strong>（<code>.v2.</code> → <code>.v3.</code>）。名前で引く lock は schema 検査に届く前に「ファイルが無い」で止まります。対応表は各 artifact の <code>contractMigration.renamedAssets</code> にあります。</p>
+<p>直す順序は <strong>manifest → profile → sensitivity → robustness → validation-results → test-counts</strong> です。索引（<code>trs-jack-3d-release-index.v1</code>）は版を上げていないので、入口は動きます。 <strong>profile しか読まないなら 2 か所</strong>（manifest と profile）で済みます。</p>
+<p>条文は <a href="SCHEMA_VERSIONING_POLICY.md">docs/SCHEMA_VERSIONING_POLICY.md</a>、 遡及記録は同梱の <code>contract-migration.v1.json</code> にあります。</p>
 <h3>⚠ v0.2.0 は <code>schemaVersion: 2</code> です（<strong>破壊的変更</strong>）</h3>
 <p><strong>読み込む前に版で分岐してください。</strong><code>schemaVersion === 1</code> を期待する実装は、 2 を受け取ったら停止してください。語彙の対応表は profile の <code>contractMigration</code> にあります。</p>
-<div class="tw"><table><thead><tr><th></th><th>旧</th><th>新</th></tr></thead><tbody><tr><td><code>schemaVersion</code></td><td>1</td><td><strong>2</strong></td></tr><tr><td><code>topologyClass</code></td><td><code>fully-seated</code></td><td><strong><code>all-expected-functions-match</code></strong></td></tr><tr><td>ファイル名</td><td><code>half_plug_topology_profile.v2.*</code></td><td>**<code>half_plug_topology_profile.v2.*</code>**</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th></th><th>旧</th><th>新</th></tr></thead><tbody><tr><td><code>schemaVersion</code></td><td>1</td><td><strong>2</strong></td></tr><tr><td><code>topologyClass</code></td><td><code>fully-seated</code></td><td><strong><code>all-expected-functions-match</code></strong></td></tr><tr><td>ファイル名</td><td><code>half_plug_topology_profile.v1.*</code></td><td>**<code>half_plug_topology_profile.v2.*</code>**</td></tr></tbody></table></div>
 <p>ファイル名も変えたのは、<strong>release lock が <code>filename</code> で引く</strong>ためです。 名前が同じまま契約だけ変わると、lock が同じ名前で非互換な内容を指します。</p>
 <p><strong><code>fully-seated</code> を改めた理由</strong>は、「プラグ肩が当たった」と読めるからです。 実体は <code>reasonCode</code> のとおり <code>ALL_EXPECTED_FUNCTIONS_MATCH</code> でしかありません。 名前だけでは同じ誤読が起きるので、差を数字でも出します。</p>
 <pre><code>TRS×TRRS  電気的に全機能が揃う  13.52 mm   ← all-expected-functions-match の開始

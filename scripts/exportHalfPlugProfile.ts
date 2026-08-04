@@ -27,6 +27,7 @@ import { extractEvents, sweep } from '../src/model/sweep'
 import type { TrsModel } from '../src/model/engine'
 import { ALL_TOPOLOGY_CLASSES, classifyFromEvaluation } from '../src/model/topology'
 import { buildProvenance } from './provenance'
+import { migrationFor } from './contractMigration.mjs'
 
 const ROOT = resolve(process.cwd())
 const STEP_MM = 0.02
@@ -530,70 +531,11 @@ const allFunctionsFromMm: number | null =
  *
  * 沈黙を避けるという目的に対して、答えは 1 つしかなかった。
  */
-const CONTRACT_MIGRATION = {
-  fromSchemaVersion: 1,
-  toSchemaVersion: 2,
-  breaking: true,
-  schemaId: 'half-plug-topology-profile.v2',
-  previousSchemaId: 'half-plug-topology-profile.v1',
-  /** 旧語彙を読む消費側が沈黙ではなくエラーになるための対応表 */
-  renamedEnumValues: [
-    {
-      field: 'intervals[].electricalTopology.topologyClass',
-      from: 'fully-seated',
-      to: 'all-expected-functions-match',
-      introducedIn: 'schemaVersion 2',
-      reason: '「プラグ肩が当たった」と読めたが、実体は reasonCode のとおり ALL_EXPECTED_FUNCTIONS_MATCH でしかない',
-    },
-    {
-      field: 'events[].spreadStatus',
-      from: 'MEASURED',
-      to: 'MODEL_SWEEP_EVENT_SPECIFIC',
-      introducedIn: 'v0.1.1 (schemaVersion 1 のまま変えてしまった)',
-      reason: '実物の測定と誤認される。実際はモデルのパラメータを振った結果',
-    },
-    {
-      field: 'events[].spreadStatus',
-      from: 'NOT_EVENT_SPECIFIC',
-      to: 'MODEL_SWEEP_NOT_EVENT_SPECIFIC',
-      introducedIn: 'v0.1.1 (schemaVersion 1 のまま変えてしまった)',
-      reason: '同上',
-    },
-    {
-      field: 'events[].spreadStatus',
-      from: 'NOT_MEASURED',
-      to: 'NOT_ANALYZED',
-      introducedIn: 'v0.1.1 (schemaVersion 1 のまま変えてしまった)',
-      reason: '同上',
-    },
-  ],
-  addedFields: [
-    { field: 'schemaId', introducedIn: 'schemaVersion 2' },
-    { field: 'contractMigration', introducedIn: 'schemaVersion 2' },
-    { field: 'mechanicalInsertion', introducedIn: 'schemaVersion 2' },
-    { field: 'coordinateSystem.normalizedScope', introducedIn: 'schemaVersion 2' },
-    { field: 'coordinateSystem.crossProfileComparable', introducedIn: 'schemaVersion 2' },
-    { field: 'sensitivitySummary.eventSpreadAvailable', introducedIn: 'v0.1.2 (追加のみ)' },
-    { field: 'sensitivitySummary.globalSummaryAvailable', introducedIn: 'v0.1.2 (追加のみ)' },
-    { field: 'sensitivitySummary.basis', introducedIn: 'v0.1.2 (追加のみ)' },
-    /**
-     * 値の**追加**であって改名ではない。旧語彙が消えたわけではないので、
-     * role で絞り込む実装が沈黙して壊れることはない。
-     * ただし v0.3.0 の schema を pin して新しい artifact を検証すると enum で落ちる（**明示的に落ちる**）。
-     */
-    { field: 'provenance.inputFiles[].role に "input-scope" を追加', introducedIn: 'v0.3.0 フォローアップ P1-2 (追加のみ)' },
-  ],
-  consumerAction:
-    '**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。'
-    + '旧語彙のまま読むと、値で絞り込む箇所が「そのデータが 1 件も無い」と区別できず、沈黙して壊れる。',
-  versionSelectionEvidence:
-    '下流 release-verifier.mjs は schemaVersion を見て拒否するが contractRevision はどこも読まない。'
-    + '2026-08-03 に両方を実際に import させて確かめた (A: 停止 / B: PASS)。',
-} as const
+const CONTRACT_MIGRATION = migrationFor('half-plug-topology-profile.v3')
 
 const profile = {
-  schemaVersion: 2 as const,
-  schemaId: 'half-plug-topology-profile.v2',
+  schemaVersion: 3 as const,
+  schemaId: 'half-plug-topology-profile.v3',
   contractMigration: CONTRACT_MIGRATION,
   /**
    * **revision ではなく inputDigest で作る (2026-08-03 変更)。**
@@ -700,7 +642,7 @@ const profile = {
 // artifacts/ へ 2 回書いて比べると、比較の途中で作業ツリーが汚れてしまう
 const OUT_DIR = argOf('out', resolve(ROOT, 'artifacts'))
 mkdirSync(OUT_DIR, { recursive: true })
-const OUT_PATH = resolve(OUT_DIR, `half_plug_topology_profile.v2.${slug}.json`)
+const OUT_PATH = resolve(OUT_DIR, `half_plug_topology_profile.v3.${slug}.json`)
 writeFileSync(OUT_PATH, JSON.stringify(profile, null, 1) + '\n')
 
 const codes = new Set(intervals.map((i) => (i.electricalTopology as { topologyClass: string }).topologyClass))

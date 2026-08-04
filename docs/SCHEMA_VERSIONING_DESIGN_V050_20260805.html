@@ -96,11 +96,12 @@
     <li><a href="#s4">4. source snapshot — オーダー §2 の選択</a></li>
     <li><a href="#s5">5. 影響範囲</a></li>
     <li><a href="#s6">6. 未確認・限界</a></li>
-    <li><a href="#s7">7. 実装の可否</a></li>
+    <li><a href="#s7">6-2. 実装で分かったこと（2026-08-05 追記・設計との差）</a></li>
+    <li><a href="#s8">7. 実装の可否</a></li>
   </ol>
 </nav>
 <h1>v0.5.0 設計 — schema versioning の是正</h1>
-<p>作成日: 2026-08-05 対象: <code>docs/NONBLOCKING_FOLLOWUP_ORDER_V041_20260804.md</code> §1・§2 状態: <strong>設計のみ。実装していない。</strong> schema・artifact・生成器は 1 行も変えていない。</p>
+<p>作成日: 2026-08-05 対象: <code>docs/NONBLOCKING_FOLLOWUP_ORDER_V041_20260804.md</code> §1・§2 状態: <strong>v0.5.0 で実装済み。</strong>（この文書は設計時の記録である。 設計と実装の差は §6-2 に残してある——本文の数字を後から書き換えていないので、 <strong>§1-5 の「7 件」は設計時の見積もりで、実測は 9 件</strong>である。）</p>
 <hr>
 <h2 id="s0">0. 決めたこと（本人決定・2026-08-05）</h2>
 <ol><li><strong>版を上げるのは 6 つ。</strong> オーダーの 4 つに、v0.4.1 で拒む変更を据え置いた 2 つを足す。</li><li><strong><code>additionalProperties: false</code> は維持する。</strong> したがって条文は「項目の追加はすべて版上げ」と正直に書く。「optional な追加は据え置き可」とは書かない。</li></ol>
@@ -286,7 +287,24 @@ profileSchemaId      : {"type":"string"}                ← const ではない</
 <h2 id="s6">6. 未確認・限界</h2>
 <ol><li><strong>条文の機械判定は保守的な近似である。</strong>JSON Schema の言語包含は一般には決定不能なので、 決められない変更（<code>pattern</code> の書き換え・<code>oneOf</code> の枝数変更・未対応キーワード）は すべて「上げる」側へ倒している。<strong>「上げなくてよいのに上げる」方向の誤りは残る。</strong> 逆方向（上げるべきなのに据え置く）は、対応表に無いキーワードを検出して落とすことで塞いでいる。</li><li><strong>判定器は <code>$ref</code> を辿るが、循環参照は 50 段で打ち切る。</strong>現在の schema に循環参照は無いが、 将来入ったときに黙って通る可能性がある。実装時に「打ち切りが起きたら落とす」を入れる。</li><li><strong><code>contractMigration</code> の遡及記録は事後の再構成である。</strong>当時の判断記録ではない。 <code>recordedRetroactivelyIn</code> でその旨を機械可読に持たせるが、<strong>当時そう考えていたわけではない。</strong></li><li><strong><code>meaning-changed</code>（値の意味だけ変わる）は機械判定できない。</strong>v0.1.1 の <code>spreadStatus</code> の ような変更は、人間が気づいて書く以外にない。条文はここを守れない。</li><li><strong>停止回数 6 は「schema 検査に到達した場合」の数である。</strong>ファイル名で引く下流は その手前で止まる（§3-4）。実際の下流が名前で引いているか URL で引いているかは未確認。</li><li><strong>本設計は実装していない。</strong>測定に使ったスクリプトは scratchpad にあり、repo には入れていない。</li></ol>
 <hr>
-<h2 id="s7">7. 実装の可否</h2>
+<h2 id="s7">6-2. 実装で分かったこと（2026-08-05 追記・<strong>設計との差</strong>）</h2>
+<p>設計を実装したときに、設計時の見積もりと<strong>3 点ずれた</strong>。黙って直さず、差として残す。</p>
+<div class="tw"><table><thead><tr><th></th><th>設計（この文書の本文）</th><th>実装で実測</th></tr></thead><tbody><tr><td>遡って記録する違反</td><td><strong>7 件</strong></td><td><strong>9 件</strong></td></tr><tr><td>source snapshot の形と大きさ</td><td>tar.gz <strong>0.21 MB</strong></td><td><strong>JSON 1.05 MB</strong></td></tr><tr><td><code>role</code> の enum</td><td>変えない</td><td><strong><code>contract-migration</code> を 1 つ追加</strong></td></tr></tbody></table></div>
+<h3>① 違反は 7 件ではなく 9 件だった</h3>
+<p>設計では v0.3.0 → v0.4.0 → v0.4.1 の 3 tag しか比べていなかった。 実装時に<strong>全 tag 対（v0.1.0 から v0.4.1 まで）を機械で洗った</strong>ところ、 <code>half-plug-topology-profile.v1</code> 系統に 2 件多く見つかった。</p>
+<pre><code>v0.1.0→v0.1.1  profile v1  spreadStatus の値 3 つを改名 + eventSpreadSource 追加
+v0.1.1→v0.2.0  profile v1  inputSettings 追加 + sensitivitySummary を拡張</code></pre>
+<p>後者は <strong>v2 を新設したのと同じ release で v1 の schema ファイルも直していた</strong>もので、 v0.2.0 が配った artifact は v2 なので実害は無かった。それでも条文には反するので記録した。</p>
+<p><strong>設計時に「3 tag だけ見れば足りる」と決めた根拠は無かった。</strong> <code>test/contractMigration.test.ts</code> の検査③に全 tag 対の走査を入れて、 同じ取りこぼしが次に起きないようにした。</p>
+<h3>② snapshot は tar.gz にできなかった</h3>
+<p><strong><code>tar.gz</code> は同じ入力から作っても毎回ハッシュが変わる</strong>（mtime が入る）。 実測で 2 回作って不一致だった。release asset は sha256 で固定するので使えない。</p>
+<p>JSON にしたので圧縮が効かず <strong>0.21 MB → 1.05 MB</strong> になった。 それでも tag source archive（8.94 MB）の 1/8 で、 <strong>限界の申告（<code>isSelfConsistencyOnly</code> 等）を artifact 自身に持たせられる</strong>利点が加わった。</p>
+<h3>③ 正本ファイルが入力に増えたので <code>role</code> を 1 つ足した</h3>
+<p><code>contract-migration.v1.json</code> が生成器の入力になったため、<code>roleOfInput</code> が <code>other</code> を返す。 <code>other</code> は enum に無いので artifact が schema を通らない。 <strong><code>contract-migration</code> を enum に足し、v0.5.0 の history に記録した</strong>（設計に無い変更）。</p>
+<h3>④ 実装中に見つけた既存の空振り</h3>
+<p><code>test/sourceInputScope.test.ts</code> の記録漏れ回帰試験は <strong>v0.3.0 tag の source</strong> に当てていた。 台帳が記述しているのは現在の入力なので、<strong>その tag に無いファイルは落としても検出しようがない。</strong> v0.5.0 で増えた入力を落としても <code>OK</code> が返った。台帳も検証対象も現在へ揃え、 <strong>無変異の対照</strong>（何も落とさなければ <code>OK</code>）を先に置いた。</p>
+<hr>
+<h2 id="s8">7. 実装の可否</h2>
 <p><strong>この設計での実装可否を確認したうえで着手する。</strong></p>
 <p>着手した場合の順序（1 回の再生成で済ませる）:</p>
 <ol><li><code>docs/SCHEMA_VERSIONING_POLICY.md</code>（条文）と <code>scripts/schemaLanguageDiff.mjs</code>（判定器）</li><li>判定器のテスト（合成 16 件 + 過去 7 件の遡及適用 + 対照）</li><li>schema 6 本を新版として作成（旧版は残置）</li><li><code>contractMigration</code> を 6 本に新形式で記述（遡及 7 件を含む）</li><li><code>contractMigration</code> の機械検査 4 種（§2-4）+ その変異テスト</li><li>生成器・<code>validate:profiles</code>・<code>release:stage</code> を新ファイル名へ追随</li><li><strong>感度 → 頑健性 → profile → evidence を 1 回だけ再生成</strong></li><li>source snapshot（案 C）の生成と bundle への追加</li><li>README の機械照合を新版へ追随（<code>test/docs.test.ts</code>）</li><li>release notes に「6 回止まる・直す順序・profile だけなら 2 回」を冒頭へ</li></ol>

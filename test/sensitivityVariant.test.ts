@@ -31,8 +31,8 @@ import { mustFind } from './_must'
 const ROOT = resolve(__dirname, '..')
 const J = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 
-const trs = J('artifacts/half_plug_topology_profile.v2.trs_jack_trs.json')
-const trrs = J('artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json')
+const trs = J('artifacts/half_plug_topology_profile.v3.trs_jack_trs.json')
+const trrs = J('artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json')
 const sensTrs = J('artifacts/sensitivity.trs_jack_trs.json')
 const sensTrrs = J('artifacts/sensitivity.trs_jack_trrs.json')
 
@@ -57,7 +57,7 @@ function exportWith(variant: string, slug: string, mutate: (a: Record<string, un
   // コードと依存は symlink で共有する（複製すると vite の解決が壊れる）
   // `source-input-scope.v1.json` も入力（v0.3.0 フォローアップ P1-2）。
   // 無いと exportHalfPlugProfile が落ちる——既定値へ黙って戻さない設計なので、それが正しい
-  for (const sub of ['node_modules', 'src', 'scripts', 'schemas', 'package.json', 'package-lock.json', 'source-input-scope.v1.json', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json', 'tsconfig.scripts.json'])
+  for (const sub of ['node_modules', 'src', 'scripts', 'schemas', 'package.json', 'package-lock.json', 'source-input-scope.v1.json', 'contract-migration.v1.json', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json', 'tsconfig.scripts.json'])
     symlinkSync(resolve(ROOT, sub), join(d, sub))
   // artifacts だけ実体を複製する
   cpSync(resolve(ROOT, 'artifacts'), join(d, 'artifacts'), { recursive: true })
@@ -72,7 +72,7 @@ function exportWith(variant: string, slug: string, mutate: (a: Record<string, un
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   })
-  return JSON.parse(readFileSync(join(d, `artifacts/half_plug_topology_profile.v2.${slug}.json`), 'utf8'))
+  return JSON.parse(readFileSync(join(d, `artifacts/half_plug_topology_profile.v3.${slug}.json`), 'utf8'))
 }
 
 describe('P0-4 感度情報が variant を跨がない', () => {

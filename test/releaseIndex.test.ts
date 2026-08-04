@@ -33,7 +33,7 @@ const index = J(INDEX_PATH)
 const validation = J('artifacts/validation-results.json')
 const manifest = J('artifacts/source-input-manifest.json')
 const robustness = J('artifacts/topology-robustness.trs_jack_trrs.json')
-const trrs = J('artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json')
+const trrs = J('artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json')
 
 const ajv = new Ajv({ allErrors: true, strict: false })
 /** **同じ schema を 2 回 compile しない。** ajv は $id の重複を拒む */
@@ -69,8 +69,8 @@ describe('§1 release index — 下流が手で転記しなくて済む', () => 
   })
 
   for (const [variantId, file] of [
-    ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json'],
-    ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json'],
+    ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json'],
+    ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json'],
   ] as const) {
     it(`${variantId}: 索引の値が profile の実物と一致する`, () => {
       const p = J(file)
@@ -112,7 +112,7 @@ describe('§1 release index — 下流が手で転記しなくて済む', () => 
 
   it('`artifactGenerationCommit` が profile の生成 commit と一致する', () => {
     // 下流の lock が既定で照合する値。profile 以外を指していたら意味を成さない
-    const p = J('artifacts/half_plug_topology_profile.v2.trs_jack_trs.json')
+    const p = J('artifacts/half_plug_topology_profile.v3.trs_jack_trs.json')
     expect(index.artifactGenerationCommit).toBe(p.provenance.generatedFromCommit)
   })
 
@@ -135,8 +135,8 @@ describe('§1 release index — 下流が手で転記しなくて済む', () => 
 
 describe('§2 evidence が schema を持ち、それに適合する', () => {
   for (const [artifact, schema] of [
-    ['artifacts/validation-results.json', 'schemas/validation-results.v1.schema.json'],
-    ['artifacts/source-input-manifest.json', 'schemas/source-input-manifest.v1.schema.json'],
+    ['artifacts/validation-results.json', 'schemas/validation-results.v2.schema.json'],
+    ['artifacts/source-input-manifest.json', 'schemas/source-input-manifest.v2.schema.json'],
     [INDEX_PATH, 'schemas/trs-jack-3d-release-index.v1.schema.json'],
   ] as const) {
     it(`${artifact.split('/').pop()} が schema に適合する`, () => {
@@ -155,10 +155,10 @@ describe('§2 evidence が schema を持ち、それに適合する', () => {
 
   it('**schema が実際に効く**（壊した文書を弾く）', () => {
     // 通るだけの schema では意味がない
-    const v = compile('schemas/validation-results.v1.schema.json')
-    expect(v({ ...validation, schemaVersion: 2 })).toBe(false)
+    const v = compile('schemas/validation-results.v2.schema.json')
+    expect(v({ ...validation, schemaVersion: 1 })).toBe(false)
     expect(v({ ...validation, results: [] })).toBe(false)
-    const m = compile('schemas/source-input-manifest.v1.schema.json')
+    const m = compile('schemas/source-input-manifest.v2.schema.json')
     expect(m({ ...manifest, inputFiles: [] })).toBe(false)
     const i = compile('schemas/trs-jack-3d-release-index.v1.schema.json')
     expect(i({ ...index, profiles: {} })).toBe(false)
@@ -203,18 +203,29 @@ describe('§4 窓の端点が profile と突き合わせられる', () => {
   ]
 
   it('版が上がり、端点の規約が機械可読になっている', () => {
-    expect(robustness.schemaVersion).toBe(2)
+    expect(robustness.schemaVersion).toBe(3)
     expect(robustness.windowEndConvention).toBe('EXCLUSIVE')
     expect(robustness.contractMigration.breaking).toBe(true)
-    expect(robustness.contractMigration.toSchemaVersion).toBe(2)
+    expect(robustness.contractMigration.toSchemaVersion).toBe(robustness.schemaVersion)
   })
 
   it('**旧項目名が本体に残っていない**', () => {
     // 宣言だけして直していないのが一番たちが悪い
     const body = JSON.stringify({ n: robustness.nominalConfiguration, c: robustness.counterExamples })
-    for (const r of robustness.contractMigration.renamedFields as { from: string; to: string }[]) {
-      expect(body.includes(`"${r.from}":`), `旧項目 ${r.from} が残っている`).toBe(false)
-      expect(body.includes(`"${r.to}":`), `新項目 ${r.to} が無い`).toBe(true)
+    // v0.5.0 で history 形式になった。改名は changes[].removed / added に入る
+    const renames = mustBeNonEmpty(
+      (robustness.contractMigration.history as { changes: { kind: string, removed?: string[], added?: string[] }[] }[])
+        .flatMap((h) => h.changes)
+        .filter((c) => c.kind === 'field-renamed'),
+      '改名の記録',
+    )
+    for (const r of renames) {
+      for (const from of mustBeNonEmpty(r.removed ?? [], '旧項目名')) {
+        expect(body.includes(`"${from}":`), `旧項目 ${from} が残っている`).toBe(false)
+      }
+      for (const to of mustBeNonEmpty(r.added ?? [], '新項目名')) {
+        expect(body.includes(`"${to}":`), `新項目 ${to} が無い`).toBe(true)
+      }
     }
   })
 

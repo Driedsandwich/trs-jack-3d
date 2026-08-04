@@ -1,24 +1,121 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
+ "contractMigration": {
+  "schemaId": "source-input-manifest.v2",
+  "previousSchemaId": "source-input-manifest.v1",
+  "fromSchemaVersion": 1,
+  "toSchemaVersion": 2,
+  "breaking": true,
+  "policy": {
+   "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+   "policyVersion": 1,
+   "decisionRule": "language-subset",
+   "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+  },
+  "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。inputDigest の意味と検算手順は v1 から変わっていない。**artifact の配布名は変わらない**。**この manifest は producer の申告であり、受け手の独立検証を置き換えない。**",
+  "renamedAssets": [
+   {
+    "from": "source-input-manifest.v1.schema.json",
+    "to": "source-input-manifest.v2.schema.json",
+    "reason": "schema ファイル名。artifact 側の名前は変わらない"
+   }
+  ],
+  "history": [
+   {
+    "shippedIn": "v0.4.0",
+    "previousRelease": "v0.3.0",
+    "previousSchemaPath": "schemas/source-input-manifest.v1.schema.json",
+    "currentSchemaPath": "schemas/source-input-manifest.v1.schema.json",
+    "schemaVersionAtTheTime": 1,
+    "schemaVersionShouldHaveBeen": 2,
+    "versionWasHeld": true,
+    "policyVerdict": "BUMP",
+    "recordedRetroactivelyIn": "v0.5.0",
+    "changes": [
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/inputScope",
+      "instancePath": "$.inputScope",
+      "added": [
+       "inputScope"
+      ],
+      "reason": "入力の範囲定義を manifest 自身に持たせた（v0.3.0 フォローアップ P1-2）"
+     },
+     {
+      "kind": "constraint-tightened",
+      "effect": "NARROW",
+      "schemaPointer": "/required",
+      "instancePath": "$",
+      "added": [
+       "inputScope"
+      ],
+      "reason": "必須にした。**旧 artifact は新 schema で落ちる**"
+     }
+    ]
+   },
+   {
+    "shippedIn": "v0.5.0",
+    "previousRelease": "v0.4.1",
+    "previousSchemaPath": "schemas/source-input-manifest.v1.schema.json",
+    "currentSchemaPath": "schemas/source-input-manifest.v2.schema.json",
+    "schemaVersionAtTheTime": 2,
+    "versionWasHeld": false,
+    "policyVerdict": "BUMP",
+    "changes": [
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaVersion/const",
+      "instancePath": "$.schemaVersion",
+      "from": 1,
+      "to": 2,
+      "reason": "版を上げた。**下流はここで分岐して止まる**"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/contractMigration",
+      "instancePath": "$.contractMigration",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "**この schema には対応表が無かった。**v0.4.0 で契約を変えたのに記録が残っていなかった原因の一つ"
+     },
+     {
+      "kind": "constraint-tightened",
+      "effect": "NARROW",
+      "schemaPointer": "/required",
+      "instancePath": "$",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "対応表を必須にした。**旧 artifact は新 schema で落ちる**"
+     }
+    ]
+   }
+  ]
+ },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-04",
- "generatedFromCommit": "162f4cd7d93689a21b7d63260571926fee2b377b",
+ "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
  "purpose": "release asset の provenance.inputFiles[].sha256 を、tag source の実ファイルと独立に検算するための一覧。**この manifest 自身は証明ではない。**GitHub の tag source archive を取得して、ここに並ぶ path の sha256 を自分で計算し、突き合わせること。",
- "inputFilesTotal": 29,
+ "inputFilesTotal": 30,
  "inconsistentAcrossArtifacts": 0,
  "mismatchedWithWorkingTreeAtBuild": 0,
  "inputScope": {
   "file": "source-input-scope.v1.json",
-  "sha256": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+  "sha256": "b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5",
   "recursiveDirectories": [
    "src/data",
    "src/model"
   ],
   "requiredExactFiles": [
    "package-lock.json",
-   "schemas/event-sensitivity.v1.schema.json",
-   "schemas/half-plug-topology-profile.v2.schema.json",
-   "schemas/topology-robustness.v2.schema.json",
+   "contract-migration.v1.json",
+   "schemas/event-sensitivity.v2.schema.json",
+   "schemas/half-plug-topology-profile.v3.schema.json",
+   "schemas/topology-robustness.v3.schema.json",
    "scripts/exportHalfPlugProfile.ts",
    "scripts/provenance.ts",
    "scripts/searchTopologyRobustness.ts",
@@ -71,52 +168,67 @@
    "actualSha256AtBuild": "79086a32df36d0397a201a8be4701f3f24c1ff9417ef01ff78b05a6f407e2f3b",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json"
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json"
    ]
   },
   {
    "path": "artifacts/sensitivity.trs_jack_trrs.json",
    "role": "sensitivity-input",
-   "recordedSha256": "4e2d87b43e4acb179ad47a055be9ef27cf61c12abd10b3d0ffff77a468a6b237",
+   "recordedSha256": "c47a83cfea909211c510c29307336a5d7235bc0e7810f3e9529a230dcc9c22ce",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "4e2d87b43e4acb179ad47a055be9ef27cf61c12abd10b3d0ffff77a468a6b237",
+   "actualSha256AtBuild": "c47a83cfea909211c510c29307336a5d7235bc0e7810f3e9529a230dcc9c22ce",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json"
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json"
    ]
   },
   {
    "path": "artifacts/sensitivity.trs_jack_trs.json",
    "role": "sensitivity-input",
-   "recordedSha256": "a98f62179c6882160c3ce7422d6bdeef2f5d00164c8d3833875f9b2942fea4fd",
+   "recordedSha256": "184de49a5db0408c6f8a05faffbd6e3c7df5d420361e9eb64c5c5d6cf6a08cea",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "a98f62179c6882160c3ce7422d6bdeef2f5d00164c8d3833875f9b2942fea4fd",
+   "actualSha256AtBuild": "184de49a5db0408c6f8a05faffbd6e3c7df5d420361e9eb64c5c5d6cf6a08cea",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json"
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json"
    ]
   },
   {
-   "path": "package-lock.json",
-   "role": "lockfile",
-   "recordedSha256": "0cb561622cfcbcc74f76e6dbde5bf645885d4a693a901e692b12e8e5e5eea5e3",
+   "path": "contract-migration.v1.json",
+   "role": "contract-migration",
+   "recordedSha256": "8b33e236c248543f70ce8d9de06004ef73f8b4e18f434a8c946e482a883665c5",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "0cb561622cfcbcc74f76e6dbde5bf645885d4a693a901e692b12e8e5e5eea5e3",
+   "actualSha256AtBuild": "8b33e236c248543f70ce8d9de06004ef73f8b4e18f434a8c946e482a883665c5",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
    ]
   },
   {
-   "path": "schemas/event-sensitivity.v1.schema.json",
-   "role": "schema",
-   "recordedSha256": "b859a1a04583e7a2d16925b9ba09d6ac329149f593796585f82ae7fa2b4ca5b5",
+   "path": "package-lock.json",
+   "role": "lockfile",
+   "recordedSha256": "f7d1bb2301009c21f4fff8b189f49a6927385fd9dbae0f56ea6cd13b2c88a4d8",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "b859a1a04583e7a2d16925b9ba09d6ac329149f593796585f82ae7fa2b4ca5b5",
+   "actualSha256AtBuild": "f7d1bb2301009c21f4fff8b189f49a6927385fd9dbae0f56ea6cd13b2c88a4d8",
+   "matchesWorkingTree": true,
+   "consumedBy": [
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
+    "artifacts/sensitivity.trs_jack_trrs.json",
+    "artifacts/sensitivity.trs_jack_trs.json",
+    "artifacts/topology-robustness.trs_jack_trrs.json"
+   ]
+  },
+  {
+   "path": "schemas/event-sensitivity.v2.schema.json",
+   "role": "schema",
+   "recordedSha256": "e9cd21c7cb09e496aa9e5609e126493e06871e0bac99cf9dcec79f8d8e7f80ce",
+   "consistentAcrossArtifacts": true,
+   "actualSha256AtBuild": "e9cd21c7cb09e496aa9e5609e126493e06871e0bac99cf9dcec79f8d8e7f80ce",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/sensitivity.trs_jack_trrs.json",
@@ -124,23 +236,23 @@
    ]
   },
   {
-   "path": "schemas/half-plug-topology-profile.v2.schema.json",
+   "path": "schemas/half-plug-topology-profile.v3.schema.json",
    "role": "schema",
-   "recordedSha256": "ecc48eab261d60169ec8e124736a909258a590cfd77817fe340d5804ad827152",
+   "recordedSha256": "ea5948a9b7631176bfaf5d3fe8e7cd422ef333cc07b6de67521c1c8dbcb735dd",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "ecc48eab261d60169ec8e124736a909258a590cfd77817fe340d5804ad827152",
+   "actualSha256AtBuild": "ea5948a9b7631176bfaf5d3fe8e7cd422ef333cc07b6de67521c1c8dbcb735dd",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json"
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json"
    ]
   },
   {
-   "path": "schemas/topology-robustness.v2.schema.json",
+   "path": "schemas/topology-robustness.v3.schema.json",
    "role": "schema",
-   "recordedSha256": "13a30e136448d7c8641a62dbdebb4ab040c935f1151bb38271ead1549ee51b69",
+   "recordedSha256": "10ec667f043c2c65a017ae3ae2ed2765679a90026eb450d59fb02f4bc70bd1c3",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "13a30e136448d7c8641a62dbdebb4ab040c935f1151bb38271ead1549ee51b69",
+   "actualSha256AtBuild": "10ec667f043c2c65a017ae3ae2ed2765679a90026eb450d59fb02f4bc70bd1c3",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -149,25 +261,25 @@
   {
    "path": "scripts/exportHalfPlugProfile.ts",
    "role": "generator",
-   "recordedSha256": "ad61ad252be658eaf36a07214f9aa0434c3d9255387d405649a1cf8f3d19b22a",
+   "recordedSha256": "be6f222129ed14c80b41a91456151296d381169aff79bd036b4a2b2ac7730804",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "ad61ad252be658eaf36a07214f9aa0434c3d9255387d405649a1cf8f3d19b22a",
+   "actualSha256AtBuild": "be6f222129ed14c80b41a91456151296d381169aff79bd036b4a2b2ac7730804",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json"
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json"
    ]
   },
   {
    "path": "scripts/provenance.ts",
    "role": "generator",
-   "recordedSha256": "f79999ce246974086348a8b77b791e16895c377e58294e88d2a09471dd3e1ebb",
+   "recordedSha256": "ad943f639e4cd9531fc13f1bc549ad891a8f3247911f66c21bc712fca6062f00",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "f79999ce246974086348a8b77b791e16895c377e58294e88d2a09471dd3e1ebb",
+   "actualSha256AtBuild": "ad943f639e4cd9531fc13f1bc549ad891a8f3247911f66c21bc712fca6062f00",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -176,9 +288,9 @@
   {
    "path": "scripts/searchTopologyRobustness.ts",
    "role": "generator",
-   "recordedSha256": "c6b5c18d98abd745621dc1cc384f13934e6c0fc2aa728137255e90755c4af562",
+   "recordedSha256": "1b6fca6df32e443d50ce437fd3213d9d875098e920c11717dcc0b3e4ca07ade4",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "c6b5c18d98abd745621dc1cc384f13934e6c0fc2aa728137255e90755c4af562",
+   "actualSha256AtBuild": "1b6fca6df32e443d50ce437fd3213d9d875098e920c11717dcc0b3e4ca07ade4",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -187,9 +299,9 @@
   {
    "path": "scripts/sensitivityEvents.ts",
    "role": "generator",
-   "recordedSha256": "7a322385eb93919d5de375f21b6e72bd6845306ccb58b2adf34bfff393cb65b5",
+   "recordedSha256": "57fa90ae653f687a1438f6417e6db15e2dfc742890096e3f857fe496d132bdea",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "7a322385eb93919d5de375f21b6e72bd6845306ccb58b2adf34bfff393cb65b5",
+   "actualSha256AtBuild": "57fa90ae653f687a1438f6417e6db15e2dfc742890096e3f857fe496d132bdea",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/sensitivity.trs_jack_trrs.json",
@@ -199,13 +311,13 @@
   {
    "path": "source-input-scope.v1.json",
    "role": "input-scope",
-   "recordedSha256": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+   "recordedSha256": "b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+   "actualSha256AtBuild": "b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -219,8 +331,8 @@
    "actualSha256AtBuild": "318f0bb993030e0ebe936e21adb2ea4e952f5e0a7a18709e4227bc8a1e56dee7",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -234,8 +346,8 @@
    "actualSha256AtBuild": "ee586e1bf7e15b55398e148612b9ef6ad4b1f98a849d455d477b1c65a97f70ff",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -249,8 +361,8 @@
    "actualSha256AtBuild": "1c2922b6698713f72c241b6f49809e3654ee909ddd94116cad6f90a57f124dd4",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -264,8 +376,8 @@
    "actualSha256AtBuild": "52e255dfbb3d0344b1aa922ac8092518395ed441c9ce69dcf7274434a19349db",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -279,8 +391,8 @@
    "actualSha256AtBuild": "f5443dcdda800abef9b928fde166f1930393f2e85c59b50851906d910e0d8e8f",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -294,8 +406,8 @@
    "actualSha256AtBuild": "709bd006cc055bd44058c40f6ca8011c81e04ce3e795297e6edfeeebadb7889c",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -309,8 +421,8 @@
    "actualSha256AtBuild": "7d51e6f5a5a3961fca92039e217bf631a78e779a7fe1847078e3dd42a2347102",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -324,8 +436,8 @@
    "actualSha256AtBuild": "f5715e080d34a29fd93ab4f0a5e4bdc14d47cf77a5bc199c3b5ce8b7fb509ce2",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -339,8 +451,8 @@
    "actualSha256AtBuild": "b21590bdb56f65343c99512fad0ecd72b2c9200ed234b12f8428843dfa8f40de",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -354,8 +466,8 @@
    "actualSha256AtBuild": "bfc407f8921aaf230cc736c6a368f9490d59f0da9acca16dabfbc9ba49ca3025",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -369,8 +481,8 @@
    "actualSha256AtBuild": "e4a4e78b14fd2f7d1c0148a968617d4eb9c8395ed1f08b4e3eae355d31a4ae67",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -384,8 +496,8 @@
    "actualSha256AtBuild": "7ecd30ba22d3b587f8782c7469e1c9cfedcb6fc5b098436e0e75b902c0b938aa",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -399,8 +511,8 @@
    "actualSha256AtBuild": "1f6bc966eba29a27091d7d55afc278a365396aa690302b0492d3a5734e9974c1",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -414,8 +526,8 @@
    "actualSha256AtBuild": "73e197830e9c0b5f7e46ffedba781f3689fd8e21fbc73ad63cea955075d1a7cb",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -429,8 +541,8 @@
    "actualSha256AtBuild": "bb88036fd8d757e652b66f36861b3b72a4abc6e9fd0f501761c785ff0a5472a4",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -444,8 +556,8 @@
    "actualSha256AtBuild": "12203873d4c89084734cd4cc2e6de4b139aaa3000bf8651f9bf8c1dd7db5cac9",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"
@@ -459,8 +571,8 @@
    "actualSha256AtBuild": "9f4770aad4e05cdf0f3f2a4e3ad4a91992a76b91dac8cbf5a0df4975b3131e70",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-    "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
     "artifacts/sensitivity.trs_jack_trrs.json",
     "artifacts/sensitivity.trs_jack_trs.json",
     "artifacts/topology-robustness.trs_jack_trrs.json"

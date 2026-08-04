@@ -1,57 +1,185 @@
 {
- "schemaVersion": 2,
+ "schemaVersion": 3,
  "generatedBy": "npm run search:robustness",
  "contractMigration": {
-  "fromSchemaVersion": 1,
-  "toSchemaVersion": 2,
+  "schemaId": "topology-robustness.v3",
+  "previousSchemaId": "topology-robustness.v2",
+  "fromSchemaVersion": 2,
+  "toSchemaVersion": 3,
   "breaking": true,
-  "renamedFields": [
+  "policy": {
+   "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+   "policyVersion": 1,
+   "decisionRule": "language-subset",
+   "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+  },
+  "consumerAction": "**schemaVersion で分岐すること。**2 を期待する実装は 3 を受け取ったら停止する。区間の終端が要るなら endExclusiveMm を、観測の最後の点が要るなら lastSampleMm を使う（v2 から変わっていない）。**artifact の配布名は変わらない**。",
+  "renamedAssets": [
    {
-    "field": "nominalConfiguration.windows[].fromMm / counterExamples[].windows[].fromMm",
-    "from": "fromMm",
-    "to": "startMm",
-    "reason": "始まりは profile の nominalStartMm と一致する。名前を揃えた"
-   },
-   {
-    "field": "windows[].toMm",
-    "from": "toMm",
-    "to": "lastSampleMm",
-    "reason": "**「終わり」という語で 2 つの違う量を指していた。**旧 toMm は最後に当たった標本位置であって区間の終端ではない"
+    "from": "topology-robustness.v2.schema.json",
+    "to": "topology-robustness.v3.schema.json",
+    "reason": "schema ファイル名。artifact 側の名前は変わらない"
    }
   ],
-  "addedFields": [
+  "history": [
    {
-    "field": "windows[].endExclusiveMm",
-    "reason": "profile の nominalEndMm と一致する本当の終端。旧 toMm + stepMm"
+    "shippedIn": "v0.3.0",
+    "previousRelease": "v0.2.0",
+    "previousSchemaPath": "schemas/topology-robustness.v1.schema.json",
+    "currentSchemaPath": "schemas/topology-robustness.v2.schema.json",
+    "schemaVersionAtTheTime": 2,
+    "versionWasHeld": false,
+    "policyVerdict": "BUMP",
+    "changes": [
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaVersion/const",
+      "instancePath": "$.schemaVersion",
+      "from": 1,
+      "to": 2,
+      "reason": "版を上げた。**この回は条文どおりに上げている**"
+     },
+     {
+      "kind": "field-renamed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/nominalConfiguration/properties/windows/items",
+      "instancePath": "$.nominalConfiguration.windows[]",
+      "removed": [
+       "fromMm",
+       "toMm"
+      ],
+      "added": [
+       "startMm",
+       "lastSampleMm",
+       "endExclusiveMm"
+      ],
+      "reason": "**「終わり」という語で 2 つの違う量を指していた。**旧 toMm は最後に当たった標本位置であって区間の終端ではない"
+     },
+     {
+      "kind": "field-renamed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/counterExamples/items/properties/windows/items",
+      "instancePath": "$.counterExamples[].windows[]",
+      "removed": [
+       "fromMm",
+       "toMm"
+      ],
+      "added": [
+       "startMm",
+       "lastSampleMm",
+       "endExclusiveMm"
+      ],
+      "reason": "同上"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/windowEndConvention",
+      "instancePath": "$.windowEndConvention",
+      "added": [
+       "windowEndConvention"
+      ],
+      "reason": "端点の規約を機械可読にした"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/contractMigration",
+      "instancePath": "$.contractMigration",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "対応表そのもの"
+     },
+     {
+      "kind": "constraint-tightened",
+      "effect": "NARROW",
+      "schemaPointer": "/required",
+      "instancePath": "$",
+      "added": [
+       "contractMigration",
+       "windowEndConvention"
+      ],
+      "reason": "新しい項目を必須にした"
+     }
+    ]
    },
    {
-    "field": "windowEndConvention",
-    "reason": "端点の規約を機械可読にする"
+    "shippedIn": "v0.4.0",
+    "previousRelease": "v0.3.0",
+    "previousSchemaPath": "schemas/topology-robustness.v2.schema.json",
+    "currentSchemaPath": "schemas/topology-robustness.v2.schema.json",
+    "schemaVersionAtTheTime": 2,
+    "schemaVersionShouldHaveBeen": 3,
+    "versionWasHeld": true,
+    "policyVerdict": "BUMP",
+    "recordedRetroactivelyIn": "v0.5.0",
+    "changes": [
+     {
+      "kind": "enum-value-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+      "instancePath": "$.provenance.inputFiles[].role",
+      "added": [
+       "input-scope"
+      ],
+      "reason": "入力の範囲定義 source-input-scope.v1.json が入力になった。**追加のみだが、旧 schema を pin した consumer はこの値を拒む**"
+     }
+    ]
    },
    {
-    "field": "contractMigration",
-    "reason": "この表そのもの"
-   },
-   {
-    "field": "provenance.inputFiles[].role に \"input-scope\" を追加",
-    "reason": "入力の範囲定義 (source-input-scope.v1.json) が入力になった。**追加のみで改名ではない**ので、role で絞り込む実装が沈黙して壊れることはない。v0.3.0 の schema を pin して新しい artifact を検証すると enum で落ちるが、それは明示的に落ちる (v0.3.0 フォローアップ P1-2)"
+    "shippedIn": "v0.5.0",
+    "previousRelease": "v0.4.1",
+    "previousSchemaPath": "schemas/topology-robustness.v2.schema.json",
+    "currentSchemaPath": "schemas/topology-robustness.v3.schema.json",
+    "schemaVersionAtTheTime": 3,
+    "versionWasHeld": false,
+    "policyVerdict": "BUMP",
+    "changes": [
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaVersion/const",
+      "instancePath": "$.schemaVersion",
+      "from": 2,
+      "to": 3,
+      "reason": "版を上げた。**下流はここで分岐して止まる**"
+     },
+     {
+      "kind": "field-reshaped",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/contractMigration",
+      "instancePath": "$.contractMigration",
+      "reason": "単一遷移のオブジェクトから history 形式へ変えた"
+     },
+     {
+      "kind": "enum-value-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+      "instancePath": "$.provenance.inputFiles[].role",
+      "added": [
+       "contract-migration"
+      ],
+      "reason": "版と契約変更の対応表の正本 contract-migration.v1.json が入力になった"
+     }
+    ]
    }
-  ],
-  "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。区間の終端が要るなら endExclusiveMm を、観測の最後の点が要るなら lastSampleMm を使う。"
+  ]
  },
  "windowEndConvention": "EXCLUSIVE",
  "variantId": "TRS|JACK-TRRS",
  "targetTopologyClass": "ground-open-differential",
  "basis": "MODEL_PARAMETER_SWEEP",
- "generatedFromCommit": "06827505d66e13200bae66442f73324f8cc0b5dc",
+ "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "06827505d66e13200bae66442f73324f8cc0b5dc",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "14e0544b39e572ae47ee77c9a44d02f16e568f0fd06997f51c8464469630a779",
+  "inputDigest": "8fff3444a40a0d1259e044a90642e1dfac89df28c73c0ade3be687b67a847e9d",
   "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 4 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
   "inputSettings": {
    "variantId": "TRS|JACK-TRRS",
@@ -61,28 +189,33 @@
   },
   "inputFiles": [
    {
+    "path": "contract-migration.v1.json",
+    "sha256": "8b33e236c248543f70ce8d9de06004ef73f8b4e18f434a8c946e482a883665c5",
+    "role": "contract-migration"
+   },
+   {
     "path": "package-lock.json",
-    "sha256": "0cb561622cfcbcc74f76e6dbde5bf645885d4a693a901e692b12e8e5e5eea5e3",
+    "sha256": "f7d1bb2301009c21f4fff8b189f49a6927385fd9dbae0f56ea6cd13b2c88a4d8",
     "role": "lockfile"
    },
    {
-    "path": "schemas/topology-robustness.v2.schema.json",
-    "sha256": "13a30e136448d7c8641a62dbdebb4ab040c935f1151bb38271ead1549ee51b69",
+    "path": "schemas/topology-robustness.v3.schema.json",
+    "sha256": "10ec667f043c2c65a017ae3ae2ed2765679a90026eb450d59fb02f4bc70bd1c3",
     "role": "schema"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "f79999ce246974086348a8b77b791e16895c377e58294e88d2a09471dd3e1ebb",
+    "sha256": "ad943f639e4cd9531fc13f1bc549ad891a8f3247911f66c21bc712fca6062f00",
     "role": "generator"
    },
    {
     "path": "scripts/searchTopologyRobustness.ts",
-    "sha256": "c6b5c18d98abd745621dc1cc384f13934e6c0fc2aa728137255e90755c4af562",
+    "sha256": "1b6fca6df32e443d50ce437fd3213d9d875098e920c11717dcc0b3e4ca07ade4",
     "role": "generator"
    },
    {
     "path": "source-input-scope.v1.json",
-    "sha256": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+    "sha256": "b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5",
     "role": "input-scope"
    },
    {
@@ -171,7 +304,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run search:robustness -- --release",
+  "command": "npm run search:robustness",
   "artifactDate": "2026-08-04"
  },
  "generatedAt": "2026-08-04",

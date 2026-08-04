@@ -34,17 +34,25 @@ const ROOT = resolve(__dirname, '..')
 const R = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 const SCOPE = loadInputScope(ROOT)
 
-/** **検証は v0.3.0 tag の source に対して行う。**作業ツリーの状態でテストの成否が変わらないように */
-const TAG = 'v0.3.0'
+/**
+ * **台帳も検証対象も「現在」に揃える。**
+ *
+ * v0.4.1 までは v0.3.0 tag の source に当てていた（作業ツリーの状態で成否が変わらないように）。
+ * だが manifest が記述しているのは**現在の入力**なので、過去 tag に当てると
+ * **その tag に無いファイルは落としても検出しようがない。**
+ * v0.5.0 で入力が 1 件増えたとき、それを落としても OK が返って実際に空振りした。
+ * ずれを隠さないよう、**無変異の対照**（下の「対照」）を先に置く。
+ */
+const MANIFEST_PATH = 'artifacts/source-input-manifest.json'
 
 const tmps: string[] = []
 afterAll(() => tmps.forEach((d) => rmSync(d, { recursive: true, force: true })))
 
-/** v0.3.0 の manifest を一時ファイルへ出す（**script は書かない。テストが書く**） */
+/** 現在の manifest を一時ファイルへ出す（**script は書かない。テストが書く**） */
 function tagManifest(mutate?: (d: Record<string, unknown>) => void): string {
   const dir = mkdtempSync(join(tmpdir(), 'scope-'))
   tmps.push(dir)
-  const d = JSON.parse(execFileSync('git', ['show', `${TAG}:artifacts/source-input-manifest.json`], { cwd: ROOT, encoding: 'utf8' }))
+  const d = R(MANIFEST_PATH)
   mutate?.(d)
   const p = join(dir, 'manifest.json')
   writeFileSync(p, JSON.stringify(d))
@@ -69,7 +77,10 @@ function dropAndVerify(drop: (path: string) => boolean, scope = INPUT_SCOPE_FILE
     o.inputFiles = o.inputFiles.filter((f) => !drop(f.path))
     o.inputFilesTotal = o.inputFiles.length
   })
-  return verify(['--manifest', p, '--tag', TAG, '--scope', scope])
+  // **作業ツリーを source にする。**manifest が記述しているのは現在の入力なので、
+  // 過去 tag の source に当てると「その tag に無いファイル」を検出しようがない
+  // （v0.5.0 で contract-migration.v1.json を落としても OK が返り、実際に空振りした）。
+  return verify(['--manifest', p, '--source', ROOT, '--scope', scope])
 }
 
 // ---------------------------------------------------------------------------
@@ -179,9 +190,9 @@ describe('P1-2-2 生成側と検証側が同じ範囲を読む', () => {
 
     // **現役の schema だけ。**v1 は過去の release の契約なので触らない
     for (const s of [
-      'schemas/half-plug-topology-profile.v2.schema.json',
-      'schemas/event-sensitivity.v1.schema.json',
-      'schemas/topology-robustness.v2.schema.json',
+      'schemas/half-plug-topology-profile.v3.schema.json',
+      'schemas/event-sensitivity.v2.schema.json',
+      'schemas/topology-robustness.v3.schema.json',
     ]) {
       const allowed = roleEnum(s)
       for (const r of produced) expect(allowed, `${s} の enum に role "${r}" が無い`).toContain(r)
@@ -192,7 +203,7 @@ describe('P1-2-2 生成側と検証側が同じ範囲を読む', () => {
     expect(roleOfInput(SCOPE, INPUT_SCOPE_FILE)).toBe('input-scope')
     expect(roleOfInput(SCOPE, 'package-lock.json')).toBe('lockfile')
     expect(roleOfInput(SCOPE, 'src/model/topology.ts')).toBe('model-code')
-    expect(roleOfInput(SCOPE, 'schemas/topology-robustness.v2.schema.json')).toBe('schema')
+    expect(roleOfInput(SCOPE, 'schemas/topology-robustness.v3.schema.json')).toBe('schema')
     expect(roleOfInput(SCOPE, mustFind(SCOPE.allowedGeneratedInputs, () => true, '例外入力'))).toBe('sensitivity-input')
   })
 
@@ -211,6 +222,7 @@ describe('P1-2-2 生成側と検証側が同じ範囲を読む', () => {
     tmps.push(dir)
     // 範囲定義だけ置いて、他の必須入力（package-lock.json 等）は置かない
     writeFileSync(join(dir, INPUT_SCOPE_FILE), readFileSync(resolve(ROOT, INPUT_SCOPE_FILE)))
+    writeFileSync(join(dir, 'contract-migration.v1.json'), readFileSync(resolve(ROOT, 'contract-migration.v1.json')))
     expect(() => listInputs(dir, 'trs_jack_trs')).toThrow(/必須の入力/)
   })
 })
@@ -221,28 +233,46 @@ describe('P1-2-3 回帰 — 2026-08-03 に素通りした 4 件', () => {
    * `unrecordedInputCandidates` に名指しで出ていることまで見る。
    * 別の理由で落ちていたら、この検査は何も守っていない。
    */
-  const CASES: [string, (p: string) => boolean, number][] = [
-    ['src/model/ 8 件（範囲の内側。当時も検出できた）', (p) => p.startsWith('src/model/'), 8],
-    ['scripts/ 4 件（生成器本体。**当時は exit 0**）', (p) => p.startsWith('scripts/'), 4],
-    ['schemas/ 3 件（**当時は exit 0**）', (p) => p.startsWith('schemas/'), 3],
-    ['package-lock.json（**当時は exit 0**）', (p) => p === 'package-lock.json', 1],
+  /**
+   * **件数は台帳から引く。**数字を直書きすると、入力が増えたときに
+   * 「数字を書き換えて緑にする」作業になり、検査の意味が薄れる
+   * （v0.5.0 で contract-migration.v1.json が入力に増えて実際にずれた）。
+   */
+  const MANIFEST_INPUTS = (R('artifacts/source-input-manifest.json').inputFiles as { path: string }[]).map((f) => f.path)
+
+  const CASES: [string, (p: string) => boolean][] = [
+    ['src/model/（範囲の内側。当時も検出できた）', (p) => p.startsWith('src/model/')],
+    ['scripts/（生成器本体。**当時は exit 0**）', (p) => p.startsWith('scripts/')],
+    ['schemas/（**当時は exit 0**）', (p) => p.startsWith('schemas/')],
+    ['package-lock.json（**当時は exit 0**）', (p) => p === 'package-lock.json'],
+    ['contract-migration.v1.json（v0.5.0 で増えた入力）', (p) => p === 'contract-migration.v1.json'],
   ]
 
-  for (const [name, drop, count] of CASES)
+  it('対照: 何も落とさなければ OK（台帳と作業ツリーが揃っている）', () => {
+    // ここが MISMATCH なら、下の変異試験は「別の理由で落ちている」ことになる
+    const r = dropAndVerify(() => false)
+    expect({ status: r.json.status, code: r.code }).toEqual({ status: 'OK', code: 0 })
+  })
+
+  for (const [name, drop] of CASES)
     it(`記録漏れを検出する: ${name}`, () => {
+      const expected = MANIFEST_INPUTS.filter(drop)
+      // 落とす対象が 0 件なら、この検査は何も落としていない（空振り）
+      mustBeNonEmpty(expected, `${name} に該当する記録済み入力`)
       const r = dropAndVerify(drop)
       expect({ status: r.json.status, code: r.code }).toEqual({ status: 'MISMATCH', code: 1 })
       const extra = mustBeNonEmpty(r.json.unrecordedInputCandidates as unknown as string[], '未記録の入力候補')
-      expect(extra).toHaveLength(count)
-      // 落としたものだけが挙がっていること（無関係なファイルで水増ししていない）
-      expect(extra.every((p: string) => drop(p))).toBe(true)
+      expect([...extra].sort()).toEqual([...expected].sort())
     })
 
   it('**変異なしなら通る**（何でも MISMATCH にする検査になっていない）', () => {
-    const r = verify(['--manifest', tagManifest(), '--tag', TAG, '--scope', INPUT_SCOPE_FILE])
+    const r = verify(['--manifest', tagManifest(), '--source', ROOT, '--scope', INPUT_SCOPE_FILE])
     expect({ status: r.json.status, code: r.code }).toEqual({ status: 'OK', code: 0 })
     expect(r.json.unrecordedInputCandidates).toEqual([])
-    expect((r.json.independentVerification as { checked: number }).checked).toBe(28)
+    // **件数は台帳から引く。**直書きすると入力が増えたときに数字合わせになる
+    const total = (R(MANIFEST_PATH).inputFiles as unknown[]).length
+    expect(total, '台帳の入力が 0 件').toBeGreaterThan(0)
+    expect((r.json.independentVerification as { checked: number }).checked).toBe(total)
   })
 
   /**
@@ -265,26 +295,37 @@ describe('P1-2-3 回帰 — 2026-08-03 に素通りした 4 件', () => {
 
 describe('P1-2-4 検出していないときに黙らない', () => {
   it('**範囲定義が無い source では performed: false と書く**（候補 0 件と言わない）', () => {
-    // v0.3.0 の source には範囲定義が入っていない
-    const r = verify(['--manifest', tagManifest(), '--tag', TAG])
+    /**
+     * **ここだけ v0.3.0 の実物を使う。**
+     * 作業ツリーには範囲定義が必ず入っているので、「範囲定義が無い source」を
+     * 現在のツリーからは作れない。v0.3.0 はそれが実在した最後の release である。
+     * 台帳も v0.3.0 のものを使う（source と揃えないと別の理由で落ちる）。
+     */
+    const old = JSON.parse(execFileSync('git', ['show', 'v0.3.0:artifacts/source-input-manifest.json'], { cwd: ROOT, encoding: 'utf8' }))
+    const dir = mkdtempSync(join(tmpdir(), 'oldscope-'))
+    tmps.push(dir)
+    const mp = join(dir, 'manifest.json')
+    writeFileSync(mp, JSON.stringify(old))
+
+    const r = verify(['--manifest', mp, '--tag', 'v0.3.0'])
     const d = r.json.unrecordedInputDetection as unknown as { performed: boolean; reason: string; note: string }
     expect(d.performed).toBe(false)
     expect(d.reason).toContain(INPUT_SCOPE_FILE)
     // **既定へ戻していないことを書いてあること**
     expect(d.note).toContain('既定の範囲へ戻すことは意図的にしていない')
     // sha256 の検算は有効。両方を潰さない
-    expect((r.json.independentVerification as { checked: number }).checked).toBe(28)
+    expect((r.json.independentVerification as { checked: number }).checked).toBe(old.inputFiles.length)
   })
 
   it('範囲定義があるときは performed: true と出所を書く', () => {
-    const r = verify(['--manifest', tagManifest(), '--tag', TAG, '--scope', INPUT_SCOPE_FILE])
+    const r = verify(['--manifest', tagManifest(), '--source', ROOT, '--scope', INPUT_SCOPE_FILE])
     const d = r.json.unrecordedInputDetection as unknown as { performed: boolean; scopeSource: string }
     expect(d.performed).toBe(true)
     expect(d.scopeSource).toContain(INPUT_SCOPE_FILE)
   })
 
   it('**覆っていない範囲を出力に載せる**（一致を全件保証と読ませない）', () => {
-    const r = verify(['--manifest', tagManifest(), '--tag', TAG, '--scope', INPUT_SCOPE_FILE])
+    const r = verify(['--manifest', tagManifest(), '--source', ROOT, '--scope', INPUT_SCOPE_FILE])
     const nc = mustBeNonEmpty(r.json.notCoveredByDigest as unknown as { what: string }[], '覆っていない範囲')
     expect(nc.map((x) => x.what).join(' / ')).toMatch(/Node/)
   })
@@ -305,14 +346,14 @@ describe('P1-2-5 自己参照の検出', () => {
       })
       o.inputFilesTotal = o.inputFiles.length
     })
-    const r = verify(['--manifest', p, '--tag', TAG, '--scope', INPUT_SCOPE_FILE])
+    const r = verify(['--manifest', p, '--source', ROOT, '--scope', INPUT_SCOPE_FILE])
     expect(r.json.status).toBe('MISMATCH')
     const self = mustBeNonEmpty(r.json.selfReferencingInputs as unknown as string[], '自己参照の入力')
     expect(self).toContain('artifacts/topology-robustness.trs_jack_trrs.json')
   })
 
   it('例外に挙げた感度 artifact は自己参照として扱わない', () => {
-    const r = verify(['--manifest', tagManifest(), '--tag', TAG, '--scope', INPUT_SCOPE_FILE])
+    const r = verify(['--manifest', tagManifest(), '--source', ROOT, '--scope', INPUT_SCOPE_FILE])
     expect(r.json.selfReferencingInputs).toEqual([])
     // 実際に感度 artifact が記録されていること（例外が空振りしていない）
     const paths = R('artifacts/source-input-manifest.json').inputFiles.map((f: { path: string }) => f.path)

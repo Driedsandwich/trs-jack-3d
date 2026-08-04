@@ -1,10 +1,183 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
+ "contractMigration": {
+  "schemaId": "test-counts.v2",
+  "previousSchemaId": "test-counts.v1",
+  "fromSchemaVersion": 1,
+  "toSchemaVersion": 2,
+  "breaking": true,
+  "policy": {
+   "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+   "policyVersion": 1,
+   "decisionRule": "language-subset",
+   "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+  },
+  "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。allPassed は failed と exitCode の両方から決まる。**allPassed が false の artifact は配布してはいけない**（npm run release:stage が拒否する）。**artifact の配布名は変わらない**。",
+  "renamedAssets": [
+   {
+    "from": "test-counts.v1.schema.json",
+    "to": "test-counts.v2.schema.json",
+    "reason": "schema ファイル名。artifact 側の名前は変わらない"
+   }
+  ],
+  "history": [
+   {
+    "shippedIn": "v0.4.1",
+    "previousRelease": "v0.4.0",
+    "previousSchemaPath": "schemas/test-counts.v1.schema.json",
+    "currentSchemaPath": "schemas/test-counts.v1.schema.json",
+    "schemaVersionAtTheTime": 1,
+    "schemaVersionShouldHaveBeen": 2,
+    "versionWasHeld": true,
+    "policyVerdict": "BUMP",
+    "recordedRetroactivelyIn": "v0.5.0",
+    "changes": [
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/exitCode",
+      "instancePath": "$.exitCode",
+      "added": [
+       "exitCode"
+      ],
+      "reason": "件数を「どの実行から取ったか」まで含めて記録するようにした（v0.4.0 で allPassed:false のまま公開した件の対策）"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/failed",
+      "instancePath": "$.failed",
+      "added": [
+       "failed"
+      ],
+      "reason": "同上"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/failedSuites",
+      "instancePath": "$.failedSuites",
+      "added": [
+       "failedSuites"
+      ],
+      "reason": "同上"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/generatedFromCommit",
+      "instancePath": "$.generatedFromCommit",
+      "added": [
+       "generatedFromCommit"
+      ],
+      "reason": "同上"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/nodeVersion",
+      "instancePath": "$.nodeVersion",
+      "added": [
+       "nodeVersion"
+      ],
+      "reason": "同上"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/runner",
+      "instancePath": "$.runner",
+      "added": [
+       "runner"
+      ],
+      "reason": "同上"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/runnerVersion",
+      "instancePath": "$.runnerVersion",
+      "added": [
+       "runnerVersion"
+      ],
+      "reason": "同上"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/testCommand",
+      "instancePath": "$.testCommand",
+      "added": [
+       "testCommand"
+      ],
+      "reason": "同上"
+     },
+     {
+      "kind": "constraint-tightened",
+      "effect": "NARROW",
+      "schemaPointer": "/required",
+      "instancePath": "$",
+      "added": [
+       "exitCode",
+       "failed",
+       "generatedFromCommit",
+       "nodeVersion",
+       "runner",
+       "runnerVersion",
+       "testCommand"
+      ],
+      "reason": "必須にした。**旧 artifact は新 schema で落ちる**"
+     }
+    ]
+   },
+   {
+    "shippedIn": "v0.5.0",
+    "previousRelease": "v0.4.1",
+    "previousSchemaPath": "schemas/test-counts.v1.schema.json",
+    "currentSchemaPath": "schemas/test-counts.v2.schema.json",
+    "schemaVersionAtTheTime": 2,
+    "versionWasHeld": false,
+    "policyVerdict": "BUMP",
+    "changes": [
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaVersion/const",
+      "instancePath": "$.schemaVersion",
+      "from": 1,
+      "to": 2,
+      "reason": "版を上げた。**下流はここで分岐して止まる**"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/contractMigration",
+      "instancePath": "$.contractMigration",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "**この schema には対応表が無かった。**v0.4.1 で契約を変えたのに記録が残っていなかった原因の一つ"
+     },
+     {
+      "kind": "constraint-tightened",
+      "effect": "NARROW",
+      "schemaPointer": "/required",
+      "instancePath": "$",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "対応表を必須にした。**旧 artifact は新 schema で落ちる**"
+     }
+    ]
+   }
+  ]
+ },
  "generatedAt": "2026-08-04",
  "note": "npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。byFile は npm run check:vacuity の下限としても使う。件数が減る変更は理由を書く。",
- "total": 476,
+ "total": 549,
  "byFile": {
   "contact.test.ts": 41,
+  "contractMigration.test.ts": 34,
   "dimensions.test.ts": 16,
   "docs.test.ts": 72,
   "halfPlugProfile.test.ts": 23,
@@ -12,10 +185,11 @@
   "realJackComparison.test.ts": 12,
   "releaseIndex.test.ts": 28,
   "robustnessWindowFixtures.test.ts": 16,
-  "schemaContractV2.test.ts": 32,
+  "schemaContractV2.test.ts": 34,
+  "schemaVersioningPolicy.test.ts": 35,
   "sensitivityProvenance.test.ts": 29,
   "sensitivityVariant.test.ts": 9,
-  "sourceInputScope.test.ts": 24,
+  "sourceInputScope.test.ts": 26,
   "sourceVerificationResult.test.ts": 17,
   "topology.test.ts": 15,
   "topologyRobustness.test.ts": 44,
@@ -33,5 +207,5 @@
  "runner": "vitest",
  "runnerVersion": "4.1.10",
  "nodeVersion": "v22.22.3",
- "generatedFromCommit": "162f4cd7d93689a21b7d63260571926fee2b377b"
+ "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4"
 }

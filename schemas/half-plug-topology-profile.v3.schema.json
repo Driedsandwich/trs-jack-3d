@@ -1,0 +1,1188 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/half-plug-topology-profile.v3.schema.json",
+ "title": "Half-Plug Topology Profile v3",
+ "description": "プラグ挿入経路を、接点トポロジーが変化しない区間へ分割した中立表現。DSP から独立している。**これは音響係数ではない。** 音に関する項目はすべて参考分類であり、フィルタ係数・ゲイン・クロストーク量として使ってはならない。 **v2 は v1 と非互換である。**`topologyClass` の `fully-seated` を `all-expected-functions-match` へ改名し、`schemaId` / `contractMigration` / `mechanicalInsertion` / `coordinateSystem.normalizedScope` を追加した。v1 を期待する実装は `schemaVersion` を見て停止すること。対応表は `contractMigration` にある",
+ "type": "object",
+ "required": [
+  "schemaVersion",
+  "schemaId",
+  "contractMigration",
+  "mechanicalInsertion",
+  "profileId",
+  "variantId",
+  "plug",
+  "jack",
+  "plugBasis",
+  "jackBasis",
+  "provenance",
+  "sourceRevision",
+  "generatedAt",
+  "fullInsertionDepthMm",
+  "stepMm",
+  "coordinateSystem",
+  "dataLicense",
+  "modelLimitations",
+  "assumptionSummary",
+  "intervals",
+  "events",
+  "sensitivitySummary",
+  "absentTopologies"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "schemaVersion": {
+   "const": 3,
+   "description": "**v0.1.0→v0.1.1 では enum を非互換に変えたのに 1 のままだった。**その結果、値で絞り込む下流が沈黙して壊れた。同じことを繰り返さないため、語彙を変えるときは必ずここを上げる"
+  },
+  "profileId": {
+   "type": "string",
+   "description": "この profile の識別子。variantId + geometry revision から作る"
+  },
+  "variantId": {
+   "type": "string",
+   "description": "プラグ|ジャックの組み合わせ ID"
+  },
+  "plug": {
+   "$ref": "#/definitions/part"
+  },
+  "jack": {
+   "$ref": "#/definitions/part"
+  },
+  "plugBasis": {
+   "$ref": "#/definitions/basis"
+  },
+  "jackBasis": {
+   "$ref": "#/definitions/basis"
+  },
+  "provenance": {
+   "$ref": "#/definitions/provenance"
+  },
+  "sourceRevision": {
+   "type": "string",
+   "description": "生成元 source commit。取得できなければ UNKNOWN。**これで固定しないでください。** artifact を含めてコミットすると HEAD が変わるため、生成時点で正しかった値がコミット後に「古い」ように見えます。固定には provenance.inputDigest を使ってください"
+  },
+  "generatedAt": {
+   "type": "string",
+   "description": "YYYY-MM-DD。ARTIFACT_DATE で固定できる"
+  },
+  "fullInsertionDepthMm": {
+   "type": "number",
+   "exclusiveMinimum": 0
+  },
+  "stepMm": {
+   "type": "number",
+   "exclusiveMinimum": 0,
+   "description": "区間を作るのに使った走査刻み。区間境界の分解能そのもの"
+  },
+  "coordinateSystem": {
+   "type": "object",
+   "required": [
+    "depthOrigin",
+    "depthDirection",
+    "normalized",
+    "normalizedScope",
+    "crossProfileComparable",
+    "normalizedNote"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "depthOrigin": {
+     "type": "string"
+    },
+    "depthDirection": {
+     "type": "string"
+    },
+    "normalized": {
+     "type": "string",
+     "description": "normalizedStart/End の定義"
+    },
+    "normalizedScope": {
+     "const": "PROFILE_LOCAL",
+     "description": "**profile 内のモデル相対座標である。**機械可読にしたのは、文章で弱めても機械が読む形では何も言っていなかったため"
+    },
+    "crossProfileComparable": {
+     "const": false,
+     "description": "同じ normalized 値が別 profile で同じ電気状態を意味することは保証しない"
+    },
+    "normalizedNote": {
+     "type": "string"
+    }
+   }
+  },
+  "dataLicense": {
+   "type": "object",
+   "required": [
+    "code",
+    "data",
+    "attribution"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "code": {
+     "type": "string"
+    },
+    "data": {
+     "type": "string"
+    },
+    "attribution": {
+     "type": "string",
+     "description": "CC BY の帰属表示に使う文字列"
+    }
+   }
+  },
+  "modelLimitations": {
+   "type": "object",
+   "required": [
+    "verifiedPhysical",
+    "notes"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "verifiedPhysical": {
+     "type": "boolean",
+     "description": "実物と突き合わせて検証済みか。未実測の profile では必ず false。true にできるのは実測記録が伴う場合のみ"
+    },
+    "physicalVerificationRef": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "notes": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     },
+     "minItems": 1
+    }
+   }
+  },
+  "assumptionSummary": {
+   "type": "object",
+   "required": [
+    "counts",
+    "jackInternalAssumptions"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "counts": {
+     "type": "object",
+     "required": [
+      "FACT",
+      "DERIVED",
+      "ASSUMPTION",
+      "UNKNOWN"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "FACT": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "DERIVED": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "ASSUMPTION": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "UNKNOWN": {
+       "type": "integer",
+       "minimum": 0
+      }
+     }
+    },
+    "jackInternalAssumptions": {
+     "type": "integer",
+     "minimum": 0
+    }
+   }
+  },
+  "intervals": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "$ref": "#/definitions/interval"
+   }
+  },
+  "events": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "eventId",
+     "kind",
+     "depthMm",
+     "normalized",
+     "label",
+     "spreadStatus"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "eventId": {
+      "type": "string",
+      "description": "同じ入力から決定的に生成される識別子。kind だけでは STATE_CHANGE が区別できないため、対象と遷移を含める。**label の文言を変えても変わらない。**"
+     },
+     "kind": {
+      "type": "string"
+     },
+     "eventIdentity": {
+      "type": [
+       "object",
+       "null"
+      ],
+      "description": "何がどの状態からどの状態へ変わったか。kind が 1 回しか出ない事象では null",
+      "required": [
+       "subjectType",
+       "subjectId",
+       "fromState",
+       "toState"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "subjectType": {
+        "enum": [
+         "contact",
+         "break-contact"
+        ]
+       },
+       "subjectId": {
+        "type": "string"
+       },
+       "fromState": {
+        "type": "string"
+       },
+       "toState": {
+        "type": "string"
+       }
+      }
+     },
+     "depthMm": {
+      "type": "number"
+     },
+     "normalized": {
+      "type": "number"
+     },
+     "label": {
+      "type": "string"
+     },
+     "spreadStatus": {
+      "enum": [
+       "MODEL_SWEEP_EVENT_SPECIFIC",
+       "MODEL_SWEEP_NOT_EVENT_SPECIFIC",
+       "NOT_ANALYZED"
+      ],
+      "description": "**モデルのパラメータを振った結果であって、実物の測定ではない。** MODEL_SWEEP_EVENT_SPECIFIC = この事象そのものの幅を走査で求めた。MODEL_SWEEP_NOT_EVENT_SPECIFIC = kind 単位の集計しか無く、この事象へ配れない (集計は sensitivitySummary.aggregateSpreadByKind)。NOT_ANALYZED = 解析していない。**どれも「動かない」の意味ではない。** 2026-08-03 まで MEASURED / NOT_MEASURED / NOT_EVENT_SPECIFIC という名前だったが、MEASURED は実物測定と誤認されるため改めた"
+     },
+     "spreadMm": {
+      "type": [
+       "object",
+       "null"
+      ],
+      "description": "**その事象そのものを測った幅だけを入れる。** kind 単位の集計を事象へ複製しない (統合オーダー P0-3)。null は未測定であって不動の意味ではない",
+      "required": [
+       "minMm",
+       "maxMm",
+       "sweptParameters"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "minMm": {
+        "type": "number"
+       },
+       "maxMm": {
+        "type": "number"
+       },
+       "sweptParameters": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        },
+        "minItems": 1
+       }
+      }
+     }
+    }
+   }
+  },
+  "sensitivitySummary": {
+   "type": "object",
+   "required": [
+    "available",
+    "globalSummaryAvailable",
+    "eventSpreadAvailable",
+    "notes"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "available": {
+     "type": "boolean",
+     "description": "**global summary があるかどうかだけ**を表す (後方互換のために残している別名)。`globalSummaryAvailable` と常に等しい。**これが false でも event spread は存在しうる。** 感度情報の有無を判定する用途に使ってはならない"
+    },
+    "globalSummaryAvailable": {
+     "type": "boolean",
+     "description": "variant 固有の総合解析 (プラトー間隔・Tip 橋絡しきい値・挿抜力) があるか。3極でのみ true"
+    },
+    "eventSpreadAvailable": {
+     "type": "boolean",
+     "description": "event 単位の model-sweep spread があるか。**`available` とは別の事実。** 2026-08-03 まで両者を `available` 1 つに潰しており、TRS×TRRS が spread を 7 件持ちながら false を名乗っていた"
+    },
+    "basis": {
+     "type": [
+      "string",
+      "null"
+     ],
+     "enum": [
+      "MODEL_PARAMETER_SWEEP",
+      null
+     ],
+     "description": "感度情報が何に由来するか。**実測ではない。** モデルのパラメータを振った結果である"
+    },
+    "bridgeDepthJointRangeMm": {
+     "type": [
+      "array",
+      "null"
+     ],
+     "items": {
+      "type": "number"
+     },
+     "minItems": 2,
+     "maxItems": 2
+    },
+    "tipBridgeComplianceThreshold": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "tipBridgeWorstCornerThreshold": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "eventSpreadSource": {
+     "type": [
+      "object",
+      "null"
+     ],
+     "description": "event spread をどの artifact から取ったか。**variantId が profile と一致しなければ取り込まない (fail-closed)。** null は「この variant 固有の解析が無いので出していない」",
+     "additionalProperties": true
+    },
+    "aggregateSpreadByKind": {
+     "type": [
+      "object",
+      "null"
+     ],
+     "description": "kind 単位の深さの幅の集計。**個々の事象へ当てはめてはならない。** STATE_CHANGE のように 1 回の挿入で複数回起きる kind では、全接点・全遷移をまたいだ和集合になっている",
+     "additionalProperties": {
+      "type": "object",
+      "properties": {
+       "minMm": {
+        "type": "number"
+       },
+       "maxMm": {
+        "type": "number"
+       },
+       "configs": {
+        "type": "number"
+       },
+       "movesMm": {
+        "type": "number"
+       }
+      }
+     }
+    },
+    "notes": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "absentTopologies": {
+   "type": "object",
+   "description": "探したが、この profile には現れなかったトポロジー。Half-Plug 側の中核候補 GROUND_OPEN が既定モデルに存在しないことを、機械可読な反証として記録する。**表示上だけ足してはならない。**",
+   "required": [
+    "searched",
+    "absent"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "searched": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     },
+     "minItems": 1
+    },
+    "absent": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "schemaId": {
+   "const": "half-plug-topology-profile.v3"
+  },
+  "mechanicalInsertion": {
+   "type": "object",
+   "description": "**電気的に全機能が揃う深さと、機械的な完全挿入は違う。**名前を改めただけでは同じ誤読が起きるので、差を数字で出す",
+   "required": [
+    "completeAtMm",
+    "firstAllFunctionsMatchAtMm",
+    "gapMm",
+    "note"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "completeAtMm": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "description": "プラグ肩が当たる深さ"
+    },
+    "firstAllFunctionsMatchAtMm": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "description": "電気的に全機能が揃う最初の深さ。null はその variant では揃わないこと"
+    },
+    "gapMm": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "description": "completeAtMm − firstAllFunctionsMatchAtMm"
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "contractMigration": {
+   "type": "object",
+   "description": "**版と契約変更の対応表。**旧語彙を読む消費側が沈黙ではなくエラーになるためのもの。判定は docs/SCHEMA_VERSIONING_POLICY.md の条文（新 schema が許す言語が旧 schema の言語に収まるか）による。**artifact の中身では判定しない**——同じ変更でも、その版の artifact が新しい値を使っているかで答えが反転してしまうため。正本は contract-migration.v1.json",
+   "required": [
+    "schemaId",
+    "previousSchemaId",
+    "fromSchemaVersion",
+    "toSchemaVersion",
+    "breaking",
+    "policy",
+    "consumerAction",
+    "renamedAssets",
+    "history"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schemaId": {
+     "const": "half-plug-topology-profile.v3"
+    },
+    "previousSchemaId": {
+     "const": "half-plug-topology-profile.v2"
+    },
+    "fromSchemaVersion": {
+     "const": 2
+    },
+    "toSchemaVersion": {
+     "const": 3
+    },
+    "breaking": {
+     "const": true
+    },
+    "policy": {
+     "type": "object",
+     "required": [
+      "document",
+      "policyVersion",
+      "decisionRule"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "document": {
+       "const": "docs/SCHEMA_VERSIONING_POLICY.md"
+      },
+      "policyVersion": {
+       "type": "integer",
+       "minimum": 1
+      },
+      "decisionRule": {
+       "const": "language-subset"
+      },
+      "note": {
+       "type": "string"
+      }
+     }
+    },
+    "consumerAction": {
+     "type": "string",
+     "minLength": 1
+    },
+    "renamedAssets": {
+     "type": "array",
+     "minItems": 1,
+     "description": "**条文の外（第6条）。**配布名は schema の言語に現れないので、名前で引く下流は schema 検査に到達する前に「ファイルが無い」で止まる",
+     "items": {
+      "type": "object",
+      "required": [
+       "from",
+       "to",
+       "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "from": {
+        "type": "string"
+       },
+       "to": {
+        "type": "string"
+       },
+       "reason": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "history": {
+     "type": "array",
+     "minItems": 1,
+     "description": "**契約が変わった release を古い順に並べる。**版を据え置いたまま変えた回は versionWasHeld: true で残す。それが条文違反の記録である",
+     "items": {
+      "type": "object",
+      "required": [
+       "shippedIn",
+       "previousRelease",
+       "previousSchemaPath",
+       "currentSchemaPath",
+       "schemaVersionAtTheTime",
+       "versionWasHeld",
+       "policyVerdict",
+       "changes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "shippedIn": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+       },
+       "previousRelease": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+       },
+       "previousSchemaPath": {
+        "type": "string",
+        "description": "**previousRelease 時点でのこの schema のパス。**版を上げるとファイル名が変わるので、記録側に持たせないと機械で突き合わせられない"
+       },
+       "currentSchemaPath": {
+        "type": "string"
+       },
+       "schemaVersionAtTheTime": {
+        "type": "integer",
+        "minimum": 1
+       },
+       "schemaVersionShouldHaveBeen": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "据え置いた回にだけ入る。**条文に照らして本来あるべきだった版**"
+       },
+       "versionWasHeld": {
+        "type": "boolean"
+       },
+       "policyVerdict": {
+        "enum": [
+         "BUMP",
+         "HOLD_RECORD",
+         "HOLD"
+        ]
+       },
+       "recordedRetroactivelyIn": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+        "description": "**いつ遡って書いたか。**当時の判断記録ではないことを隠さない"
+       },
+       "note": {
+        "type": "string"
+       },
+       "changes": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+         "type": "object",
+         "required": [
+          "kind",
+          "effect",
+          "schemaPointer",
+          "reason"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "kind": {
+           "enum": [
+            "field-added",
+            "field-removed",
+            "field-renamed",
+            "field-reshaped",
+            "enum-value-added",
+            "enum-value-removed",
+            "enum-value-renamed",
+            "type-widened",
+            "type-narrowed",
+            "constraint-tightened",
+            "constraint-loosened",
+            "const-changed",
+            "meaning-changed",
+            "description-only"
+           ]
+          },
+          "effect": {
+           "enum": [
+            "WIDEN",
+            "NARROW",
+            "NEUTRAL",
+            "UNDECIDABLE"
+           ],
+           "description": "**scripts/schemaLanguageDiff.mjs の判定をそのまま入れる。**記録と実物がずれたらテストが落ちる"
+          },
+          "schemaPointer": {
+           "type": "string",
+           "pattern": "^/",
+           "description": "**artifact ではなく schema への JSON Pointer。**実在することを機械で確かめる"
+          },
+          "instancePath": {
+           "type": "string",
+           "description": "人が読むための位置。$.a.b[].c 形式"
+          },
+          "added": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "removed": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "from": {
+           "type": [
+            "string",
+            "number",
+            "boolean"
+           ]
+          },
+          "to": {
+           "type": [
+            "string",
+            "number",
+            "boolean"
+           ]
+          },
+          "reason": {
+           "type": "string",
+           "minLength": 1
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "definitions": {
+  "part": {
+   "type": "object",
+   "required": [
+    "id",
+    "label",
+    "poles"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "type": "string"
+    },
+    "label": {
+     "type": "string"
+    },
+    "poles": {
+     "type": "integer",
+     "minimum": 2
+    },
+    "manufacturerPartNumber": {
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   }
+  },
+  "provenance": {
+   "type": "object",
+   "description": "何から作られたか。**`generatedFromCommit` ではなく `inputDigest` で固定してください。** artifact を含めてコミットすると HEAD は変わりますが、入力は変わっていないので `inputDigest` は変わりません",
+   "required": [
+    "generatorVersion",
+    "generatedFromCommit",
+    "workingTreeDirty",
+    "revisionOverride",
+    "artifactKind",
+    "inputDigestAlgorithm",
+    "inputDigest",
+    "inputDigestScope",
+    "inputFiles",
+    "command",
+    "artifactDate"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "generatorVersion": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "生成器の版。出力の形を変えたときだけ上がる。データが変わっただけでは上がらない (それは inputDigest が表す)"
+    },
+    "generatedFromCommit": {
+     "type": "string",
+     "pattern": "^([0-9a-f]{40}|UNKNOWN)$",
+     "description": "生成時点の HEAD。**参考値。** 一致を要求してはならない"
+    },
+    "workingTreeDirty": {
+     "type": "boolean",
+     "description": "**入力ファイルに**未コミットの変更があったか。true の artifact は release asset にできない。artifact 自身の変更は見ない"
+    },
+    "revisionOverride": {
+     "type": "boolean",
+     "description": "SOURCE_REVISION による上書きが使われたか。通常モードでは常に false"
+    },
+    "artifactKind": {
+     "enum": [
+      "local",
+      "release"
+     ],
+     "description": "local = 手元で生成 (リポジトリにコミットされているものはこちら)。release = clean な入力から --release で生成した配布物"
+    },
+    "inputDigestAlgorithm": {
+     "const": "sha256"
+    },
+    "inputDigest": {
+     "type": "string",
+     "pattern": "^[0-9a-f]{64}$"
+    },
+    "inputDigestScope": {
+     "type": "string",
+     "description": "digest の作り方。第三者が同じ値を再計算できるように書く"
+    },
+    "inputFiles": {
+     "type": "array",
+     "minItems": 1,
+     "description": "digest の対象。**生成される artifact 自身は含まない** (含めると自己参照になる)",
+     "items": {
+      "type": "object",
+      "required": [
+       "path",
+       "sha256",
+       "role"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "path": {
+        "type": "string"
+       },
+       "sha256": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+       },
+       "role": {
+        "enum": [
+         "schema",
+         "generator",
+         "model-data",
+         "model-code",
+         "lockfile",
+         "sensitivity-input",
+         "input-scope",
+         "contract-migration"
+        ],
+        "description": "**`input-scope` は入力の範囲定義 (source-input-scope.v1.json)。v0.3.0 フォローアップ P1-2 で追加。**"
+       }
+      }
+     }
+    },
+    "command": {
+     "type": "string",
+     "description": "再生成に使うコマンド。呼び出し経路によらない正規形"
+    },
+    "artifactDate": {
+     "type": "string",
+     "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+     "description": "**UTC の日付**（`toISOString()` 由来）。生成した人の現地時刻より 1 日手前になることがある。commit の日付と 1 日ずれていても陳腐化ではない。ARTIFACT_DATE で固定できる"
+    },
+    "inputSettings": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     },
+     "description": "digest に混ぜたファイル以外の入力 (variant 固有の走査設定など)。**値そのものを記録する。** 記録しないと第三者が inputDigest を再計算できない。この項目が無い artifact は setting 行を使っていない"
+    }
+   }
+  },
+  "basis": {
+   "type": "object",
+   "description": "その部品の寸法が何に由来するか。**一括りにしない。** 外形・端子・ブレーク接点・内部接点はそれぞれ根拠が違い、まとめると強いほうか弱いほうへ丸まる",
+   "required": [
+    "source",
+    "evidenceGrade"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "source": {
+     "type": "string"
+    },
+    "evidenceGrade": {
+     "$ref": "#/definitions/grade"
+    },
+    "note": {
+     "type": "string"
+    },
+    "detail": {
+     "type": "object",
+     "description": "根拠の内訳。実在の単一品と、複数の部品から組み立てた構成 profile を取り違えさせないための欄",
+     "required": [
+      "partIdentityBasis",
+      "externalGeometryBasis",
+      "terminalLayoutBasis",
+      "breakContactBasis",
+      "internalContactGeometryBasis",
+      "electricalContinuityValidation",
+      "acousticValidation",
+      "constructedProfile",
+      "constructedFrom"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "partIdentityBasis": {
+       "type": "string"
+      },
+      "externalGeometryBasis": {
+       "type": "string"
+      },
+      "terminalLayoutBasis": {
+       "type": "string"
+      },
+      "breakContactBasis": {
+       "type": "string"
+      },
+      "internalContactGeometryBasis": {
+       "type": "string"
+      },
+      "electricalContinuityValidation": {
+       "type": "string"
+      },
+      "acousticValidation": {
+       "type": "string"
+      },
+      "constructedProfile": {
+       "type": "boolean",
+       "description": "true なら複数の部品から組み立てたもので、実在の単一品ではない"
+      },
+      "constructedFrom": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     }
+    }
+   }
+  },
+  "grade": {
+   "enum": [
+    "FACT",
+    "DERIVED",
+    "ASSUMPTION",
+    "UNKNOWN"
+   ]
+  },
+  "interval": {
+   "type": "object",
+   "required": [
+    "intervalId",
+    "nominalStartMm",
+    "nominalEndMm",
+    "normalizedStart",
+    "normalizedEnd",
+    "contacts",
+    "circuitEdges",
+    "circuitNets",
+    "terminalToPlugNet",
+    "breakStates",
+    "mechanicalFlags",
+    "electricalTopology",
+    "acousticAnnotation",
+    "evidenceGrade",
+    "uncertainty",
+    "safetyFlags"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "intervalId": {
+     "type": "string"
+    },
+    "nominalStartMm": {
+     "type": "number"
+    },
+    "nominalEndMm": {
+     "type": "number"
+    },
+    "normalizedStart": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "normalizedEnd": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "contacts": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "contactId",
+       "terminalId",
+       "state",
+       "connectedNets",
+       "evidenceGrade"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "contactId": {
+        "type": "string"
+       },
+       "terminalId": {
+        "type": "string"
+       },
+       "state": {
+        "type": "string"
+       },
+       "connectedNets": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "physicallyTouching": {
+        "type": "boolean"
+       },
+       "evidenceGrade": {
+        "$ref": "#/definitions/grade"
+       }
+      }
+     }
+    },
+    "circuitEdges": {
+     "type": "array",
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "minItems": 2,
+      "maxItems": 2
+     }
+    },
+    "circuitNets": {
+     "type": "array",
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "terminalToPlugNet": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "breakStates": {
+     "type": "object",
+     "additionalProperties": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    },
+    "mechanicalFlags": {
+     "type": "object",
+     "required": [
+      "anyBridged",
+      "anyWrongSegment",
+      "anyUnstable"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "anyBridged": {
+       "type": "boolean"
+      },
+      "anyWrongSegment": {
+       "type": "boolean"
+      },
+      "anyUnstable": {
+       "type": "boolean"
+      }
+     }
+    },
+    "electricalTopology": {
+     "type": "object",
+     "description": "**電気的な事実。** どう聞こえるかは含まない (それは acousticAnnotation)。2026-08-03 まで topologyClass は acousticAnnotation の中にあり、電気の分類と聴感の仮説が同じ入れ物に同居していた",
+     "required": [
+      "topologyClass",
+      "reasonCode",
+      "openSignals",
+      "confidenceBoundary"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "topologyClass": {
+       "enum": [
+        "all-expected-functions-match",
+        "no-path",
+        "one-sided",
+        "on-insulator",
+        "wrong-conductor",
+        "signal-to-signal-short",
+        "signal-to-return-short",
+        "ground-open-differential",
+        "ground-open-nondifferential"
+       ],
+       "description": "**v2 で `fully-seated` を `all-expected-functions-match` へ改めた。**旧名は「プラグ肩が当たった」と読めたが、実体は reasonCode のとおり ALL_EXPECTED_FUNCTIONS_MATCH でしかない。機械的な完全挿入との差は `mechanicalInsertion.gapMm` にある"
+      },
+      "reasonCode": {
+       "type": "string",
+       "description": "なぜその分類になったか。文言ではなく機械可読な符号。表示文を変えても変わらない"
+      },
+      "openSignals": {
+       "type": "array",
+       "description": "どこにも届いていない機能。端子が存在するのに導体へ届いていないものだけ",
+       "items": {
+        "enum": [
+         "L",
+         "R",
+         "GND",
+         "MIC"
+        ]
+       }
+      },
+      "confidenceBoundary": {
+       "type": "boolean",
+       "description": "判定の境目に近いか。接触が不安定、またはブレーク接点が判定不能なときに立つ"
+      }
+     }
+    },
+    "acousticAnnotation": {
+     "type": "object",
+     "description": "**未検証の聴感の仮説であって DSP 係数ではない。** これをフィルタ係数・ゲイン・クロストーク量へ直接変換してはならない。電気的な分類は electricalTopology にある",
+     "required": [
+      "audibleHypothesis",
+      "electricalRisk",
+      "confidence"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "audibleHypothesis": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "stabilityOverlay": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "electricalRisk": {
+       "enum": [
+        "none",
+        "protection-dependent",
+        "short-circuit"
+       ]
+      },
+      "confidence": {
+       "enum": [
+        "low",
+        "medium",
+        "high"
+       ]
+      }
+     }
+    },
+    "evidenceGrade": {
+     "$ref": "#/definitions/grade",
+     "description": "この区間の結論を支える最も弱い根拠区分"
+    },
+    "uncertainty": {
+     "type": "object",
+     "required": [
+      "boundaryResolutionMm",
+      "systematicShiftMm",
+      "notes"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "boundaryResolutionMm": {
+       "type": "number",
+       "description": "区間境界の分解能。走査刻みそのもの"
+      },
+      "systematicShiftMm": {
+       "type": [
+        "number",
+        "null"
+       ],
+       "description": "全区間へ一律にかかりうる系統的なずれ"
+      },
+      "notes": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "safetyFlags": {
+     "type": "object",
+     "required": [
+      "shortsSignalToReturn",
+      "shortsSignalToSignal"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "shortsSignalToReturn": {
+       "type": "boolean"
+      },
+      "shortsSignalToSignal": {
+       "type": "boolean"
+      }
+     }
+    }
+   }
+  }
+ }
+}

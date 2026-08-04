@@ -332,7 +332,7 @@ src/
 
 ## Half-Plug Lab との連携
 
-**配布物は [v0.4.1](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.4.1) です。**
+**配布物は [v0.5.0](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.5.0) です。**
 
 **`profileId` を報告文から転記しないでください。**同梱の
 `trs-jack-3d-release-index.v1.json` から引くのが正本です
@@ -340,9 +340,14 @@ src/
 `sourceRevision` や `main` では固定しないでください
 — artifact を含めてコミットすると HEAD は変わりますが、入力が同じなら `inputDigest` は変わりません。
 
-配布物の中身は `Half-Plug Topology Profile v2`（`half_plug_topology_profile.v2.*.json`）と、
+配布物の中身は `Half-Plug Topology Profile v3`（`half_plug_topology_profile.v3.*.json`）と、
 その検証に要る schema・evidence・入力の範囲定義・検証ツールです。
-入力 29 件は同梱の `verifyReleaseSourceInputs.mjs` で自分で検算できます。
+入力は同梱の `verifyReleaseSourceInputs.mjs` で自分で検算できます。
+
+> **v0.5.0 で schema を 6 本まとめて上げました。**旧版を pin した実装は **6 か所で止まります**。
+> profile 本体は**ファイル名も `.v2.` → `.v3.` へ変わる**ので、名前で引く lock は
+> schema 検査に届く前に止まります。何がどう変わったかは同梱の `contract-migration.v1.json` と、
+> 各 artifact の `contractMigration.history` にあります（→ [条文](docs/SCHEMA_VERSIONING_POLICY.md)）。
 
 > **この節の版数・schema 版・ファイル名は `test/docs.test.ts` が機械照合しています。**
 > v0.1.1〜v0.4.0 の間、この節はずっと古い版を案内していました（→ [履歴](#過去-release-の-known-issue)）。
@@ -354,7 +359,7 @@ src/
 ```
 trs-jack-3d          決定論的な幾何・接点・回路グラフ
       ↓
-Half-Plug Topology Profile v2     ← 中立 JSON。ここが境界
+Half-Plug Topology Profile v3     ← 中立 JSON。ここが境界
       ↓
 Half-Plug Lab                     DSP 状態候補への写像は向こう側の責任
 ```
@@ -525,7 +530,7 @@ PS000001 はその外側です。**どちらが実物に近いかは決着して
 | `perf_real_gpu.json` | 実 GPU (Apple M5) でのフレームレートと描画コスト |
 | `touch_verification.json` | タッチ操作の検証 20 項目の結果 |
 | `sensitivity.json` | 仮定パラメータの感度解析の生データ（→ [docs/SENSITIVITY.md](docs/SENSITIVITY.md)） |
-| `half_plug_topology_profile.v2.*.json` | 接点トポロジーの中立表現（variant ごと）。**音響係数ではありません** |
+| `half_plug_topology_profile.v3.*.json` | 接点トポロジーの中立表現（variant ごと）。**音響係数ではありません** |
 | `topology_search_difference_signal.json` | 左右差分が残る構成の探索結果（`npm run search:topology`・約 10 分） |
 | `real_jack_comparison.json` | 実在部品の図面値との突き合わせ（`npm run compare:real-jack`）。**看板の結論が実在図面 1 件と食い違うことを記録しています** |
 | `test_counts.json` | テスト件数と内訳（`npm run test:count`）。文書の件数はこれと機械照合します |

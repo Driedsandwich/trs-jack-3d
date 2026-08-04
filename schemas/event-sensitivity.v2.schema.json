@@ -1,0 +1,499 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/event-sensitivity.v2.schema.json",
+ "title": "trs-jack-3d event sensitivity artifact v2",
+ "description": "variant ごとの主要イベント深さの幅。**モデルのパラメータを振った結果であって、実物のばらつきでも製造公差でもない。** 2026-08-03 の非阻害フォローアップオーダー P1-2 で新設。それまでこの artifact だけ schema が無く、下流が独自に構造検査を書いていた",
+ "type": "object",
+ "required": [
+  "schemaVersion",
+  "variantId",
+  "analysisScope",
+  "basis",
+  "generatedFromCommit",
+  "provenance",
+  "sweptParameters",
+  "sweep",
+  "byKind",
+  "contractMigration"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "schemaVersion": {
+   "const": 2
+  },
+  "generatedBy": {
+   "type": "string"
+  },
+  "variantId": {
+   "type": "string",
+   "description": "どの variant の解析か。**profile 側と一致しなければ取り込んではならない (fail-closed)。** これが無かったため 3極の幅が 4極 profile へ配られていた"
+  },
+  "analysisScope": {
+   "enum": [
+    "EVENT_DEPTH_SPREAD_ONLY"
+   ],
+   "description": "この artifact が扱う範囲。総合解析 (プラトー間隔・Tip 橋絡しきい値・挿抜力) は含まない"
+  },
+  "basis": {
+   "const": "MODEL_PARAMETER_SWEEP",
+   "description": "**実測ではない。** モデルのパラメータを振った結果であることを機械可読にする"
+  },
+  "generatedFromCommit": {
+   "type": "string",
+   "pattern": "^([0-9a-f]{40}|UNKNOWN)$",
+   "description": "生成時点の HEAD。**参考値。** 固定には provenance.inputDigest を使う"
+  },
+  "provenance": {
+   "type": "object",
+   "description": "何から作られたか。**`generatedFromCommit` ではなく `inputDigest` で固定してください。** artifact を含めてコミットすると HEAD は変わりますが、入力は変わっていないので `inputDigest` は変わりません",
+   "required": [
+    "generatorVersion",
+    "generatedFromCommit",
+    "workingTreeDirty",
+    "revisionOverride",
+    "artifactKind",
+    "inputDigestAlgorithm",
+    "inputDigest",
+    "inputDigestScope",
+    "inputFiles",
+    "command",
+    "artifactDate"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "generatorVersion": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "生成器の版。出力の形を変えたときだけ上がる。データが変わっただけでは上がらない (それは inputDigest が表す)"
+    },
+    "generatedFromCommit": {
+     "type": "string",
+     "pattern": "^([0-9a-f]{40}|UNKNOWN)$",
+     "description": "生成時点の HEAD。**参考値。** 一致を要求してはならない"
+    },
+    "workingTreeDirty": {
+     "type": "boolean",
+     "description": "**入力ファイルに**未コミットの変更があったか。true の artifact は release asset にできない。artifact 自身の変更は見ない"
+    },
+    "revisionOverride": {
+     "type": "boolean",
+     "description": "SOURCE_REVISION による上書きが使われたか。通常モードでは常に false"
+    },
+    "artifactKind": {
+     "enum": [
+      "local",
+      "release"
+     ],
+     "description": "local = 手元で生成 (リポジトリにコミットされているものはこちら)。release = clean な入力から --release で生成した配布物"
+    },
+    "inputDigestAlgorithm": {
+     "const": "sha256"
+    },
+    "inputDigest": {
+     "type": "string",
+     "pattern": "^[0-9a-f]{64}$"
+    },
+    "inputDigestScope": {
+     "type": "string",
+     "description": "digest の作り方。第三者が同じ値を再計算できるように書く"
+    },
+    "inputFiles": {
+     "type": "array",
+     "minItems": 1,
+     "description": "digest の対象。**生成される artifact 自身は含まない** (含めると自己参照になる)",
+     "items": {
+      "type": "object",
+      "required": [
+       "path",
+       "sha256",
+       "role"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "path": {
+        "type": "string"
+       },
+       "sha256": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+       },
+       "role": {
+        "enum": [
+         "schema",
+         "generator",
+         "model-data",
+         "model-code",
+         "lockfile",
+         "sensitivity-input",
+         "input-scope",
+         "contract-migration"
+        ],
+        "description": "**`input-scope` は入力の範囲定義 (source-input-scope.v1.json)。v0.3.0 フォローアップ P1-2 で追加。**"
+       }
+      }
+     }
+    },
+    "command": {
+     "type": "string",
+     "description": "再生成に使うコマンド。呼び出し経路によらない正規形"
+    },
+    "artifactDate": {
+     "type": "string",
+     "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+     "description": "**UTC の日付**（`toISOString()` 由来）。生成した人の現地時刻より 1 日手前になることがある。commit の日付と 1 日ずれていても陳腐化ではない。ARTIFACT_DATE で固定できる"
+    },
+    "inputSettings": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     },
+     "description": "digest に混ぜたファイル以外の入力 (variant 固有の走査設定など)。**値そのものを記録する。** 記録しないと第三者が inputDigest を再計算できない。この項目が無い artifact は setting 行を使っていない"
+    }
+   }
+  },
+  "generatedAt": {
+   "type": "string",
+   "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+  },
+  "note": {
+   "type": "string"
+  },
+  "sweptParameters": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "string"
+   },
+   "description": "実際に振った寸法キー。**直書きせず、走査に使った値をそのまま記録する。** キーを取り違えると override が効かず、同じ構成を数百回繰り返すだけの空振りになる"
+  },
+  "sweep": {
+   "type": "object",
+   "required": [
+    "axialRangeMm",
+    "padRangeMm",
+    "divisions",
+    "stepMm",
+    "configurationsTried",
+    "configurationsUsable",
+    "shippedValues",
+    "shippedInsideSweptRange"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "axialRangeMm": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 2,
+     "maxItems": 2
+    },
+    "padRangeMm": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 2,
+     "maxItems": 2
+    },
+    "divisions": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "stepMm": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "configurationsTried": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "configurationsUsable": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "完全挿入が成立した構成の数。**0 なら幅を報告してはならない** (軸の取り違えの疑い)"
+    },
+    "buildFailed": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "fullInsertionNotOk": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "shippedValues": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "number"
+     }
+    },
+    "shippedInsideSweptRange": {
+     "type": "boolean",
+     "description": "既定値の構成が走査範囲に入っているか。**false だと名目値が幅の外に出る** (2026-08-03 に実際に起きた形)"
+    }
+   }
+  },
+  "byKind": {
+   "type": "object",
+   "minProperties": 1,
+   "description": "イベント種別ごとの深さの幅。**個々の事象へそのまま当てはめてはならない**ものも含む",
+   "additionalProperties": {
+    "type": "object",
+    "required": [
+     "minMm",
+     "maxMm",
+     "configs",
+     "movesMm"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "minMm": {
+      "type": "number"
+     },
+     "maxMm": {
+      "type": "number"
+     },
+     "configs": {
+      "type": "integer",
+      "minimum": 1
+     },
+     "movesMm": {
+      "type": "number",
+      "minimum": 0
+     }
+    }
+   }
+  },
+  "contractMigration": {
+   "type": "object",
+   "description": "**版と契約変更の対応表。**旧語彙を読む消費側が沈黙ではなくエラーになるためのもの。判定は docs/SCHEMA_VERSIONING_POLICY.md の条文（新 schema が許す言語が旧 schema の言語に収まるか）による。**artifact の中身では判定しない**——同じ変更でも、その版の artifact が新しい値を使っているかで答えが反転してしまうため。正本は contract-migration.v1.json",
+   "required": [
+    "schemaId",
+    "previousSchemaId",
+    "fromSchemaVersion",
+    "toSchemaVersion",
+    "breaking",
+    "policy",
+    "consumerAction",
+    "renamedAssets",
+    "history"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schemaId": {
+     "const": "event-sensitivity.v2"
+    },
+    "previousSchemaId": {
+     "const": "event-sensitivity.v1"
+    },
+    "fromSchemaVersion": {
+     "const": 1
+    },
+    "toSchemaVersion": {
+     "const": 2
+    },
+    "breaking": {
+     "const": true
+    },
+    "policy": {
+     "type": "object",
+     "required": [
+      "document",
+      "policyVersion",
+      "decisionRule"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "document": {
+       "const": "docs/SCHEMA_VERSIONING_POLICY.md"
+      },
+      "policyVersion": {
+       "type": "integer",
+       "minimum": 1
+      },
+      "decisionRule": {
+       "const": "language-subset"
+      },
+      "note": {
+       "type": "string"
+      }
+     }
+    },
+    "consumerAction": {
+     "type": "string",
+     "minLength": 1
+    },
+    "renamedAssets": {
+     "type": "array",
+     "minItems": 1,
+     "description": "**条文の外（第6条）。**配布名は schema の言語に現れないので、名前で引く下流は schema 検査に到達する前に「ファイルが無い」で止まる",
+     "items": {
+      "type": "object",
+      "required": [
+       "from",
+       "to",
+       "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "from": {
+        "type": "string"
+       },
+       "to": {
+        "type": "string"
+       },
+       "reason": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "history": {
+     "type": "array",
+     "minItems": 1,
+     "description": "**契約が変わった release を古い順に並べる。**版を据え置いたまま変えた回は versionWasHeld: true で残す。それが条文違反の記録である",
+     "items": {
+      "type": "object",
+      "required": [
+       "shippedIn",
+       "previousRelease",
+       "previousSchemaPath",
+       "currentSchemaPath",
+       "schemaVersionAtTheTime",
+       "versionWasHeld",
+       "policyVerdict",
+       "changes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "shippedIn": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+       },
+       "previousRelease": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+       },
+       "previousSchemaPath": {
+        "type": "string",
+        "description": "**previousRelease 時点でのこの schema のパス。**版を上げるとファイル名が変わるので、記録側に持たせないと機械で突き合わせられない"
+       },
+       "currentSchemaPath": {
+        "type": "string"
+       },
+       "schemaVersionAtTheTime": {
+        "type": "integer",
+        "minimum": 1
+       },
+       "schemaVersionShouldHaveBeen": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "据え置いた回にだけ入る。**条文に照らして本来あるべきだった版**"
+       },
+       "versionWasHeld": {
+        "type": "boolean"
+       },
+       "policyVerdict": {
+        "enum": [
+         "BUMP",
+         "HOLD_RECORD",
+         "HOLD"
+        ]
+       },
+       "recordedRetroactivelyIn": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+        "description": "**いつ遡って書いたか。**当時の判断記録ではないことを隠さない"
+       },
+       "note": {
+        "type": "string"
+       },
+       "changes": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+         "type": "object",
+         "required": [
+          "kind",
+          "effect",
+          "schemaPointer",
+          "reason"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "kind": {
+           "enum": [
+            "field-added",
+            "field-removed",
+            "field-renamed",
+            "field-reshaped",
+            "enum-value-added",
+            "enum-value-removed",
+            "enum-value-renamed",
+            "type-widened",
+            "type-narrowed",
+            "constraint-tightened",
+            "constraint-loosened",
+            "const-changed",
+            "meaning-changed",
+            "description-only"
+           ]
+          },
+          "effect": {
+           "enum": [
+            "WIDEN",
+            "NARROW",
+            "NEUTRAL",
+            "UNDECIDABLE"
+           ],
+           "description": "**scripts/schemaLanguageDiff.mjs の判定をそのまま入れる。**記録と実物がずれたらテストが落ちる"
+          },
+          "schemaPointer": {
+           "type": "string",
+           "pattern": "^/",
+           "description": "**artifact ではなく schema への JSON Pointer。**実在することを機械で確かめる"
+          },
+          "instancePath": {
+           "type": "string",
+           "description": "人が読むための位置。$.a.b[].c 形式"
+          },
+          "added": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "removed": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "from": {
+           "type": [
+            "string",
+            "number",
+            "boolean"
+           ]
+          },
+          "to": {
+           "type": [
+            "string",
+            "number",
+            "boolean"
+           ]
+          },
+          "reason": {
+           "type": "string",
+           "minLength": 1
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

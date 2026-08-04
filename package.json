@@ -1,7 +1,7 @@
 {
   "name": "trs-jack-3d",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.5.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -24,6 +24,7 @@
     "check:vacuity": "node scripts/checkVacuity.mjs",
     "validate:profiles": "node scripts/validateProfiles.mjs",
     "release:evidence": "node scripts/buildReleaseEvidence.mjs",
+    "release:snapshot": "node scripts/buildSourceSnapshot.mjs",
     "release:stage": "node scripts/stageRelease.mjs",
     "verify:provenance": "node scripts/verifyProvenance.mjs",
     "verify:release-source-inputs": "node scripts/verifyReleaseSourceInputs.mjs",

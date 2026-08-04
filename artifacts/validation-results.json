@@ -1,28 +1,180 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
+ "contractMigration": {
+  "schemaId": "validation-results.v2",
+  "previousSchemaId": "validation-results.v1",
+  "fromSchemaVersion": 1,
+  "toSchemaVersion": 2,
+  "breaking": true,
+  "policy": {
+   "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+   "policyVersion": 1,
+   "decisionRule": "language-subset",
+   "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+  },
+  "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。artifactValidationStatus（形と意味が正しいか）と releaseReadinessStatus（配ってよいか）は別の判定である。**両方を見ること。**v0.4.0 は前者が PASS で後者が NOT_READY だった。**artifact の配布名は変わらない**。",
+  "renamedAssets": [
+   {
+    "from": "validation-results.v1.schema.json",
+    "to": "validation-results.v2.schema.json",
+    "reason": "schema ファイル名。artifact 側の名前は変わらない"
+   }
+  ],
+  "history": [
+   {
+    "shippedIn": "v0.4.0",
+    "previousRelease": "v0.3.0",
+    "previousSchemaPath": "schemas/validation-results.v1.schema.json",
+    "currentSchemaPath": "schemas/validation-results.v1.schema.json",
+    "schemaVersionAtTheTime": 1,
+    "schemaVersionShouldHaveBeen": 2,
+    "versionWasHeld": true,
+    "policyVerdict": "BUMP",
+    "recordedRetroactivelyIn": "v0.5.0",
+    "changes": [
+     {
+      "kind": "type-widened",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/results/items/properties/schema/type",
+      "instancePath": "$.results[].schema",
+      "added": [
+       "null"
+      ],
+      "reason": "schema を持たない検証対象（意味規則だけの検査）を表せるようにした"
+     }
+    ]
+   },
+   {
+    "shippedIn": "v0.4.1",
+    "previousRelease": "v0.4.0",
+    "previousSchemaPath": "schemas/validation-results.v1.schema.json",
+    "currentSchemaPath": "schemas/validation-results.v1.schema.json",
+    "schemaVersionAtTheTime": 1,
+    "schemaVersionShouldHaveBeen": 2,
+    "versionWasHeld": true,
+    "policyVerdict": "BUMP",
+    "recordedRetroactivelyIn": "v0.5.0",
+    "changes": [
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/artifactValidationStatus",
+      "instancePath": "$.artifactValidationStatus",
+      "added": [
+       "artifactValidationStatus"
+      ],
+      "reason": "判定を「artifact が正しいか」と「配ってよいか」へ分けた"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/releaseReadinessStatus",
+      "instancePath": "$.releaseReadinessStatus",
+      "added": [
+       "releaseReadinessStatus"
+      ],
+      "reason": "同上"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/releaseReadinessReasons",
+      "instancePath": "$.releaseReadinessReasons",
+      "added": [
+       "releaseReadinessReasons"
+      ],
+      "reason": "NOT_READY の理由を機械可読で持たせた"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/testEvidence",
+      "instancePath": "$.testEvidence",
+      "added": [
+       "testEvidence"
+      ],
+      "reason": "突き合わせた test の結果を同じ artifact に入れた"
+     },
+     {
+      "kind": "constraint-tightened",
+      "effect": "NARROW",
+      "schemaPointer": "/required",
+      "instancePath": "$",
+      "added": [
+       "artifactValidationStatus",
+       "releaseReadinessReasons",
+       "releaseReadinessStatus",
+       "testEvidence"
+      ],
+      "reason": "必須にした。**旧 artifact は新 schema で落ちる**"
+     }
+    ]
+   },
+   {
+    "shippedIn": "v0.5.0",
+    "previousRelease": "v0.4.1",
+    "previousSchemaPath": "schemas/validation-results.v1.schema.json",
+    "currentSchemaPath": "schemas/validation-results.v2.schema.json",
+    "schemaVersionAtTheTime": 2,
+    "versionWasHeld": false,
+    "policyVerdict": "BUMP",
+    "changes": [
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaVersion/const",
+      "instancePath": "$.schemaVersion",
+      "from": 1,
+      "to": 2,
+      "reason": "版を上げた。**下流はここで分岐して止まる**"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/contractMigration",
+      "instancePath": "$.contractMigration",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "**この schema には対応表が無かった。**v0.4.1 で契約を変えたのに記録が残っていなかった原因の一つ"
+     },
+     {
+      "kind": "constraint-tightened",
+      "effect": "NARROW",
+      "schemaPointer": "/required",
+      "instancePath": "$",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "対応表を必須にした。**旧 artifact は新 schema で落ちる**"
+     }
+    ]
+   }
+  ]
+ },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-04",
- "generatedFromCommit": "162f4cd7d93689a21b7d63260571926fee2b377b",
+ "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
  "command": "npm run validate:profiles",
- "targetsTotal": 11,
- "targetsPassed": 11,
+ "targetsTotal": 12,
+ "targetsPassed": 12,
  "allPassed": true,
  "artifactValidationStatus": "PASS",
  "releaseReadinessStatus": "READY",
  "releaseReadinessReasons": [],
  "testEvidence": {
-  "total": 476,
+  "total": 549,
   "failed": 0,
   "skipped": 0,
   "exitCode": 0,
   "allPassed": true
  },
- "distributedTargets": 8,
+ "distributedTargets": 9,
  "sourceOnlyTargets": 3,
  "results": [
   {
-   "artifact": "artifacts/half_plug_topology_profile.v2.trs_jack_trs.json",
-   "schema": "schemas/half-plug-topology-profile.v2.schema.json",
+   "artifact": "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
+   "schema": "schemas/half-plug-topology-profile.v3.schema.json",
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
@@ -31,8 +183,8 @@
    "semanticErrors": []
   },
   {
-   "artifact": "artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json",
-   "schema": "schemas/half-plug-topology-profile.v2.schema.json",
+   "artifact": "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+   "schema": "schemas/half-plug-topology-profile.v3.schema.json",
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
@@ -62,7 +214,7 @@
   },
   {
    "artifact": "artifacts/test_counts.json",
-   "schema": "schemas/test-counts.v1.schema.json",
+   "schema": "schemas/test-counts.v2.schema.json",
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
@@ -72,7 +224,7 @@
   },
   {
    "artifact": "artifacts/sensitivity.trs_jack_trs.json",
-   "schema": "schemas/event-sensitivity.v1.schema.json",
+   "schema": "schemas/event-sensitivity.v2.schema.json",
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
@@ -82,7 +234,7 @@
   },
   {
    "artifact": "artifacts/sensitivity.trs_jack_trrs.json",
-   "schema": "schemas/event-sensitivity.v1.schema.json",
+   "schema": "schemas/event-sensitivity.v2.schema.json",
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
@@ -92,7 +244,7 @@
   },
   {
    "artifact": "artifacts/topology-robustness.trs_jack_trrs.json",
-   "schema": "schemas/topology-robustness.v2.schema.json",
+   "schema": "schemas/topology-robustness.v3.schema.json",
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
@@ -102,7 +254,7 @@
   },
   {
    "artifact": "artifacts/source-input-manifest.json",
-   "schema": "schemas/source-input-manifest.v1.schema.json",
+   "schema": "schemas/source-input-manifest.v2.schema.json",
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
@@ -113,6 +265,16 @@
   {
    "artifact": "source-input-scope.v1.json",
    "schema": "schemas/source-input-scope.v1.schema.json",
+   "missing": false,
+   "distribution": "RELEASE_ASSET",
+   "schemaErrorCount": 0,
+   "semanticErrorCount": 0,
+   "schemaErrors": [],
+   "semanticErrors": []
+  },
+  {
+   "artifact": "artifacts/source-snapshot.v1.json",
+   "schema": "schemas/source-snapshot.v1.schema.json",
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,

@@ -99,6 +99,9 @@ function walk(root: string, dir: string): string[] {
  */
 export const INPUT_SCOPE_FILE = 'source-input-scope.v1.json'
 
+/** 版と契約変更の対応表の正本。**これも入力である**（内容が変われば digest が動く） */
+export const CONTRACT_MIGRATION_FILE = 'contract-migration.v1.json'
+
 export interface InputScopeGenerator {
   schema: string
   generator: string
@@ -147,6 +150,7 @@ export function loadInputScope(root: string): InputScope {
  */
 export function roleOfInput(scope: InputScope, path: string): string {
   if (path === INPUT_SCOPE_FILE) return 'input-scope'
+  if (path === CONTRACT_MIGRATION_FILE) return 'contract-migration'
   if (path === 'package-lock.json') return 'lockfile'
   if (scope.allowedGeneratedInputs.includes(path)) return 'sensitivity-input'
   if (path.startsWith('src/data/')) return 'model-data'

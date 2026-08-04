@@ -188,9 +188,14 @@ const header = [
   '# **固定には inputDigest を使ってください。**',
   '# ファイル単位の sha256 は「この配布物が改変されていないか」を見るためのものです。',
   '#',
-  '# **この版は schemaVersion 2 です。v1 とは非互換です。**',
-  '# 対応表は profile の contractMigration にあります。',
-  '# v1 を期待する実装は schemaVersion を見て停止してください（沈黙より停止のほうが安全です）。',
+  /**
+   * **版は artifact から引く。**直書きしていたら v0.4.1 まで「schemaVersion 2」のまま残り、
+   * v0.5.0 で 3 になっても気づけなかった（README が v0.1.1〜v0.4.0 で古い版を案内し続けたのと同じ型）。
+   */
+  `# **この版の profile は schemaVersion ${profiles[0]?.schemaVersion ?? '不明'} です。`
+    + `v${(profiles[0]?.schemaVersion ?? 1) - 1} とは非互換です。**`,
+  '# 対応表は profile の contractMigration.history と、同梱の contract-migration.v1.json にあります。',
+  '# 旧版を期待する実装は schemaVersion を見て停止してください（沈黙より停止のほうが安全です）。',
   '#',
   ...profiles.map((p) => `# ${p.variantId.padEnd(14)} inputDigest = ${p.provenance.inputDigest}\n#                profileId   = ${p.profileId}`),
   '#',

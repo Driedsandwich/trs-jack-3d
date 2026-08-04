@@ -31,12 +31,12 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { resolve, join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { INPUT_SCOPE_FILE, assertReleaseAllowed, buildProvenance, listInputs } from '../scripts/provenance'
+import { CONTRACT_MIGRATION_FILE, INPUT_SCOPE_FILE, assertReleaseAllowed, buildProvenance, listInputs } from '../scripts/provenance'
 import { getModel } from '../src/data'
 import { mustFind } from './_must'
 
 const ROOT = resolve(__dirname, '..')
-const PROFILE = resolve(ROOT, 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json')
+const PROFILE = resolve(ROOT, 'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json')
 const profile = JSON.parse(readFileSync(PROFILE, 'utf8'))
 
 const tmps: string[] = []
@@ -56,6 +56,7 @@ function cloneInputs(): string {
   // **範囲定義も入力である**（v0.3.0 フォローアップ P1-2）。
   // 無いと listInputs が落ちる——既定値へ黙って戻さない設計なので、それが正しい
   cpSync(resolve(ROOT, INPUT_SCOPE_FILE), join(d, INPUT_SCOPE_FILE))
+  cpSync(resolve(ROOT, CONTRACT_MIGRATION_FILE), join(d, CONTRACT_MIGRATION_FILE))
   return d
 }
 
@@ -128,7 +129,7 @@ describe('P0-1 provenance の受入試験', () => {
     // revision で固定すると「生成時点で正しかった値」がコミット後に古く見える。
     const a = cloneInputs()
     const before = digestOf(a)
-    const p = join(a, 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json')
+    const p = join(a, 'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json')
     writeFileSync(p, JSON.stringify({ ...JSON.parse(readFileSync(p, 'utf8')), profileId: 'まったく別の値' }))
     expect({ unchanged: digestOf(a) === before }).toEqual({ unchanged: true })
     // profileId も digest から作っているので、同じ入力なら同じ ID になる
@@ -155,9 +156,9 @@ describe('P0-1 provenance の受入試験', () => {
         out,
       ], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, ARTIFACT_DATE: '2026-08-03' }, stdio: ['ignore', 'pipe', 'pipe'] })
     run()
-    const first = readFileSync(join(out, 'half_plug_topology_profile.v2.trs_jack_trs.json'))
+    const first = readFileSync(join(out, 'half_plug_topology_profile.v3.trs_jack_trs.json'))
     run()
-    const second = readFileSync(join(out, 'half_plug_topology_profile.v2.trs_jack_trs.json'))
+    const second = readFileSync(join(out, 'half_plug_topology_profile.v3.trs_jack_trs.json'))
     expect({ bytes: first.length, identical: first.equals(second) }).toEqual({
       bytes: first.length,
       identical: true,

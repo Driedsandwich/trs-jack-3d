@@ -1,0 +1,419 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/validation-results.v2.schema.json",
+ "title": "trs-jack-3d validation results v2",
+ "description": "こちらで意味規則が通っているかの記録。**受け手の環境で同じ判定になる保証ではない。**同梱の schema で自分で検証すること",
+ "type": "object",
+ "required": [
+  "schemaVersion",
+  "generatedAt",
+  "generatedFromCommit",
+  "command",
+  "targetsTotal",
+  "targetsPassed",
+  "allPassed",
+  "distributedTargets",
+  "sourceOnlyTargets",
+  "results",
+  "note",
+  "artifactValidationStatus",
+  "releaseReadinessStatus",
+  "releaseReadinessReasons",
+  "testEvidence",
+  "contractMigration"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "schemaVersion": {
+   "const": 2
+  },
+  "generatedBy": {
+   "type": "string"
+  },
+  "generatedAt": {
+   "type": "string",
+   "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+  },
+  "generatedFromCommit": {
+   "type": "string",
+   "pattern": "^([0-9a-f]{40}|UNKNOWN)$"
+  },
+  "command": {
+   "type": "string"
+  },
+  "targetsTotal": {
+   "type": "integer",
+   "minimum": 1
+  },
+  "targetsPassed": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "allPassed": {
+   "type": "boolean"
+  },
+  "distributedTargets": {
+   "type": "integer",
+   "minimum": 0,
+   "description": "release asset として配布する検証対象の数"
+  },
+  "sourceOnlyTargets": {
+   "type": "integer",
+   "minimum": 0,
+   "description": "**配布しない検証対象の数。**受け手は bundle だけでは全対象を再検証できない"
+  },
+  "results": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": [
+     "artifact",
+     "schema",
+     "missing",
+     "distribution",
+     "schemaErrorCount",
+     "semanticErrorCount",
+     "schemaErrors",
+     "semanticErrors"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "artifact": {
+      "type": "string"
+     },
+     "schema": {
+      "type": [
+       "string",
+       "null"
+      ],
+      "description": "**null なら schema を持たない対象**（package.json のように、こちらが形を決めていないもの）。意味規則だけを回している"
+     },
+     "missing": {
+      "type": "boolean"
+     },
+     "distribution": {
+      "enum": [
+       "RELEASE_ASSET",
+       "SOURCE_ONLY"
+      ],
+      "description": "**SOURCE_ONLY は bundle に入っていない。**受け手が独立再検証できるのは RELEASE_ASSET だけ"
+     },
+     "schemaErrorCount": {
+      "type": "integer",
+      "minimum": 0
+     },
+     "semanticErrorCount": {
+      "type": "integer",
+      "minimum": 0
+     },
+     "schemaErrors": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "semanticErrors": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   }
+  },
+  "note": {
+   "type": "string"
+  },
+  "artifactValidationStatus": {
+   "enum": [
+    "PASS",
+    "FAIL"
+   ],
+   "description": "artifact の**形と意味**が正しいか。テストの成否とは別"
+  },
+  "releaseReadinessStatus": {
+   "enum": [
+    "READY",
+    "NOT_READY"
+   ],
+   "description": "**release として配ってよいか。**release:stage がこれを門にする"
+  },
+  "releaseReadinessReasons": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "description": "NOT_READY の理由。**空のまま NOT_READY にしない**"
+  },
+  "testEvidence": {
+   "oneOf": [
+    {
+     "type": "null"
+    },
+    {
+     "type": "object",
+     "required": [
+      "total",
+      "allPassed"
+     ],
+     "properties": {
+      "total": {
+       "type": "integer"
+      },
+      "failed": {
+       "type": [
+        "integer",
+        "null"
+       ]
+      },
+      "skipped": {
+       "type": "integer"
+      },
+      "exitCode": {
+       "type": [
+        "integer",
+        "null"
+       ]
+      },
+      "allPassed": {
+       "type": "boolean"
+      }
+     }
+    }
+   ],
+   "description": "**形の検証と突き合わせた test の結果。**v0.4.0 では両者を見ていなかった"
+  },
+  "contractMigration": {
+   "type": "object",
+   "description": "**版と契約変更の対応表。**旧語彙を読む消費側が沈黙ではなくエラーになるためのもの。判定は docs/SCHEMA_VERSIONING_POLICY.md の条文（新 schema が許す言語が旧 schema の言語に収まるか）による。**artifact の中身では判定しない**——同じ変更でも、その版の artifact が新しい値を使っているかで答えが反転してしまうため。正本は contract-migration.v1.json",
+   "required": [
+    "schemaId",
+    "previousSchemaId",
+    "fromSchemaVersion",
+    "toSchemaVersion",
+    "breaking",
+    "policy",
+    "consumerAction",
+    "renamedAssets",
+    "history"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schemaId": {
+     "const": "validation-results.v2"
+    },
+    "previousSchemaId": {
+     "const": "validation-results.v1"
+    },
+    "fromSchemaVersion": {
+     "const": 1
+    },
+    "toSchemaVersion": {
+     "const": 2
+    },
+    "breaking": {
+     "const": true
+    },
+    "policy": {
+     "type": "object",
+     "required": [
+      "document",
+      "policyVersion",
+      "decisionRule"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "document": {
+       "const": "docs/SCHEMA_VERSIONING_POLICY.md"
+      },
+      "policyVersion": {
+       "type": "integer",
+       "minimum": 1
+      },
+      "decisionRule": {
+       "const": "language-subset"
+      },
+      "note": {
+       "type": "string"
+      }
+     }
+    },
+    "consumerAction": {
+     "type": "string",
+     "minLength": 1
+    },
+    "renamedAssets": {
+     "type": "array",
+     "minItems": 1,
+     "description": "**条文の外（第6条）。**配布名は schema の言語に現れないので、名前で引く下流は schema 検査に到達する前に「ファイルが無い」で止まる",
+     "items": {
+      "type": "object",
+      "required": [
+       "from",
+       "to",
+       "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "from": {
+        "type": "string"
+       },
+       "to": {
+        "type": "string"
+       },
+       "reason": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "history": {
+     "type": "array",
+     "minItems": 1,
+     "description": "**契約が変わった release を古い順に並べる。**版を据え置いたまま変えた回は versionWasHeld: true で残す。それが条文違反の記録である",
+     "items": {
+      "type": "object",
+      "required": [
+       "shippedIn",
+       "previousRelease",
+       "previousSchemaPath",
+       "currentSchemaPath",
+       "schemaVersionAtTheTime",
+       "versionWasHeld",
+       "policyVerdict",
+       "changes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "shippedIn": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+       },
+       "previousRelease": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+       },
+       "previousSchemaPath": {
+        "type": "string",
+        "description": "**previousRelease 時点でのこの schema のパス。**版を上げるとファイル名が変わるので、記録側に持たせないと機械で突き合わせられない"
+       },
+       "currentSchemaPath": {
+        "type": "string"
+       },
+       "schemaVersionAtTheTime": {
+        "type": "integer",
+        "minimum": 1
+       },
+       "schemaVersionShouldHaveBeen": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "据え置いた回にだけ入る。**条文に照らして本来あるべきだった版**"
+       },
+       "versionWasHeld": {
+        "type": "boolean"
+       },
+       "policyVerdict": {
+        "enum": [
+         "BUMP",
+         "HOLD_RECORD",
+         "HOLD"
+        ]
+       },
+       "recordedRetroactivelyIn": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+        "description": "**いつ遡って書いたか。**当時の判断記録ではないことを隠さない"
+       },
+       "note": {
+        "type": "string"
+       },
+       "changes": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+         "type": "object",
+         "required": [
+          "kind",
+          "effect",
+          "schemaPointer",
+          "reason"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "kind": {
+           "enum": [
+            "field-added",
+            "field-removed",
+            "field-renamed",
+            "field-reshaped",
+            "enum-value-added",
+            "enum-value-removed",
+            "enum-value-renamed",
+            "type-widened",
+            "type-narrowed",
+            "constraint-tightened",
+            "constraint-loosened",
+            "const-changed",
+            "meaning-changed",
+            "description-only"
+           ]
+          },
+          "effect": {
+           "enum": [
+            "WIDEN",
+            "NARROW",
+            "NEUTRAL",
+            "UNDECIDABLE"
+           ],
+           "description": "**scripts/schemaLanguageDiff.mjs の判定をそのまま入れる。**記録と実物がずれたらテストが落ちる"
+          },
+          "schemaPointer": {
+           "type": "string",
+           "pattern": "^/",
+           "description": "**artifact ではなく schema への JSON Pointer。**実在することを機械で確かめる"
+          },
+          "instancePath": {
+           "type": "string",
+           "description": "人が読むための位置。$.a.b[].c 形式"
+          },
+          "added": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "removed": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "from": {
+           "type": [
+            "string",
+            "number",
+            "boolean"
+           ]
+          },
+          "to": {
+           "type": [
+            "string",
+            "number",
+            "boolean"
+           ]
+          },
+          "reason": {
+           "type": "string",
+           "minLength": 1
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

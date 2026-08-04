@@ -11,9 +11,10 @@
 
  "requiredExactFiles": [
   "package-lock.json",
-  "schemas/event-sensitivity.v1.schema.json",
-  "schemas/half-plug-topology-profile.v2.schema.json",
-  "schemas/topology-robustness.v2.schema.json",
+  "contract-migration.v1.json",
+  "schemas/event-sensitivity.v2.schema.json",
+  "schemas/half-plug-topology-profile.v3.schema.json",
+  "schemas/topology-robustness.v3.schema.json",
   "scripts/exportHalfPlugProfile.ts",
   "scripts/provenance.ts",
   "scripts/searchTopologyRobustness.ts",
@@ -35,19 +36,19 @@
 
  "generators": {
   "profile": {
-   "schema": "schemas/half-plug-topology-profile.v2.schema.json",
+   "schema": "schemas/half-plug-topology-profile.v3.schema.json",
    "generator": "scripts/exportHalfPlugProfile.ts",
    "usesGeneratedInputs": true,
    "note": "variant ごとの感度 artifact を入力に読む。どれを読むかは variantSlug で決まる"
   },
   "sensitivity": {
-   "schema": "schemas/event-sensitivity.v1.schema.json",
+   "schema": "schemas/event-sensitivity.v2.schema.json",
    "generator": "scripts/sensitivityEvents.ts",
    "usesGeneratedInputs": false,
    "note": "自分自身が出力なので、artifacts/sensitivity.*.json を入力にしてはいけない"
   },
   "robustness": {
-   "schema": "schemas/topology-robustness.v2.schema.json",
+   "schema": "schemas/topology-robustness.v3.schema.json",
    "generator": "scripts/searchTopologyRobustness.ts",
    "usesGeneratedInputs": false
   }
@@ -58,6 +59,7 @@
  "commonInputs": [
   "scripts/provenance.ts",
   "source-input-scope.v1.json",
+  "contract-migration.v1.json",
   "package-lock.json"
  ],
  "commonInputsNote": "どの生成器も読む入力。recursiveDirectories 配下と合わせて、全 artifact に共通で入る。",

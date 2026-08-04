@@ -25,7 +25,7 @@ const DIR = 'test/fixtures/topology-robustness'
 const R = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 
 const ajv = new Ajv({ allErrors: true, strict: false })
-const validateSchema = ajv.compile(R('schemas/topology-robustness.v2.schema.json'))
+const validateSchema = ajv.compile(R('schemas/topology-robustness.v3.schema.json'))
 
 /** fixture を 2 層に通して、**どちらが弾いたか**を返す */
 function layers(name: string) {

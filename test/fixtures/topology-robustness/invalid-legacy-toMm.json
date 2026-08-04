@@ -1,39 +1,171 @@
 {
- "schemaVersion": 2,
+ "schemaVersion": 3,
  "generatedBy": "npm run search:robustness",
  "contractMigration": {
-  "fromSchemaVersion": 1,
-  "toSchemaVersion": 2,
+  "schemaId": "topology-robustness.v3",
+  "previousSchemaId": "topology-robustness.v2",
+  "fromSchemaVersion": 2,
+  "toSchemaVersion": 3,
   "breaking": true,
-  "renamedFields": [
+  "policy": {
+   "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+   "policyVersion": 1,
+   "decisionRule": "language-subset",
+   "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+  },
+  "consumerAction": "**schemaVersion で分岐すること。**2 を期待する実装は 3 を受け取ったら停止する。区間の終端が要るなら endExclusiveMm を、観測の最後の点が要るなら lastSampleMm を使う（v2 から変わっていない）。**artifact の配布名は変わらない**。",
+  "renamedAssets": [
    {
-    "field": "nominalConfiguration.windows[].fromMm / counterExamples[].windows[].fromMm",
-    "from": "fromMm",
-    "to": "startMm",
-    "reason": "始まりは profile の nominalStartMm と一致する。名前を揃えた"
-   },
-   {
-    "field": "windows[].toMm",
-    "from": "toMm",
-    "to": "lastSampleMm",
-    "reason": "**「終わり」という語で 2 つの違う量を指していた。**旧 toMm は最後に当たった標本位置であって区間の終端ではない"
+    "from": "topology-robustness.v2.schema.json",
+    "to": "topology-robustness.v3.schema.json",
+    "reason": "schema ファイル名。artifact 側の名前は変わらない"
    }
   ],
-  "addedFields": [
+  "history": [
    {
-    "field": "windows[].endExclusiveMm",
-    "reason": "profile の nominalEndMm と一致する本当の終端。旧 toMm + stepMm"
+    "shippedIn": "v0.3.0",
+    "previousRelease": "v0.2.0",
+    "previousSchemaPath": "schemas/topology-robustness.v1.schema.json",
+    "currentSchemaPath": "schemas/topology-robustness.v2.schema.json",
+    "schemaVersionAtTheTime": 2,
+    "versionWasHeld": false,
+    "policyVerdict": "BUMP",
+    "changes": [
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaVersion/const",
+      "instancePath": "$.schemaVersion",
+      "from": 1,
+      "to": 2,
+      "reason": "版を上げた。**この回は条文どおりに上げている**"
+     },
+     {
+      "kind": "field-renamed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/nominalConfiguration/properties/windows/items",
+      "instancePath": "$.nominalConfiguration.windows[]",
+      "removed": [
+       "fromMm",
+       "toMm"
+      ],
+      "added": [
+       "startMm",
+       "lastSampleMm",
+       "endExclusiveMm"
+      ],
+      "reason": "**「終わり」という語で 2 つの違う量を指していた。**旧 toMm は最後に当たった標本位置であって区間の終端ではない"
+     },
+     {
+      "kind": "field-renamed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/counterExamples/items/properties/windows/items",
+      "instancePath": "$.counterExamples[].windows[]",
+      "removed": [
+       "fromMm",
+       "toMm"
+      ],
+      "added": [
+       "startMm",
+       "lastSampleMm",
+       "endExclusiveMm"
+      ],
+      "reason": "同上"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/windowEndConvention",
+      "instancePath": "$.windowEndConvention",
+      "added": [
+       "windowEndConvention"
+      ],
+      "reason": "端点の規約を機械可読にした"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/contractMigration",
+      "instancePath": "$.contractMigration",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "対応表そのもの"
+     },
+     {
+      "kind": "constraint-tightened",
+      "effect": "NARROW",
+      "schemaPointer": "/required",
+      "instancePath": "$",
+      "added": [
+       "contractMigration",
+       "windowEndConvention"
+      ],
+      "reason": "新しい項目を必須にした"
+     }
+    ]
    },
    {
-    "field": "windowEndConvention",
-    "reason": "端点の規約を機械可読にする"
+    "shippedIn": "v0.4.0",
+    "previousRelease": "v0.3.0",
+    "previousSchemaPath": "schemas/topology-robustness.v2.schema.json",
+    "currentSchemaPath": "schemas/topology-robustness.v2.schema.json",
+    "schemaVersionAtTheTime": 2,
+    "schemaVersionShouldHaveBeen": 3,
+    "versionWasHeld": true,
+    "policyVerdict": "BUMP",
+    "recordedRetroactivelyIn": "v0.5.0",
+    "changes": [
+     {
+      "kind": "enum-value-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+      "instancePath": "$.provenance.inputFiles[].role",
+      "added": [
+       "input-scope"
+      ],
+      "reason": "入力の範囲定義 source-input-scope.v1.json が入力になった。**追加のみだが、旧 schema を pin した consumer はこの値を拒む**"
+     }
+    ]
    },
    {
-    "field": "contractMigration",
-    "reason": "この表そのもの"
+    "shippedIn": "v0.5.0",
+    "previousRelease": "v0.4.1",
+    "previousSchemaPath": "schemas/topology-robustness.v2.schema.json",
+    "currentSchemaPath": "schemas/topology-robustness.v3.schema.json",
+    "schemaVersionAtTheTime": 3,
+    "versionWasHeld": false,
+    "policyVerdict": "BUMP",
+    "changes": [
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaVersion/const",
+      "instancePath": "$.schemaVersion",
+      "from": 2,
+      "to": 3,
+      "reason": "版を上げた。**下流はここで分岐して止まる**"
+     },
+     {
+      "kind": "field-reshaped",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/contractMigration",
+      "instancePath": "$.contractMigration",
+      "reason": "単一遷移のオブジェクトから history 形式へ変えた"
+     },
+     {
+      "kind": "enum-value-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+      "instancePath": "$.provenance.inputFiles[].role",
+      "added": [
+       "contract-migration"
+      ],
+      "reason": "版と契約変更の対応表の正本 contract-migration.v1.json が入力になった"
+     }
+    ]
    }
-  ],
-  "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。区間の終端が要るなら endExclusiveMm を、観測の最後の点が要るなら lastSampleMm を使う。"
+  ]
  },
  "windowEndConvention": "EXCLUSIVE",
  "variantId": "TRS|JACK-TRRS",

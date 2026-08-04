@@ -1,0 +1,439 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/source-input-manifest.v2.schema.json",
+ "title": "trs-jack-3d source input manifest v2",
+ "description": "artifact の入力ファイルを tag source と独立に検算するための一覧。**この manifest 自身は証明ではない。**tag source archive を取って自分で計算すること",
+ "type": "object",
+ "required": [
+  "schemaVersion",
+  "generatedAt",
+  "generatedFromCommit",
+  "purpose",
+  "inputScope",
+  "inputFilesTotal",
+  "inconsistentAcrossArtifacts",
+  "mismatchedWithWorkingTreeAtBuild",
+  "inputFiles",
+  "verificationRecipe",
+  "note",
+  "contractMigration"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "schemaVersion": {
+   "const": 2
+  },
+  "generatedBy": {
+   "type": "string"
+  },
+  "generatedAt": {
+   "type": "string",
+   "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+  },
+  "generatedFromCommit": {
+   "type": "string",
+   "pattern": "^([0-9a-f]{40}|UNKNOWN)$"
+  },
+  "purpose": {
+   "type": "string"
+  },
+  "inputScope": {
+   "type": "object",
+   "description": "**この一覧が「全部」なのかを確かめるための範囲**（v0.3.0 フォローアップ P1-2）。件数と sha256 だけでは記録漏れを見つけられない——落ちている入力があっても、残った分は全部一致する。範囲を渡せば受け手は自分の source を歩いて探せる",
+   "additionalProperties": false,
+   "required": [
+    "file",
+    "sha256",
+    "recursiveDirectories",
+    "requiredExactFiles",
+    "allowedGeneratedInputs",
+    "excludedOutputs",
+    "notCovered",
+    "verifyCommand"
+   ],
+   "properties": {
+    "file": {
+     "const": "source-input-scope.v1.json"
+    },
+    "sha256": {
+     "type": "string",
+     "pattern": "^[0-9a-f]{64}$"
+    },
+    "recursiveDirectories": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "string"
+     }
+    },
+    "requiredExactFiles": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "string"
+     }
+    },
+    "allowedGeneratedInputs": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "excludedOutputs": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "string"
+     }
+    },
+    "notCovered": {
+     "type": "array",
+     "minItems": 1,
+     "description": "**inputDigest が覆っていないもの。**「一致した」は「これらも同じだった」を意味しない",
+     "items": {
+      "type": "object",
+      "required": [
+       "what",
+       "why",
+       "consequence"
+      ],
+      "properties": {
+       "what": {
+        "type": "string"
+       },
+       "why": {
+        "type": "string"
+       },
+       "consequence": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "verifyCommand": {
+     "type": "string"
+    }
+   }
+  },
+  "inputFilesTotal": {
+   "type": "integer",
+   "minimum": 1
+  },
+  "inconsistentAcrossArtifacts": {
+   "type": "integer",
+   "minimum": 0,
+   "description": "同じパスが artifact 間で違う sha256 で現れた数。**0 でなければどれかが古い入力から作られている**"
+  },
+  "mismatchedWithWorkingTreeAtBuild": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "inputFiles": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": [
+     "path",
+     "role",
+     "recordedSha256",
+     "consistentAcrossArtifacts",
+     "actualSha256AtBuild",
+     "matchesWorkingTree",
+     "consumedBy"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "path": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string"
+     },
+     "recordedSha256": {
+      "oneOf": [
+       {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+       },
+       {
+        "type": "array",
+        "minItems": 2,
+        "items": {
+         "type": "string",
+         "pattern": "^[0-9a-f]{64}$"
+        }
+       }
+      ],
+      "description": "**配列なら artifact 間で食い違っている。**先勝ちで潰さず両方を残す"
+     },
+     "consistentAcrossArtifacts": {
+      "type": "boolean"
+     },
+     "actualSha256AtBuild": {
+      "oneOf": [
+       {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "matchesWorkingTree": {
+      "type": "boolean"
+     },
+     "consumedBy": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   }
+  },
+  "verificationRecipe": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "string"
+   }
+  },
+  "note": {
+   "type": "string"
+  },
+  "contractMigration": {
+   "type": "object",
+   "description": "**版と契約変更の対応表。**旧語彙を読む消費側が沈黙ではなくエラーになるためのもの。判定は docs/SCHEMA_VERSIONING_POLICY.md の条文（新 schema が許す言語が旧 schema の言語に収まるか）による。**artifact の中身では判定しない**——同じ変更でも、その版の artifact が新しい値を使っているかで答えが反転してしまうため。正本は contract-migration.v1.json",
+   "required": [
+    "schemaId",
+    "previousSchemaId",
+    "fromSchemaVersion",
+    "toSchemaVersion",
+    "breaking",
+    "policy",
+    "consumerAction",
+    "renamedAssets",
+    "history"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schemaId": {
+     "const": "source-input-manifest.v2"
+    },
+    "previousSchemaId": {
+     "const": "source-input-manifest.v1"
+    },
+    "fromSchemaVersion": {
+     "const": 1
+    },
+    "toSchemaVersion": {
+     "const": 2
+    },
+    "breaking": {
+     "const": true
+    },
+    "policy": {
+     "type": "object",
+     "required": [
+      "document",
+      "policyVersion",
+      "decisionRule"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "document": {
+       "const": "docs/SCHEMA_VERSIONING_POLICY.md"
+      },
+      "policyVersion": {
+       "type": "integer",
+       "minimum": 1
+      },
+      "decisionRule": {
+       "const": "language-subset"
+      },
+      "note": {
+       "type": "string"
+      }
+     }
+    },
+    "consumerAction": {
+     "type": "string",
+     "minLength": 1
+    },
+    "renamedAssets": {
+     "type": "array",
+     "minItems": 1,
+     "description": "**条文の外（第6条）。**配布名は schema の言語に現れないので、名前で引く下流は schema 検査に到達する前に「ファイルが無い」で止まる",
+     "items": {
+      "type": "object",
+      "required": [
+       "from",
+       "to",
+       "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "from": {
+        "type": "string"
+       },
+       "to": {
+        "type": "string"
+       },
+       "reason": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "history": {
+     "type": "array",
+     "minItems": 1,
+     "description": "**契約が変わった release を古い順に並べる。**版を据え置いたまま変えた回は versionWasHeld: true で残す。それが条文違反の記録である",
+     "items": {
+      "type": "object",
+      "required": [
+       "shippedIn",
+       "previousRelease",
+       "previousSchemaPath",
+       "currentSchemaPath",
+       "schemaVersionAtTheTime",
+       "versionWasHeld",
+       "policyVerdict",
+       "changes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "shippedIn": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+       },
+       "previousRelease": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+       },
+       "previousSchemaPath": {
+        "type": "string",
+        "description": "**previousRelease 時点でのこの schema のパス。**版を上げるとファイル名が変わるので、記録側に持たせないと機械で突き合わせられない"
+       },
+       "currentSchemaPath": {
+        "type": "string"
+       },
+       "schemaVersionAtTheTime": {
+        "type": "integer",
+        "minimum": 1
+       },
+       "schemaVersionShouldHaveBeen": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "据え置いた回にだけ入る。**条文に照らして本来あるべきだった版**"
+       },
+       "versionWasHeld": {
+        "type": "boolean"
+       },
+       "policyVerdict": {
+        "enum": [
+         "BUMP",
+         "HOLD_RECORD",
+         "HOLD"
+        ]
+       },
+       "recordedRetroactivelyIn": {
+        "type": "string",
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+        "description": "**いつ遡って書いたか。**当時の判断記録ではないことを隠さない"
+       },
+       "note": {
+        "type": "string"
+       },
+       "changes": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+         "type": "object",
+         "required": [
+          "kind",
+          "effect",
+          "schemaPointer",
+          "reason"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "kind": {
+           "enum": [
+            "field-added",
+            "field-removed",
+            "field-renamed",
+            "field-reshaped",
+            "enum-value-added",
+            "enum-value-removed",
+            "enum-value-renamed",
+            "type-widened",
+            "type-narrowed",
+            "constraint-tightened",
+            "constraint-loosened",
+            "const-changed",
+            "meaning-changed",
+            "description-only"
+           ]
+          },
+          "effect": {
+           "enum": [
+            "WIDEN",
+            "NARROW",
+            "NEUTRAL",
+            "UNDECIDABLE"
+           ],
+           "description": "**scripts/schemaLanguageDiff.mjs の判定をそのまま入れる。**記録と実物がずれたらテストが落ちる"
+          },
+          "schemaPointer": {
+           "type": "string",
+           "pattern": "^/",
+           "description": "**artifact ではなく schema への JSON Pointer。**実在することを機械で確かめる"
+          },
+          "instancePath": {
+           "type": "string",
+           "description": "人が読むための位置。$.a.b[].c 形式"
+          },
+          "added": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "removed": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "from": {
+           "type": [
+            "string",
+            "number",
+            "boolean"
+           ]
+          },
+          "to": {
+           "type": [
+            "string",
+            "number",
+            "boolean"
+           ]
+          },
+          "reason": {
+           "type": "string",
+           "minLength": 1
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

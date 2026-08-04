@@ -1,84 +1,294 @@
 {
- "schemaVersion": 2,
- "schemaId": "half-plug-topology-profile.v2",
+ "schemaVersion": 3,
+ "schemaId": "half-plug-topology-profile.v3",
  "contractMigration": {
-  "fromSchemaVersion": 1,
-  "toSchemaVersion": 2,
+  "schemaId": "half-plug-topology-profile.v3",
+  "previousSchemaId": "half-plug-topology-profile.v2",
+  "fromSchemaVersion": 2,
+  "toSchemaVersion": 3,
   "breaking": true,
-  "schemaId": "half-plug-topology-profile.v2",
-  "previousSchemaId": "half-plug-topology-profile.v1",
-  "renamedEnumValues": [
+  "policy": {
+   "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+   "policyVersion": 1,
+   "decisionRule": "language-subset",
+   "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+  },
+  "consumerAction": "**schemaVersion で分岐すること。**2 を期待する実装は 3 を受け取ったら停止し、この表で対応づける。**配布名も変わる**ので、v2 のファイル名で引いている lock は schema 検査へ到達する前に「ファイルが無い」で止まる（renamedAssets）。契約そのもの（区間・event・topology 列・座標系・role の enum）は v2 から変わっていない。",
+  "renamedAssets": [
    {
-    "field": "intervals[].electricalTopology.topologyClass",
-    "from": "fully-seated",
-    "to": "all-expected-functions-match",
-    "introducedIn": "schemaVersion 2",
-    "reason": "「プラグ肩が当たった」と読めたが、実体は reasonCode のとおり ALL_EXPECTED_FUNCTIONS_MATCH でしかない"
+    "from": "half_plug_topology_profile.v2.trs_jack_trs.json",
+    "to": "half_plug_topology_profile.v3.trs_jack_trs.json",
+    "reason": "配布名に schema の版が入っている。**名前で引く lock はここで止まる**"
    },
    {
-    "field": "events[].spreadStatus",
-    "from": "MEASURED",
-    "to": "MODEL_SWEEP_EVENT_SPECIFIC",
-    "introducedIn": "v0.1.1 (schemaVersion 1 のまま変えてしまった)",
-    "reason": "実物の測定と誤認される。実際はモデルのパラメータを振った結果"
-   },
-   {
-    "field": "events[].spreadStatus",
-    "from": "NOT_EVENT_SPECIFIC",
-    "to": "MODEL_SWEEP_NOT_EVENT_SPECIFIC",
-    "introducedIn": "v0.1.1 (schemaVersion 1 のまま変えてしまった)",
+    "from": "half_plug_topology_profile.v2.trs_jack_trrs.json",
+    "to": "half_plug_topology_profile.v3.trs_jack_trrs.json",
     "reason": "同上"
    },
    {
-    "field": "events[].spreadStatus",
-    "from": "NOT_MEASURED",
-    "to": "NOT_ANALYZED",
-    "introducedIn": "v0.1.1 (schemaVersion 1 のまま変えてしまった)",
-    "reason": "同上"
+    "from": "half-plug-topology-profile.v2.schema.json",
+    "to": "half-plug-topology-profile.v3.schema.json",
+    "reason": "schema ファイル名"
    }
   ],
-  "addedFields": [
+  "history": [
    {
-    "field": "schemaId",
-    "introducedIn": "schemaVersion 2"
+    "shippedIn": "v0.1.1",
+    "previousRelease": "v0.1.0",
+    "previousSchemaPath": "schemas/half-plug-topology-profile.v1.schema.json",
+    "currentSchemaPath": "schemas/half-plug-topology-profile.v1.schema.json",
+    "schemaVersionAtTheTime": 1,
+    "schemaVersionShouldHaveBeen": 2,
+    "versionWasHeld": true,
+    "policyVerdict": "BUMP",
+    "recordedRetroactivelyIn": "v0.5.0",
+    "changes": [
+     {
+      "kind": "enum-value-renamed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/events/items/properties/spreadStatus/enum",
+      "instancePath": "$.events[].spreadStatus",
+      "removed": [
+       "MEASURED",
+       "NOT_EVENT_SPECIFIC",
+       "NOT_MEASURED"
+      ],
+      "added": [
+       "MODEL_SWEEP_EVENT_SPECIFIC",
+       "MODEL_SWEEP_NOT_EVENT_SPECIFIC",
+       "NOT_ANALYZED"
+      ],
+      "reason": "MEASURED が実物の測定と誤読される。実際はモデルのパラメータを振った結果である。**値が入れ替わったので、旧 schema でも新 schema でも一方の artifact は落ちる**"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/sensitivitySummary/properties/eventSpreadSource",
+      "instancePath": "$.sensitivitySummary.eventSpreadSource",
+      "added": [
+       "eventSpreadSource"
+      ],
+      "reason": "幅の出どころを機械可読にした"
+     }
+    ]
    },
    {
-    "field": "contractMigration",
-    "introducedIn": "schemaVersion 2"
+    "shippedIn": "v0.2.0",
+    "previousRelease": "v0.1.1",
+    "previousSchemaPath": "schemas/half-plug-topology-profile.v1.schema.json",
+    "currentSchemaPath": "schemas/half-plug-topology-profile.v1.schema.json",
+    "schemaVersionAtTheTime": 1,
+    "schemaVersionShouldHaveBeen": 2,
+    "versionWasHeld": true,
+    "policyVerdict": "BUMP",
+    "recordedRetroactivelyIn": "v0.5.0",
+    "changes": [
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/provenance/properties/inputSettings",
+      "instancePath": "$.provenance.inputSettings",
+      "added": [
+       "inputSettings"
+      ],
+      "reason": "生成時の設定を残すようにした"
+     },
+     {
+      "kind": "field-reshaped",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/sensitivitySummary",
+      "instancePath": "$.sensitivitySummary",
+      "added": [
+       "basis",
+       "eventSpreadAvailable",
+       "globalSummaryAvailable"
+      ],
+      "reason": "感度の要約に「何を根拠にしたか」「そもそも取れたか」を足し、必須にした"
+     }
+    ],
+    "note": "**v0.2.0 では v2 を新設したが、同時に v1 の schema ファイルも直していた。**v0.2.0 が配った artifact は v2 なので実害は無かったが、条文には反する"
    },
    {
-    "field": "mechanicalInsertion",
-    "introducedIn": "schemaVersion 2"
+    "shippedIn": "v0.2.0",
+    "previousRelease": "v0.1.1",
+    "previousSchemaPath": "schemas/half-plug-topology-profile.v1.schema.json",
+    "currentSchemaPath": "schemas/half-plug-topology-profile.v2.schema.json",
+    "schemaVersionAtTheTime": 2,
+    "versionWasHeld": false,
+    "policyVerdict": "BUMP",
+    "changes": [
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaVersion/const",
+      "instancePath": "$.schemaVersion",
+      "from": 1,
+      "to": 2,
+      "reason": "版を上げた。**この回は条文どおりに上げている**"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/schemaId",
+      "instancePath": "$.schemaId",
+      "added": [
+       "schemaId"
+      ],
+      "reason": "版だけでなく schema の同一性も持たせた"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/contractMigration",
+      "instancePath": "$.contractMigration",
+      "added": [
+       "contractMigration"
+      ],
+      "reason": "対応表そのもの"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/mechanicalInsertion",
+      "instancePath": "$.mechanicalInsertion",
+      "added": [
+       "mechanicalInsertion"
+      ],
+      "reason": "機械的な挿入量を電気的トポロジーと分けた"
+     },
+     {
+      "kind": "enum-value-renamed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/intervals/items/properties/electricalTopology/properties/topologyClass/enum",
+      "instancePath": "$.intervals[].electricalTopology.topologyClass",
+      "removed": [
+       "fully-seated"
+      ],
+      "added": [
+       "all-expected-functions-match"
+      ],
+      "reason": "「プラグ肩が当たった」と読めたが、実体は reasonCode のとおり ALL_EXPECTED_FUNCTIONS_MATCH でしかない"
+     },
+     {
+      "kind": "field-reshaped",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/coordinateSystem",
+      "instancePath": "$.coordinateSystem",
+      "added": [
+       "crossProfileComparable",
+       "normalizedNote",
+       "normalizedScope"
+      ],
+      "reason": "正規化座標が variant を跨いで比較できないことを明示した"
+     },
+     {
+      "kind": "field-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/provenance/properties/inputSettings",
+      "instancePath": "$.provenance.inputSettings",
+      "added": [
+       "inputSettings"
+      ],
+      "reason": "v1 側と同じ追加"
+     },
+     {
+      "kind": "field-reshaped",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/sensitivitySummary",
+      "instancePath": "$.sensitivitySummary",
+      "added": [
+       "basis",
+       "eventSpreadAvailable",
+       "globalSummaryAvailable"
+      ],
+      "reason": "v1 側と同じ変更"
+     },
+     {
+      "kind": "constraint-tightened",
+      "effect": "NARROW",
+      "schemaPointer": "/required",
+      "instancePath": "$",
+      "added": [
+       "contractMigration",
+       "mechanicalInsertion",
+       "schemaId"
+      ],
+      "reason": "新しい項目を必須にした"
+     }
+    ]
    },
    {
-    "field": "coordinateSystem.normalizedScope",
-    "introducedIn": "schemaVersion 2"
+    "shippedIn": "v0.4.0",
+    "previousRelease": "v0.3.0",
+    "previousSchemaPath": "schemas/half-plug-topology-profile.v2.schema.json",
+    "currentSchemaPath": "schemas/half-plug-topology-profile.v2.schema.json",
+    "schemaVersionAtTheTime": 2,
+    "schemaVersionShouldHaveBeen": 3,
+    "versionWasHeld": true,
+    "policyVerdict": "BUMP",
+    "recordedRetroactivelyIn": "v0.5.0",
+    "changes": [
+     {
+      "kind": "enum-value-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+      "instancePath": "$.provenance.inputFiles[].role",
+      "added": [
+       "input-scope"
+      ],
+      "reason": "入力の範囲定義 source-input-scope.v1.json が入力になった。**追加のみだが、旧 schema を pin した consumer はこの値を拒む**"
+     }
+    ]
    },
    {
-    "field": "coordinateSystem.crossProfileComparable",
-    "introducedIn": "schemaVersion 2"
-   },
-   {
-    "field": "sensitivitySummary.eventSpreadAvailable",
-    "introducedIn": "v0.1.2 (追加のみ)"
-   },
-   {
-    "field": "sensitivitySummary.globalSummaryAvailable",
-    "introducedIn": "v0.1.2 (追加のみ)"
-   },
-   {
-    "field": "sensitivitySummary.basis",
-    "introducedIn": "v0.1.2 (追加のみ)"
-   },
-   {
-    "field": "provenance.inputFiles[].role に \"input-scope\" を追加",
-    "introducedIn": "v0.3.0 フォローアップ P1-2 (追加のみ)"
+    "shippedIn": "v0.5.0",
+    "previousRelease": "v0.4.1",
+    "previousSchemaPath": "schemas/half-plug-topology-profile.v2.schema.json",
+    "currentSchemaPath": "schemas/half-plug-topology-profile.v3.schema.json",
+    "schemaVersionAtTheTime": 3,
+    "versionWasHeld": false,
+    "policyVerdict": "BUMP",
+    "changes": [
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaVersion/const",
+      "instancePath": "$.schemaVersion",
+      "from": 2,
+      "to": 3,
+      "reason": "版を上げた。**下流はここで分岐して止まる**"
+     },
+     {
+      "kind": "const-changed",
+      "effect": "UNDECIDABLE",
+      "schemaPointer": "/properties/schemaId/const",
+      "instancePath": "$.schemaId",
+      "from": "half-plug-topology-profile.v2",
+      "to": "half-plug-topology-profile.v3",
+      "reason": "schema の同一性も上げた"
+     },
+     {
+      "kind": "field-reshaped",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/contractMigration",
+      "instancePath": "$.contractMigration",
+      "reason": "この履歴そのもの。単一遷移のオブジェクトから history 形式へ変えた。**版を据え置いたまま変えた回を分けて記録できなかった**のが v0.4.0 の取りこぼしの原因"
+     },
+     {
+      "kind": "enum-value-added",
+      "effect": "WIDEN",
+      "schemaPointer": "/properties/provenance/properties/inputFiles/items/properties/role/enum",
+      "instancePath": "$.provenance.inputFiles[].role",
+      "added": [
+       "contract-migration"
+      ],
+      "reason": "版と契約変更の対応表の正本 contract-migration.v1.json が入力になった"
+     }
+    ]
    }
-  ],
-  "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。旧語彙のまま読むと、値で絞り込む箇所が「そのデータが 1 件も無い」と区別できず、沈黙して壊れる。",
-  "versionSelectionEvidence": "下流 release-verifier.mjs は schemaVersion を見て拒否するが contractRevision はどこも読まない。2026-08-03 に両方を実際に import させて確かめた (A: 停止 / B: PASS)。"
+  ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRS:796498ebba63",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:c7a093b16110",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -113,16 +323,16 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "38d856a5d9d88b6f1ebbcae63f8e5ec1a0047dd3",
+ "sourceRevision": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
  "generatedAt": "2026-08-04",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "38d856a5d9d88b6f1ebbcae63f8e5ec1a0047dd3",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "796498ebba637a948c52c99568143f1e06571b8900899dd7165b3776e7454420",
+  "inputDigest": "c7a093b16110467c89d0bbd0c78520d60a9ee65827a3c1095db0bcd89796dde1",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -132,32 +342,37 @@
    },
    {
     "path": "artifacts/sensitivity.trs_jack_trs.json",
-    "sha256": "a98f62179c6882160c3ce7422d6bdeef2f5d00164c8d3833875f9b2942fea4fd",
+    "sha256": "184de49a5db0408c6f8a05faffbd6e3c7df5d420361e9eb64c5c5d6cf6a08cea",
     "role": "sensitivity-input"
    },
    {
+    "path": "contract-migration.v1.json",
+    "sha256": "8b33e236c248543f70ce8d9de06004ef73f8b4e18f434a8c946e482a883665c5",
+    "role": "contract-migration"
+   },
+   {
     "path": "package-lock.json",
-    "sha256": "0cb561622cfcbcc74f76e6dbde5bf645885d4a693a901e692b12e8e5e5eea5e3",
+    "sha256": "f7d1bb2301009c21f4fff8b189f49a6927385fd9dbae0f56ea6cd13b2c88a4d8",
     "role": "lockfile"
    },
    {
-    "path": "schemas/half-plug-topology-profile.v2.schema.json",
-    "sha256": "ecc48eab261d60169ec8e124736a909258a590cfd77817fe340d5804ad827152",
+    "path": "schemas/half-plug-topology-profile.v3.schema.json",
+    "sha256": "ea5948a9b7631176bfaf5d3fe8e7cd422ef333cc07b6de67521c1c8dbcb735dd",
     "role": "schema"
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "ad61ad252be658eaf36a07214f9aa0434c3d9255387d405649a1cf8f3d19b22a",
+    "sha256": "be6f222129ed14c80b41a91456151296d381169aff79bd036b4a2b2ac7730804",
     "role": "generator"
    },
    {
     "path": "scripts/provenance.ts",
-    "sha256": "f79999ce246974086348a8b77b791e16895c377e58294e88d2a09471dd3e1ebb",
+    "sha256": "ad943f639e4cd9531fc13f1bc549ad891a8f3247911f66c21bc712fca6062f00",
     "role": "generator"
    },
    {
     "path": "source-input-scope.v1.json",
-    "sha256": "8822587d5c190c4b5acccf3f4fdd520d022e9e8559a0d7b72e31e115ab16e997",
+    "sha256": "b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5",
     "role": "input-scope"
    },
    {
@@ -246,7 +461,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" --release",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\"",
   "artifactDate": "2026-08-04"
  },
  "fullInsertionDepthMm": 14,
@@ -3833,8 +4048,8 @@
     "jack.contact.sleeve.axialCenter",
     "jack.contact.sleeve.padWidth"
    ],
-   "generatedFromCommit": "06827505d66e13200bae66442f73324f8cc0b5dc",
-   "inputDigest": "04cf8cee07694502af361c73545430ce87fcc6f4450713acbe68067df6fbd328",
+   "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
+   "inputDigest": "15bf3d2cc80124d74611714cba1e535008903de8af2896423162f6e49ce9c452",
    "configurationsUsable": 869,
    "shippedInsideSweptRange": true
   },

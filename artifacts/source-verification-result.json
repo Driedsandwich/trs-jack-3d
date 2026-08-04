@@ -10,7 +10,7 @@
   "sha256": "dd03e574a2fce72b7867a6a75f4efeb6de585038966ff78cef7f3d6463419a11"
  },
  "sourceOrigin": "directory:.",
- "generatedFromCommit": "162f4cd7d93689a21b7d63260571926fee2b377b",
+ "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
  "releaseCommit": null,
  "generatedAt": "2026-08-04",
  "status": "OK",
@@ -20,8 +20,8 @@
   "scopeSource": "override:source-input-scope.v1.json"
  },
  "counts": {
-  "checked": 29,
-  "matched": 29,
+  "checked": 30,
+  "matched": 30,
   "mismatched": 0,
   "missingInSource": 0,
   "unrecordedInputCandidates": 0,

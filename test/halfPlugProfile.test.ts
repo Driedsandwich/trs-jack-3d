@@ -31,13 +31,13 @@ import { getModel } from '../src/data'
 const ROOT = resolve(__dirname, '..')
 const json = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 
-const schema = json('schemas/half-plug-topology-profile.v2.schema.json')
+const schema = json('schemas/half-plug-topology-profile.v3.schema.json')
 
 // variant ごとに profile を出すので、**全部を検査する**。
 // 1 つだけ見て通すと、追加した variant が壊れていても気づけない。
 const PROFILES = [
-  ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json'],
-  ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json'],
+  ['TRS|JACK-TRS', 'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json'],
+  ['TRS|JACK-TRRS', 'artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json'],
 ] as const
 const profiles = PROFILES.map(([id, path]) => [id, json(path)] as const)
 /** 既定 variant。個別の主張はこちらで見る */

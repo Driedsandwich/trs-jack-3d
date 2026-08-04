@@ -41,6 +41,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { buildProvenance, listRobustnessInputs } from './provenance'
+import { migrationFor } from './contractMigration.mjs'
 import { buildModelWithOverrides, getModel } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
 import { sweep } from '../src/model/sweep'
@@ -458,42 +459,10 @@ const provenance = buildProvenance({
  * 値を読む側は `undefined` を受け取り、**エラーも警告も出ないまま壊れる。**
  * v0.1.0 → v0.1.1 の `spreadStatus` で実際に起きた。同じことを別 artifact で繰り返さない。
  */
-const CONTRACT_MIGRATION = {
-  fromSchemaVersion: 1,
-  toSchemaVersion: 2,
-  breaking: true,
-  renamedFields: [
-    {
-      field: 'nominalConfiguration.windows[].fromMm / counterExamples[].windows[].fromMm',
-      from: 'fromMm',
-      to: 'startMm',
-      reason: '始まりは profile の nominalStartMm と一致する。名前を揃えた',
-    },
-    {
-      field: 'windows[].toMm',
-      from: 'toMm',
-      to: 'lastSampleMm',
-      reason: '**「終わり」という語で 2 つの違う量を指していた。**旧 toMm は最後に当たった標本位置であって区間の終端ではない',
-    },
-  ],
-  addedFields: [
-    { field: 'windows[].endExclusiveMm', reason: 'profile の nominalEndMm と一致する本当の終端。旧 toMm + stepMm' },
-    { field: 'windowEndConvention', reason: '端点の規約を機械可読にする' },
-    { field: 'contractMigration', reason: 'この表そのもの' },
-    {
-      field: 'provenance.inputFiles[].role に "input-scope" を追加',
-      reason: '入力の範囲定義 (source-input-scope.v1.json) が入力になった。**追加のみで改名ではない**ので、'
-        + 'role で絞り込む実装が沈黙して壊れることはない。v0.3.0 の schema を pin して新しい artifact を'
-        + '検証すると enum で落ちるが、それは明示的に落ちる (v0.3.0 フォローアップ P1-2)',
-    },
-  ],
-  consumerAction:
-    '**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止する。'
-    + '区間の終端が要るなら endExclusiveMm を、観測の最後の点が要るなら lastSampleMm を使う。',
-} as const
+const CONTRACT_MIGRATION = migrationFor('topology-robustness.v3')
 
 const out = {
-  schemaVersion: 2 as const,
+  schemaVersion: 3 as const,
   generatedBy: 'npm run search:robustness',
   contractMigration: CONTRACT_MIGRATION,
   /** 端点の規約。`endExclusiveMm` は含まない側の端で、profile の `nominalEndMm` と一致する */

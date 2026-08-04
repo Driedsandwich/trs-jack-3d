@@ -26,6 +26,8 @@ import { resolve } from 'node:path'
 import Ajv from 'ajv'
 import { validateAll } from './validateProfiles.mjs'
 import { RELEASE_ASSETS, SOURCE_ONLY_TARGETS } from './releaseAssets.mjs'
+import { migrationFor } from './contractMigration.mjs'
+import { buildSourceSnapshot } from './buildSourceSnapshot.mjs'
 
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
@@ -117,7 +119,8 @@ const inconsistent = inputs.filter((x) => !x.consistentAcrossArtifacts)
 const mismatched = inputs.filter((x) => !x.matchesWorkingTree)
 
 const manifest = {
-  schemaVersion: 1,
+  schemaVersion: 2,
+  contractMigration: migrationFor('source-input-manifest.v2'),
   generatedBy: 'npm run release:evidence',
   generatedAt: ARTIFACT_DATE,
   generatedFromCommit: git(['rev-parse', 'HEAD']),
@@ -160,6 +163,13 @@ const manifest = {
 }
 
 writeFileSync(resolve(ROOT, 'artifacts/source-input-manifest.json'), JSON.stringify(manifest, null, 1) + '\n')
+
+/**
+ * **写しは manifest の直後に作る。**
+ * 写しは manifest の入力一覧を読み、index は写しの sha256 を読むので、
+ * この順でないと片方が必ず古いものを見る（実測で ENOENT になった）。
+ */
+buildSourceSnapshot(ROOT)
 
 // ---------------------------------------------------------------------------
 // 2. 検証を実際に回した記録（v0.3.0 フォローアップ P1-3）
@@ -267,7 +277,8 @@ else {
 }
 
 const validation = {
-  schemaVersion: 1,
+  schemaVersion: 2,
+  contractMigration: migrationFor('validation-results.v2'),
   generatedBy: 'npm run release:evidence',
   generatedAt: ARTIFACT_DATE,
   generatedFromCommit: git(['rev-parse', 'HEAD']),
@@ -317,8 +328,8 @@ writeFileSync(resolve(ROOT, 'artifacts/validation-results.json'), JSON.stringify
 const readIf = (p) => (existsSync(resolve(ROOT, p)) ? read(p) : null)
 const profileEntries = {}
 for (const [variantFile, sensFile] of [
-  ['artifacts/half_plug_topology_profile.v2.trs_jack_trs.json', 'artifacts/sensitivity.trs_jack_trs.json'],
-  ['artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json', 'artifacts/sensitivity.trs_jack_trrs.json'],
+  ['artifacts/half_plug_topology_profile.v3.trs_jack_trs.json', 'artifacts/sensitivity.trs_jack_trs.json'],
+  ['artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json', 'artifacts/sensitivity.trs_jack_trrs.json'],
 ]) {
   const prof = readIf(variantFile)
   const sens = readIf(sensFile)
@@ -379,8 +390,8 @@ const index = {
   artifactGenerationCommits: [...byCommit.entries()]
     .map(([commit, list]) => ({ commit, assets: list.sort() }))
     .sort((a, b) => a.commit.localeCompare(b.commit)),
-  profileSchemaVersion: someProfile ? readIf('artifacts/half_plug_topology_profile.v2.trs_jack_trs.json').schemaVersion : 2,
-  profileSchemaId: someProfile ? readIf('artifacts/half_plug_topology_profile.v2.trs_jack_trs.json').schemaId : null,
+  profileSchemaVersion: someProfile ? readIf('artifacts/half_plug_topology_profile.v3.trs_jack_trs.json').schemaVersion : 2,
+  profileSchemaId: someProfile ? readIf('artifacts/half_plug_topology_profile.v3.trs_jack_trs.json').schemaId : null,
   profiles: profileEntries,
   assets,
   notes: [
@@ -402,7 +413,7 @@ writeFileSync(resolve(ROOT, INDEX_PATH), JSON.stringify(index, null, 1) + '\n')
 const ajv = new Ajv({ allErrors: true, strict: false })
 let selfBad = 0
 for (const [artifactPath, schemaPath] of [
-  ['artifacts/validation-results.json', 'schemas/validation-results.v1.schema.json'],
+  ['artifacts/validation-results.json', 'schemas/validation-results.v2.schema.json'],
   [INDEX_PATH, 'schemas/trs-jack-3d-release-index.v1.schema.json'],
   // 検証を回した記録も同じ扱い。**validateAll の対象に入れると、その回の自分自身を見ることになる**
   [SOURCE_VERIFICATION_PATH, 'schemas/source-verification-result.v1.schema.json'],

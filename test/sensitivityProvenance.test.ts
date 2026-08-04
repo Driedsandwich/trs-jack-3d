@@ -33,8 +33,8 @@ import { mustBeNonEmpty, mustFind } from './_must'
 const ROOT = resolve(__dirname, '..')
 const J = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
 
-const trs = J('artifacts/half_plug_topology_profile.v2.trs_jack_trs.json')
-const trrs = J('artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json')
+const trs = J('artifacts/half_plug_topology_profile.v3.trs_jack_trs.json')
+const trrs = J('artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json')
 const sensTrs = J('artifacts/sensitivity.trs_jack_trs.json')
 const sensTrrs = J('artifacts/sensitivity.trs_jack_trrs.json')
 

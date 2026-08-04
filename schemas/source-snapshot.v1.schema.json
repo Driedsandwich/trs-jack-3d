@@ -1,0 +1,96 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/source-snapshot.v1.schema.json",
+ "title": "trs-jack-3d source snapshot v1",
+ "description": "通信が無い受け手が、inputDigest を自分で計算し直して manifest と突き合わせるための入力の写し。**これは producer の申告であって、受け手の独立検証を置き換えない。**こちらが渡したファイルを、こちらが記録した hash と照合するだけなので、**producer が両方を同時に偽れば一致する。**独立検証には GitHub の tag source archive を使うこと。",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "schemaVersion",
+  "schemaId",
+  "generatedBy",
+  "generatedAt",
+  "generatedFromCommit",
+  "isSelfConsistencyOnly",
+  "producerClaimOnly",
+  "replacesRecipientVerification",
+  "isSourceOfTruthForInputDigest",
+  "inputDigestSourceOfTruth",
+  "whatThisProves",
+  "whatThisDoesNotProve",
+  "independentVerificationRecipe",
+  "excluded",
+  "recordedInputsTotal",
+  "filesTotal",
+  "files"
+ ],
+ "properties": {
+  "schemaVersion": { "const": 1 },
+  "schemaId": { "const": "trs-jack-3d-source-snapshot.v1" },
+  "generatedBy": { "type": "string" },
+  "generatedAt": { "type": "string" },
+  "generatedFromCommit": { "type": "string", "pattern": "^([0-9a-f]{40}|UNKNOWN)$" },
+  "isSelfConsistencyOnly": {
+   "const": true,
+   "description": "**この写しで確かめられるのは「記録した hash が、記録した中身と合っているか」だけである。**"
+  },
+  "producerClaimOnly": {
+   "type": "string",
+   "minLength": 1,
+   "description": "**producer の申告であることを、artifact 自身の言葉で書く。**"
+  },
+  "replacesRecipientVerification": {
+   "const": false,
+   "description": "受け手の独立検証を置き換えない"
+  },
+  "isSourceOfTruthForInputDigest": {
+   "const": false,
+   "description": "**inputDigest の正本にしない。**正本は source-input-manifest.json のまま"
+  },
+  "inputDigestSourceOfTruth": { "const": "artifacts/source-input-manifest.json" },
+  "whatThisProves": { "type": "string", "minLength": 1 },
+  "whatThisDoesNotProve": { "type": "string", "minLength": 1 },
+  "independentVerificationRecipe": {
+   "type": "array",
+   "minItems": 1,
+   "description": "**通信がある受け手はこちらを使うこと。**tag source から取れば循環しない",
+   "items": { "type": "string" }
+  },
+  "excluded": {
+   "type": "array",
+   "minItems": 1,
+   "description": "**入れていないもの。**「全部入っている」と読まれないようにする",
+   "items": {
+    "type": "object",
+    "required": ["what", "why"],
+    "additionalProperties": false,
+    "properties": { "what": { "type": "string" }, "why": { "type": "string" } }
+   }
+  },
+  "recordedInputsTotal": {
+   "type": "integer",
+   "minimum": 1,
+   "description": "source-input-manifest に載っている入力のうち、この写しに入っている件数"
+  },
+  "filesTotal": { "type": "integer", "minimum": 1 },
+  "files": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": ["path", "sha256", "isRecordedInput", "bytes", "content"],
+    "additionalProperties": false,
+    "properties": {
+     "path": { "type": "string", "minLength": 1 },
+     "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+     "isRecordedInput": {
+      "type": "boolean",
+      "description": "source-input-manifest に入力として載っているか。**false のものは inputDigest に入らない**（生成器・schema の読み物）"
+     },
+     "bytes": { "type": "integer", "minimum": 0 },
+     "content": { "type": "string" }
+    }
+   }
+  }
+ }
+}

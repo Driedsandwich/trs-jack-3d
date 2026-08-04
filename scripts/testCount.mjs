@@ -15,6 +15,7 @@
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { migrationFor } from './contractMigration.mjs'
 
 const ROOT = process.cwd()
 const TMP = resolve(ROOT, 'node_modules/.cache/test-count.json')
@@ -86,7 +87,8 @@ writeFileSync(
   OUT,
   JSON.stringify(
     {
-      schemaVersion: 1,
+      schemaVersion: 2,
+      contractMigration: migrationFor('test-counts.v2'),
       generatedAt,
       note:
         'npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、'

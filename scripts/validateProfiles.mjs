@@ -50,13 +50,13 @@ const compile = (schemaPath) => {
 /** 検証対象。schema が無いものは semantic だけ回す */
 const TARGETS = [
   {
-    artifact: 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json',
-    schema: 'schemas/half-plug-topology-profile.v2.schema.json',
+    artifact: 'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json',
+    schema: 'schemas/half-plug-topology-profile.v3.schema.json',
     semantic: 'profile',
   },
   {
-    artifact: 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json',
-    schema: 'schemas/half-plug-topology-profile.v2.schema.json',
+    artifact: 'artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json',
+    schema: 'schemas/half-plug-topology-profile.v3.schema.json',
     semantic: 'profile',
   },
   {
@@ -71,25 +71,25 @@ const TARGETS = [
   },
   {
     artifact: 'artifacts/test_counts.json',
-    schema: 'schemas/test-counts.v1.schema.json',
+    schema: 'schemas/test-counts.v2.schema.json',
     semantic: 'testCounts',
   },
   // 感度 artifact。**2026-08-03 まで schema が無く、下流が独自に構造検査を書いていた**
   // (非阻害フォローアップ P1-2)
   {
     artifact: 'artifacts/sensitivity.trs_jack_trs.json',
-    schema: 'schemas/event-sensitivity.v1.schema.json',
+    schema: 'schemas/event-sensitivity.v2.schema.json',
     semantic: 'sensitivity',
   },
   {
     artifact: 'artifacts/sensitivity.trs_jack_trrs.json',
-    schema: 'schemas/event-sensitivity.v1.schema.json',
+    schema: 'schemas/event-sensitivity.v2.schema.json',
     semantic: 'sensitivity',
   },
   // 目標トポロジーの頑健性 (非阻害フォローアップ P1-4)
   {
     artifact: 'artifacts/topology-robustness.trs_jack_trrs.json',
-    schema: 'schemas/topology-robustness.v2.schema.json',
+    schema: 'schemas/topology-robustness.v3.schema.json',
     semantic: 'robustness',
   },
   // release evidence (v0.2.0 フォローアップ §2)。
@@ -97,7 +97,7 @@ const TARGETS = [
   // 1 回の実行で収束しないため。あちらは buildReleaseEvidence が書いた直後に schema で見る
   {
     artifact: 'artifacts/source-input-manifest.json',
-    schema: 'schemas/source-input-manifest.v1.schema.json',
+    schema: 'schemas/source-input-manifest.v2.schema.json',
     semantic: 'sourceInputManifest',
   },
   // 入力の範囲定義 (v0.3.0 フォローアップ P1-2)。
@@ -106,6 +106,16 @@ const TARGETS = [
     artifact: 'source-input-scope.v1.json',
     schema: 'schemas/source-input-scope.v1.schema.json',
     semantic: 'sourceInputScope',
+  },
+  /**
+   * オフラインの受け手のための source snapshot（v0.5.0・オーダー §2）。
+   * **これは producer の申告であり、受け手の独立検証を置き換えない。**
+   * 意味規則で、写しの中身と記録した sha256 が実際に一致するかまで見る。
+   */
+  {
+    artifact: 'artifacts/source-snapshot.v1.json',
+    schema: 'schemas/source-snapshot.v1.schema.json',
+    semantic: 'sourceSnapshot',
   },
   /**
    * package.json ↔ package-lock.json の version 一致（v0.3.0 フォローアップ P1-1）。
@@ -512,7 +522,7 @@ const SEMANTIC = {
      * 突き合わせる検査がどこにも無かったので通ってしまった。
      */
     const slug = String(a.variantId).toLowerCase().replace(/[^a-z0-9]+/g, '_')
-    const profilePath = `artifacts/half_plug_topology_profile.v2.${slug}.json`
+    const profilePath = `artifacts/half_plug_topology_profile.v3.${slug}.json`
     if (!existsSync(resolve(ROOT, profilePath))) return
     const prof = read(profilePath)
     if (prof.variantId !== a.variantId)
@@ -571,6 +581,60 @@ const SEMANTIC = {
    * いちばん大事なのは最後の突き合わせ——**範囲から導いた集合と、実際に記録された入力が
    * ちょうど一致すること。**ここがずれていたら、範囲定義は飾りになっている。
    */
+  /**
+   * source snapshot（v0.5.0・オーダー §2）。
+   *
+   * **schema は「そう書いてある」ことしか見ない。**
+   * 写しの中身と記録した sha256 が実際に一致するかは、ここで計算して確かめる。
+   * ここを回さないと、**中身が壊れた写しでも `isSelfConsistencyOnly: true` と
+   * 書いてあるだけで通ってしまう。**
+   */
+  sourceSnapshot(a, errs) {
+    const files = a.files ?? []
+    if (files.length === 0) {
+      errs.push('files が 0 件。写しとして意味がない')
+      return
+    }
+    if (files.length !== a.filesTotal) errs.push(`filesTotal ${a.filesTotal} と files の実数 ${files.length} が違う`)
+
+    let mismatched = 0
+    for (const f of files) {
+      const h = createHash('sha256').update(Buffer.from(f.content, 'utf8')).digest('hex')
+      if (h !== f.sha256) {
+        mismatched++
+        if (mismatched <= 5) errs.push(`写しの中身と sha256 が合わない: ${f.path}`)
+      }
+      if (f.bytes !== Buffer.byteLength(f.content, 'utf8'))
+        errs.push(`bytes が中身の長さと合わない: ${f.path}`)
+    }
+    if (mismatched > 5) errs.push(`ほかにも ${mismatched - 5} 件、写しと sha256 が合わない`)
+
+    const recorded = files.filter((f) => f.isRecordedInput)
+    if (recorded.length !== a.recordedInputsTotal)
+      errs.push(`recordedInputsTotal ${a.recordedInputsTotal} と実数 ${recorded.length} が違う`)
+
+    // --- manifest に載っている入力を取りこぼしていないか -------------------
+    // ここが抜けると、受け手は inputDigest を再計算できないのに「全部入り」と読む
+    const manifestPath = 'artifacts/source-input-manifest.json'
+    if (existsSync(resolve(ROOT, manifestPath))) {
+      const m = JSON.parse(readFileSync(resolve(ROOT, manifestPath), 'utf8'))
+      const have = new Set(files.map((f) => f.path))
+      const missing = (m.inputFiles ?? []).map((f) => f.path).filter((p) => !have.has(p))
+      if (missing.length > 0) errs.push(`manifest の入力が写しに無い (${missing.length} 件): ${missing.slice(0, 3).join(', ')}`)
+      for (const f of m.inputFiles ?? []) {
+        const s = files.find((x) => x.path === f.path)
+        const rec = Array.isArray(f.recordedSha256) ? f.recordedSha256 : [f.recordedSha256]
+        if (s && !rec.includes(s.sha256))
+          errs.push(`写しの sha256 が manifest の記録と違う: ${f.path}`)
+      }
+    }
+
+    // --- 限界の申告が消えていないか ---------------------------------------
+    if (a.isSelfConsistencyOnly !== true) errs.push('isSelfConsistencyOnly が true でない。限界の申告を外してはいけない')
+    if (a.replacesRecipientVerification !== false) errs.push('replacesRecipientVerification が false でない')
+    if (a.isSourceOfTruthForInputDigest !== false) errs.push('isSourceOfTruthForInputDigest が false でない')
+  },
+
   sourceInputScope(a, errs) {
     const required = new Set(a.requiredExactFiles ?? [])
 
@@ -775,8 +839,8 @@ const SEMANTIC = {
     if (a.physicalProbabilityClaim !== false) errs.push('physicalProbabilityClaim が false でない')
     if (a.empiricalEvidence !== null) {
       // 実測を入れるなら profile の verifiedPhysical も動くはず。片方だけ動かせない
-      const prof = existsSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json'))
-        ? read('artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json')
+      const prof = existsSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json'))
+        ? read('artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json')
         : null
       if (prof && prof.modelLimitations?.verifiedPhysical === false)
         errs.push('empiricalEvidence が入っているのに profile の verifiedPhysical が false のまま')
@@ -797,8 +861,8 @@ const SEMANTIC = {
      * ここがずれていたら、頑健性 artifact は別のモデルの話をしている。
      * v1 では `toMm` と `nominalEndMm` が 1 刻みずれていて、突き合わせようがなかった。
      */
-    const rprof = existsSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json'))
-      ? read('artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json')
+    const rprof = existsSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json'))
+      ? read('artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json')
       : null
     const nomW = a.nominalConfiguration?.windows?.[0]
     if (rprof && nomW) {

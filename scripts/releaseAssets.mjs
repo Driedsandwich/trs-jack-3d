@@ -17,24 +17,25 @@
 
 export const RELEASE_ASSETS = [
   // --- 本体 ---
-  { path: 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json', role: 'profile' },
-  { path: 'artifacts/half_plug_topology_profile.v2.trs_jack_trrs.json', role: 'profile' },
+  { path: 'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json', role: 'profile' },
+  { path: 'artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json', role: 'profile' },
   { path: 'artifacts/sensitivity.trs_jack_trs.json', role: 'sensitivity' },
   { path: 'artifacts/sensitivity.trs_jack_trrs.json', role: 'sensitivity' },
   { path: 'artifacts/topology-robustness.trs_jack_trrs.json', role: 'robustness' },
 
   // --- 受け手が検証するための schema ---
-  { path: 'schemas/half-plug-topology-profile.v2.schema.json', role: 'schema' },
-  { path: 'schemas/event-sensitivity.v1.schema.json', role: 'schema' },
-  { path: 'schemas/topology-robustness.v2.schema.json', role: 'schema' },
+  { path: 'schemas/half-plug-topology-profile.v3.schema.json', role: 'schema' },
+  { path: 'schemas/event-sensitivity.v2.schema.json', role: 'schema' },
+  { path: 'schemas/topology-robustness.v3.schema.json', role: 'schema' },
   { path: 'schemas/trs-jack-3d-release-index.v1.schema.json', role: 'schema' },
-  { path: 'schemas/validation-results.v1.schema.json', role: 'schema' },
-  { path: 'schemas/source-input-manifest.v1.schema.json', role: 'schema' },
+  { path: 'schemas/validation-results.v2.schema.json', role: 'schema' },
+  { path: 'schemas/source-input-manifest.v2.schema.json', role: 'schema' },
   { path: 'schemas/source-input-scope.v1.schema.json', role: 'schema' },
   { path: 'schemas/source-verification-result.v1.schema.json', role: 'schema' },
   { path: 'schemas/topology-search.v1.schema.json', role: 'schema' },
   { path: 'schemas/real-jack-comparison.v1.schema.json', role: 'schema' },
-  { path: 'schemas/test-counts.v1.schema.json', role: 'schema' },
+  { path: 'schemas/test-counts.v2.schema.json', role: 'schema' },
+  { path: 'schemas/source-snapshot.v1.schema.json', role: 'schema' },
 
   // --- 自己完結性のための証拠（P2-7）---
   { path: 'artifacts/test_counts.json', role: 'evidence' },
@@ -50,6 +51,26 @@ export const RELEASE_ASSETS = [
    * 生成側 (`scripts/provenance.ts`) が読むのと同じファイルである。
    */
   { path: 'source-input-scope.v1.json', role: 'evidence' },
+  /**
+   * **版と契約変更の対応表の正本（v0.5.0）。**
+   *
+   * 6 本の artifact の `contractMigration` はすべてここから入る。
+   * 受け手はこの 1 枚で「どの版で何が変わったか」「どの回が版を据え置いたまま壊したか」を辿れる。
+   * **これも入力である**ので、inputDigest にも入っている。
+   */
+  { path: 'contract-migration.v1.json', role: 'evidence' },
+  /**
+   * **オフラインの受け手のための source snapshot（v0.5.0・オーダー §2）。**
+   *
+   * v0.4.1 で受け手はネットワークが無く `SOURCE_UNAVAILABLE` になった。
+   * tag source archive (8.94 MB) を丸ごと足す案もあったが、増えるぶんの中身は
+   * **画面写真と生成物**で、検証には使われない（実測）。入力・生成器・schema だけを入れる。
+   *
+   * **これは producer の申告であり、受け手の独立検証を置き換えない。**
+   * artifact 自身に `isSelfConsistencyOnly: true` を持たせてある。
+   * 通信がある受け手は GitHub の "Source code (tar.gz)" を使うこと（release notes に手順）。
+   */
+  { path: 'artifacts/source-snapshot.v1.json', role: 'evidence' },
   /**
    * **検証を実際に回した記録（v0.3.0 フォローアップ P1-3）。自己申告である。**
    * 配る理由は自慢のためではなく、**判定の境界を実物で見せるため**——

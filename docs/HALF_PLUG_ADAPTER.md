@@ -2,7 +2,7 @@
 
 > この文書の HTML 版（同名 `.html`）は `npm run docs:html` で生成しています。**HTML を直接編集しないでください。**
 
-作成 2026-08-02 ／ 対象 `Half-Plug Topology Profile v2`（2026-08-03 に v1 から更新）
+作成 2026-08-02 ／ 対象 `Half-Plug Topology Profile v3`（2026-08-05 に v2 から更新）
 
 統合オーダー §4 が Half-Plug 側へ求めている `integrations/trs-jack-3d/` の
 初期マッピングを、**現在のコード体系で**書き起こしたものです。
@@ -34,8 +34,8 @@
 
 | ファイル | 中身 | 左右差分 |
 |---|---|---|
-| `half_plug_topology_profile.v2.trs_jack_trs.json` | 3極プラグ × 3極ジャック（Lumberg 実部品） | **現れない** |
-| `half_plug_topology_profile.v2.trs_jack_trrs.json` | 3極プラグ × **4極ジャック** | **現れる**（`IV028` / 13.30〜13.52 mm） |
+| `half_plug_topology_profile.v3.trs_jack_trs.json` | 3極プラグ × 3極ジャック（Lumberg 実部品） | **現れない** |
+| `half_plug_topology_profile.v3.trs_jack_trrs.json` | 3極プラグ × **4極ジャック** | **現れる**（`IV028` / 13.30〜13.52 mm） |
 
 **再現したい音が出るのは後者だけです。**前者は「出ない」ことを
 `absentTopologies` に記録した反証として持っています。
@@ -107,7 +107,7 @@ UI で「物理的に完全に挿さっている」と表示しないでくだ�
 
 ## 3. 本命の区間
 
-`half_plug_topology_profile.v2.trs_jack_trrs.json` の `IV028`:
+`half_plug_topology_profile.v3.trs_jack_trrs.json` の `IV028`:
 
 ```
 nominalStartMm  13.30      normalizedStart  0.9500
@@ -298,6 +298,34 @@ physicalClaimStatus      未実測なら "unverified"
 `kind` 単位の集計は捨てず、`sensitivitySummary.aggregateSpreadByKind` に残してあります。
 そちらを個々の事象へ当てはめないでください。
 
+### ⚠ v0.5.0 は `schemaVersion: 3` です（**破壊的変更・6 本まとめて**）
+
+**v0.5.0 で 6 本の schema を同時に上げました。**旧版を pin した実装は **6 か所で止まります。**
+
+| pin | 旧 | 新 | 止まる artifact |
+|---|---|---|---:|
+| profile | 2 | **3** | 2 |
+| event-sensitivity | 1 | **2** | 2 |
+| topology-robustness | 2 | **3** | 1 |
+| source-input-manifest | 1 | **2** | 1 |
+| validation-results | 1 | **2** | 1 |
+| test-counts | 1 | **2** | 1 |
+
+**契約の中身は変わっていません。**区間・event・topology 列・座標系・`role` の enum
+（`contract-migration` が 1 つ増えたのを除く）はそのままです。
+上げたのは、**v0.4.0 と v0.4.1 で版を据え置いたまま契約を変えていたのを是正するため**です。
+
+**profile 本体はファイル名も変わります**（`.v2.` → `.v3.`）。名前で引く lock は
+schema 検査に届く前に「ファイルが無い」で止まります。対応表は各 artifact の
+`contractMigration.renamedAssets` にあります。
+
+直す順序は **manifest → profile → sensitivity → robustness → validation-results → test-counts**
+です。索引（`trs-jack-3d-release-index.v1`）は版を上げていないので、入口は動きます。
+**profile しか読まないなら 2 か所**（manifest と profile）で済みます。
+
+条文は [docs/SCHEMA_VERSIONING_POLICY.md](SCHEMA_VERSIONING_POLICY.md)、
+遡及記録は同梱の `contract-migration.v1.json` にあります。
+
 ### ⚠ v0.2.0 は `schemaVersion: 2` です（**破壊的変更**）
 
 **読み込む前に版で分岐してください。**`schemaVersion === 1` を期待する実装は、
@@ -307,7 +335,7 @@ physicalClaimStatus      未実測なら "unverified"
 |---|---|---|
 | `schemaVersion` | 1 | **2** |
 | `topologyClass` | `fully-seated` | **`all-expected-functions-match`** |
-| ファイル名 | `half_plug_topology_profile.v2.*` | **`half_plug_topology_profile.v2.*`** |
+| ファイル名 | `half_plug_topology_profile.v1.*` | **`half_plug_topology_profile.v2.*`** |
 
 ファイル名も変えたのは、**release lock が `filename` で引く**ためです。
 名前が同じまま契約だけ変わると、lock が同じ名前で非互換な内容を指します。
