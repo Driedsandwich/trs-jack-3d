@@ -417,20 +417,52 @@ describe('B. 文書に転記した artifact の値が一致している', () => 
     expect(m[2]).toContain(`/releases/tag/v${pkg.version}`)
   })
 
+  /**
+   * **1 箇所でも古ければ落ちること。**
+   *
+   * 最初に書いた版は `toContain` で「新しい版がどこかにあるか」を見ていた。
+   * `Half-Plug Topology Profile v2` は README に 2 箇所あるので、
+   * **片方を v1 に戻しても、もう片方が残っていて素通りした**（変異で実測）。
+   * さらに除外範囲を「known issue 節より前」にしていたが、その節は上のほうにあり、
+   * **図も artifact 表も検査の外**だった。
+   *
+   * だから「どこかにあるか」ではなく**出現箇所を全部数えて、古い版が 0 件であること**を見る。
+   */
   it('**README の profile schema 版とファイル名が artifact と一致する**', () => {
     const readme = text['README.md']
     const prof = JSON.parse(
       readFileSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json'), 'utf8'),
     ) as { schemaVersion: number }
     expect(prof.schemaVersion).toBeGreaterThan(0)
-    // 現行の schema 版を「現行」として書いていること
-    expect(readme).toContain(`Half-Plug Topology Profile v${prof.schemaVersion}`)
-    expect(readme).toContain(`half_plug_topology_profile.v${prof.schemaVersion}.*.json`)
-    // **旧版を「現行」として残していないこと。**過去の記述は known issue の表へ分ける
-    const body = readme.split('### 過去 release の known issue')[0]
-    for (let v = 1; v < prof.schemaVersion; v++) {
-      expect(body, `README 本文に旧 profile v${v} が現行として残っている`).not.toContain(`Half-Plug Topology Profile v${v}`)
-      expect(body, `README 本文に旧ファイル名 v${v} が残っている`).not.toContain(`half_plug_topology_profile.v${v}.*.json`)
+
+    /** known issue の節だけを外す（そこは過去の版を名指しして書く場所） */
+    const HEAD = '### 過去 release の known issue'
+    const s = readme.indexOf(HEAD)
+    if (s < 0) throw new Error(`README に「${HEAD}」の節が無い。書式を変えたらこの検査も直すこと`)
+    /**
+     * **節の終わりをどこで切るか。**`## ` だけを探すと次の h2 まで飛び、
+     * 図も artifact 表も除外に巻き込まれる（実測で 19% が消えた）。
+     * 同じ深さ (`### `) か、それより浅い見出しのうち**先に来るほう**で切る。
+     */
+    const ends = [readme.indexOf('\n### ', s + HEAD.length), readme.indexOf('\n## ', s + HEAD.length)]
+      .filter((i) => i >= 0)
+    const rest = ends.length ? Math.min(...ends) : -1
+    const body = readme.slice(0, s) + (rest < 0 ? '' : readme.slice(rest))
+    // **除外が効きすぎていないこと。**節だけを外して本文はほぼ残る
+    expect(body.length / readme.length, '除外範囲が広すぎて検査が空振りする').toBeGreaterThan(0.9)
+
+    const count = (hay: string, needle: string) => hay.split(needle).length - 1
+    const CUR = prof.schemaVersion
+    // 現行版が名指しされていること（**0 件なら書き忘れ**）
+    const curName = count(body, `Half-Plug Topology Profile v${CUR}`)
+    const curFile = count(body, `half_plug_topology_profile.v${CUR}.`)
+    expect(curName, `README に現行の Profile v${CUR} が無い`).toBeGreaterThan(0)
+    expect(curFile, `README に現行のファイル名 v${CUR} が無い`).toBeGreaterThan(0)
+
+    // **旧版が 1 箇所でも残っていたら落ちる**
+    for (let v = 1; v < CUR; v++) {
+      expect(count(body, `Half-Plug Topology Profile v${v}`), `README に旧 Profile v${v} が残っている`).toBe(0)
+      expect(count(body, `half_plug_topology_profile.v${v}.`), `README に旧ファイル名 v${v} が残っている`).toBe(0)
     }
   })
 
