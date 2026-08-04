@@ -55,7 +55,7 @@ import { join, resolve } from 'node:path'
  *   3 … --fetch github を gh から Node の fetch へ替えた（外部コマンド依存を無くした）。
  *       toolVersion を全出口へ入れた。どちらも v0.4.0 で受け手が実際に困った点 (v0.4.1)
  */
-export const TOOL_VERSION = 3
+export const TOOL_VERSION = 4
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -137,9 +137,31 @@ function stripTopLevel(files) {
 // source の取得（3 経路。どれを使ったかを必ず出力に残す）
 // ---------------------------------------------------------------------------
 
+/**
+ * **`--source` は tar.gz も受ける（v0.5.0）。**
+ *
+ * v0.4.1 までは展開済みディレクトリしか受けなかったが、
+ * release notes と snapshot の手順書は `--source src.tar.gz` と書いていた。
+ * **書いてある手順が動かない**状態だったので、受けられるようにした。
+ * GitHub の tarball と同じく、単一の親ディレクトリは剥がす。
+ */
+function loadFromArchive(path) {
+  const abs = resolve(ROOT, path)
+  if (!existsSync(abs)) return { error: `source archive が無い: ${path}` }
+  try {
+    const buf = readFileSync(abs)
+    const tar = /\.(tgz|tar\.gz)$/i.test(path) ? gunzipSync(buf) : buf
+    return { files: stripTopLevel(readTar(tar)), origin: `archive:${path}` }
+  } catch (e) {
+    return { error: `source archive を読めない (${path}): ${e.message}` }
+  }
+}
+
 function loadFromDir(dir) {
   const abs = resolve(ROOT, dir)
   if (!existsSync(abs)) return { error: `source ディレクトリが無い: ${dir}` }
+  // ファイルを渡されたら archive として読む（**ENOTDIR で落とさない**）
+  if (!statSync(abs).isDirectory()) return loadFromArchive(dir)
   const files = new Map()
   const walk = (rel) => {
     for (const n of readdirSync(join(abs, rel) || abs).sort()) {

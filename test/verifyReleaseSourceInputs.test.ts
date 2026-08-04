@@ -14,7 +14,7 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
@@ -225,6 +225,40 @@ describe('§5-3 取れなかったのと合わなかったのを混ぜない', (
  * 下流が保存した `SOURCE_UNAVAILABLE` の記録には版が入っていなかった。
  * **記録を受け取った側が、どの版の道具の出力か判別できない。**
  */
+/**
+ * **`--source` に tar.gz を渡せる（v0.5.0）。**
+ *
+ * v0.4.1 までは展開済みディレクトリしか受けなかったのに、
+ * release notes と snapshot の手順書は `--source src.tar.gz` と書いていた。
+ * **書いてある手順が ENOTDIR で落ちていた。**
+ */
+describe('§5-3c --source に archive を渡せる', () => {
+  const tgz = join(mkdtempSync(join(tmpdir(), 'srcarch-')), 'src.tar.gz')
+
+  it('前提: tag source archive を作れる', () => {
+    execFileSync('git', ['archive', '--format=tar.gz', '-o', tgz, 'HEAD'], { cwd: ROOT })
+    expect(statSync(tgz).size, 'archive が空').toBeGreaterThan(1000)
+  })
+
+  it('tar.gz を渡すと展開済みディレクトリと同じ判定になる', () => {
+    const fromDir = run(['--manifest', 'artifacts/source-input-manifest.json', '--source', '.', '--scope', 'source-input-scope.v1.json'])
+    const fromTgz = run(['--manifest', 'artifacts/source-input-manifest.json', '--source', tgz, '--scope', 'source-input-scope.v1.json'])
+    expect(fromTgz.json.status, `archive 経路が失敗した: ${JSON.stringify(fromTgz.json).slice(0, 300)}`).toBe('OK')
+    // **origin だけが違い、判定は同じ**であること
+    expect(fromTgz.json.independentVerification).toEqual(fromDir.json.independentVerification)
+    expect(String(fromTgz.json.origin)).toContain('archive:')
+    expect(String(fromDir.json.origin)).toContain('directory:')
+  })
+
+  it('壊れた archive は SOURCE_UNAVAILABLE（不一致に潰さない）', () => {
+    const broken = join(mkdtempSync(join(tmpdir(), 'brokenarch-')), 'src.tar.gz')
+    writeFileSync(broken, Buffer.from('これは tar.gz ではない'))
+    const r = run(['--manifest', 'artifacts/source-input-manifest.json', '--source', broken])
+    expect(r.json.status).toBe('SOURCE_UNAVAILABLE')
+    expect(String(r.json.reason)).toContain('archive')
+  })
+})
+
 describe('§5-3b すべての出口に toolVersion が入る', () => {
   /**
    * **tag に固定しない。**最初は `--tag v0.4.0` と書いたが、
