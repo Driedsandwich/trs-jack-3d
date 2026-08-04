@@ -78,7 +78,7 @@
   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表を見て語彙を対応づける。旧語彙のまま読むと、値で絞り込む箇所が「そのデータが 1 件も無い」と区別できず、沈黙して壊れる。",
   "versionSelectionEvidence": "下流 release-verifier.mjs は schemaVersion を見て拒否するが contractRevision はどこも読まない。2026-08-03 に両方を実際に import させて確かめた (A: 停止 / B: PASS)。"
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:4923277389e6",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:b61bce36516c",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -117,26 +117,26 @@
    ]
   }
  },
- "sourceRevision": "d6ed1b2b6dcef8b8d7f6e077da13578bb7c52632",
- "generatedAt": "2026-08-03",
+ "sourceRevision": "38d856a5d9d88b6f1ebbcae63f8e5ec1a0047dd3",
+ "generatedAt": "2026-08-04",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "d6ed1b2b6dcef8b8d7f6e077da13578bb7c52632",
+  "generatedFromCommit": "38d856a5d9d88b6f1ebbcae63f8e5ec1a0047dd3",
   "workingTreeDirty": false,
   "revisionOverride": false,
   "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "4923277389e6fd566bb6a4defccef9078e6e1c03c00572753c7359791125e509",
+  "inputDigest": "b61bce36516c2bc089205a6c0ff52a3e8afe2e474b481ed3cbf401c3b0795aef",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "042bfeaa3710a8f995918ff8e53e1ac64416b606bf5b020d4b85e25f47970dc2",
+    "sha256": "4e2d87b43e4acb179ad47a055be9ef27cf61c12abd10b3d0ffff77a468a6b237",
     "role": "sensitivity-input"
    },
    {
     "path": "package-lock.json",
-    "sha256": "d3f1e876ea7e3583e616bee4ae9d6b68f75a312fbf7501cb794a72a952b6f8f9",
+    "sha256": "0cb561622cfcbcc74f76e6dbde5bf645885d4a693a901e692b12e8e5e5eea5e3",
     "role": "lockfile"
    },
    {
@@ -246,7 +246,7 @@
    }
   ],
   "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\" --release",
-  "artifactDate": "2026-08-03"
+  "artifactDate": "2026-08-04"
  },
  "fullInsertionDepthMm": 14,
  "stepMm": 0.02,
@@ -5462,8 +5462,8 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "e396af761e41f2a8f4cb7a7f8a77bb42e231d561",
-   "inputDigest": "1c589a04e9690ea02543f15432726aac11165033c19aca7deec0d233bbc568ae",
+   "generatedFromCommit": "06827505d66e13200bae66442f73324f8cc0b5dc",
+   "inputDigest": "5c91ddaea6deb266624649e2104ab6f3de79eb31a292ca24392891294f58343e",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
   },
