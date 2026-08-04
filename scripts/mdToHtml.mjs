@@ -110,6 +110,11 @@ const TARGETS = [
     html: 'docs/NONBLOCKING_FOLLOWUP_ORDER_20260803.html',
     title: '非阻害フォローアップオーダー (2026-08-03) への対応状況',
   },
+  {
+    md: 'docs/SCHEMA_VERSIONING_DESIGN_V050_20260805.md',
+    html: 'docs/SCHEMA_VERSIONING_DESIGN_V050_20260805.html',
+    title: 'v0.5.0 設計 — schema versioning の是正 (2026-08-05)',
+  },
 ]
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
