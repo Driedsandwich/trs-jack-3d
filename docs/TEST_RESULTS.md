@@ -2,9 +2,9 @@
 
 > この文書の HTML 版（同名 `.html`）は `npm run docs:html` で生成しています。**HTML を直接編集しないでください。**
 
-**この文書は「現在の検証状態」です**（最終実行 2026-08-03）。表のコマンドはすべて再実行できます。
+**この文書は「現在の検証状態」です**（最終実行 2026-08-04）。表のコマンドはすべて再実行できます。
 
-> **2026-08-03 に再実行したのは、型検査・単体テスト・空振り検査・成果物の検証・入力の独立検算の 5 つだけ**です。
+> **2026-08-04 に再実行したのは、型検査・単体テスト・空振り検査・成果物の検証・入力の独立検算の 5 つだけ**です。
 > 実ブラウザ・GPU・タッチ・本番ビルドの行は 2026-08-01 の実測値のままで、
 > **この日には回していません。**混ぜて「全部確認済み」と読まないでください。
 
@@ -27,7 +27,7 @@
 | 種別 | コマンド | 結果 |
 |---|---|---|
 | 型検査 | `npm run typecheck` | **エラー 0**（`src` / `scripts` / `test`） |
-| 単体テスト | `npm run test` | **473 件**（内訳は `artifacts/test_counts.json`。`npm run test:count` で更新） |
+| 単体テスト | `npm run test` | **476 件**（内訳は `artifacts/test_counts.json`。`npm run test:count` で更新） |
 | 空振り検査 | `npm run check:vacuity` | skip 0 件・件数の減少なし（→ [CONTRIBUTING §7](CONTRIBUTING.html)） |
 | 成果物の検証 | `npm run validate:profiles` | **11 件すべて適合**（schema = ajv draft-07。うち 1 件は schema を持たず意味規則だけ） |
 | 入力の独立検算 | `npm run verify:release-source-inputs` | **入力 29 件すべて一致**・記録漏れ 0 件（**自己申告**。受け手は同梱の script で自分で回すこと） |

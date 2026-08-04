@@ -1,12 +1,22 @@
 {
  "schemaVersion": 1,
  "generatedBy": "npm run release:evidence",
- "generatedAt": "2026-08-03",
- "generatedFromCommit": "42a16bcd062a90d1544fd131a444e2ef4f1381f2",
+ "generatedAt": "2026-08-04",
+ "generatedFromCommit": "162f4cd7d93689a21b7d63260571926fee2b377b",
  "command": "npm run validate:profiles",
  "targetsTotal": 11,
  "targetsPassed": 11,
  "allPassed": true,
+ "artifactValidationStatus": "PASS",
+ "releaseReadinessStatus": "READY",
+ "releaseReadinessReasons": [],
+ "testEvidence": {
+  "total": 476,
+  "failed": 0,
+  "skipped": 0,
+  "exitCode": 0,
+  "allPassed": true
+ },
  "distributedTargets": 8,
  "sourceOnlyTargets": 3,
  "results": [

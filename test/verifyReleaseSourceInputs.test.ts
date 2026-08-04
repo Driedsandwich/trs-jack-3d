@@ -226,10 +226,15 @@ describe('§5-3 取れなかったのと合わなかったのを混ぜない', (
  * **記録を受け取った側が、どの版の道具の出力か判別できない。**
  */
 describe('§5-3b すべての出口に toolVersion が入る', () => {
+  /**
+   * **tag に固定しない。**最初は `--tag v0.4.0` と書いたが、
+   * 次の版で lockfile が変わった瞬間に `MISMATCH` になった（この検査が見たいのは版ではない）。
+   * 現在の作業ツリーと突き合わせれば、どの版でも `OK` になる。
+   */
   const EXITS: [string, string[]][] = [
-    ['OK', ['--manifest', 'artifacts/source-input-manifest.json', '--tag', 'v0.4.0', '--scope', 'source-input-scope.v1.json']],
+    ['OK', ['--manifest', 'artifacts/source-input-manifest.json', '--source', '.', '--scope', 'source-input-scope.v1.json']],
     ['SOURCE_UNAVAILABLE', ['--manifest', 'artifacts/source-input-manifest.json', '--tag', 'v9.9.9-does-not-exist']],
-    ['MANIFEST_UNAVAILABLE', ['--manifest', 'artifacts/does-not-exist.json', '--tag', 'v0.4.0']],
+    ['MANIFEST_UNAVAILABLE', ['--manifest', 'artifacts/does-not-exist.json', '--source', '.']],
   ]
   for (const [want, args] of EXITS)
     it(`${want} の出力に toolVersion がある`, () => {
