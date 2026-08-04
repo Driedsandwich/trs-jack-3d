@@ -176,6 +176,7 @@ describe('公開物の文体', () => {
     'docs/release/v0.4.0-notes.md',
     'docs/release/v0.4.0-chatgpt-prompt.md',
     'docs/release/v0.4.1-notes.md',
+    'docs/release/v0.4.1-chatgpt-prompt.md',
     'docs/release/v0.3.0-chatgpt-prompt.md',
   ]
 
