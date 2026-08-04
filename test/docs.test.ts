@@ -27,6 +27,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { RELEASE_ASSETS } from '../scripts/releaseAssets.mjs'
 
 const ROOT = resolve(__dirname, '..')
 const read = (p: string) => readFileSync(resolve(ROOT, p), 'utf8')
@@ -392,6 +393,56 @@ describe('B. 文書に転記した artifact の値が一致している', () => 
     )
     const worst = Math.max(11.78 - j.minMm, j.maxMm - 11.78, 8.06 - Math.min(...breaks), Math.max(...breaks) - 8.06)
     expect(md).toContain(`最大 ${worst.toFixed(1)} mm`)
+  })
+
+  /**
+   * **README の Half-Plug 節が、実際の配布契約と一致する（v0.4.1・P0-3）。**
+   *
+   * v0.1.1 から v0.4.0 まで、**この節は一度も正しくなかった。**
+   *
+   *   v0.1.1 tag の README → v0.1.0 を案内
+   *   v0.2.0 / v0.3.0 / v0.4.0 tag の README → v0.1.1 を案内
+   *
+   * 「release のたびに直す」手順が無いのが原因で、文言を直すだけでは同じことが起きる。
+   * **release の設定と artifact から引いて突き合わせる。**
+   */
+  it('**README の配布物の版数が release の設定と一致する**', () => {
+    const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as { version: string }
+    const readme = text['README.md']
+    const m = readme.match(/\*\*配布物は \[(v[\d.]+)\]\(([^)]+)\)/)
+    if (!m) throw new Error('README に「**配布物は [vX.Y.Z](...)」の行が無い。書式を変えたらこの検査も直すこと')
+    // release:stage の既定版数（= package.json）と一致すること
+    expect({ readme: m[1], pkg: `v${pkg.version}` }).toEqual({ readme: `v${pkg.version}`, pkg: `v${pkg.version}` })
+    // リンク先の tag も同じであること（版数だけ直してリンクを忘れる形を防ぐ）
+    expect(m[2]).toContain(`/releases/tag/v${pkg.version}`)
+  })
+
+  it('**README の profile schema 版とファイル名が artifact と一致する**', () => {
+    const readme = text['README.md']
+    const prof = JSON.parse(
+      readFileSync(resolve(ROOT, 'artifacts/half_plug_topology_profile.v2.trs_jack_trs.json'), 'utf8'),
+    ) as { schemaVersion: number }
+    expect(prof.schemaVersion).toBeGreaterThan(0)
+    // 現行の schema 版を「現行」として書いていること
+    expect(readme).toContain(`Half-Plug Topology Profile v${prof.schemaVersion}`)
+    expect(readme).toContain(`half_plug_topology_profile.v${prof.schemaVersion}.*.json`)
+    // **旧版を「現行」として残していないこと。**過去の記述は known issue の表へ分ける
+    const body = readme.split('### 過去 release の known issue')[0]
+    for (let v = 1; v < prof.schemaVersion; v++) {
+      expect(body, `README 本文に旧 profile v${v} が現行として残っている`).not.toContain(`Half-Plug Topology Profile v${v}`)
+      expect(body, `README 本文に旧ファイル名 v${v} が残っている`).not.toContain(`half_plug_topology_profile.v${v}.*.json`)
+    }
+  })
+
+  it('**README が案内するファイル名が release asset に実在する**', () => {
+    const readme = text['README.md']
+    const names = RELEASE_ASSETS.map((a) => a.path.split('/').pop() as string)
+    // README が名指しする配布物のうち、パターンでなく実名のものを突き合わせる
+    const cited = ['trs-jack-3d-release-index.v1.json', 'verifyReleaseSourceInputs.mjs']
+    for (const c of cited) {
+      expect(readme, `README が ${c} に触れていない`).toContain(c)
+      expect(names, `${c} が配布一覧に無い`).toContain(c)
+    }
   })
 
   it('**docs/TEST_RESULTS.md のテスト件数が artifact と一致する**', () => {

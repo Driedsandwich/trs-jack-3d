@@ -34,7 +34,9 @@
  * ## read-only
  *
  * **ファイルへの書き込みを一切しない。**tar は展開せずメモリ上で読む。
- * 使う外部コマンドは `git archive` / `git rev-parse` / `gh api` だけで、いずれも読み取り専用。
+ * 使う外部コマンドは `git archive` / `git rev-parse` の 2 つだけで、どちらも読み取り専用。
+ * `--fetch github` は Node 組み込みの `fetch` を GET で使うので、**外部コマンドを増やさない**
+ * （v0.4.0 では `gh` を呼んでおり、受け手の環境に無くて使えなかった）。
  * `test/verifyReleaseSourceInputs.test.ts` が書き込み API を使っていないことを機械で固定している。
  */
 
@@ -50,8 +52,10 @@ import { join, resolve } from 'node:path'
  *   1 … 初版 (v0.2.0 フォローアップ §5)
  *   2 … 範囲定義 (source-input-scope.v1.json) から未記録入力を探すようにした。
  *       範囲定義が無い場合に既定へ戻さず performed:false を出す (v0.3.0 フォローアップ P1-2)
+ *   3 … --fetch github を gh から Node の fetch へ替えた（外部コマンド依存を無くした）。
+ *       toolVersion を全出口へ入れた。どちらも v0.4.0 で受け手が実際に困った点 (v0.4.1)
  */
-export const TOOL_VERSION = 2
+export const TOOL_VERSION = 3
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -73,8 +77,18 @@ const SCOPE_OVERRIDE = argOf('scope')
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
+/**
+ * 出力して終わる。**`toolVersion` はここで入れる。**
+ *
+ * v0.4.0 では成功・不一致の出口にしか書いておらず、
+ * `SOURCE_UNAVAILABLE` / `MANIFEST_UNAVAILABLE` / `NOTHING_TO_VERIFY` の 3 経路には
+ * 入っていなかった。**受け手が記録を保存しても、どの版の道具の出力か分からない。**
+ * 実際、下流が保存した `SOURCE_UNAVAILABLE` の記録には版が無かった。
+ *
+ * 各出口へ手で足すと、出口が増えたときにまた忘れる。**通り道で入れる。**
+ */
 const done = (payload, code) => {
-  console.log(JSON.stringify(payload, null, 1))
+  console.log(JSON.stringify({ toolVersion: TOOL_VERSION, ...payload }, null, 1))
   process.exit(code)
 }
 
@@ -163,12 +177,31 @@ function loadFromLocalTag(tag) {
   }
 }
 
-function loadFromGithub(tag) {
+/**
+ * GitHub から tag の source を取る。**外部コマンドを使わない（v0.4.1）。**
+ *
+ * v0.4.0 では `gh api` を呼んでいた。下流の環境に `gh` が無く、
+ * `spawnSync gh ENOENT` で `SOURCE_UNAVAILABLE` になった。
+ * 判定としては正しい（取れなかったことを不一致に潰していない）が、
+ * **検証ツールを配った意味が半分になる。**受け手に道具の前提を増やしてはいけない。
+ *
+ * Node 18 以降は `fetch` が組み込みなので、これで足りる。
+ * GET しかしないので read-only の性質も変わらない。
+ */
+async function loadFromGithub(tag) {
+  const url = `https://api.github.com/repos/${REPO}/tarball/${tag}`
+  let res
   try {
-    const gz = execFileSync('gh', ['api', `repos/${REPO}/tarball/${tag}`], { cwd: ROOT, maxBuffer: 1 << 30 })
+    res = await fetch(url, { headers: { 'user-agent': 'trs-jack-3d-verify', accept: 'application/vnd.github+json' } })
+  } catch (e) {
+    return { error: `GitHub へ接続できなかった (${url}): ${String(e.message).split('\n')[0]}` }
+  }
+  if (!res.ok) return { error: `GitHub が ${res.status} ${res.statusText} を返した (${url})` }
+  try {
+    const gz = Buffer.from(await res.arrayBuffer())
     return { files: stripTopLevel(readTar(gunzipSync(gz))), origin: `github-tarball:${REPO}@${tag}` }
   } catch (e) {
-    return { error: `GitHub から取得できなかった: ${String(e.message).split('\n')[0]}` }
+    return { error: `取得した tarball を読めなかった: ${String(e.message).split('\n')[0]}` }
   }
 }
 
@@ -185,13 +218,13 @@ try {
   done({ status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST, reason: `manifest を読めない: ${e.message}` }, 2)
 }
 
-const loaded = SOURCE_DIR
+const loaded = await (SOURCE_DIR
   ? loadFromDir(SOURCE_DIR)
   : FETCH === 'github' && TAG
     ? loadFromGithub(TAG)
     : TAG
       ? loadFromLocalTag(TAG)
-      : { error: '--source か --tag のどちらかが要る' }
+      : { error: '--source か --tag のどちらかが要る' })
 
 if (loaded.error) {
   // **不一致ではない。**取れなかっただけで、検証は「していない」
@@ -335,7 +368,6 @@ const detection = scope
 
 done({
   status,
-  toolVersion: TOOL_VERSION,
   origin: loaded.origin,
   networkUsed: loaded.origin.startsWith('github-tarball'),
   manifest: MANIFEST,

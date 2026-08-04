@@ -332,15 +332,28 @@ src/
 
 ## Half-Plug Lab との連携
 
-**配布物は [v0.1.1](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.1.1) です**
-（profile 2 件・schema 4 件・variant 別の感度 artifact 2 件・`SHA256SUMS`）。
-**固定には `provenance.inputDigest` を使ってください**
-（TRS×TRS `ea318f0c5b6c…` ／ TRS×TRRS `49b2ef8d7a13…`。**v0.1.1 から variant ごとに違います**）。
+**配布物は [v0.4.1](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.4.1) です。**
+
+**`profileId` を報告文から転記しないでください。**同梱の
+`trs-jack-3d-release-index.v1.json` から引くのが正本です
+（`profileId` は `provenance.inputDigest` の先頭 12 桁で、**版ごとに変わります**）。
 `sourceRevision` や `main` では固定しないでください
 — artifact を含めてコミットすると HEAD は変わりますが、入力が同じなら `inputDigest` は変わりません。
 
-> **v0.1.0 には known issue があります。**TRS モデルの感度解析値が TRS×TRRS profile へ
-> 混入していました。v0.1.1 で修正済みです（区間・`electricalTopology`・provenance には影響しません）。
+配布物の中身は `Half-Plug Topology Profile v2`（`half_plug_topology_profile.v2.*.json`）と、
+その検証に要る schema・evidence・入力の範囲定義・検証ツールです。
+入力 29 件は同梱の `verifyReleaseSourceInputs.mjs` で自分で検算できます。
+
+> **この節の版数・schema 版・ファイル名は `test/docs.test.ts` が機械照合しています。**
+> v0.1.1〜v0.4.0 の間、この節はずっと古い版を案内していました（→ [履歴](#過去-release-の-known-issue)）。
+
+### 過去 release の known issue
+
+| 版 | 内容 |
+|---|---|
+| v0.1.0 | TRS モデルの感度解析値が TRS×TRRS profile へ混入。v0.1.1 で修正（区間・`electricalTopology`・provenance には影響なし） |
+| v0.2.0〜v0.3.0 | この README が配布物として v0.1.1 を案内し続けていた。v0.4.1 で機械照合を入れて修正 |
+| v0.4.0 | `test_counts.json` の `allPassed` が `false`。実際は全件通過で、件数・内訳は正しい。v0.4.1 で生成手順を直し、配布側で拒否するようにした |
 
 このプロジェクトは元々、**「有線イヤホンを半挿しにすると音の質感が変わる」現象を
 無線イヤホンで再現したい**という目的から始まりました。その音響エミュレーター
@@ -349,7 +362,7 @@ src/
 ```
 trs-jack-3d          決定論的な幾何・接点・回路グラフ
       ↓
-Half-Plug Topology Profile v1     ← 中立 JSON。ここが境界
+Half-Plug Topology Profile v2     ← 中立 JSON。ここが境界
       ↓
 Half-Plug Lab                     DSP 状態候補への写像は向こう側の責任
 ```
@@ -512,7 +525,7 @@ PS000001 はその外側です。**どちらが実物に近いかは決着して
 | `perf_real_gpu.json` | 実 GPU (Apple M5) でのフレームレートと描画コスト |
 | `touch_verification.json` | タッチ操作の検証 20 項目の結果 |
 | `sensitivity.json` | 仮定パラメータの感度解析の生データ（→ [docs/SENSITIVITY.md](docs/SENSITIVITY.md)） |
-| `half_plug_topology_profile.v1.*.json` | 接点トポロジーの中立表現（variant ごと）。**音響係数ではありません** |
+| `half_plug_topology_profile.v2.*.json` | 接点トポロジーの中立表現（variant ごと）。**音響係数ではありません** |
 | `topology_search_difference_signal.json` | 左右差分が残る構成の探索結果（`npm run search:topology`・約 10 分） |
 | `real_jack_comparison.json` | 実在部品の図面値との突き合わせ（`npm run compare:real-jack`）。**看板の結論が実在図面 1 件と食い違うことを記録しています** |
 | `test_counts.json` | テスト件数と内訳（`npm run test:count`）。文書の件数はこれと機械照合します |

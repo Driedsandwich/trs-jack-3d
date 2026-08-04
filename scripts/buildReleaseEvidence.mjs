@@ -248,6 +248,24 @@ const sourceOnly = new Set(SOURCE_ONLY_TARGETS.map((t) => t.path))
 const results = validateAll()
 const failed = results.filter((r) => r.missing || r.schemaErrors.length || r.semanticErrors.length)
 
+/**
+ * **schema 検証と「配ってよいか」を別の名前で出す（v0.4.1・P0-2）。**
+ *
+ * v0.4.0 では `validation-results.json` が 11/11 PASS でありながら、
+ * `test_counts.json` は `allPassed: false` だった。**両者を突き合わせていなかった。**
+ * artifact の形が正しいことと、release として出してよいことは別の判定である。
+ */
+const tcPath = 'artifacts/test_counts.json'
+const tc = existsSync(resolve(ROOT, tcPath)) ? read(tcPath) : null
+const readinessReasons = []
+if (failed.length) readinessReasons.push(`validate:profiles が ${failed.length} 件不適合`)
+if (!tc) readinessReasons.push(`${tcPath} が無い`)
+else {
+  if (tc.allPassed !== true) readinessReasons.push(`${tcPath} の allPassed が ${JSON.stringify(tc.allPassed)}`)
+  if (tc.failed !== undefined && tc.failed !== 0) readinessReasons.push(`${tcPath} の failed が ${tc.failed}`)
+  if (tc.exitCode !== undefined && tc.exitCode !== 0) readinessReasons.push(`${tcPath} の exitCode が ${tc.exitCode}`)
+}
+
 const validation = {
   schemaVersion: 1,
   generatedBy: 'npm run release:evidence',
@@ -257,6 +275,17 @@ const validation = {
   targetsTotal: results.length,
   targetsPassed: results.length - failed.length,
   allPassed: failed.length === 0,
+  /** artifact の**形と意味**が正しいか。テストの成否とは別 */
+  artifactValidationStatus: failed.length === 0 ? 'PASS' : 'FAIL',
+  /**
+   * **release として配ってよいか。**形の検証に加えて、テストが通っていることまで見る。
+   * `npm run release:stage` がこれを門にする。
+   */
+  releaseReadinessStatus: readinessReasons.length === 0 ? 'READY' : 'NOT_READY',
+  releaseReadinessReasons: readinessReasons,
+  testEvidence: tc
+    ? { total: tc.total, failed: tc.failed ?? null, skipped: tc.skipped, exitCode: tc.exitCode ?? null, allPassed: tc.allPassed }
+    : null,
   /** **配布する対象と、しない対象を分けて数える（v0.2.0 フォローアップ §3）。** */
   distributedTargets: results.filter((r) => shippedPaths.has(r.artifact)).length,
   sourceOnlyTargets: results.filter((r) => !shippedPaths.has(r.artifact)).length,
@@ -395,6 +424,8 @@ console.log(`  source-verification-result  ${sourceVerification.status}`
   + ` (検算 ${sourceVerification.counts.checked} 件 / 記録漏れ探索 ${sourceVerification.unrecordedInputDetection.performed ? '実行' : '**未実行**'})`
   + ' — **自己申告**')
 console.log(`  release-index               asset ${assets.length} 件 / 生成 commit ${index.artifactGenerationCommits.length} 種`)
+console.log(`  artifactValidation          ${validation.artifactValidationStatus}`)
+console.log(`  releaseReadiness            ${validation.releaseReadinessStatus}`)
 if (inconsistent.length) console.log(`  **artifact 間で sha256 が食い違う入力が ${inconsistent.length} 件**`)
 if (mismatched.length) console.log(`  **作業ツリーと一致しない入力が ${mismatched.length} 件** (作り直しが要る)`)
 if (!validation.allPassed) {
@@ -406,4 +437,18 @@ if (selfBad) {
   console.log('\n**自分で書いた evidence が schema に適合しない。**')
   process.exit(1)
 }
-console.log('  すべて整合している')
+/**
+ * **ここで止めない（v0.4.1・P0-2）。**
+ *
+ * テストが落ちていることを理由に evidence の生成を止めると、
+ * 「件数の照合が落ちている間は件数を更新できない」という循環に戻る。
+ * evidence には `releaseReadinessStatus: NOT_READY` と理由が入っているので、
+ * **止めるのは配布側**（`npm run release:stage` が拒否する）。
+ */
+if (validation.releaseReadinessStatus !== 'READY') {
+  console.log('\n**release として配れる状態ではない。**')
+  for (const r of validation.releaseReadinessReasons) console.log(`  ${r}`)
+  console.log('  evidence は書いた（判定を残すため）。**npm run release:stage が拒否する。**')
+} else {
+  console.log('  すべて整合している')
+}

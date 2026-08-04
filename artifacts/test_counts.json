@@ -1,8 +1,8 @@
 {
  "schemaVersion": 1,
- "generatedAt": "2026-08-03",
+ "generatedAt": "2026-08-04",
  "note": "npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。byFile は npm run check:vacuity の下限としても使う。件数が減る変更は理由を書く。",
- "total": 467,
+ "total": 473,
  "byFile": {
   "contact.test.ts": 41,
   "dimensions.test.ts": 16,
@@ -22,8 +22,16 @@
   "topologySearch.test.ts": 16,
   "trrs.test.ts": 26,
   "uiStrings.test.ts": 25,
-  "verifyReleaseSourceInputs.test.ts": 17
+  "verifyReleaseSourceInputs.test.ts": 23
  },
  "skipped": 0,
- "allPassed": false
+ "failed": 5,
+ "failedSuites": 9,
+ "exitCode": 1,
+ "allPassed": false,
+ "testCommand": "npx vitest run --reporter=json",
+ "runner": "vitest",
+ "runnerVersion": "4.1.10",
+ "nodeVersion": "v22.22.3",
+ "generatedFromCommit": "8b6ce4c2531418dde1c3d75c00786928f67a92c3"
 }

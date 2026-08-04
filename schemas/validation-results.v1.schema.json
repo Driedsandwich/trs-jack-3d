@@ -15,7 +15,11 @@
     "distributedTargets",
     "sourceOnlyTargets",
     "results",
-    "note"
+    "note",
+    "artifactValidationStatus",
+    "releaseReadinessStatus",
+    "releaseReadinessReasons",
+    "testEvidence"
   ],
   "additionalProperties": false,
   "properties": {
@@ -119,6 +123,65 @@
     },
     "note": {
       "type": "string"
+    },
+    "artifactValidationStatus": {
+      "enum": [
+        "PASS",
+        "FAIL"
+      ],
+      "description": "artifact の**形と意味**が正しいか。テストの成否とは別"
+    },
+    "releaseReadinessStatus": {
+      "enum": [
+        "READY",
+        "NOT_READY"
+      ],
+      "description": "**release として配ってよいか。**release:stage がこれを門にする"
+    },
+    "releaseReadinessReasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "NOT_READY の理由。**空のまま NOT_READY にしない**"
+    },
+    "testEvidence": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "total",
+            "allPassed"
+          ],
+          "properties": {
+            "total": {
+              "type": "integer"
+            },
+            "failed": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "skipped": {
+              "type": "integer"
+            },
+            "exitCode": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "allPassed": {
+              "type": "boolean"
+            }
+          }
+        }
+      ],
+      "description": "**形の検証と突き合わせた test の結果。**v0.4.0 では両者を見ていなかった"
     }
   }
 }

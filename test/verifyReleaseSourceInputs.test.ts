@@ -67,8 +67,23 @@ describe('§5-1 read-only であること', () => {
     const calls = [...SRC.matchAll(/execFileSync\(\s*'([^']+)'\s*,\s*\[\s*'([^']+)'/g)]
       .map((m) => `${m[1]} ${m[2]}`)
     mustBeNonEmpty(calls, '外部コマンド呼び出し')
-    const ALLOWED = ['git archive', 'git rev-parse', 'gh api']
+    const ALLOWED = ['git archive', 'git rev-parse']
     for (const c of calls) expect(ALLOWED, `${c} は読み取り専用の一覧に無い`).toContain(c)
+  })
+
+  /**
+   * **受け手に道具の前提を増やさない（v0.4.1）。**
+   *
+   * v0.4.0 では `--fetch github` が `gh api` を呼んでいた。
+   * 下流の環境に `gh` が無く `spawnSync gh ENOENT` になり、
+   * **配った検証ツールの network 経路が使えなかった。**
+   * Node 18 以降は `fetch` が組み込みなので、外部コマンドは要らない。
+   */
+  it('**`gh` に依存していない**（受け手の環境に無くても使える）', () => {
+    expect(SRC).not.toMatch(/execFileSync\(\s*'gh'/)
+    expect(SRC).not.toMatch(/'gh api'/)
+    // 取得は組み込みの fetch を GET で使う（read-only の性質は変わらない）
+    expect(SRC).toMatch(/await fetch\(/)
   })
 
   it('tar を展開せずメモリ上で読んでいる', () => {
@@ -200,6 +215,45 @@ describe('§5-3 取れなかったのと合わなかったのを混ぜない', (
     expect(r.json.status).toBe('MISMATCH')
     const extra = mustBeNonEmpty(r.json.unrecordedInputCandidates as string[], '記録漏れの入力候補')
     expect(extra.every((x) => x.startsWith('src/model/'))).toBe(true)
+  })
+})
+
+/**
+ * **どの出口にも版が入っていること（v0.4.1）。**
+ *
+ * v0.4.0 では成功・不一致の出口にしか `toolVersion` が無く、
+ * 下流が保存した `SOURCE_UNAVAILABLE` の記録には版が入っていなかった。
+ * **記録を受け取った側が、どの版の道具の出力か判別できない。**
+ */
+describe('§5-3b すべての出口に toolVersion が入る', () => {
+  const EXITS: [string, string[]][] = [
+    ['OK', ['--manifest', 'artifacts/source-input-manifest.json', '--tag', 'v0.4.0', '--scope', 'source-input-scope.v1.json']],
+    ['SOURCE_UNAVAILABLE', ['--manifest', 'artifacts/source-input-manifest.json', '--tag', 'v9.9.9-does-not-exist']],
+    ['MANIFEST_UNAVAILABLE', ['--manifest', 'artifacts/does-not-exist.json', '--tag', 'v0.4.0']],
+  ]
+  for (const [want, args] of EXITS)
+    it(`${want} の出力に toolVersion がある`, () => {
+      const r = run(args)
+      expect(r.json.status).toBe(want)
+      expect(r.json.toolVersion, `${want} に版が無い`).toBeGreaterThanOrEqual(3)
+    })
+
+  it('NOTHING_TO_VERIFY の出力にも toolVersion がある', () => {
+    const p = tagManifest((d) => {
+      const o = d as { inputFiles: unknown[]; inputFilesTotal: number }
+      o.inputFiles = []
+      o.inputFilesTotal = 0
+    })
+    const r = run(['--manifest', p, '--tag', 'v0.2.0'])
+    expect(r.json.status).toBe('NOTHING_TO_VERIFY')
+    expect(r.json.toolVersion).toBeGreaterThanOrEqual(3)
+  })
+
+  it('**各出口へ手で書かず、done() が入れている**（出口が増えても忘れない）', () => {
+    expect(SRC).toMatch(/const done = \([^)]*\) => \{[\s\S]{0,200}toolVersion: TOOL_VERSION/)
+    // 個別の done 呼び出しに toolVersion を書き足していないこと
+    const perCall = [...SRC.matchAll(/done\(\{[\s\S]{0,120}?toolVersion/g)]
+    expect(perCall).toHaveLength(0)
   })
 })
 

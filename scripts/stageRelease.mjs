@@ -64,6 +64,58 @@ if (dup.length) {
   process.exit(1)
 }
 
+/**
+ * --- テストが通っていない artifact を配らせない（v0.4.1・P0-1/P0-2）-----------
+ *
+ * **v0.4.0 で実際にやってしまった。**テストが 2 件落ちている時点で `test:count` を回し、
+ * 直したあと取り直さなかった。件数は変わらなかったので `total` の突き合わせは通り、
+ * `allPassed: false` のまま公開した。
+ *
+ * **生成は止めない。**止めると「件数の照合が落ちている間は件数を更新できない」という
+ * 循環に戻る（`scripts/testCount.mjs` の冒頭に経緯がある）。
+ * 循環が起きるのは*生成*側で、*配布*側で止めればどちらの問題も起きない。
+ * だからここで拒む。
+ *
+ * `--allow-not-ready` は形だけ確かめたいときの逃げ道で、**配ってはいけない。**
+ */
+const ALLOW_NOT_READY = argv.includes('--allow-not-ready')
+const TEST_COUNTS = 'artifacts/test_counts.json'
+if (existsSync(resolve(ROOT, TEST_COUNTS))) {
+  const tc = read(resolve(ROOT, TEST_COUNTS))
+  const reasons = []
+  if (tc.allPassed !== true) reasons.push(`allPassed が ${JSON.stringify(tc.allPassed)}`)
+  if (tc.failed !== undefined && tc.failed !== 0) reasons.push(`failed が ${tc.failed}`)
+  if (tc.exitCode !== undefined && tc.exitCode !== 0) reasons.push(`exitCode が ${tc.exitCode}`)
+  if (reasons.length) {
+    console.log(`**${TEST_COUNTS} がテストの成功を示していない: ${reasons.join(' / ')}**`)
+    console.log('  この artifact を配ると、受け手は「テストが落ちたまま出した」と読む。')
+    console.log('  テストを直してから npm run test:count を**取り直す**こと。')
+    console.log('  (件数が同じでも取り直しは要る。v0.4.0 はここを飛ばして allPassed: false を公開した)')
+    console.log('  形だけ確かめたい場合は --allow-not-ready を付ける（**配ってはいけない**）。')
+    if (!ALLOW_NOT_READY) process.exit(1)
+    console.log('  --allow-not-ready が付いているので続行する。')
+  }
+} else {
+  console.log(`**${TEST_COUNTS} が無い。**npm run test:count を回すこと。`)
+  if (!ALLOW_NOT_READY) process.exit(1)
+}
+
+/**
+ * release evidence 側の判定とも突き合わせる。
+ * **evidence が「配布可」と言っていないものを配らない。**
+ */
+const VALIDATION = 'artifacts/validation-results.json'
+if (existsSync(resolve(ROOT, VALIDATION))) {
+  const vr = read(resolve(ROOT, VALIDATION))
+  if (vr.releaseReadinessStatus !== undefined && vr.releaseReadinessStatus !== 'READY') {
+    console.log(`**${VALIDATION} の releaseReadinessStatus が ${vr.releaseReadinessStatus} である。**`)
+    for (const r of vr.releaseReadinessReasons ?? []) console.log(`  ${r}`)
+    console.log('  npm run release:evidence を回し直すこと。')
+    if (!ALLOW_NOT_READY) process.exit(1)
+    console.log('  --allow-not-ready が付いているので続行する。')
+  }
+}
+
 // --- local な artifact を拒む ------------------------------------------------
 const localOnes = RELEASE_ASSETS.filter((a) => {
   if (!a.path.startsWith('artifacts/')) return false

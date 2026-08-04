@@ -20,16 +20,48 @@ const ROOT = process.cwd()
 const TMP = resolve(ROOT, 'node_modules/.cache/test-count.json')
 const OUT = resolve(ROOT, 'artifacts/test_counts.json')
 
+/** 引けなければ `UNKNOWN`。**推測で埋めない** */
+const gitHead = () => {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  } catch {
+    return 'UNKNOWN'
+  }
+}
+const runnerVersion = () => {
+  try {
+    return JSON.parse(readFileSync(resolve(ROOT, 'node_modules/vitest/package.json'), 'utf8')).version
+  } catch {
+    return 'UNKNOWN'
+  }
+}
+
 mkdirSync(resolve(ROOT, 'node_modules/.cache'), { recursive: true })
-// **失敗しても続ける。** vitest はテストが落ちると非ゼロで終了するが、JSON レポートは書く。
-// ここで例外にすると「件数の照合が落ちている間は件数を更新できない」という循環になる
-// (実際に一度そうなった)。件数を数えるのが目的なので、成否は allPassed に記録するだけにする。
+/**
+ * **失敗しても続ける。生成は止めない。**
+ *
+ * vitest はテストが落ちると非ゼロで終了するが、JSON レポートは書く。
+ * ここで例外にすると「件数の照合が落ちている間は件数を更新できない」という循環になる
+ * (実際に一度そうなった)。件数を数えるのが目的なので、成否は記録するだけにする。
+ *
+ * ## 止めるのは配布側（v0.4.1・P0-1/P0-2）
+ *
+ * v0.4.0 では、**2 件落ちている時点でこれを回し、直したあと取り直さなかった。**
+ * 件数は変わらなかったので `total` を突き合わせる検査は通り、
+ * `allPassed: false` のまま公開された。
+ *
+ * 生成を止める設計にすると上の循環に戻るので、**生成は許して配布を止める。**
+ * `npm run release:stage` が `allPassed !== true` を拒否し、
+ * `validation-results.json` の `releaseReadinessStatus` にも出す。
+ */
+let exitCode = 0
 try {
   execFileSync('npx', ['vitest', 'run', '--reporter=json', `--outputFile=${TMP}`], {
     cwd: ROOT,
     stdio: ['ignore', 'ignore', 'inherit'],
   })
-} catch {
+} catch (e) {
+  exitCode = typeof e.status === 'number' ? e.status : 1
   // レポートが書けていれば続行する。書けていなければ次の readFileSync で落ちる
 }
 
@@ -63,7 +95,20 @@ writeFileSync(
       total,
       byFile: Object.fromEntries(Object.entries(byFile).sort()),
       skipped,
-      allPassed: r.numFailedTests === 0,
+      /**
+       * **同じ実行から取る（v0.4.1・P0-1）。**
+       * `allPassed` だけだと「なぜ false なのか」が残らず、
+       * 直したあと取り直したかどうかも分からない。
+       */
+      failed: r.numFailedTests ?? 0,
+      failedSuites: r.numFailedTestSuites ?? 0,
+      exitCode,
+      allPassed: r.numFailedTests === 0 && exitCode === 0,
+      testCommand: 'npx vitest run --reporter=json',
+      runner: 'vitest',
+      runnerVersion: runnerVersion(),
+      nodeVersion: process.version,
+      generatedFromCommit: gitHead(),
     },
     null,
     1,
@@ -71,3 +116,7 @@ writeFileSync(
 )
 console.log(`artifacts/test_counts.json: 合計 ${total} 件 / ${Object.keys(byFile).length} ファイル`)
 for (const [k, v] of Object.entries(byFile).sort()) console.log(`  ${k.padEnd(30)} ${v}`)
+if (r.numFailedTests || exitCode) {
+  console.log(`\n  **失敗 ${r.numFailedTests} 件 / exit ${exitCode}。件数は記録したが、この artifact では配布できない。**`)
+  console.log('  npm run release:stage が allPassed !== true を拒否する。直してから取り直すこと。')
+}

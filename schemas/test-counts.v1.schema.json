@@ -4,23 +4,82 @@
   "title": "テスト件数 v1",
   "description": "npm run test:count の出力。docs/TEST_RESULTS.md の件数と機械照合し、npm run check:vacuity の下限としても使う。",
   "type": "object",
-  "required": ["schemaVersion", "generatedAt", "note", "total", "byFile", "skipped", "allPassed"],
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "note",
+    "total",
+    "byFile",
+    "skipped",
+    "allPassed",
+    "failed",
+    "exitCode",
+    "testCommand",
+    "runner",
+    "runnerVersion",
+    "nodeVersion",
+    "generatedFromCommit"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schemaVersion": { "const": 1 },
-    "generatedAt": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
-    "note": { "type": "string" },
-    "total": { "type": "integer", "minimum": 1 },
+    "schemaVersion": {
+      "const": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "note": {
+      "type": "string"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 1
+    },
     "byFile": {
       "type": "object",
       "minProperties": 1,
-      "additionalProperties": { "type": "integer", "minimum": 0 }
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
     },
     "skipped": {
       "type": "integer",
       "minimum": 0,
       "description": "飛ばされたテストの件数。**0 でないと check:vacuity が落ちる。** skip は「通った」ではなく「見ていない」"
     },
-    "allPassed": { "type": "boolean" }
+    "allPassed": {
+      "type": "boolean"
+    },
+    "failed": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "**同じ実行から取る。**allPassed だけでは「なぜ false か」が残らない"
+    },
+    "failedSuites": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "exitCode": {
+      "type": "integer",
+      "description": "vitest の終了コード。テストは通ったが runner が落ちた場合を区別する"
+    },
+    "testCommand": {
+      "type": "string"
+    },
+    "runner": {
+      "type": "string"
+    },
+    "runnerVersion": {
+      "type": "string"
+    },
+    "nodeVersion": {
+      "type": "string"
+    },
+    "generatedFromCommit": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{40}|UNKNOWN)$"
+    }
   }
 }
