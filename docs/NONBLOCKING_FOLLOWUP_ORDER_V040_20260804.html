@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>v0.4.0 フォローアップオーダー (2026-08-04)</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc"><h2>目次</h2><ol><li><a href="#s1">0-1. 受領時の検証記録（2026-08-04・trs-jack-3d 側）</a></li><li><a href="#s5">0. 結論</a></li><li><a href="#s6">1. P0 — v0.4.1</a></li><li><a href="#s14">2. P1 — v0.5.0 Schema契約</a></li><li><a href="#s19">3. P2 — 再現環境</a></li><li><a href="#s20">4. P2 — CI</a></li><li><a href="#s21">5. P3 — reusable model core（必要時のみ）</a></li><li><a href="#s22">6. P3 — 物理検証</a></li><li><a href="#s23">7. 完了報告で必要な情報</a></li></ol></nav>
+<h1>trs-jack-3d v0.4.0 フォローアップ開発オーダー</h1>
+<p>作成日: 2026-08-04   対象: <code>Driedsandwich/trs-jack-3d</code></p>
+<h2 id="s1">0-1. 受領時の検証記録（2026-08-04・trs-jack-3d 側）</h2>
+<p><strong>受け取った内容は実測で裏を取りました。</strong>自己申告は使っていません。</p>
+<div class="tw"><table><thead><tr><th>確認</th><th>方法</th><th>結果</th></tr></thead><tbody><tr><td>配布 zip</td><td><code>shasum -c</code></td><td><strong>一致</strong>（2,915,564 bytes・CRC OK・469 ファイル）</td></tr><tr><td>このオーダー本体</td><td>zip 内から直接読み出し</td><td>sha256 <code>26a9ef573612fa96…</code></td></tr><tr><td>数値・構造の主張</td><td>配布 24 件と 1 件ずつ照合</td><td><strong>25 項目すべて一致・食い違い 0</strong></td></tr><tr><td>指摘 P0-1（<code>allPassed: false</code>）</td><td>公開 tag の artifact を確認</td><td><strong>正しい</strong>（こちらも公開前に自分で気づき、作業指示 §0 に訂正を書いていた）</td></tr><tr><td>指摘 P0-3（README 陳腐化）</td><td>全 tag の README を走査</td><td><strong>正しい。しかも指摘より深刻</strong>（下の 0-3）</td></tr><tr><td>指摘 P1-1（schema hash 変更）</td><td>v0.3.0 と v0.4.0 の実ファイルを hash</td><td><strong>4 件すべて一致。向きも正しい</strong></td></tr></tbody></table></div>
+<p>照合した主な値（すべて一致）:</p>
+<pre><code>SHA256SUMS 登録 23 / bundle 24 ファイル / 欠落 0 / 余剰 0
+profileId  TRS  trs-jack-3d:TRS|JACK-TRS:f925561fead8
+           TRRS trs-jack-3d:TRS|JACK-TRRS:4923277389e6
+releaseCommit  ab803e6b99356f4c73f789e31bc2b90e74f5ce3f
+生成 commit    e396af761e41(感度2・頑健性1) / d6ed1b2b6dce(profile 2) / 42a16bcd062a(evidence 3)
+TRS  intervals 23 / events 32 / ground-open-differential 0
+TRRS intervals 30 / events 36 / ground-open-differential 1   合計 53 / 68
+IV028  13.30–13.52mm  normalized 0.95–0.965714  ASSUMPTION
+       RETURN_OPEN_L_AND_R_ON_DISTINCT_CONDUCTORS
+mechanicalInsertion  TRS 12.34 → 14.00（gap 1.66）
+入力 29 件 / required 9 / allowedGenerated 3 / excludedOutputs artifacts / notCovered 5</code></pre>
+<p><code>SHA256SUMS</code> の「23」を最初 46 と読み違えたのは<strong>こちらの数え間違い</strong>です。 このファイルはコメント行を 23 行持ちます（データ行 23・コメント/空行 23・計 46）。</p>
+<h3 id="s2">0-2. schema hash の指摘は、向きも含めて正しい</h3>
+<p><strong>変わっていないという疑いを持って測り直しましたが、4 件とも申告どおりでした。</strong></p>
+<div class="tw"><table><thead><tr><th>schema</th><th>v0.3.0</th><th>v0.4.0</th></tr></thead><tbody><tr><td><code>half-plug-topology-profile.v2</code></td><td><code>6b13f5…</code></td><td><code>ecc48e…</code></td></tr><tr><td><code>event-sensitivity.v1</code></td><td><code>8d4b87…</code></td><td><code>b859a1…</code></td></tr><tr><td><code>topology-robustness.v2</code></td><td><code>9c2e3c…</code></td><td><code>13a30e…</code></td></tr><tr><td><code>source-input-manifest.v1</code></td><td><code>b5b1ab…</code></td><td><code>15a905…</code></td></tr></tbody></table></div>
+<p>「同じ schemaId / version のままファイルが変わっている」という指摘はそのとおりです。 こちらは「追加のみで沈黙して壊れない」と書きましたが、 <strong>旧 schema を pin した consumer が拒否する時点で実質的に破壊変更</strong>という読みのほうが正確です。</p>
+<h3 id="s3">0-3. README の陳腐化は、指摘より 3 版ぶん古い</h3>
+<p>指摘は v0.4.0 の README を見たものですが、全 tag を走査すると<strong>一度も正しかったことがありません。</strong></p>
+<div class="tw"><table><thead><tr><th>tag</th><th>README が案内する配布物</th></tr></thead><tbody><tr><td>v0.1.1</td><td><strong>v0.1.0</strong></td></tr><tr><td>v0.2.0</td><td><strong>v0.1.1</strong></td></tr><tr><td>v0.3.0</td><td><strong>v0.1.1</strong></td></tr><tr><td>v0.4.0</td><td><strong>v0.1.1</strong></td></tr></tbody></table></div>
+<p><code>half_plug_topology_profile.v1.*.json</code> と「Half-Plug Topology Profile v1」も残っています。 <strong>release のたびに直す手順が無い</strong>のが原因で、P0-3 は文言修正ではなく機械照合が要ります。</p>
+<h3 id="s4">0-4. こちら側で新たに見つけたこと（オーダーに無い）</h3>
+<p><strong>1. 同梱した検証ツールの network 経路が <code>gh</code> に依存している。</strong></p>
+<p>受領した <code>SOURCE_INPUT_VERIFICATION_RESULT</code> は、こちらのツールの出力そのままでした。</p>
+<pre><code>status  SOURCE_UNAVAILABLE
+reason  GitHub から取得できなかった: spawnSync gh ENOENT</code></pre>
+<p><strong>判定は正しい</strong>（取れなかったことを不一致に潰していない）。 だが <code>--fetch github</code> は <code>gh</code> を呼ぶので、<code>gh</code> の無い環境では使えません。 Node 18 以降には <code>fetch</code> が入っているので、外部コマンドなしで取得できます。 <code>--source</code> 経路は動くはずですが、<strong>道具を配った意味を半分にしています。</strong></p>
+<p><strong>2. <code>toolVersion</code> が早期終了の出力に入っていない。</strong></p>
+<p>成功・不一致の出口にしか入れておらず、 <code>SOURCE_UNAVAILABLE</code> / <code>MANIFEST_UNAVAILABLE</code> / <code>NOTHING_TO_VERIFY</code> の 3 経路には 入っていません（受領した JSON にも無い）。 <strong>記録を受け取った側が、どの版の道具の出力かを判別できません。</strong></p>
+<hr>
+<h2 id="s5">0. 結論</h2>
+<p>Half-Plug Labへのv0.4.0 static integrationを止める問題はない。</p>
+<p>一方、リポジトリ本体を外部利用者へ安定して提示するには、次の2段階を推奨する。</p>
+<pre><code>v0.4.1: release evidenceとREADMEの修正（互換patch）
+v0.5.0: Schema versioningの是正（破壊release）</code></pre>
+<p>v0.4.0のassetは上書きしない。</p>
+<h2 id="s6">1. P0 — v0.4.1</h2>
+<h3 id="s7">P0-1. <code>test_counts.json</code>を最終テスト実行と原子的に結合する</h3>
+<p>現在のv0.4.0 release asset:</p>
+<pre><code>total 467
+skipped 0
+allPassed false</code></pre>
+<p>原因は、失敗状態でcount artifactを作り、その後テストを直してもartifactを再生成しなかったこと。</p>
+<h3 id="s8">必須対応</h3>
+<p><code>test_counts.json</code>へ次を追加するか、別のtest-run evidenceを導入する。</p>
+<pre><code>passed
+failed
+skipped
+total
+allPassed
+testCommand
+exitCode
+runner
+runnerVersion
+nodeVersion
+startedAt
+finishedAt
+generatedFromCommit
+testOutputSha256</code></pre>
+<p>release stagingを次の一連操作にする。</p>
+<pre><code>1. final testを実行
+2. exit codeとmachine-readable resultを取得
+3. 同じresultからtest_countsを生成
+4. allPassed == true / failed == 0を確認
+5. test artifactの生成commitとrelease入力を固定
+6. release stageへ進む</code></pre>
+<p>禁止:</p>
+<ul><li>test countを先に生成して後からテストだけ直す</li><li><code>total</code>だけでstalenessを判定する</li><li>release notesでartifactのfalseをtrueに読み替える</li><li>v0.4.0 assetを置換する</li></ul>
+<h3 id="s9">回帰試験</h3>
+<ol><li>2件FAIL状態でartifact生成→release stage拒否</li><li>FAILを修正したがartifact未更新→拒否</li><li>totalが同じでもallPassed/failed/exitCodeが古ければ拒否</li><li>test file追加・削除でstale検出</li><li>test runner version変更を記録</li><li><code>validation-results</code>がtest resultと矛盾すれば拒否</li></ol>
+<h3 id="s10">P0-2. release validationをtest evidenceとcross-checkする</h3>
+<p>現在、<code>validation-results.json</code>は11/11 PASSでも、<code>test_counts.json.allPassed=false</code>を許容する。</p>
+<p>release readiness用の意味規則を追加する。</p>
+<pre><code>releaseReady =
+  validationResults.allPassed
+  &amp;&amp; testCounts.allPassed
+  &amp;&amp; testCounts.failed == 0
+  &amp;&amp; testCounts.exitCode == 0
+  &amp;&amp; testCounts.generatedFromCommit is expected</code></pre>
+<p>Schema validationとrelease readinessを別名で出す。</p>
+<pre><code>artifactValidationStatus
+releaseReadinessStatus</code></pre>
+<h3 id="s11">P0-3. READMEのHalf-Plug節を最新化する</h3>
+<p>v0.4.0 tagのREADMEは次を案内している。</p>
+<pre><code>release v0.1.1
+Half-Plug Topology Profile v1
+half_plug_topology_profile.v1.*.json</code></pre>
+<p>次へ更新する。</p>
+<pre><code>latest supported release: v0.4.0またはrelease indexを正本にする手順
+profile schema: v2
+profile filenames: half_plug_topology_profile.v2.*.json
+source input scope: 29 files
+release lock: release indexから生成</code></pre>
+<p>過去releaseのknown issueは履歴節へ分離する。</p>
+<h3 id="s12">文書回帰試験</h3>
+<ul><li>READMEのlatest supported tagがrelease staging設定と一致</li><li>Profile Schema versionがrelease indexと一致</li><li>artifact filenameがrelease indexに存在</li><li>READMEに旧profile v1を「現行」として記載しない</li><li>release indexから期待値を構築し、手入力のdigestを減らす</li></ul>
+<h3 id="s13">P0-4. v0.4.1 release</h3>
+<p>添付:</p>
+<ul><li>修正済みtest evidence</li><li>validation results</li><li>release index</li><li>SHA256SUMS</li><li>known issue/migration note</li></ul>
+<p>v0.4.0はimmutableに保つ。</p>
+<h2 id="s14">2. P1 — v0.5.0 Schema契約</h2>
+<h3 id="s15">P1-1. 互換性を壊すSchema変更ではversionを上げる</h3>
+<p>v0.3.0→v0.4.0で、同じSchema versionのまま次が変更された。</p>
+<ul><li>provenance role enumへ<code>input-scope</code>を追加</li><li>source-input-manifestで<code>inputScope</code>を必須化</li></ul>
+<p>旧Schemaをpinしたconsumerは新artifactを拒否するため、実質的に破壊変更である。</p>
+<p>次のいずれかを採用する。</p>
+<h3 id="s16">推奨A</h3>
+<pre><code>half-plug-topology-profile.v3
+ event-sensitivity.v2
+ topology-robustness.v3
+ source-input-manifest.v2</code></pre>
+<p><code>contractMigration</code>へ旧版からの変更を記録する。</p>
+<h3 id="s17">代替B</h3>
+<p>provenance roleを外部拡張可能な文字列にし、未知roleを保全して読み飛ばせる設計へ変更する。ただし必須field追加は別versionを必要とする。</p>
+<h3 id="s18">P1-2. Schema versioning policyを文書化する</h3>
+<p>最低限:</p>
+<pre><code>同じschemaId/version:
+- optional field追加のみ
+-既存値の意味を変えない
+- enum拡張をconsumerが拒否する場合は破壊変更扱い
+
+version bump必須:
+- required field追加
+- enum rename/remove/additionで旧consumerが失敗
+- field meaning変更
+- constraint強化</code></pre>
+<p>Schema file hashはrelease lockで固定するが、hash固定はversioningの代替ではない。</p>
+<h2 id="s19">3. P2 — 再現環境</h2>
+<p><code>inputScope.notCovered</code>にある次をrelease evidenceへ記録する。</p>
+<pre><code>node version
+npm version
+OS/architecture
+locale
+timezone
+relevant environment variables</code></pre>
+<p>推奨asset:</p>
+<pre><code>toolchain-environment.v1.json</code></pre>
+<p>これはinputDigestへ混ぜるか、少なくとも再現条件として別途固定する。</p>
+<h2 id="s20">4. P2 — CI</h2>
+<p>手動release順序の取り違えを減らすため、read-only CIを導入する。</p>
+<p>実行:</p>
+<pre><code>npm ci
+npm run typecheck
+npm run lint
+npm run test
+npm run build
+npm run validate:profiles
+npm run check:stale
+npm run check:vacuity
+release evidence dry-run</code></pre>
+<p>要件:</p>
+<ul><li>Actionはfull commit SHAへ固定</li><li>write permissionなし</li><li>release/publishしない</li><li>secret不要</li><li>generated artifact差分があれば失敗</li></ul>
+<h2 id="s21">5. P3 — reusable model core（必要時のみ）</h2>
+<p>現在は<code>private: true</code>のViteアプリであり、npm libraryではない。</p>
+<p>外部プロジェクトからruntime modelを直接使う需要が確認された場合のみ、次を分離する。</p>
+<pre><code>packages/model-core</code></pre>
+<p>要件:</p>
+<ul><li>React/Three/Zustand非依存</li><li>Node/Browser両対応</li><li>versioned exports</li><li>topology classifierとartifact exporterのgolden parity</li><li>SemVer</li></ul>
+<p>Half-Plugの現段階ではstatic JSONで足りるため、先行実装しない。</p>
+<h2 id="s22">6. P3 — 物理検証</h2>
+<p>実物を入手後:</p>
+<pre><code>導通測定
+→ contact observation manifest
+→ 1点fit / held-out検証
+→ 挿入・抜去方向を分離
+→ 同じ状態で音響MIMO測定</code></pre>
+<p>次が揃うまで<code>verifiedPhysical</code>をtrueにしない。</p>
+<ul><li>反復導通測定</li><li>state boundaryの不確実性</li><li>PS000001反対証拠との比較</li><li>fit残差</li><li>held-out予測</li></ul>
+<h2 id="s23">7. 完了報告で必要な情報</h2>
+<h3 id="s24">v0.4.1</h3>
+<pre><code>fix commit
+release tag
+README latest-contract test
+test-run evidence fields
+stale-test mutation result
+release readiness cross-check result
+asset SHA-256</code></pre>
+<h3 id="s25">v0.5.0</h3>
+<pre><code>new schema IDs/versions
+contract migrations
+old consumer rejection tests
+new consumer import tests
+release index and hashes</code></pre>
+</div>
+</body>
+</html>
