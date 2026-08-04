@@ -154,7 +154,7 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-04",
- "generatedFromCommit": "af6aab2b1b369fe0eb6980bb7e847589d804e6b4",
+ "generatedFromCommit": "17a3d08d5bc2c88f4119000404cdd50cdc1fde04",
  "command": "npm run validate:profiles",
  "targetsTotal": 12,
  "targetsPassed": 12,

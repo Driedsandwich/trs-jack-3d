@@ -225,9 +225,11 @@ describe('contractMigration ③ 網羅（全 tag 対の走査）', () => {
 
   it('据え置いたまま契約を変えた回が、すべて history に載っている', () => {
     const g = (a: string[]) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 << 20 })
+    // stdio を捨てる。**無いのは正常**（その tag にまだ存在しない schema）なので、
+    // git の fatal をそのままテスト出力へ流すと、本当の失敗が埋もれる
     const exists = (t: string, p: string) => {
       try {
-        g(['cat-file', '-e', `${t}:${p}`])
+        execFileSync('git', ['cat-file', '-e', `${t}:${p}`], { cwd: ROOT, stdio: 'ignore' })
         return true
       } catch {
         return false
