@@ -15,6 +15,57 @@
 
 ---
 
+## v0.5.1 — 条文の判定器の欠陥と、配布 artifact 内の自己矛盾（**版は据え置き**）
+
+2026-08-05
+
+**schema は 1 本も版を上げていない。**条文どおり新旧 2 つの schema だけで判定し、
+v0.5.0 の 20 本すべてが `HOLD`（`BUMP` 0 件）であることを実測してから据え置いた。
+`profileId` は変わる（生成器と `package-lock.json` を直したため）。
+
+### 訂正
+
+- **条文の判定器が `oneOf` を誤判定していた。**枝を index 同士で比較しており、
+  枝を狭めたのに全体は広がる場合を `HOLD_RECORD`（据え置き可）と返していた。
+  **危険な向きの誤りである。**外部監査が ajv 付きの反例を出した。
+
+  ```
+  旧 oneOf: [{integer}, {number, minimum: 0}] → 新 [{integer}, {number, minimum: 1}]
+  値 0    旧 invalid → 新 valid   広がっている
+  値 0.5  旧 valid   → 新 invalid 狭まっている
+  ```
+
+  `oneOf` は変更があれば無条件 `UNDEC` へ倒すようにした。`anyOf` / `allOf` は
+  和と積で枝ごとに単調なので触っていない。
+- **判定器と設計文書に「逆（上げるべきなのに据え置く）は起きない」と書いていた。これは嘘だった。**
+  実測に合わせて書き換え、条文の「限界」にも節を足した。
+  **「危険側の誤りは起きない」と再び書かないこと。**言えるのは
+  「いま反例が見つかっている経路は塞いだ」までである。
+- **配布した profile の中で `normalized` の説明が矛盾していた。**
+  `coordinateSystem.crossProfileComparable: false` と書きながら、
+  `modelLimitations.notes` は「機種横断では normalized を使うこと」を出し続けていた。
+  **全 tag を走査すると v0.1.0 から v0.5.0 まで 7 版すべてに入っていた。**
+  生成器のコメントは「v0.1.1 で弱めた」と書いていたが、弱まっていなかった。
+- `exportHalfPlugProfile.ts` の冒頭が「Half-Plug Topology Profile v1」のままだった（実体は v3）。
+
+### 足したもの
+
+| | |
+|---|---|
+| `schemas/contract-migration.v1.schema.json` | **対応表の正本にだけ schema が無かった**（外部監査で指摘） |
+| `contractMigrationLedger` 意味規則 | キーと `schemaId` の一致・版の連番・履歴の並び・据え置き回の必須項目 |
+| `oneOf` の回帰試験 | **v0.5.0 tag の実物を読み込んで修正前の挙動も実測**する（①ajv ②修正前 ③修正後） |
+| 版据え置きの検査 | v0.5.0 の全 schema が現在も `HOLD` であること |
+
+### 実装中に見つけたもの
+
+- `--source` に **macOS の `tar`** で作った archive を渡すと、AppleDouble（`._*`）が混ざって
+  `stripTopLevel` が効かず **30 件すべてが `missingInSource`** になる。
+  **GitHub の tarball では起きない**（案内している経路は動く）。
+  tar parser の頑健化は v0.6.0 の課題として残す。
+- `--source archive` のテストが `git archive HEAD` を使っており、作業ツリーが dirty だと
+  コミット済みの中身と食い違って落ちた。source snapshot から復元する形へ直した。
+
 ## v0.5.0 — schema versioning の是正（**6 本まとめて版を上げた**）
 
 2026-08-05

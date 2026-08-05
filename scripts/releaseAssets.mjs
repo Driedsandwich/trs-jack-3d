@@ -36,6 +36,7 @@ export const RELEASE_ASSETS = [
   { path: 'schemas/real-jack-comparison.v1.schema.json', role: 'schema' },
   { path: 'schemas/test-counts.v2.schema.json', role: 'schema' },
   { path: 'schemas/source-snapshot.v1.schema.json', role: 'schema' },
+  { path: 'schemas/contract-migration.v1.schema.json', role: 'schema' },
 
   // --- 自己完結性のための証拠（P2-7）---
   { path: 'artifacts/test_counts.json', role: 'evidence' },

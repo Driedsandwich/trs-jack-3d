@@ -1,5 +1,5 @@
 /**
- * Half-Plug Topology Profile v1 の書き出し。
+ * Half-Plug Topology Profile v3 の書き出し。
  *   npm run export:half-plug
  *
  * 何のためか:
@@ -572,9 +572,13 @@ const profile = {
     /**
      * **normalized の射程を機械可読にする（非阻害オーダー P2-6.2）。**
      *
-     * 「機種横断では normalized を使う」と読める書き方をしていた時期があり、
-     * v0.1.1 で文章としては弱めたが、**機械が読める形では何も言っていなかった。**
      * 同じ 0.95 が別 profile で同じ電気状態を意味する保証はどこにも無い。
+     *
+     * **【2026-08-05 訂正】**ここにはもともと「v0.1.1 で文章としては弱めた」と書いていたが、
+     * **弱まっていなかった。**`modelLimitations.notes` は「機種横断では normalized を使うこと」を
+     * v0.1.0 から v0.5.0 まで 7 版すべてでそのまま出し続けていた（全 tag を走査して実測）。
+     * v0.2.0 でこの機械可読フィールドを足したときに、**元の文言を消し忘れて矛盾になっていた。**
+     * 外部監査が指摘するまで気づかなかった。v0.5.1 で notes 側を直した。
      */
     normalizedScope: 'PROFILE_LOCAL' as const,
     crossProfileComparable: false,
@@ -616,7 +620,13 @@ const profile = {
         + '3.5mm ジャック全般を代表しない。',
       'acousticAnnotation は参考分類であって DSP 係数ではない。フィルタ係数・ゲイン・クロストーク量へ直接変換してはならない。',
       'quality を接触抵抗 Ω へ換算してはならない。相対スコアであって物理量ではない。',
-      'nominalStartMm は 1 機種の実寸であり、一般的な「挿入深度」ではない。機種横断では normalized を使うこと。',
+      // **profile 横断の対応づけ方。** 2026-08-05 まで、ここは「機種横断では normalized を使うこと」
+      // と書いていた。coordinateSystem.crossProfileComparable: false と真逆で、**配布した artifact の
+      // 中で矛盾していた**（外部監査が発見）。normalized は主キーにならない
+      'nominalStartMm は 1 機種の実寸であり、一般的な「挿入深度」ではない。'
+        + 'profile を跨いで対応づけるときは topologyClass と event の同一性を主キーにすること。'
+        + 'normalized は分母 (fullInsertionDepthMm) が profile ごとに違うので主キーにできない'
+        + '（近傍を選ぶ補助にだけ使う）。',
     ],
   },
   assumptionSummary: { counts, jackInternalAssumptions: jackInternal },

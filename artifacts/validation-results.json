@@ -153,23 +153,23 @@
   ]
  },
  "generatedBy": "npm run release:evidence",
- "generatedAt": "2026-08-04",
- "generatedFromCommit": "130dd2685964fe3589fd8f54c448826fa0cc4bd5",
+ "generatedAt": "2026-08-05",
+ "generatedFromCommit": "e4dc012188a71d461f63d596a1d0aeddfd6c35ec",
  "command": "npm run validate:profiles",
- "targetsTotal": 12,
- "targetsPassed": 12,
+ "targetsTotal": 13,
+ "targetsPassed": 13,
  "allPassed": true,
  "artifactValidationStatus": "PASS",
  "releaseReadinessStatus": "READY",
  "releaseReadinessReasons": [],
  "testEvidence": {
-  "total": 552,
+  "total": 558,
   "failed": 0,
   "skipped": 0,
   "exitCode": 0,
   "allPassed": true
  },
- "distributedTargets": 9,
+ "distributedTargets": 10,
  "sourceOnlyTargets": 3,
  "results": [
   {
@@ -275,6 +275,16 @@
   {
    "artifact": "artifacts/source-snapshot.v1.json",
    "schema": "schemas/source-snapshot.v1.schema.json",
+   "missing": false,
+   "distribution": "RELEASE_ASSET",
+   "schemaErrorCount": 0,
+   "semanticErrorCount": 0,
+   "schemaErrors": [],
+   "semanticErrors": []
+  },
+  {
+   "artifact": "contract-migration.v1.json",
+   "schema": "schemas/contract-migration.v1.schema.json",
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,

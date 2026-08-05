@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:821cc14c605d",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:be5f1f17d75a",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -327,21 +327,21 @@
    ]
   }
  },
- "sourceRevision": "488007bc0773c66f678c36c08882aa54bb30376b",
- "generatedAt": "2026-08-04",
+ "sourceRevision": "e4dc012188a71d461f63d596a1d0aeddfd6c35ec",
+ "generatedAt": "2026-08-05",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "488007bc0773c66f678c36c08882aa54bb30376b",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "e4dc012188a71d461f63d596a1d0aeddfd6c35ec",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "821cc14c605dd453710878d0e9f51e47391d4e1802d212106b2405091500db92",
+  "inputDigest": "be5f1f17d75a867953d59023cd8cd13e9aba78d2fd06376af1a79a3bdf49bd19",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "6948165bdc766d1c8ea13afcc0263c2c80a55e23f4a7719697cd40674cd2ce08",
+    "sha256": "94a28035eab1e98ea0e9b00fdeea36a198c4af349b74521ad8548415800d36d7",
     "role": "sensitivity-input"
    },
    {
@@ -351,7 +351,7 @@
    },
    {
     "path": "package-lock.json",
-    "sha256": "f7d1bb2301009c21f4fff8b189f49a6927385fd9dbae0f56ea6cd13b2c88a4d8",
+    "sha256": "4b6690ae39f24acdcd1ad41b53898b94bdc41ade2564f8e8ecc79ca950b9ed7d",
     "role": "lockfile"
    },
    {
@@ -361,7 +361,7 @@
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "be6f222129ed14c80b41a91456151296d381169aff79bd036b4a2b2ac7730804",
+    "sha256": "26cfc68fa755f849a4e88e7d843fbdb7acc8bc6d0a63603b2c1b8e7f57cdf510",
     "role": "generator"
    },
    {
@@ -460,8 +460,8 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\" --release",
-  "artifactDate": "2026-08-04"
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
+  "artifactDate": "2026-08-05"
  },
  "fullInsertionDepthMm": 14,
  "stepMm": 0.02,
@@ -492,7 +492,7 @@
    "この profile は Lumberg 1532 10 × 4極ジャック (端子系 Lumberg 1503 28 / 接点位置は仮定) の 1 組についてのものであり、3.5mm ジャック全般を代表しない。",
    "acousticAnnotation は参考分類であって DSP 係数ではない。フィルタ係数・ゲイン・クロストーク量へ直接変換してはならない。",
    "quality を接触抵抗 Ω へ換算してはならない。相対スコアであって物理量ではない。",
-   "nominalStartMm は 1 機種の実寸であり、一般的な「挿入深度」ではない。機種横断では normalized を使うこと。"
+   "nominalStartMm は 1 機種の実寸であり、一般的な「挿入深度」ではない。profile を跨いで対応づけるときは topologyClass と event の同一性を主キーにすること。normalized は分母 (fullInsertionDepthMm) が profile ごとに違うので主キーにできない（近傍を選ぶ補助にだけ使う）。"
   ]
  },
  "assumptionSummary": {
@@ -5677,8 +5677,8 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "5e2e381bfa38cd77daaf7dca015637d9443ab7ac",
-   "inputDigest": "6db355313884b2edb9dd0d6046b7da47423f7a2104139c3c71330e987e52f300",
+   "generatedFromCommit": "e4dc012188a71d461f63d596a1d0aeddfd6c35ec",
+   "inputDigest": "e591211cc1980983602ae7f61ce6279a607d723cd9ef6ee9fda285a88b6bbf3b",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
   },

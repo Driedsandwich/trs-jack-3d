@@ -36,9 +36,17 @@
  * ## 限界
  *
  * JSON Schema の言語包含は一般には決定不能なので、**これは保守的な近似**である。
- * 決められない変更 (pattern の書き換え・oneOf の枝数変更・未対応キーワード) は
- * すべて BUMP 側へ倒す。「上げなくてよいのに上げる」誤りは残るが、
- * 逆 (上げるべきなのに据え置く) は起きないようにしてある。
+ * 決められない変更 (pattern の書き換え・oneOf の変更・未対応キーワード) は
+ * すべて BUMP 側へ倒す。「上げなくてよいのに上げる」誤りは残る。
+ *
+ * **v0.5.0 までは「逆 (上げるべきなのに据え置く) は起きない」と書いていたが、それは嘘だった。**
+ * `oneOf` の枝を index 同士で比較しており、枝を狭めたのに全体は広がる場合を
+ * HOLD_RECORD と誤判定していた (外部監査で ajv 付きの反例が出た。下の oneOf の節)。
+ * v0.5.1 で `oneOf` は変更があれば無条件 UNDEC へ倒すようにした。
+ *
+ * **同じ形の穴が他にも残っている可能性は消えていない。**
+ * 「危険側の誤りは起きない」と再び書かないこと。言えるのは
+ * 「**いま反例が見つかっている経路は塞いだ**」までである。
  *
  * $ref は辿るが、循環参照は打ち切って UNDEC にする (黙って通さない)。
  */
@@ -240,8 +248,42 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
   const nu = n.uniqueItems ?? false
   if (ou !== nu) d.add(nu ? NARROW : WIDEN, path, `${ptr}/uniqueItems`, `uniqueItems: ${ou} -> ${nu}`)
 
-  // --- oneOf / anyOf / allOf ---
-  for (const kw of ['oneOf', 'anyOf', 'allOf']) {
+  /**
+   * --- oneOf ---
+   *
+   * **枝を狭めても全体が狭まるとは限らない。**`oneOf` は「ちょうど 1 枝が一致」なので、
+   * 枝の言語について単調ではない。実測した反例:
+   *
+   *   旧  oneOf: [{integer}, {number, minimum: 0}]
+   *   新  oneOf: [{integer}, {number, minimum: 1}]
+   *
+   *   値 0    旧 invalid (2 枝が一致するので oneOf は落ちる) → 新 valid  **広がった**
+   *   値 0.5  旧 valid                                    → 新 invalid 狭まった
+   *
+   * 枝を index 同士で再帰比較していた v0.5.0 までの実装は、これを
+   * 「minimum が上がった = NARROW」とだけ見て **HOLD_RECORD** を返していた。
+   * **危険な向き (上げるべきなのに据え置く) の誤りである。**
+   *
+   * 一般の包含判定を作る必要は無い。**変更があれば無条件で BUMP 側へ倒す。**
+   */
+  if (JSON.stringify(o.oneOf) !== JSON.stringify(n.oneOf)) {
+    d.add(
+      UNDEC,
+      path,
+      `${ptr}/oneOf`,
+      'oneOf: 変わった (「ちょうど 1 枝」は枝の言語について単調でないので、枝ごとの比較では決められない)',
+    )
+  }
+
+  /**
+   * --- anyOf / allOf ---
+   *
+   * こちらは和と積なので**枝ごとに単調である**。
+   * 各枝が狭まれば ∪ も ∩ も狭まり、各枝が広がれば逆も同じ。
+   * 枝が混在すれば WIDEN と NARROW が両方立ち、verdict は BUMP になる (安全側)。
+   * so 枝ごとの再帰比較で健全。
+   */
+  for (const kw of ['anyOf', 'allOf']) {
     const ol = o[kw]
     const nl = n[kw]
     if (JSON.stringify(ol) === JSON.stringify(nl)) continue

@@ -118,6 +118,16 @@ const TARGETS = [
     semantic: 'sourceSnapshot',
   },
   /**
+   * 版と契約変更の対応表の正本（v0.5.1 で schema を新設）。
+   * v0.5.0 では**中央の正本だけ schema が無かった**（外部監査で指摘）。
+   * 6 本の artifact に埋め込まれる値の出どころなので、ここが壊れると全部が壊れる。
+   */
+  {
+    artifact: 'contract-migration.v1.json',
+    schema: 'schemas/contract-migration.v1.schema.json',
+    semantic: 'contractMigrationLedger',
+  },
+  /**
    * package.json ↔ package-lock.json の version 一致（v0.3.0 フォローアップ P1-1）。
    *
    * **`check:stale` ではなくここへ入れた。実測して決めた。**
@@ -589,6 +599,54 @@ const SEMANTIC = {
    * ここを回さないと、**中身が壊れた写しでも `isSelfConsistencyOnly: true` と
    * 書いてあるだけで通ってしまう。**
    */
+  /**
+   * 対応表の正本（v0.5.1）。
+   *
+   * **schema は形しか見ない。**キーと中身の一致、版の連番、履歴の並びは意味規則で見る。
+   * 記録が schema 実物とずれていないことは test/contractMigration.test.ts が別に見る
+   * （こちらは release evidence の門としても回る）。
+   */
+  contractMigrationLedger(a, errs) {
+    const ms = Object.entries(a.migrations ?? {})
+    if (ms.length === 0) {
+      errs.push('migrations が空。対応表として意味がない')
+      return
+    }
+    for (const [key, m] of ms) {
+      if (m.schemaId !== key) errs.push(`キー ${key} と schemaId ${m.schemaId} が違う`)
+      if (m.toSchemaVersion !== m.fromSchemaVersion + 1)
+        errs.push(`${key}: ${m.fromSchemaVersion} → ${m.toSchemaVersion} が連番でない`)
+      // 版を上げたのだから、id の版数も上がっているはず
+      const v = (id) => Number(String(id).match(/\.v(\d+)$/)?.[1])
+      if (v(m.schemaId) !== m.toSchemaVersion) errs.push(`${key}: schemaId の版数が toSchemaVersion と違う`)
+      if (v(m.previousSchemaId) !== m.fromSchemaVersion) errs.push(`${key}: previousSchemaId の版数が fromSchemaVersion と違う`)
+
+      const h = m.history ?? []
+      // **古い順に並んでいること。**並んでいないと「いつ壊したか」を辿れない
+      const rel = h.map((x) => x.shippedIn)
+      const sorted = [...rel].sort()
+      if (JSON.stringify(rel) !== JSON.stringify(sorted)) errs.push(`${key}: history が古い順に並んでいない (${rel.join(' ')})`)
+
+      for (const e of h) {
+        if (e.versionWasHeld) {
+          // 据え置いた回は「本来の版」と「いつ遡って書いたか」を必ず持つ
+          if (typeof e.schemaVersionShouldHaveBeen !== 'number')
+            errs.push(`${key} ${e.shippedIn}: 据え置いた回に schemaVersionShouldHaveBeen が無い`)
+          if (typeof e.recordedRetroactivelyIn !== 'string')
+            errs.push(`${key} ${e.shippedIn}: 据え置いた回に recordedRetroactivelyIn が無い`)
+          if (e.policyVerdict !== 'BUMP')
+            errs.push(`${key} ${e.shippedIn}: 据え置いたのに policyVerdict が ${e.policyVerdict}`)
+        }
+        if (e.previousRelease >= e.shippedIn)
+          errs.push(`${key}: previousRelease ${e.previousRelease} が shippedIn ${e.shippedIn} より後`)
+      }
+      // 最後の回は「この版で出した」ものであること
+      const last = h[h.length - 1]
+      if (last && last.schemaVersionAtTheTime !== m.toSchemaVersion)
+        errs.push(`${key}: history の最後が toSchemaVersion で終わっていない`)
+    }
+  },
+
   sourceSnapshot(a, errs) {
     const files = a.files ?? []
     if (files.length === 0) {

@@ -172,9 +172,9 @@
    }
   ]
  },
- "generatedAt": "2026-08-04",
+ "generatedAt": "2026-08-05",
  "note": "npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。byFile は npm run check:vacuity の下限としても使う。件数が減る変更は理由を書く。",
- "total": 552,
+ "total": 558,
  "byFile": {
   "contact.test.ts": 41,
   "contractMigration.test.ts": 34,
@@ -186,7 +186,7 @@
   "releaseIndex.test.ts": 28,
   "robustnessWindowFixtures.test.ts": 16,
   "schemaContractV2.test.ts": 34,
-  "schemaVersioningPolicy.test.ts": 35,
+  "schemaVersioningPolicy.test.ts": 41,
   "sensitivityProvenance.test.ts": 29,
   "sensitivityVariant.test.ts": 9,
   "sourceInputScope.test.ts": 26,
@@ -207,5 +207,5 @@
  "runner": "vitest",
  "runnerVersion": "4.1.10",
  "nodeVersion": "v22.22.3",
- "generatedFromCommit": "130dd2685964fe3589fd8f54c448826fa0cc4bd5"
+ "generatedFromCommit": "e4dc012188a71d461f63d596a1d0aeddfd6c35ec"
 }

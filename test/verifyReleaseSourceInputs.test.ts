@@ -14,9 +14,9 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { mustBeNonEmpty } from './_must'
 
@@ -233,16 +233,53 @@ describe('§5-3 取れなかったのと合わなかったのを混ぜない', (
  * **書いてある手順が ENOTDIR で落ちていた。**
  */
 describe('§5-3c --source に archive を渡せる', () => {
-  const tgz = join(mkdtempSync(join(tmpdir(), 'srcarch-')), 'src.tar.gz')
+  /**
+   * **同じ中身から dir と tar.gz を作って比べる。**
+   *
+   * 最初は `git archive HEAD` を使っていたが、それは**コミット済みの中身**なので、
+   * 作業ツリーに未コミットの入力変更があると manifest と食い違って MISMATCH になった
+   * （v0.5.1 の実装中に実際に落ちた）。archive loader を試したいのに、
+   * コミット状態でテストの成否が変わるのは筋が悪い。
+   *
+   * 代わりに **source snapshot artifact から中身を復元**する。
+   * manifest が記録した 30 入力はすべてここに入っているので、
+   * dir 経路と archive 経路が**同じ中身**を見ていることを保証できる。
+   */
+  const work = mkdtempSync(join(tmpdir(), 'srcarch-'))
+  tmps.push(work)
+  const srcDir = join(work, 'src')
+  /** GitHub の tarball と同じく、展開すると 1 枚かぶる親ディレクトリ */
+  const TOP = 'Driedsandwich-trs-jack-3d-abc1234'
+  const tgz = join(work, 'src.tar.gz')
 
-  it('前提: tag source archive を作れる', () => {
-    execFileSync('git', ['archive', '--format=tar.gz', '-o', tgz, 'HEAD'], { cwd: ROOT })
+  it('前提: snapshot から中身を復元し、tar.gz に固められる', () => {
+    const snap = JSON.parse(readFileSync(resolve(ROOT, 'artifacts/source-snapshot.v1.json'), 'utf8'))
+    expect(snap.files.length, '写しが空').toBeGreaterThan(30)
+    // **GitHub の tarball と同じ形にする。**展開すると親ディレクトリが 1 枚かぶる
+    for (const f of snap.files as { path: string, content: string }[]) {
+      const dest = join(srcDir, TOP, f.path)
+      mkdirSync(dirname(dest), { recursive: true })
+      writeFileSync(dest, f.content)
+    }
+    // 記録された入力が復元先に全部あること（無いと下の比較が空振りする）
+    const manifest = JSON.parse(readFileSync(resolve(ROOT, 'artifacts/source-input-manifest.json'), 'utf8'))
+    const missing = (manifest.inputFiles as { path: string }[]).filter((f) => !existsSync(join(srcDir, TOP, f.path)))
+    expect(missing.map((f) => f.path), '写しに無い入力').toEqual([])
+
+    /**
+     * **`COPYFILE_DISABLE=1` が要る。**macOS の tar は AppleDouble (`._*`) を混ぜる。
+     * 混ざると stripTopLevel が「共通の親が 1 枚」と判定できなくなり、
+     * 30 件すべてが missingInSource になる（v0.5.1 の実装中に実際に踏んだ）。
+     */
+    execFileSync('tar', ['czf', tgz, '-C', srcDir, TOP], { env: { ...process.env, COPYFILE_DISABLE: '1' } })
     expect(statSync(tgz).size, 'archive が空').toBeGreaterThan(1000)
   })
 
   it('tar.gz を渡すと展開済みディレクトリと同じ判定になる', () => {
-    const fromDir = run(['--manifest', 'artifacts/source-input-manifest.json', '--source', '.', '--scope', 'source-input-scope.v1.json'])
-    const fromTgz = run(['--manifest', 'artifacts/source-input-manifest.json', '--source', tgz, '--scope', 'source-input-scope.v1.json'])
+    const args = (src: string) => ['--manifest', 'artifacts/source-input-manifest.json', '--source', src, '--scope', 'source-input-scope.v1.json']
+    const fromDir = run(args(join(srcDir, TOP)))
+    const fromTgz = run(args(tgz))
+    expect(fromDir.json.status, `dir 経路が失敗した: ${JSON.stringify(fromDir.json).slice(0, 300)}`).toBe('OK')
     expect(fromTgz.json.status, `archive 経路が失敗した: ${JSON.stringify(fromTgz.json).slice(0, 300)}`).toBe('OK')
     // **origin だけが違い、判定は同じ**であること
     expect(fromTgz.json.independentVerification).toEqual(fromDir.json.independentVerification)

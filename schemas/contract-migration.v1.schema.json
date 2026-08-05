@@ -1,0 +1,175 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/contract-migration.v1.schema.json",
+ "title": "trs-jack-3d contract migration v1",
+ "description": "**版と契約変更の対応表の正本。**ここに書いた値が各 artifact の contractMigration へそのまま入る。6 本の schema がそれぞれ自分用の contractMigration 部分 schema を持っているが、**中央の正本そのものには schema が無かった**（v0.5.0 の外部監査で指摘・v0.5.1 で追加）。判定規則は docs/SCHEMA_VERSIONING_POLICY.md。",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "schemaVersion",
+  "schemaId",
+  "purpose",
+  "why",
+  "policyDocument",
+  "policyVersion",
+  "verifiedBy",
+  "migrations"
+ ],
+ "properties": {
+  "schemaVersion": { "const": 1 },
+  "schemaId": { "const": "trs-jack-3d-contract-migration.v1" },
+  "purpose": { "type": "string", "minLength": 1 },
+  "why": { "type": "string", "minLength": 1 },
+  "policyDocument": { "const": "docs/SCHEMA_VERSIONING_POLICY.md" },
+  "policyVersion": { "type": "integer", "minimum": 1 },
+  "verifiedBy": {
+   "type": "string",
+   "minLength": 1,
+   "description": "**記録が実物とずれていないことを、どの検査が担保しているか。**書いただけの表にしないため"
+  },
+  "migrations": {
+   "type": "object",
+   "minProperties": 1,
+   "description": "schemaId をキーにした対応表。**各 artifact の contractMigration はここから引く**",
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "schemaId",
+     "previousSchemaId",
+     "fromSchemaVersion",
+     "toSchemaVersion",
+     "breaking",
+     "policy",
+     "consumerAction",
+     "renamedAssets",
+     "history"
+    ],
+    "properties": {
+     "schemaId": { "type": "string", "pattern": "\\.v[0-9]+$" },
+     "previousSchemaId": { "type": "string", "pattern": "\\.v[0-9]+$" },
+     "fromSchemaVersion": { "type": "integer", "minimum": 1 },
+     "toSchemaVersion": { "type": "integer", "minimum": 2 },
+     "breaking": { "const": true },
+     "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document", "policyVersion", "decisionRule"],
+      "properties": {
+       "document": { "const": "docs/SCHEMA_VERSIONING_POLICY.md" },
+       "policyVersion": { "type": "integer", "minimum": 1 },
+       "decisionRule": {
+        "const": "language-subset",
+        "description": "**判定は新旧 2 つの schema だけで行う。**artifact の中身は見ない"
+       },
+       "note": { "type": "string" }
+      }
+     },
+     "consumerAction": { "type": "string", "minLength": 1 },
+     "renamedAssets": {
+      "type": "array",
+      "minItems": 1,
+      "description": "**条文の外（第6条）。**配布名は schema の言語に現れないので、名前で引く下流は schema 検査に到達する前に「ファイルが無い」で止まる",
+      "items": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": ["from", "to", "reason"],
+       "properties": {
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+       }
+      }
+     },
+     "history": {
+      "type": "array",
+      "minItems": 1,
+      "description": "**契約が変わった release を古い順に並べる。**版を据え置いたまま変えた回は versionWasHeld: true で残す。それが条文違反の記録である",
+      "items": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "shippedIn",
+        "previousRelease",
+        "previousSchemaPath",
+        "currentSchemaPath",
+        "schemaVersionAtTheTime",
+        "versionWasHeld",
+        "policyVerdict",
+        "changes"
+       ],
+       "properties": {
+        "shippedIn": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "previousRelease": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "previousSchemaPath": {
+         "type": "string",
+         "pattern": "^schemas/",
+         "description": "**previousRelease 時点でのこの schema のパス。**版を上げるとファイル名が変わるので、記録側に持たせないと機械で突き合わせられない"
+        },
+        "currentSchemaPath": { "type": "string", "pattern": "^schemas/" },
+        "schemaVersionAtTheTime": { "type": "integer", "minimum": 1 },
+        "schemaVersionShouldHaveBeen": {
+         "type": "integer",
+         "minimum": 1,
+         "description": "据え置いた回にだけ入る。**条文に照らして本来あるべきだった版**"
+        },
+        "versionWasHeld": { "type": "boolean" },
+        "policyVerdict": { "enum": ["BUMP", "HOLD_RECORD", "HOLD"] },
+        "recordedRetroactivelyIn": {
+         "type": "string",
+         "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+         "description": "**いつ遡って書いたか。**当時の判断記録ではないことを隠さない"
+        },
+        "note": { "type": "string" },
+        "changes": {
+         "type": "array",
+         "minItems": 1,
+         "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "effect", "schemaPointer", "reason"],
+          "properties": {
+           "kind": {
+            "enum": [
+             "field-added",
+             "field-removed",
+             "field-renamed",
+             "field-reshaped",
+             "enum-value-added",
+             "enum-value-removed",
+             "enum-value-renamed",
+             "type-widened",
+             "type-narrowed",
+             "constraint-tightened",
+             "constraint-loosened",
+             "const-changed",
+             "meaning-changed",
+             "description-only"
+            ]
+           },
+           "effect": {
+            "enum": ["WIDEN", "NARROW", "NEUTRAL", "UNDECIDABLE"],
+            "description": "**scripts/schemaLanguageDiff.mjs の判定をそのまま入れる。**記録と実物がずれたらテストが落ちる"
+           },
+           "schemaPointer": {
+            "type": "string",
+            "pattern": "^/",
+            "description": "**artifact ではなく schema への JSON Pointer。**実在することを機械で確かめる"
+           },
+           "instancePath": { "type": "string", "description": "人が読むための位置。$.a.b[].c 形式" },
+           "added": { "type": "array", "items": { "type": "string" } },
+           "removed": { "type": "array", "items": { "type": "string" } },
+           "from": { "type": ["string", "number", "boolean"] },
+           "to": { "type": ["string", "number", "boolean"] },
+           "reason": { "type": "string", "minLength": 1 }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}
