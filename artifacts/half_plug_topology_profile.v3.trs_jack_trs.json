@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRS:42c882c3793c",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:8e5e88cee10e",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -323,16 +323,16 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "e4dc012188a71d461f63d596a1d0aeddfd6c35ec",
+ "sourceRevision": "0c0e3e5a576017d0fa1b9093c4c159c87b9267c6",
  "generatedAt": "2026-08-05",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "e4dc012188a71d461f63d596a1d0aeddfd6c35ec",
-  "workingTreeDirty": true,
+  "generatedFromCommit": "0c0e3e5a576017d0fa1b9093c4c159c87b9267c6",
+  "workingTreeDirty": false,
   "revisionOverride": false,
-  "artifactKind": "local",
+  "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "42c882c3793cbd14fb0e4412bdd8448c9a34c624a906a8192ab2b793ddc14f9f",
+  "inputDigest": "8e5e88cee10e48654708115d7e8d1f889ed6b59671a38ca779a927c24868dca3",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -342,7 +342,7 @@
    },
    {
     "path": "artifacts/sensitivity.trs_jack_trs.json",
-    "sha256": "132e03ddbdbd541df65afb153717c83ae9ac9a9f017223f424f5b3ba20035052",
+    "sha256": "b29149ce89d20c41b50cf678cbaf635c2a25a037206692b6aacf958f8e4a8857",
     "role": "sensitivity-input"
    },
    {
@@ -461,7 +461,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\"",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" --release",
   "artifactDate": "2026-08-05"
  },
  "fullInsertionDepthMm": 14,
@@ -4048,7 +4048,7 @@
     "jack.contact.sleeve.axialCenter",
     "jack.contact.sleeve.padWidth"
    ],
-   "generatedFromCommit": "e4dc012188a71d461f63d596a1d0aeddfd6c35ec",
+   "generatedFromCommit": "c8b9fb8d897ea6c9ac92f7c26977dc418a8c07dc",
    "inputDigest": "49a963d426a4363b136fabe2efa48ac46eef5ced7e3c853e1b528250a117605c",
    "configurationsUsable": 869,
    "shippedInsideSweptRange": true
