@@ -98,7 +98,7 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-05",
- "generatedFromCommit": "9d6c9a1535450733f6da02970a9206293c8ea14b",
+ "generatedFromCommit": "9a582f4ecc0fb9d5d22bab7763751faddb44a356",
  "purpose": "release asset の provenance.inputFiles[].sha256 を、tag source の実ファイルと独立に検算するための一覧。**この manifest 自身は証明ではない。**GitHub の tag source archive を取得して、ここに並ぶ path の sha256 を自分で計算し、突き合わせること。",
  "inputFilesTotal": 30,
  "inconsistentAcrossArtifacts": 0,
@@ -174,9 +174,9 @@
   {
    "path": "artifacts/sensitivity.trs_jack_trrs.json",
    "role": "sensitivity-input",
-   "recordedSha256": "a8b586d66e7b4d7b8cfc203e114f7db3903909d1227dc7156b0d2b0a8fd7f546",
+   "recordedSha256": "0d1ab1dfff8ae00a4560d245fbcb7ef6870e13d9de807fdfde92e03bf23c8c25",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "a8b586d66e7b4d7b8cfc203e114f7db3903909d1227dc7156b0d2b0a8fd7f546",
+   "actualSha256AtBuild": "0d1ab1dfff8ae00a4560d245fbcb7ef6870e13d9de807fdfde92e03bf23c8c25",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json"
@@ -185,9 +185,9 @@
   {
    "path": "artifacts/sensitivity.trs_jack_trs.json",
    "role": "sensitivity-input",
-   "recordedSha256": "57af17c66d8199e8a4d0bf64136f448fba9869c8effeadaab8f756b2455b7103",
+   "recordedSha256": "de296296e818adc88daf47974ff85d3d0329a8db0c7847da9e56728e57443707",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "57af17c66d8199e8a4d0bf64136f448fba9869c8effeadaab8f756b2455b7103",
+   "actualSha256AtBuild": "de296296e818adc88daf47974ff85d3d0329a8db0c7847da9e56728e57443707",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json"
