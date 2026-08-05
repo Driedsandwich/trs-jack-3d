@@ -120,6 +120,26 @@
 <ol><li><code>src/data/*.json</code> を直す</li><li><code>npm run artifacts</code> — 走査結果と区分件数を作り直す</li><li><code>npm run export:half-plug:all</code> — profile を作り直す（区分が変わったときは必須）</li><li><strong><code>npm run check:stale</code></strong> — 重い成果物の再実行が要るかを<strong>機械が判定します</strong>（→ 下）</li><li><code>npm run test</code> — <strong>ここで連動漏れが落ちます</strong></li><li><code>npm run test:count</code> — テスト件数の artifact を更新する</li><li><strong><code>npm run check:vacuity</code></strong> — 空振りしているテストが無いかを機械が判定します（→ §7）</li><li><strong><code>npm run validate:profiles</code></strong> — 成果物 9 件を schema と意味規則で検証します （2026-08-03 に感度 2 件・頑健性 1 件・入力一覧 1 件を追加。それまで schema が無く、受け手が独自に構造検査を書いていました）</li><li><code>npm run docs:html</code> — HTML を作り直す</li></ol>
 <div class="note"><p><strong>release を作るときは、さらに 2 つ回します。</strong></p><p><code>npm run release:evidence</code>（検証結果・入力一覧・索引を artifact にする）→</p><p><code>npm run release:stage -- --version vX.Y.Z</code>（asset を集めて <code>SHA256SUMS</code> を作る）。</p><p><strong>asset の一覧は <code>scripts/releaseAssets.mjs</code> が正本です。</strong>その場で選ばないでください——</p><p>v0.1.1 では選び忘れて <code>event-sensitivity</code> schema を落とし、受け手が感度 artifact を</p><p>検証できませんでした。<code>release:stage</code> は <code>artifactKind: local</code> の artifact を既定で拒みます。</p></div>
 <div class="note"><p><strong><code>npm run verify:provenance</code> は手順に入れません。</strong></p><p>これは clean checkout から生成して provenance を確かめるもので、</p><p><strong>開発中は必ず落ちます</strong>（入力を直している最中なので作業ツリーが汚れている）。</p><p>回すのは release を作る前だけです（→ §9・P0-8）。</p></div>
+<h3>release の後に手作業が 1 つ残っています — <strong>8 回中 3 回ずれました</strong></h3>
+<p>tag を打って asset を上げたら、公開された <code>SHA256SUMS</code> を <code>docs/release/&lt;tag&gt;-SHA256SUMS.txt</code> へそのまま複製します。 <strong>なぜ tag の後かというと、artifact は自分を含む commit のハッシュを持てないからです</strong> （→ §9・P0-8 と同じ理由）。</p>
+<p><strong>この 1 手だけは、スクリプトにもテストにも、この手順書にも入っていませんでした。</strong></p>
+<pre><code>docs/release へ書き込むスクリプト   0 件（対照: dist/release へ書くものは 1 件ある）
+手順書（この節）への記載             無し（2026-08-05 にこの節を足すまで）</code></pre>
+<p>v0.1.0 〜 v0.5.1 の 8 回を実測した結果です（2026-08-05）。</p>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>1 回で決まった</td><td><strong>5 / 8</strong>（v0.1.0・v0.1.1・v0.2.0・v0.3.0・v0.4.1）</td></tr><tr><td>控え直しが要った</td><td><strong>2 / 8</strong>（v0.4.0・v0.5.0）</td></tr><tr><td>丸ごと抜けた</td><td><strong>1 / 8</strong>（<strong>v0.5.1</strong>）</td></tr></tbody></table></div>
+<p><strong>ずれ方は 2 種類あって、原因が違います。</strong></p>
+<h4>(a) 早く取りすぎた — v0.4.0 / v0.5.0</h4>
+<p>控え直しの差分は、<strong>どちらも 1 行だけ</strong>でした。</p>
+<pre><code>- ...  trs-jack-3d-release-index.v1.json
++ ...  trs-jack-3d-release-index.v1.json</code></pre>
+<p>索引は <code>releaseCommit</code> を持つので、<strong>最終 commit が決まるまで中身が確定しません。</strong> その前に控えを取ると、索引の行だけが古いまま残ります。 控えは <code>release:stage</code> をやり直した<strong>後</strong>に取ってください。</p>
+<h4>(b) 書かれていないので押し出された — v0.5.1</h4>
+<p><strong>tag の直後の commit は、8 回中 6 回が控えでした</strong>（例外は v0.2.0 と v0.5.1）。 v0.5.1 だけ、そこに <code>docs/release/v0.5.1-chatgpt-prompt.md</code> が入っています。 その回に「作業指示を用意する」という<strong>新しい作業が 1 つ増え、書かれていない手作業のほうが落ちました。</strong></p>
+<p>覚えておく形にすると同じことが起きます。<strong>次に触るときは、控えの作成を <code>release:stage</code> か後続スクリプトへ寄せて、公開物との byte 一致をテストで見てください</strong> （この節は「まだ機械化していない」ことの記録です。v0.6.0 の課題に入れてあります）。</p>
+<p>手作業のあいだは、複製したその場で byte 一致を確かめます。</p>
+<pre><code>gh release download &lt;tag&gt; -R Driedsandwich/trs-jack-3d -D /tmp/x -p SHA256SUMS
+cmp /tmp/x/SHA256SUMS docs/release/&lt;tag&gt;-SHA256SUMS.txt
+# 対照: 別 tag の控えとも比べて、ちゃんと不一致になることを見る</code></pre>
 <h3>重い成果物（10〜15 分）は、必要かどうかを機械に訊く</h3>
 <p><code>npm run search:topology</code>（約 10 分）、<code>npm run sensitivity</code>（約 15 分）、 <code>npm run search:robustness</code>（5,184 構成。1 構成 137ms の実測から約 12 分の見積り）は毎回は回せません。 かといって回し忘れると<strong>成果物だけが古い値のまま残ります。</strong></p>
 <p><strong>条件を覚えないでください。<code>npm run check:stale</code> が判定します。</strong></p>
