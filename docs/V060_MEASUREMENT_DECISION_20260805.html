@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>v0.6.0 §0 の判断材料 — 実測方針を反転するか (2026-08-05)</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">0. 推奨 — 条件付きで反転する（L の 1 点だけ自分で測る）</a></li>
+    <li><a href="#s1">1. 反転した場合、あなたが実際にやること</a></li>
+    <li><a href="#s2">2. 4極ジャックの候補 — 端子配列がデータシートにあるものだけ</a></li>
+    <li><a href="#s3">3. 反転しない場合、AI だけでどこまで行けるか</a></li>
+    <li><a href="#s4">4. L の 1 点だけを測る最小手順</a></li>
+    <li><a href="#s5">5. 決めること</a></li>
+  </ol>
+</nav>
+<h1>v0.6.0 §0 の判断材料 — <strong>実測方針を反転するか</strong></h1>
+<div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
+<p>作成 2026-08-05 ／ 状態: <strong>判断待ち。部品は購入していません。</strong></p>
+<p><code>docs/V060_PLAN_20260805.md</code> §0 の判断のための材料です。決めるのは 1 つだけです。</p>
+<div class="note"><p><code>docs/VERIFICATION_PLAN.md</code> の 2026-08-02 方針</p><p>「<strong>メンテナ自身は実測を行いません。</strong>電子計測の知見が無く、精度の要る測定を</p><p>自分でやると、かえって根拠の弱い数値を『実測値』として台帳に入れてしまうためです」</p><p><strong>これを反転するか。</strong></p></div>
+<hr>
+<h2 id="s0">0. 推奨 — <strong>条件付きで反転する（<code>L</code> の 1 点だけ自分で測る）</strong></h2>
+<p><strong>方針の理由（精度が要る）は、測定ごとに当てはまったり当てはまらなかったりします。</strong> <code>VERIFICATION_PLAN</code> の各測定を、<strong>見分けたい差</strong>と<strong>要る技能</strong>の 2 つで並べ直しました。</p>
+<div class="tw"><table><thead><tr><th>測定</th><th>見分けたい差</th><th class="num">分解能 0.01 mm に対して</th><th>要る技能</th></tr></thead><tbody><tr><td><strong>§2-2 の <code>L</code> 1 点</strong></td><td>すき間 <strong>2.14 mm</strong> か <strong>0.69 mm</strong> か</td><td class="num"><strong>145 倍</strong></td><td><strong>導通が鳴った位置で止めて測るだけ</strong></td></tr><tr><td>§2-2 の GND</td><td>8.33 か 8.67 か</td><td class="num">34 倍</td><td>同上</td></tr><tr><td>§1-1 プラグ外径</td><td>直径差 <strong>0.30 / 0.23 / 0.090</strong> の 3 本の線。隣り合う線の間隔は <strong>0.07 mm</strong></td><td class="num"><strong>7 倍</strong></td><td><strong>逆テーパの頂点（先端から 4.3〜4.8 mm）を探して読む</strong></td></tr><tr><td>§1-2 橋絡の決着</td><td>光る／光らない（<strong>寸法ではない</strong>）</td><td class="num">—</td><td><strong>LED 回路の自作・プラグへのはんだ付け・一定速度での挿入</strong></td></tr><tr><td>§2 深さの確認</td><td>すき間</td><td class="num">—</td><td>導通 + すき間（<code>L</code> と同種）</td></tr><tr><td>§2-2 の MIC / R</td><td>0.03 / 0.05 mm</td><td class="num">3〜5 倍</td><td><strong>測っても差がつかない</strong></td></tr></tbody></table></div>
+<p><strong><code>L</code> の 1 点だけは、145 倍離れた 2 つの予測のどちらかを選ぶ作業です。</strong> ノギスを 0.1 mm 単位で雑に読んでも <strong>14.5 倍</strong>あり、<strong>結論は動きません。</strong> これは「精度の要る測定」ではありません。</p>
+<p>一方 §1-1 は隣り合う判定線が <strong>0.07 mm</strong>（7 倍）しかなく、しかも <strong>逆テーパの頂点を自分で探す</strong>必要があります。当て方のクセがそのまま結論を変えます。 §1-2 は寸法ではありませんが、<strong>LED 回路を自作して一定速度で挿す</strong>という別の技能が要ります。 <strong>この 2 つは方針どおり「募集」のままにしてください。</strong></p>
+<div class="note"><p><strong>条文にするなら 2 条件の AND を勧めます。</strong></p><p>「自分で測る／測らない」を測定ごとに気分で決めると、いずれ精度の要る測定にも手が伸びます。</p><p>```</p><p>① 見分けたい差が、道具の分解能の 100 倍以上ある</p><p>② 道具の当て方・回路の自作・速度制御などの技能を要しない</p><p>```</p><p><strong><code>L</code> は ①②とも満たします。§1-1 は ① で落ち、§1-2 は ② で落ちます。</strong></p><p><strong>数で線を引けば、そこは毎回考えなくて済みます。</strong></p></div>
+<hr>
+<h2 id="s1">1. 反転した場合、<strong>あなたが実際にやること</strong></h2>
+<p><code>L</code> の 1 点だけに絞った場合です。</p>
+<div class="tw"><table><thead><tr><th>#</th><th>工程</th><th>時間の目安</th><th>費用</th><th><strong>失敗しやすい箇所</strong></th></tr></thead><tbody><tr><td>1</td><td>部品を選んで発注する（→ §2）</td><td>20 分</td><td>下記</td><td><strong>4極ジャックの端子配列が分からない品を買うと、工程 4 が倍になる</strong></td></tr><tr><td>2</td><td>届くのを待つ</td><td>国内 2〜4 日 / 欧州 1〜3 週間</td><td>—</td><td>—</td></tr><tr><td>3</td><td>プラグの 4 導体にリード線を出す</td><td>20 分</td><td>—</td><td><strong>隣の導体と短絡させる。</strong>被覆を剥きすぎない</td></tr><tr><td>4</td><td>完全挿入して「プラグ先端と導通する端子」を 1 本だけ特定する</td><td>10 分</td><td>—</td><td><strong>端子番号を推測しない。</strong>導通で決める</td></tr><tr><td>5</td><td>プラグをゆっくり挿し、その端子が最初に導通した位置で止める</td><td>5 分 ×3 回</td><td>—</td><td><strong>速く挿すと行き過ぎる。</strong>戻すと値が変わる（挿入方向だけ測る）</td></tr><tr><td>6</td><td>プラグ肩とジャック前面のすき間をノギスで測る</td><td>5 分 ×3 回</td><td>—</td><td><strong>ノギスを斜めに当てる。</strong>同じ当て方を 3 回繰り返す</td></tr><tr><td>7</td><td>3 回の値と分解能をシートへ書き写す</td><td>5 分</td><td>—</td><td><strong>平均だけ書く。</strong>生値を 3 つとも残すこと</td></tr><tr><td></td><td><strong>合計（待ち時間を除く）</strong></td><td><strong>約 1 時間</strong></td><td></td><td></td></tr></tbody></table></div>
+<p><strong>工程 7 で終わりです。</strong>判定・計算・profile への反映・再生成はすべて AI 側です。</p>
+<h3>費用</h3>
+<div class="tw"><table><thead><tr><th></th><th>品目</th><th>概算</th></tr></thead><tbody><tr><td>必須</td><td>4極ジャック（→ §2）</td><td>¥100〜500</td></tr><tr><td>必須</td><td>4極プラグ または CTIA 4極ケーブル</td><td>¥300〜700（Lumberg 1532 02 なら $3.62 + 送料）</td></tr><tr><td>必須</td><td>デジタルノギス 0.01 mm</td><td>¥2,000〜4,000（手持ちがあれば 0）</td></tr><tr><td>必須</td><td>テスター（導通ブザー付き）</td><td>¥1,500〜3,000（手持ちがあれば 0）</td></tr><tr><td></td><td><strong>合計</strong></td><td><strong>¥4,000〜8,000（測定器を持っていれば ¥400〜1,200）</strong></td></tr></tbody></table></div>
+<div class="note"><p><strong>ジャックは基板に付けずに測れます。</strong>端子にクリップを挟むだけです。</p><p>ただし SMT 品は端子が小さくクリップが滑るので、<strong>THT（スルーホール）品のほうが楽</strong>です。</p></div>
+<hr>
+<h2 id="s2">2. 4極ジャックの候補 — <strong>端子配列がデータシートにあるものだけ</strong></h2>
+<p><strong>購入していません。</strong>在庫・価格は調べた時点の値です。</p>
+<div class="tw"><table><thead><tr><th>型番</th><th>メーカー</th><th>実装</th><th>極数</th><th>ブレーク接点</th><th>端子配列の記載</th><th>確認状況</th></tr></thead><tbody><tr><td><strong>1503 28</strong></td><td>Lumberg</td><td>SMT ミッドマウント</td><td>4</td><td><strong>2 個あり</strong></td><td>あり（<code>downloads.lumberg.com/datenblaetter/en/1503_28.pdf</code>・07/2025 版）</td><td><strong>本文を取得して確認済み</strong></td></tr><tr><td><strong>SJ-43514</strong></td><td>Same Sky（旧 CUI Devices）</td><td><strong>THT</strong> 右アングル</td><td>4</td><td>0</td><td>あり（PIN1=Sleeve / PIN2=Tip / PIN3=Ring1 / PIN4=Ring2 と記載されている）</td><td><strong>未確認</strong>（PDF 本体を取得できていない。検索結果の記載）</td></tr><tr><td>1503 20 / 1503 15 VP3</td><td>Lumberg</td><td>未確認</td><td>4</td><td>未確認</td><td>未確認</td><td><strong>未確認</strong>（TME のページが 403 で読めなかった）</td></tr></tbody></table></div>
+<p><strong><code>1503 28</code> が本命です。</strong>このモデルの TRRS 側は<strong>この部品の端子位置（1.25 / 4.74 / 7.50 / 11.30 mm）を そのまま仮定として使っています</strong>（<code>UNKNOWNS.md</code> §5-2）。 <strong>別の部品を測ると「モデルがその部品と合うか」しか分かりません。</strong> <code>1503 28</code> を測れば「<strong>モデルが自分の土台と合うか</strong>」が分かります。意味が違います。</p>
+<p>対になるプラグもデータシートに書いてあります。</p>
+<div class="tw"><table><thead><tr><th>型番</th><th>メーカー</th><th>内容</th><th>在庫・価格</th><th>確認状況</th></tr></thead><tbody><tr><td><strong>1532 02</strong></td><td>Lumberg</td><td>4極ストレートプラグ・ケーブル用・はんだ端子</td><td>TME 1,048 個 / $3.62（1 個）</td><td><strong>確認済み</strong>（<code>1503 28</code> のデータシートが counterpart として名指ししている）</td></tr></tbody></table></div>
+<div class="note"><p><strong><code>1503 28</code> の在庫は確認できていません。</strong>SMT ミッドマウント品なので、</p><p>流通量は THT 品より少ない可能性があります。</p><p>- <strong>[AI]</strong> <code>1503 28</code> の在庫を Bürklin / Arrow / Farnell / TME で調べる（購入はしない）</p><p>- <strong>[AI]</strong> <code>SJ-43514</code> のデータシート PDF を取得し、端子配列と寸法を実測で確認する</p><p>- <strong>[AI]</strong> <code>1503 20</code> / <code>1503 15 VP3</code> が 4極 THT かどうかを調べ、代替候補にできるか判定する</p></div>
+<div class="note"><p><strong>市販の CTIA 4極ケーブルを切って使う手もあります</strong>（<code>VERIFICATION_PLAN</code> §2-2 の記載）。</p><p>ただし<strong>プラグ側の導体境界の寸法が分からない</strong>ので、すき間の読みに使えても、</p><p>接点位置の逆算には Lumberg のプラグのほうが確実です。</p></div>
+<hr>
+<h2 id="s3">3. <strong>反転しない場合、AI だけでどこまで行けるか</strong></h2>
+<p>結論から言うと <strong>「<code>verifiedPhysical</code> を <code>true</code> にする」以外は全部行けます。</strong></p>
+<h3>§1-1（<code>verifiedPhysical</code> のゲート定義）— <strong>100% 行ける</strong></h3>
+<p>測定が 1 件も無くても、<strong>ゲートは書けます。</strong>むしろ測る前に書くべきものです。</p>
+<div class="tw"><table><thead><tr><th>作れるもの</th><th>測定が要るか</th></tr></thead><tbody><tr><td>合格条件の条文（何を・何点・どの許容差で・誰の記録で）</td><td><strong>要らない</strong></td></tr><tr><td>記録を読んで真偽を返す判定器（リテラル <code>false</code> を廃止する）</td><td><strong>要らない</strong></td></tr><tr><td>記録が 0 件のとき <code>false</code> を返すことの変異試験</td><td><strong>要らない</strong></td></tr><tr><td>記録が揃ったとき <code>true</code> を返すことの試験（<strong>合成の記録</strong>を入れて確かめる）</td><td><strong>要らない</strong></td></tr><tr><td><strong>実物の記録で <code>true</code> になること</strong></td><td><strong>要る</strong> ← ここだけ止まる</td></tr></tbody></table></div>
+<p><strong>合成の記録でゲートを試験できます。</strong>「実測記録が 4 件そろえば true」という条文なら、 <strong>架空の 4 件を作れば判定器の動作は全部確かめられます。</strong> 止まるのは「本物の記録が入る」ところだけで、<strong>それは 1 行の差分です。</strong></p>
+<div class="note"><p><strong>これは反転してもしなくてもやる価値があります。</strong>現状の <code>verifiedPhysical</code> は</p><p><code>scripts/exportHalfPlugProfile.ts:612</code> のリテラルで、<strong>誰かが書き換えれば <code>true</code> になります。</strong></p><p>測定が永久に来なくても、<strong>リテラルのままにしておく理由はありません。</strong></p></div>
+<h3>§1-6（受け皿）— <strong>100% 行ける</strong></h3>
+<div class="tw"><table><thead><tr><th>作れるもの</th><th>測定が要るか</th></tr></thead><tbody><tr><td><code>docs/measurements/</code> の記録形式を schema にする</td><td><strong>要らない</strong></td></tr><tr><td><code>validate:profiles</code> の検証対象へ足す（13 → 14 件）</td><td><strong>要らない</strong></td></tr><tr><td>測定シート（分解能・生値 3 回・期待値の印字・ばらつき超過で不合格）</td><td><strong>要らない</strong></td></tr><tr><td>記録から接点位置を逆算する計算（<code>fit:contacts</code> の 4極版）</td><td><strong>要らない</strong>（合成データで試験できる）</td></tr><tr><td>測定値を profile へ流し込む経路</td><td><strong>要らない</strong>（合成データで試験できる）</td></tr><tr><td><strong><code>evidenceGrade</code> に測定の区分を足すか決める</strong>（→ profile v4・下流が止まる）</td><td><strong>要らない</strong>（判断は要る）</td></tr></tbody></table></div>
+<h3>行けないもの — <strong>2 つだけ</strong></h3>
+<pre><code>1. verifiedPhysical を実物の記録で true にする
+2. IV028 の 13.30–13.52 mm を実測値に置き換える</code></pre>
+<p><strong>この 2 つ以外は、方針を維持したまま全部終わります。</strong> そして終わらせておけば、<strong>測れる人が現れた日に、記録を 1 枚もらうだけで両方閉じます。</strong></p>
+<div class="note"><p><strong>方針を維持する場合の唯一の損失は、その「現れる日」がいつか分からないことです。</strong></p><p>2026-08-02 に募集を始めてから 2026-08-05 現在まで、<strong>提供は 0 件</strong>です（3 日間なので当然ですが、</p><p>見込みの根拠にもなっていません）。</p></div>
+<hr>
+<h2 id="s4">4. <strong><code>L</code> の 1 点だけを測る最小手順</strong></h2>
+<p><strong>この手順だけで、モデルと実在部品のどちらが正しいかが決まります。</strong></p>
+<h3>用意するもの</h3>
+<pre><code>4極ジャック 1 個            端子にクリップを挟めるもの（THT が楽）
+4極プラグ 1 個              CTIA。市販ケーブルを切ってもよい
+テスター                    導通ブザー付き
+デジタルノギス              0.01 mm 表示</code></pre>
+<h3>手順</h3>
+<p><strong>① プラグの 4 本の導体にリード線を出す。</strong> ケーブルを切ったなら被覆を剥くだけです。<strong>どれがどの導体かは、まだ分からなくて構いません。</strong></p>
+<p><strong>② 完全に挿し込む。</strong>プラグ肩がジャック前面に当たるまで。</p>
+<p><strong>③ 「プラグの先端（Tip）」と導通するジャックの端子を 1 本だけ見つける。</strong> プラグ側は、<strong>先端の金属部分</strong>にテスターの片方を当てます（リード線ではなくプラグ先端そのもの）。 もう片方をジャックの端子に順に当て、<strong>ブザーが鳴る端子</strong>を探します。 <strong>これが <code>L</code> の端子です。端子番号を推測しないでください。</strong></p>
+<p><strong>④ プラグを完全に抜く。</strong></p>
+<p><strong>⑤ テスターを ③ で見つけた組み合わせにつないだまま、プラグをゆっくり挿す。</strong> <strong>ブザーが鳴った瞬間に止める。</strong>行き過ぎたら抜いてやり直してください（戻して合わせない）。</p>
+<p><strong>⑥ その状態で、プラグ肩とジャック前面の</strong>すき間<strong>をノギスで測る。</strong></p>
+<pre><code>    ┌─ プラグ肩
+    │        ┌─ ジャック前面
+    ▼        ▼
+ ━━━┓  ←→  ┃
+    ┃ すき間 ┃━━━━━━  ← 挿さっているプラグ
+ ━━━┛      ┃</code></pre>
+<p><strong>⑦ ④〜⑥ を 3 回繰り返し、3 つの値をそのまま書き留める。</strong>平均を書かないでください。</p>
+<h3>読み方 — <strong>その場で分かります</strong></h3>
+<div class="tw"><table><thead><tr><th>測った値</th><th>意味</th></tr></thead><tbody><tr><td><strong>2 mm 前後</strong>（1.5〜2.8 mm）</td><td><strong>モデルの仮定が正しい。</strong><code>IV028</code> はいまの位置でよい</td></tr><tr><td><strong>0.7 mm 前後</strong>（0〜1.3 mm）</td><td><strong>実在部品 PS000001 のほうが正しい。</strong><code>IV028</code> は動く。看板の結論も見直しになる</td></tr><tr><td>どちらでもない</td><td><strong>どちらの予測も外れ。</strong>これが一番おもしろい結果です</td></tr></tbody></table></div>
+<p><strong>予測は測る前から公開してあります</strong>（<code>artifacts/real_jack_comparison.json</code> の <code>testerPredictions</code>）。 <strong>後から結論に合わせることはできません。</strong></p>
+<h3>書き留める形</h3>
+<pre><code>ジャックの型番      :
+プラグの型番        :
+ノギスの分解能      : 0.01 mm
+すき間 1 回目       :      mm
+すき間 2 回目       :      mm
+すき間 3 回目       :      mm
+測定日              :</code></pre>
+<ul><li><strong>[AI]</strong> これを <code>docs/measurements/</code> の記入シートとして用意する（判定欄も自動で出す）</li><li><strong>[人間]</strong> 数字を書き写す。<strong>それ以外の判断はしない</strong></li></ul>
+<hr>
+<h2 id="s5">5. 決めること</h2>
+<div class="tw"><table><thead><tr><th></th><th>選択肢</th><th>この文書での扱い</th></tr></thead><tbody><tr><td><strong>A</strong></td><td><strong>条件付きで反転する</strong>（§0 の ①② を両方満たす測定だけ自分で測る＝いまは <code>L</code> の 1 点だけ）</td><td><strong>推奨</strong></td></tr><tr><td>B</td><td>全面的に反転する（§1-1 の外径や §1-2 の LED 回路も自分でやる）</td><td><strong>勧めません。</strong>方針の理由が実際に当てはまります</td></tr><tr><td>C</td><td>維持する（募集のまま）</td><td><strong>損失は §3 の 2 行だけ。</strong>それ以外は同じだけ進みます</td></tr></tbody></table></div>
+<p><strong>A を勧める理由</strong>は、<code>L</code> の 1 点が「精度の要る測定」ではないからです。 <strong>145 倍の差を見る作業を、精度が要るという理由で断るのは、理由と対象が噛み合っていません。</strong></p>
+<p><strong>C でも構いません。</strong>その場合 AI 側は §3 の表を全部やって、 <strong>記録が 1 枚来た日に閉じる状態</strong>まで持っていきます。<strong>待つ場所が変わるだけです。</strong></p>
+<ul><li><strong>[人間]</strong> A / B / C を選ぶ</li><li><strong>[AI]</strong> 選ばれた案に合わせて <code>VERIFICATION_PLAN.md</code> の冒頭 blockquote を書き換える差分を出す</li><li><strong>[AI]</strong> A なら §0 の ①② を条文へ書き、各測定を当てはめた表を <code>VERIFICATION_PLAN</code> へ入れる</li><li><strong>[AI]</strong> どの案でも §3 の表は全部やる（方針に依存しない）</li></ul>
+</div>
+</body>
+</html>

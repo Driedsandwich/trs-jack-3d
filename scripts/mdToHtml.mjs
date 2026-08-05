@@ -86,7 +86,7 @@ const STYLE = `<style>
   }
 </style>`
 
-const TARGETS = [
+export const TARGETS = [
   { md: 'docs/REPORT.md', html: 'docs/REPORT.html', title: '3.5 mm TRS 接合機構ビューア — 納品報告' },
   { md: 'docs/VERIFICATION_PLAN.md', html: 'docs/VERIFICATION_PLAN.html', title: '実物照合の手順' },
   { md: 'docs/TEST_RESULTS.md', html: 'docs/TEST_RESULTS.html', title: '検証結果' },
@@ -120,6 +120,11 @@ const TARGETS = [
     html: 'docs/V060_PLAN_20260805.html',
     title: 'v0.6.0 作業計画 — 実物測定を先に置く (2026-08-05)',
   },
+  {
+    md: 'docs/V060_MEASUREMENT_DECISION_20260805.md',
+    html: 'docs/V060_MEASUREMENT_DECISION_20260805.html',
+    title: 'v0.6.0 §0 の判断材料 — 実測方針を反転するか (2026-08-05)',
+  },
 ]
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -134,7 +139,7 @@ function inline(s) {
   return t
 }
 
-function render(mdPath, htmlPath, title) {
+export function renderToString(mdPath, title) {
   const md = readFileSync(resolve(mdPath), 'utf8')
   const lines = md.split('\n')
 const out = []
@@ -269,9 +274,18 @@ ${tocHtml}${withIds.join('\n')}
 </body>
 </html>
 `
-  writeFileSync(resolve(htmlPath), html)
-  console.log(`  ${htmlPath}  ${html.length} bytes / ブロック ${out.length} / 目次 ${toc.length} 項目`)
+  return { html, blocks: out.length, tocItems: toc.length }
 }
 
-console.log('docs/*.html を Markdown から生成')
-for (const t of TARGETS) render(t.md, t.html, t.title)
+/** 生成して書き出す。**HTML は Markdown の派生物なので、手で編集しない。** */
+function render(mdPath, htmlPath, title) {
+  const { html, blocks, tocItems } = renderToString(mdPath, title)
+  writeFileSync(resolve(htmlPath), html)
+  console.log(`  ${htmlPath}  ${html.length} bytes / ブロック ${blocks} / 目次 ${tocItems} 項目`)
+}
+
+// **import されたときは書き出さない**（checkDocNumbers.mjs が同期検査で読み込むため）
+if (process.argv[1] && process.argv[1].endsWith('mdToHtml.mjs')) {
+  console.log('docs/*.html を Markdown から生成')
+  for (const t of TARGETS) render(t.md, t.html, t.title)
+}

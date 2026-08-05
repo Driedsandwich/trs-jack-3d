@@ -22,6 +22,7 @@
     "test:count": "node scripts/testCount.mjs",
     "check:stale": "vite-node scripts/checkStale.ts",
     "check:vacuity": "node scripts/checkVacuity.mjs",
+    "check:doc-numbers": "node scripts/checkDocNumbers.mjs",
     "validate:profiles": "node scripts/validateProfiles.mjs",
     "release:evidence": "node scripts/buildReleaseEvidence.mjs",
     "release:snapshot": "node scripts/buildSourceSnapshot.mjs",

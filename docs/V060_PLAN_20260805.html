@@ -148,7 +148,7 @@ UNKNOWN    不明</code></pre>
 <p><strong>2 番目が本命です。</strong>看板の結論（3極プラグを 4極ジャックへ半挿しにすると左右差分が残る）が そこに丸ごと乗っていて、<code>IV028</code> もそこから出ています。</p>
 <ul><li><strong>[人間]</strong> 実際にプラグを挿してノギスを当てる（物理world・代替不可）</li><li><strong>[AI]</strong> 測定シートを事前に埋めておく（型番・端子番号・期待値・記入欄。人間は数字を入れるだけ）</li><li><strong>[AI]</strong> 記録から接点位置を逆算する計算を用意する（<code>fit:contacts</code> の 4極版は未実装）</li><li><strong>[AI]</strong> 測定値を profile へ流し込み、再生成して差分を出す</li></ul>
 <h3>1-4. <strong><code>IV028</code> の 13.30–13.52 mm は詰まるか — 位置は決まる。幅は測ってみないと分からない</strong></h3>
-<p><code>IV028</code> は TRRS profile の 28 番目の区間で、接点はすべて <code>ASSUMPTION</code> です。</p>
+<p><code>IV028</code> は TRRS profile の区間で（<code>IV000</code> 始まりなので 30 区間中の 29 番目）、接点はすべて <code>ASSUMPTION</code> です。</p>
 <pre><code>IV028  nominalStartMm 13.3  /  nominalEndMm 13.52   幅 0.22 mm</code></pre>
 <p><strong>位置は決まります。</strong>§2-2 の測定は、対立する 2 つの予測を直接分離できます。</p>
 <div class="tw"><table><thead><tr><th>端子</th><th class="num">本モデルの予測（肩とジャック前面のすき間）</th><th class="num">実在部品 PS000001 から計算</th><th class="num">差</th></tr></thead><tbody><tr><td>MIC</td><td class="num">12.02 mm</td><td class="num">11.99 mm</td><td class="num">0.03</td></tr><tr><td>GND</td><td class="num">8.33 mm</td><td class="num">8.67 mm</td><td class="num"><strong>0.34</strong></td></tr><tr><td>R</td><td class="num">5.57 mm</td><td class="num">5.52 mm</td><td class="num">0.05</td></tr><tr><td><strong>L</strong></td><td class="num"><strong>2.14 mm</strong></td><td class="num"><strong>0.69 mm</strong></td><td class="num"><strong>1.45</strong></td></tr></tbody></table></div>
