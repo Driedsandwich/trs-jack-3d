@@ -66,7 +66,8 @@
 | **`oneOf` が変わる（枝の中身でも）** | 決められない | **BUMP** |
 | `anyOf` / `allOf` の枝の数が変わる | 決められない | **BUMP** |
 | `$ref` を解決できない・循環する | 決められない | **BUMP** |
-| 未対応キーワードが変わった | 決められない | **BUMP** |
+| **宣言外の keyword が在る**（変わっていなくても） | 決められない | **BUMP** |
+| **`$ref` に sibling がある節が変わった** | 決められない | **BUMP** |
 | `required` に足す | 狭まる | HOLD_RECORD |
 | `enum` から値を減らす | 狭まる | HOLD_RECORD |
 | `properties` から項目を消す（`additionalProperties:false` のとき） | 狭まる | HOLD_RECORD |
@@ -140,6 +141,28 @@ v0.3.0 schema × role を input-scope から戻した同じ artifact   → 受�
 
    **同じ形の穴が他に無いことは示せていない。**この条文で言えるのは
    「いま反例が見つかっている経路は塞いだ」までである。
+
+   **実際、`oneOf` を直した直後に同じ形が 3 つ出た**（2026-08-05・第2回監査）。
+
+   ```
+   $ref に sibling があると参照変更を見落とす          → HOLD（差分 0 件）
+   schema 型 additionalProperties へ項目を足す        → HOLD_RECORD
+   patternProperties があるのに項目を消す              → HOLD_RECORD
+   ```
+
+   どれも「判定器が扱いきれない構文の周りで、他の keyword の意味が変わる」型である。
+   **1 つずつ塞ぐ形では列挙漏れがそのまま危険側の穴になる**ので、v0.5.2 で
+   **allowlist 方式**へ変えた。
+
+   > 判定器が正しく扱えると宣言した keyword の集合（`HANDLED_KEYWORDS`）を決め、
+   > **宣言外の keyword が「在る」だけで**（かつその節が新旧で変わっていれば）
+   > 無条件に `UNDEC` へ倒す。「変わったら倒す」ではない——
+   > **変わっていない keyword が、他の keyword の意味を変える**ためである。
+
+   宣言集合は現行 schema が実際に使う keyword を機械で数えて決めた。
+   `test/schemaVersioningPolicy.test.ts` の ①-d が、**宣言外の keyword が schema に
+   現れたら落とす**。落ちたら「判定器を直す」か「宣言集合へ足す」かを、その場で決めること。
+   **足すだけでは、倒れていたものが倒れなくなるだけである。**
 3. **`meaning-changed`（値の意味だけ変わる）は機械判定できない。**
    型も enum も同じまま意味だけ変わる変更（v0.1.1 の `spreadStatus` がこれ）は、
    人間が気づいて `contractMigration` に書く以外にない。条文はここを守れない。

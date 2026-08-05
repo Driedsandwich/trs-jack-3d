@@ -15,6 +15,58 @@
 
 ---
 
+## v0.5.2 — 判定器を allowlist 方式へ（**版は据え置き**）
+
+2026-08-05
+
+**schema は 1 本も版を上げていない。**v0.5.1 の 21 本すべてが `HOLD`（`BUMP` 0 件）で
+あることを実測してから据え置いた。**`profileId` は変わる**（`package-lock.json` の
+版数を上げたため。生成器は触っていない）。
+
+### 訂正 — `oneOf` を直した直後に、同じ形が 3 つ出た
+
+外部監査（第2回・2026-08-05）が ajv 付きの反例を出した。**3 件とも危険側**だった。
+
+| 反例 | v0.5.1 の判定 | 正しい判定 |
+|---|---|---|
+| `$ref` に sibling があると参照変更を見落とす | **`HOLD`・差分 0 件** | `BUMP` |
+| schema 型 `additionalProperties` へ項目を足す | `HOLD_RECORD` | `BUMP` |
+| `patternProperties` があるのに項目を消す | `HOLD_RECORD` | `BUMP` |
+
+live な schema で踏むのは **`$ref` sibling が 3 件**（profile v1/v2/v3 の `evidenceGrade`）と
+**schema 型 `additionalProperties` が 43 件**。`patternProperties` は現在 0 件。
+
+**v0.5.1 の結論（21/21 `HOLD`）は汚染されていない。**判定器を使わない byte 比較で、
+v0.5.0 → v0.5.1 の schema 20 本に **1 バイトも差が無い**ことを確認した。
+
+### 直し方を変えた — 個別対応から allowlist へ
+
+1 つずつ塞ぐ形では、**列挙漏れがそのまま危険側の穴になる**。
+
+> 判定器が正しく扱えると宣言した keyword の集合（`HANDLED_KEYWORDS`）を決め、
+> **宣言外の keyword が「在る」だけで**（かつその節が新旧で変わっていれば）`UNDEC` へ倒す。
+> 「変わったら倒す」ではない——**変わっていない keyword が他の keyword の意味を変える**ため。
+
+宣言集合は現行 schema が実際に使う keyword を機械で数えて決めた。
+`test/schemaVersioningPolicy.test.ts` の ①-d が**宣言外の keyword が現れたら落とす**。
+`patternProperties` / `dependencies` / `if` / `not` などは**意図的に宣言外**にしてある。
+
+あわせて次も直した。
+
+- schema 型 `additionalProperties` のとき、項目の追加・削除を「無制約だった」と扱わない
+  （その key は `additionalProperties` の schema の制約下にあった）
+- `$ref` に sibling がある節は、**節が同じでも参照先を比べる**
+
+### 実装中に見つけた 4 件目
+
+**節は同じまま参照先だけ変わる**場合が、どちらの網にもかかっていなかった。
+allowlist ゲートは「その節が変わっていれば」倒すので節が同じだと鳴らず、
+`deref()` は sibling があると辿らない。回帰試験に入れて直した。
+
+最初は `definitions` を丸ごと走査する形にしたが、**`deref` 経由で見えている変更と
+二重に出て** `contractMigration` の記録側が同じ差分を 2 か所へ書く羽目になったので、
+sibling 付き `$ref` の参照先だけを比べる形へ絞った。
+
 ## v0.5.1 — 条文の判定器の欠陥と、配布 artifact 内の自己矛盾（**版は据え置き**）
 
 2026-08-05

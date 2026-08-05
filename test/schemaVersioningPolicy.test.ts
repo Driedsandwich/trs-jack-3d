@@ -23,10 +23,19 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import Ajv from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
-import { diffSchemaFiles, diffSchemaObjects } from '../scripts/schemaLanguageDiff.mjs'
+import { HANDLED_KEYWORDS, diffSchemaFiles, diffSchemaObjects } from '../scripts/schemaLanguageDiff.mjs'
 import { mustBeNonEmpty } from './_must'
 
 const ROOT = resolve(__dirname, '..')
+
+/** Draft-07。反例は ajv でも同じ dialect で流す */
+const DRAFT7 = 'http://json-schema.org/draft-07/schema#'
+
+/**
+ * **直近の release tag。**版を据え置いた回はここから言語が変わっていないはずである。
+ * 上げた回はここを新しい tag へ進める（進め忘れると検査が古い版を見続ける）。
+ */
+const LATEST_TAG = 'v0.5.1'
 
 const tmpDirs: string[] = []
 afterAll(() => tmpDirs.forEach((d) => rmSync(d, { recursive: true, force: true })))
@@ -206,6 +215,168 @@ describe('条文 ①-b oneOf の反例（外部監査 2026-08-05）', () => {
   })
 })
 
+// ---------------------------------------------------------------- ①-c allowlist の反例
+
+/**
+ * **`oneOf` を直した直後に、同じ形の穴が 3 つ出た（外部監査 2026-08-05・第2回）。**
+ *
+ * どれも「判定器が知らない／扱いきれない構文の周りで、他の keyword の意味が変わる」型である。
+ * 個別に塞いでいくと、列挙漏れがそのまま危険側の穴になる。
+ * **v0.5.2 で allowlist 方式へ変えた**——扱えると宣言した keyword の集合を決め、
+ * それ以外が現れたら（かつ何か変わっていたら）無条件で UNDEC へ倒す。
+ *
+ * ②は v0.5.1 tag の実物を読み込んで**修正前の挙動**も実測する。
+ * ①だけだと「昔からこうだった」のか「直した」のかを記録でしか主張できない。
+ */
+interface Counter { id: string, name: string, old: object, neu: object, vals: unknown[], before: string }
+
+const COUNTEREXAMPLES: Counter[] = [
+  {
+    id: 'REF_WITH_SIBLING',
+    name: '$ref に sibling があると参照変更を見落とす',
+    old: { $schema: DRAFT7, $ref: '#/definitions/a', description: 'neutral', definitions: { a: { type: 'string' }, b: { type: 'number' } } },
+    neu: { $schema: DRAFT7, $ref: '#/definitions/b', description: 'neutral', definitions: { a: { type: 'string' }, b: { type: 'number' } } },
+    vals: ['text', 42],
+    before: 'HOLD',
+  },
+  {
+    id: 'SCHEMA_ADDITIONAL_PROPERTIES',
+    name: 'schema 型 additionalProperties へ項目を足す',
+    old: { $schema: DRAFT7, type: 'object', additionalProperties: { type: 'string' } },
+    neu: { $schema: DRAFT7, type: 'object', properties: { x: {} }, additionalProperties: { type: 'string' } },
+    vals: [{ x: 42 }, { x: 's' }, { y: 42 }],
+    before: 'HOLD_RECORD',
+  },
+  {
+    id: 'PATTERN_PROPERTIES',
+    name: 'patternProperties があるのに項目を消す',
+    old: { $schema: DRAFT7, type: 'object', properties: { x: { type: 'number' } }, patternProperties: { '^x$': {} }, additionalProperties: false },
+    neu: { $schema: DRAFT7, type: 'object', patternProperties: { '^x$': {} }, additionalProperties: false },
+    vals: [{ x: 'text' }, { x: 1 }, { y: 1 }],
+    before: 'HOLD_RECORD',
+  },
+]
+
+describe('条文 ①-c allowlist の反例（外部監査 2026-08-05・第2回）', () => {
+  it.each(COUNTEREXAMPLES.map((c) => [c.name, c] as const))(
+    '① ajv: %s — 新は旧に収まっていない',
+    (_n, c) => {
+      const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(s)
+      const o = compile(c.old)
+      const n = compile(c.neu)
+      const widened = c.vals.some((v) => n(structuredClone(v)) && !o(structuredClone(v)))
+      // **広がった値が実在すること。**これが無いと反例が成立していない
+      expect(widened, `${c.id}: 新だけが通す値が無い（反例の前提が崩れている）`).toBe(true)
+    },
+  )
+
+  it('② v0.5.1 の実装は 3 件とも危険側を返した（修正前の実測）', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'v051diff-'))
+    tmpDirs.push(dir)
+    const p = join(dir, 'schemaLanguageDiff.mjs')
+    const src = execFileSync('git', ['show', 'v0.5.1:scripts/schemaLanguageDiff.mjs'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 32 << 20 })
+    expect(src.length, 'v0.5.1 の実装が空').toBeGreaterThan(1000)
+    // **allowlist が無かったこと自体も確かめる**（消えていたら反例が的外れになる）
+    expect(src).not.toContain('HANDLED')
+    writeFileSync(p, src)
+    const old = await import(/* @vite-ignore */ p)
+
+    for (const c of COUNTEREXAMPLES) {
+      const r = old.diffSchemaObjects(c.old, c.neu)
+      expect(r.verdict, `${c.id}: v0.5.1 の判定`).toBe(c.before)
+      expect(r.verdict, `${c.id}: 危険側でなければ反例になっていない`).not.toBe('BUMP')
+    }
+    // **3.1 は差分 0 件の HOLD だった。**何も見えていないのに「変わっていない」と言う
+    const silent = old.diffSchemaObjects(COUNTEREXAMPLES[0].old, COUNTEREXAMPLES[0].neu)
+    expect(silent.facts.length, 'v0.5.1 は $ref の変更で差分を 1 件も出さなかったはず').toBe(0)
+  })
+
+  it.each(COUNTEREXAMPLES.map((c) => [c.name, c] as const))(
+    '③ 現在の実装は BUMP を返し、差分も出す — %s',
+    (_n, c) => {
+      const r = diffSchemaObjects(c.old, c.neu)
+      expect(r.verdict, c.id).toBe('BUMP')
+      // **判定が合っただけでは足りない。**差分 0 件の BUMP はありえない
+      expect(r.facts.length, `${c.id}: 判定は BUMP だが差分が 0 件`).toBeGreaterThan(0)
+      expect(r.facts.some((f: { kind: string }) => f.kind === 'UNDEC'), `${c.id}: UNDEC 以外の理由で BUMP になっている`).toBe(true)
+    },
+  )
+})
+
+describe('条文 ①-c2 sibling 付き $ref の参照先（v0.5.2 の実装中に見つけた 4 件目）', () => {
+  /**
+   * 3 反例を直す過程で、**節は同じまま参照先だけ変わる**場合が見えていないことに気づいた。
+   * allowlist ゲートは「その節が変わっていれば」倒すので、節が同じだと鳴らない。
+   * `deref()` も sibling があると辿らない。**どちらの網にもかからなかった。**
+   */
+  const OLD = {
+    $schema: DRAFT7,
+    properties: { x: { $ref: '#/definitions/g', description: 'sibling があるので deref が辿らない' } },
+    definitions: { g: { type: 'string' } },
+  }
+
+  it('節は同じで definitions の中身だけ変わっても見える', () => {
+    const neu = structuredClone(OLD) as any
+    neu.definitions.g = { type: 'number' }
+    const r = diffSchemaObjects(OLD, neu)
+    expect(r.verdict).toBe('BUMP')
+    expect(r.facts.length, '差分 0 件の BUMP はありえない').toBeGreaterThan(0)
+    expect(r.facts.map((f: { pointer: string }) => f.pointer).join(' '), '参照先を辿った位置で出ていない').toContain('/$ref')
+  })
+
+  it('同一 schema 同士は HOLD のまま（倒しすぎていない）', () => {
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+
+  it('この構文は live な schema に実在する（机上ではない）', () => {
+    const found: string[] = []
+    const walk = (n: unknown, f: string) => {
+      if (Array.isArray(n)) return n.forEach((x) => walk(x, f))
+      if (!n || typeof n !== 'object') return
+      const o = n as Record<string, unknown>
+      if ('$ref' in o && Object.keys(o).length > 1) found.push(f)
+      Object.values(o).forEach((x) => walk(x, f))
+    }
+    for (const f of readdirSync(resolve(ROOT, 'schemas')).filter((x) => x.endsWith('.schema.json'))) {
+      walk(JSON.parse(readFileSync(resolve(ROOT, 'schemas', f), 'utf8')), f)
+    }
+    mustBeNonEmpty(found, 'sibling 付き $ref を持つ schema')
+  })
+})
+
+describe('条文 ①-d allowlist そのもの', () => {
+  it('宣言集合が、現行 schema の使う keyword をすべて覆っている', () => {
+    const APPLICATORS = new Set(['properties', 'definitions', '$defs', 'patternProperties', 'dependencies'])
+    const SUBSCHEMA = new Set(['items', 'additionalItems', 'additionalProperties', 'contains', 'not', 'propertyNames', 'if', 'then', 'else'])
+    const LISTS = new Set(['oneOf', 'anyOf', 'allOf'])
+    const used = new Set<string>()
+    const walk = (n: unknown) => {
+      if (!n || typeof n !== 'object' || Array.isArray(n)) return
+      for (const [k, v] of Object.entries(n as Record<string, unknown>)) {
+        used.add(k)
+        if (APPLICATORS.has(k) && v && typeof v === 'object') Object.values(v as object).forEach(walk)
+        else if (SUBSCHEMA.has(k)) (Array.isArray(v) ? v : [v]).forEach(walk)
+        else if (LISTS.has(k) && Array.isArray(v)) v.forEach(walk)
+      }
+    }
+    const files = readdirSync(resolve(ROOT, 'schemas')).filter((f) => f.endsWith('.schema.json'))
+    expect(files.length, 'schema が無い（走査が動いていない）').toBeGreaterThan(15)
+    for (const f of files) walk(JSON.parse(readFileSync(resolve(ROOT, 'schemas', f), 'utf8')))
+    expect(used.size, '使われている keyword が少なすぎる').toBeGreaterThan(15)
+
+    // **宣言外の keyword が schema に現れたら落ちる。**
+    // 落ちたら「判定器を直す」か「宣言集合へ足す」かを、その場で決めること
+    const undeclared = [...used].filter((k) => !HANDLED_KEYWORDS.has(k)).sort()
+    expect(undeclared, '宣言外の keyword が schema に現れている').toEqual([])
+  })
+
+  it('宣言集合は「全部入り」ではない（何も弾かない allowlist は allowlist ではない）', () => {
+    for (const k of ['patternProperties', 'dependencies', 'if', 'then', 'else', 'not', 'contains', 'propertyNames', 'multipleOf', 'format']) {
+      expect(HANDLED_KEYWORDS.has(k), `${k} を宣言集合へ入れてはいけない（判定器は扱えない）`).toBe(false)
+    }
+  })
+})
+
 // ---------------------------------------------------------------- ② 遡及
 
 /** 版を据え置いたまま契約を変えた 7 件。**すべて条文違反である** */
@@ -298,10 +469,10 @@ describe('条文 現行 schema', () => {
    * 条文どおりなら、v0.5.0 にあった schema はすべて言語が変わっていないはずである。
    * ここが BUMP を返したら、**版を据え置いたまま契約を変えた**ことになる（＝過去 9 件と同じ違反）。
    */
-  it('v0.5.0 の全 schema が、現在も言語が変わっていない（版を据え置いてよい根拠）', () => {
-    const tagged = execFileSync('git', ['ls-tree', '-r', '--name-only', 'v0.5.0', '--', 'schemas/'], { cwd: ROOT, encoding: 'utf8' })
+  it('直近 tag の全 schema が、現在も言語が変わっていない（版を据え置いてよい根拠）', () => {
+    const tagged = execFileSync('git', ['ls-tree', '-r', '--name-only', LATEST_TAG, '--', 'schemas/'], { cwd: ROOT, encoding: 'utf8' })
       .trim().split('\n').filter(Boolean)
-    expect(tagged.length, 'v0.5.0 に schema が無い（走査が動いていない）').toBeGreaterThan(15)
+    expect(tagged.length, `${LATEST_TAG} に schema が無い（走査が動いていない）`).toBeGreaterThan(15)
 
     const bumped: string[] = []
     let compared = 0
@@ -312,7 +483,7 @@ describe('条文 現行 schema', () => {
         continue
       }
       compared++
-      const r = diffSchemaObjects(atTag('v0.5.0', p) as any, JSON.parse(readFileSync(now, 'utf8')))
+      const r = diffSchemaObjects(atTag(LATEST_TAG, p) as any, JSON.parse(readFileSync(now, 'utf8')))
       if (r.verdict === 'BUMP') bumped.push(`${p}: ${JSON.stringify(r.facts.slice(0, 2))}`)
     }
     expect(compared, '比較した本数').toBe(tagged.length)

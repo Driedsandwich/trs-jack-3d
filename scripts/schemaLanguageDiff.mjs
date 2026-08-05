@@ -60,7 +60,21 @@ export const UNDEC = 'UNDEC'
 const NEUTRAL_KEYS = ['description', 'title', '$comment', '$schema', '$id', 'examples', 'default']
 const LOWER_BOUNDS = ['minimum', 'exclusiveMinimum', 'minLength', 'minItems', 'minProperties']
 const UPPER_BOUNDS = ['maximum', 'exclusiveMaximum', 'maxLength', 'maxItems', 'maxProperties']
-const KNOWN = new Set([
+/**
+ * **判定器が正しく扱えると宣言した keyword。allowlist である。**
+ *
+ * v0.5.1 までは「知らない keyword が**変わったら**倒す」形だった。
+ * これでは、**変わっていない keyword が他の keyword の意味を変える**場合を取りこぼす。
+ * 実際に外部監査が 3 件出した（patternProperties が居ると項目削除は狭まらない、など）。
+ *
+ * v0.5.2 からは **宣言外の keyword が「在る」だけで倒す**（かつその節が変わっていれば）。
+ * 宣言集合は現行 schema が実際に使う keyword を機械で数えて決めた
+ * (test/schemaVersioningPolicy.test.ts の ①-d が、宣言外が現れたら落とす)。
+ *
+ * **ここへ足すときは、判定器が本当にその keyword を扱えるようにしてから足すこと。**
+ * 足すだけでは、倒れていたものが倒れなくなるだけである。
+ */
+export const HANDLED_KEYWORDS = new Set([
   ...NEUTRAL_KEYS,
   ...LOWER_BOUNDS,
   ...UPPER_BOUNDS,
@@ -198,15 +212,45 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
   for (const k of Object.keys(np).filter((x) => !(x in op)).sort()) {
     const p = `${ptr}/properties/${tok(k)}`
     if (oap === false) d.add(WIDEN, `${path}.${k}`, p, '項目の追加: 旧は additionalProperties:false なのでこの key は禁止だった')
-    else d.add(NARROW, `${path}.${k}`, p, '項目の追加: 旧は無制約だったが新は型が付いた')
+    else if (oap === true) d.add(NARROW, `${path}.${k}`, p, '項目の追加: 旧は無制約だったが新は型が付いた')
+    /**
+     * **旧の additionalProperties が schema のときは「無制約」ではない。**
+     * その key は additionalProperties の schema の制約下にあった。
+     * 明示 property へ移すと、新しい型が旧の制約より広いことも狭いこともある。
+     * v0.5.1 までは NARROW と決め打ちしていて、**広がる場合を据え置き可と誤判定した。**
+     */
+    else d.add(UNDEC, `${path}.${k}`, p, '項目の追加: 旧は additionalProperties の schema の制約下にあった (広狭を機械判定しない)')
   }
   for (const k of Object.keys(op).filter((x) => !(x in np)).sort()) {
     const p = `${ptr}/properties/${tok(k)}`
     if (nap === false) d.add(NARROW, `${path}.${k}`, p, '項目の削除: 新は additionalProperties:false なのでこの key は禁止になる')
-    else d.add(WIDEN, `${path}.${k}`, p, '項目の削除: 新では無制約になる')
+    else if (nap === true) d.add(WIDEN, `${path}.${k}`, p, '項目の削除: 新では無制約になる')
+    else d.add(UNDEC, `${path}.${k}`, p, '項目の削除: 新では additionalProperties の schema の制約下に入る (広狭を機械判定しない)')
   }
   for (const k of Object.keys(op).filter((x) => x in np).sort()) {
     compare(op[k], np[k], oroot, nroot, `${path}.${k}`, `${ptr}/properties/${tok(k)}`, d, seen)
+  }
+
+  /**
+   * --- $ref に sibling がある節の参照先 ---
+   *
+   * `deref()` は `$ref` が唯一の key のときしか辿らない。
+   * そのため **sibling がある節（profile v3 の evidenceGrade がこれ）は、
+   * 節自体が同じまま参照先だけ変わっても何も見えなかった。**
+   *
+   * 節が変わっていれば下の allowlist ゲートが倒す。ここで見るのは
+   * **節は同じで参照先だけ変わった**場合である。
+   * `definitions` を丸ごと走査する形にすると、`deref` 経由で見えている変更と
+   * 二重に出るので採らない（記録側が同じ差分を 2 か所へ書く羽目になる）。
+   */
+  for (const [node, isOld] of [[o, true], [n, false]]) {
+    if (!('$ref' in node) || Object.keys(node).length === 1) continue
+    const other = isOld ? n : o
+    if (!('$ref' in other) || other.$ref !== node.$ref) continue // 参照先が違うならゲートが倒す
+    if (!isOld) continue // 1 回だけ比べる
+    const a = deref({ $ref: node.$ref }, oroot)
+    const b = deref({ $ref: other.$ref }, nroot)
+    compare(a, b, oroot, nroot, `${path}(ref)`, `${ptr}/$ref`, d, seen)
   }
 
   // --- items ---
@@ -294,12 +338,26 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
     }
   }
 
-  // --- 未対応キーワード: 黙って通さない ---
+  /**
+   * --- allowlist ゲート（v0.5.2）---
+   *
+   * **宣言外の keyword が「在る」だけで倒す。**変わったかどうかではない。
+   * 変わっていない keyword が、他の keyword の意味を変えることがあるためである
+   * （patternProperties が居ると、明示 property を消しても禁止にならない）。
+   *
+   * ただし**その節が新旧でまったく同じなら倒さない。**言語も同じだからで、
+   * ここを倒すと同一 schema 同士の比較まで BUMP になり、条文が使えなくなる。
+   */
+  const reasons = []
   for (const k of [...new Set([...Object.keys(o), ...Object.keys(n)])].sort()) {
-    if (KNOWN.has(k)) continue
-    if (JSON.stringify(o[k]) !== JSON.stringify(n[k])) {
-      d.add(UNDEC, path, `${ptr}/${tok(k)}`, `未対応キーワード ${k} が変わった (判定できないので BUMP 側へ倒す)`)
-    }
+    if (!HANDLED_KEYWORDS.has(k)) reasons.push(`未対応キーワード ${k}`)
+  }
+  // **$ref に sibling があると deref が辿らない。**辿らないまま他の keyword だけ比べても意味がない
+  for (const [label, node] of [['旧', o], ['新', n]]) {
+    if ('$ref' in node && Object.keys(node).length > 1) reasons.push(`${label}の $ref に sibling がある`)
+  }
+  if (reasons.length > 0 && JSON.stringify(o) !== JSON.stringify(n)) {
+    d.add(UNDEC, path, ptr, `扱えない構文があり、この節が変わっている (${[...new Set(reasons)].join(' / ')}) — 判定できないので BUMP 側へ倒す`)
   }
 }
 

@@ -16,6 +16,12 @@ export interface SchemaDiff {
   facts: SchemaDiffFact[]
 }
 
+/**
+ * **判定器が正しく扱えると宣言した keyword（allowlist）。**
+ * 宣言外の keyword が schema に現れたらテストが落ちる。
+ */
+export declare const HANDLED_KEYWORDS: Set<string>
+
 export declare const WIDEN: 'WIDEN'
 export declare const NARROW: 'NARROW'
 export declare const UNDEC: 'UNDEC'
