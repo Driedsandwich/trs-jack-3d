@@ -143,7 +143,20 @@ describe('contractMigration ①②③ 記録と schema 実物の突き合わせ'
   it('検査は tag の実物を読んでいる（作業ツリーだけを読んでいない）', () => {
     // readFromGit が 0 なら、上の検査はすべて作業ツリー同士を比べていたことになる
     expect(readFromGit, 'tag から読んだ回数').toBeGreaterThan(10)
-    expect(readFromTree, '作業ツリーから読んだ回数（v0.5.0 のぶん）').toBeGreaterThan(0)
+
+    /**
+     * **v0.5.0 を release する前と後で、読み元が変わる。**
+     *   release 前: tag が無いので v0.5.0 の記録は作業ツリーから読む
+     *   release 後: tag があるので tag から読む（こちらのほうが強い）
+     * どちらでも空振りしないよう、**その時点で正しいほうを名指しで検査する。**
+     */
+    if (tagExists(UNRELEASED)) {
+      expect(readFromTree, `${UNRELEASED} の tag があるのに作業ツリーを読んでいる`).toBe(0)
+      const entries = ALL_ENTRIES.filter(({ entry }) => entry.shippedIn === UNRELEASED)
+      expect(entries.length, `${UNRELEASED} の記録が 1 件も無い`).toBeGreaterThan(0)
+    } else {
+      expect(readFromTree, `${UNRELEASED} の tag が無いので作業ツリーから読むはず`).toBeGreaterThan(0)
+    }
   })
 })
 
