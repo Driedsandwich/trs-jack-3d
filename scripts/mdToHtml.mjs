@@ -115,6 +115,11 @@ const TARGETS = [
     html: 'docs/SCHEMA_VERSIONING_DESIGN_V050_20260805.html',
     title: 'v0.5.0 設計 — schema versioning の是正 (2026-08-05)',
   },
+  {
+    md: 'docs/V060_PLAN_20260805.md',
+    html: 'docs/V060_PLAN_20260805.html',
+    title: 'v0.6.0 作業計画 — 実物測定を先に置く (2026-08-05)',
+  },
 ]
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

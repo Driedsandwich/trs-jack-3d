@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>v0.6.0 作業計画 — 実物測定を先に置く (2026-08-05)</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">0. 先に決めること — この計画は現在の公開方針と衝突しています</a></li>
+    <li><a href="#s1">1. 実物の導通測定</a></li>
+    <li><a href="#s2">2. P1 / P2 — 並行してよいが、順序は測定が先</a></li>
+    <li><a href="#s3">3. allowlist の宣言 32 種 — 「覆っている」しか測っていません</a></li>
+    <li><a href="#s4">4. 順序と、待ち時間の使い方</a></li>
+    <li><a href="#s5">5. この計画でやらないこと</a></li>
+  </ol>
+</nav>
+<h1>v0.6.0 作業計画 — 実物測定を先に置く</h1>
+<div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
+<p>作成 2026-08-05 ／ 状態: <strong>計画のみ。実装していません。</strong></p>
+<p>対象は 3 つです。</p>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>§1</td><td><strong>実物の導通測定</strong>（<code>verifiedPhysical</code> / <code>IV028</code>）</td></tr><tr><td>§2</td><td>外部監査の P1 / P2（tar parser・資源上限・CI・<code>SECURITY.md</code>）</td></tr><tr><td>§3</td><td>allowlist の宣言 32 種を「正しく扱える」と証明する</td></tr></tbody></table></div>
+<p>各行の先頭に <strong><code>[AI]</code></strong> か <strong><code>[人間]</code></strong> を付けます。 <strong><code>[人間]</code> を付けてよいのは、実行できない理由を具体的に言えるものだけ</strong>です （物理world・本人名義の購入・公開の最終ボタン・本人の判断）。</p>
+<hr>
+<h2 id="s0">0. 先に決めること — <strong>この計画は現在の公開方針と衝突しています</strong></h2>
+<p><code>docs/VERIFICATION_PLAN.md</code> の冒頭には、2026-08-02 の方針としてこう書いてあります。</p>
+<div class="note"><p><strong>メンテナ自身は実測を行いません。</strong>電子計測の知見が無く、精度の要る測定を</p><p>自分でやると、かえって根拠の弱い数値を「実測値」として台帳に入れてしまうためです。</p><p>このプロジェクトが避けたい失敗そのものです。</p></div>
+<p><strong>「実物の導通測定を先にする」は、この方針の反転です。</strong>黙って進めると、 公開文書が「やらない」と言っているのに作業だけ進む状態になります。</p>
+<ul><li><strong>[人間]</strong> 方針を反転するか決める（反転する／募集のまま維持する／条件付きで自分で測る）</li><li><strong>[AI]</strong> 反転するなら <code>VERIFICATION_PLAN.md</code> の冒頭 blockquote を書き換える差分を用意する</li><li><strong>[AI]</strong> 「知見が無いと弱い数値が入る」への対策を手順へ埋め込む（→ §1-5。反転の条件はこれ）</li></ul>
+<div class="note"><p>**方針を維持する場合、§1 は「測る」ではなく「測れる人が来たときに 1 発で終わる形にしておく」</p><p>になります。**その場合でも §1-1（ゲートの定義）と §1-6（受け皿の実装）は同じだけ要ります。</p></div>
+<p>もう 1 つ、購入が要ります。</p>
+<p><strong>本命の測定（§2-2）に要るのは 4極の部品で、欧州の取り寄せは要りません。</strong> Lumberg の 2 点はモデルの土台になった 3極部品で、§1-1 / §1-2 用です。</p>
+<div class="tw"><table><thead><tr><th>用途</th><th>品目</th><th>入手</th></tr></thead><tbody><tr><td><strong>§2-2（本命）</strong></td><td>4極ジャック（型番とデータシートがあるもの）</td><td>国内で買える</td></tr><tr><td><strong>§2-2（本命）</strong></td><td>4極プラグ（CTIA。市販ケーブルを切ってよい）</td><td>国内で買える</td></tr><tr><td>§1-1 / §1-2</td><td>Lumberg <strong>1532 10</strong> プラグ ×1</td><td>欧州取り寄せ（Bürklin / Arrow / 直接問い合わせ）</td></tr><tr><td>§1-2 / §2</td><td>Lumberg <strong>1503 09</strong> ジャック ×2</td><td>欧州取り寄せ（Farnell / Arrow / Bürklin / TME）</td></tr><tr><td>共通</td><td>デジタルノギス（0.01 mm）／導通ブザー付きテスター</td><td>手持ちがあれば不要</td></tr></tbody></table></div>
+<ul><li><strong>[AI]</strong> 発注先・型番・在庫・概算・代替品を調べて 1 枚にまとめる（購入ボタンは押さない）</li><li><strong>[AI]</strong> 4極ジャックの候補を、<strong>データシートに端子配列が載っているもの</strong>に絞って出す（→ §2-2 手順 1）</li><li><strong>[人間]</strong> 発注する（本人名義の購入・代替不可）</li></ul>
+<div class="note"><p><strong>§2-2 だけなら欧州取り寄せを待たずに始められます。</strong>§1-1（プラグ 1 個 + ノギスで 30 秒）は</p><p><code>UNKNOWNS</code> §4-1b を閉じる費用対効果が断トツですが、<strong><code>IV028</code> には効きません。</strong></p><p>順番は目的で決めてください。</p></div>
+<hr>
+<h2 id="s1">1. 実物の導通測定</h2>
+<h3>1-1. <strong><code>verifiedPhysical</code> を true にする条件が、いま定義されていません</strong> ← 最初にやること</h3>
+<p>これが最大の発見です。実測を始める前に、ここを決めないと作業が終われません。</p>
+<pre><code>schemas/half-plug-topology-profile.v3.schema.json
+  verifiedPhysical:
+    "実物と突き合わせて検証済みか。未実測の profile では必ず false。
+     true にできるのは実測記録が伴う場合のみ"
+
+scripts/exportHalfPlugProfile.ts:612
+  verifiedPhysical: false,        ← リテラル</code></pre>
+<p><strong>「実測記録が伴う場合」としか書いていません。</strong>何を何点測れば足りるのかが無いので、 現状の <code>true</code> は「誰かがリテラルを書き換えたら true」になります。<strong>それは検証ではありません。</strong></p>
+<p>しかも profile 全体は、そう簡単には埋まりません（2026-08-05 実測）。</p>
+<div class="tw"><table><thead><tr><th></th><th class="num"></th></tr></thead><tbody><tr><td>TRS profile の <code>evidenceGrade</code></td><td class="num">ASSUMPTION <strong>93</strong> / DERIVED 1</td></tr><tr><td>TRRS profile の <code>evidenceGrade</code></td><td class="num">ASSUMPTION <strong>151</strong> / DERIVED 1</td></tr><tr><td>台帳全体（<code>artifacts/verification_summary.json</code>）</td><td class="num">FACT 53 / DERIVED 28 / <strong>ASSUMPTION 54</strong> / UNKNOWN 0</td></tr><tr><td><code>UNKNOWNS.md</code> の小見出し</td><td class="num">21 件 / うち解決 4 件 / <strong>未解決 17 件</strong></td></tr></tbody></table></div>
+<p><strong>いま最も効く測定（<code>VERIFICATION_PLAN.md</code> §2-2）が閉じるのは、このうち §5-2 の 1 件だけです。</strong> 「1 件測ったから <code>verifiedPhysical: true</code>」は明らかに言い過ぎで、 かといって「ASSUMPTION 0 件になるまで false」だと永久に false です。</p>
+<ul><li><strong>[AI]</strong> <code>verifiedPhysical</code> の合格条件を条文として書く（何を・何点・どの許容差で・誰の記録で）</li><li><strong>[AI]</strong> 条件を機械判定にする（<code>docs/measurements/</code> の記録を読んで真偽を出す。リテラルをやめる）</li><li><strong>[AI]</strong> 判定器を変異試験にかける（記録を 1 件消したら false へ落ちること・記録が無いのに true にできないこと）</li><li><strong>[人間]</strong> 「この条件で true と名乗ってよいか」を最後に判断する（対外的な主張なので）</li></ul>
+<div class="note"><p><strong>中間の語彙を作るほうが正直かもしれません。</strong><code>verifiedPhysical</code> は真偽 2 値ですが、</p><p>実態は「1 点だけ実測が入った」「看板の結論だけ実測で裏が取れた」「全部埋まった」が別物です。</p><p><strong>[AI]</strong> 2 値のままにするか、段階を持つ別項目を足すかの設計案を 2 つ出す。</p></div>
+<h3>1-2. <strong>測ったものを置く区分がありません</strong></h3>
+<p><code>evidenceGrade</code> の語彙は 4 つだけです（<code>schemas/half-plug-topology-profile.v3.schema.json</code> の <code>definitions/grade</code>）。</p>
+<pre><code>FACT       メーカーデータシートに数値として直接記載されている
+DERIVED    FACT からの演算
+ASSUMPTION 仮定
+UNKNOWN    不明</code></pre>
+<p><strong>実物を測った値は、このどれでもありません。</strong>FACT はデータシート記載の意味で使っているので、 自分で測った値をそこへ入れると FACT の定義が壊れます。</p>
+<p>区分を足すのは <code>enum</code> の値追加＝<strong>言語が広がる変更</strong>なので、条文（<code>docs/SCHEMA_VERSIONING_POLICY.md</code>）に照らすと <strong><code>BUMP</code></strong>です。profile は v3 → <strong>v4</strong> になり、<strong>下流は止まります。</strong></p>
+<ul><li><strong>[AI]</strong> <code>MEASURED</code>（仮）を足す案と、<code>FACT</code> の定義を「一次情報」に広げる案を、条文の判定つきで比較する</li><li><strong>[AI]</strong> どちらでも <code>scripts/schemaLanguageDiff.mjs</code> に当てて <code>BUMP</code> / <code>HOLD</code> を実測してから決める</li><li><strong>[AI]</strong> 版を上げるなら <code>contract-migration.v1.json</code> へ移行記録を書く（v0.5.0 で作った仕組みをそのまま使う）</li><li><strong>[人間]</strong> 下流を止めるタイミングを決める（v0.6.0 でまとめて止めるか、測定が揃うまで待つか）</li></ul>
+<div class="note"><p><strong>語彙は 2026-08-03 に一度直しています。</strong><code>spreadStatus</code> が <code>MEASURED</code> という名前で</p><p>「モデルの走査結果」を指していて、実物測定と誤読されるので <code>MODEL_SWEEP_*</code> へ改名しました。</p><p><strong>同じ名前を今度は本物の意味で使うことになるので、改名の記録と衝突しないか確認が要ります。</strong></p></div>
+<h3>1-3. 何を測るか — 優先順位は既に決まっています</h3>
+<p><code>docs/VERIFICATION_PLAN.md</code> に手順・判定基準・期待値が<strong>測る前に公開済み</strong>です。 後出しで結論に合わせられない形になっているので、<strong>この計画では順序を確認するだけにします。</strong></p>
+<div class="tw"><table><thead><tr><th>順</th><th>測定</th><th>要るもの</th><th>閉じるもの</th></tr></thead><tbody><tr><td>1</td><td><strong>§1-1 プラグ外径</strong>（30 秒）</td><td>プラグ 1 個 + ノギス</td><td><code>UNKNOWNS</code> §4-1b（3極の結論の土台）</td></tr><tr><td>2</td><td><strong>§2-2 4極ジャックの接点位置</strong></td><td>4極ジャック + 4極プラグ + テスター + ノギス</td><td><code>UNKNOWNS</code> §5-2（<strong>最も重い</strong>）・<strong><code>IV028</code></strong></td></tr><tr><td>3</td><td>§1-2 橋絡の決着実験</td><td>LED 回路 + CR2032</td><td>どちらのモデルが正しいか</td></tr><tr><td>4</td><td>§2 深さの確認</td><td>テスター</td><td>接点ばねの軸位置</td></tr></tbody></table></div>
+<p><strong>2 番目が本命です。</strong>看板の結論（3極プラグを 4極ジャックへ半挿しにすると左右差分が残る）が そこに丸ごと乗っていて、<code>IV028</code> もそこから出ています。</p>
+<ul><li><strong>[人間]</strong> 実際にプラグを挿してノギスを当てる（物理world・代替不可）</li><li><strong>[AI]</strong> 測定シートを事前に埋めておく（型番・端子番号・期待値・記入欄。人間は数字を入れるだけ）</li><li><strong>[AI]</strong> 記録から接点位置を逆算する計算を用意する（<code>fit:contacts</code> の 4極版は未実装）</li><li><strong>[AI]</strong> 測定値を profile へ流し込み、再生成して差分を出す</li></ul>
+<h3>1-4. <strong><code>IV028</code> の 13.30–13.52 mm は詰まるか — 位置は決まる。幅は測ってみないと分からない</strong></h3>
+<p><code>IV028</code> は TRRS profile の 28 番目の区間で、接点はすべて <code>ASSUMPTION</code> です。</p>
+<pre><code>IV028  nominalStartMm 13.3  /  nominalEndMm 13.52   幅 0.22 mm</code></pre>
+<p><strong>位置は決まります。</strong>§2-2 の測定は、対立する 2 つの予測を直接分離できます。</p>
+<div class="tw"><table><thead><tr><th>端子</th><th class="num">本モデルの予測（肩とジャック前面のすき間）</th><th class="num">実在部品 PS000001 から計算</th><th class="num">差</th></tr></thead><tbody><tr><td>MIC</td><td class="num">12.02 mm</td><td class="num">11.99 mm</td><td class="num">0.03</td></tr><tr><td>GND</td><td class="num">8.33 mm</td><td class="num">8.67 mm</td><td class="num"><strong>0.34</strong></td></tr><tr><td>R</td><td class="num">5.57 mm</td><td class="num">5.52 mm</td><td class="num">0.05</td></tr><tr><td><strong>L</strong></td><td class="num"><strong>2.14 mm</strong></td><td class="num"><strong>0.69 mm</strong></td><td class="num"><strong>1.45</strong></td></tr></tbody></table></div>
+<p><strong>L の 1 点だけで決着します。</strong>差 1.45 mm はノギスの分解能 0.01 mm の 145 倍で、 <code>IV028</code> の幅 0.22 mm よりも大きいので、<strong>どちらが正しいかで <code>IV028</code> は動きます。</strong></p>
+<div class="note"><p><strong>この表を検算していて、既存文書の数値誤りが 2 件見つかりました（2026-08-05・同日に訂正済み）。</strong></p><p><code>VERIFICATION_PLAN.md</code> §2-2 が「L だけが 1.35 mm」「他の 3 点は 0.2 mm 以内」と書いていましたが、</p><p>同 artifact の <code>contactPositions.deltaMm</code> は Tip = <strong>1.45</strong> / Ring2 = <strong>-0.34</strong> です。</p><p><code>REAL_JACK_COMPARISON.md</code> §3-1 の「Tip 接点が 1.35 mm 奥へ」も同じ誤りでした。</p><p><strong>どちらも、すぐ上に正しい表があるのに、まとめの一文だけがずれていました。</strong></p><p><strong>[AI]</strong> 文中の数値を artifact と機械照合する検査を足す（→ §3 と同じ型の空振り防止）。</p></div>
+<p><strong>幅が縮むかは別の話です。</strong>幅 0.22 mm はモデルの出力で、実測に置き換えたときの幅は <strong>3 回測定のばらつき</strong>で決まります。ばらつきが 0.22 mm より小さいかは測る前には言えません。</p>
+<ul><li><strong>[AI]</strong> 「ばらつきが幅より小さいか」を測定シートの中で自動判定する欄を作る（測った直後に分かる形にする）</li><li><strong>[AI]</strong> 実測が入ったときに <code>IV028</code> がどう動くかを、両予測で先に計算して公開しておく（後出し防止）</li><li><strong>[人間]</strong> L の 1 点を測る（最悪ここだけでよい。次点は GND の 0.34 mm。MIC と R は 0.05 mm 以内で差がつかない）</li></ul>
+<div class="note"><p><strong>合わなかった結果も同じ価値があります。</strong>大きくずれたら、仮定が間違っていた証拠として記録します。</p><p>これは既に <code>VERIFICATION_PLAN.md</code> に書いてあるので、<strong>この計画で変えることはありません。</strong></p></div>
+<h3>1-5. <strong>「知見が無い人が測ると弱い数値が入る」への対策</strong>（§0 の反転条件）</h3>
+<p>方針を反転するなら、ここを手順に埋め込むのが条件です。<strong>気をつけるでは防げません。</strong></p>
+<ul><li><strong>[AI]</strong> 測定シートに<strong>分解能と 3 回の生値</strong>を必須欄にする（結論だけ書けない形にする）</li><li><strong>[AI]</strong> ばらつきが閾値を超えたら<strong>シートが不合格を出す</strong>ようにする（人間が判断しない）</li><li><strong>[AI]</strong> 期待値をシートに先に印字しておく（<strong>予測と一致したかを人間が後から決められない</strong>）</li><li><strong>[AI]</strong> 測定値と profile の突き合わせを機械にやらせる（目視で「だいたい合っている」と言わせない）</li><li><strong>[人間]</strong> 測る。数字を書き写す。それ以外の判断はしない</li><li><strong>[AI]</strong> 測定手順を通しで 1 回リハーサルできる形にする（何をどの順に持ち替えるかを 1 枚に）</li></ul>
+<h3>1-6. 受け皿の実装</h3>
+<ul><li><strong>[AI]</strong> <code>docs/measurements/</code> の記録形式を schema 化する（今は <code>TEMPLATE.md</code> だけで機械が読めない）</li><li><strong>[AI]</strong> 記録を <code>validate:profiles</code> の検証対象に足す（13 件 → 14 件）</li><li><strong>[AI]</strong> 記録から <code>verifiedPhysical</code> を決める判定器を書く（→ §1-1）</li><li><strong>[AI]</strong> 記録が無い状態で判定器が <code>true</code> を返さないことを変異試験で確かめる</li></ul>
+<hr>
+<h2 id="s2">2. P1 / P2 — <strong>並行してよいが、順序は測定が先</strong></h2>
+<p>外部監査の指摘はすべて妥当だと判断しています。ただし<strong>現在の配布経路では踏みません。</strong></p>
+<div class="tw"><table><thead><tr><th></th><th>内容</th><th>v0.6.0 でやるか</th></tr></thead><tbody><tr><td>P1</td><td>tar parser の頑健化（PAX・GNU long name・header checksum・path traversal・symlink）</td><td><strong>やる</strong>（下記の順）</td></tr><tr><td>P1</td><td>verifier の資源上限（<code>fetch</code> timeout・圧縮/展開サイズ・entry 数・1 entry サイズ・path 長）</td><td><strong>やる</strong></td></tr><tr><td>P1</td><td><code>SOURCE_UNAVAILABLE</code> / <code>ARCHIVE_INVALID</code> / <code>MISMATCH</code> の分離</td><td><strong>やる</strong>（一番安い）</td></tr><tr><td>P2</td><td>read-only CI（full commit SHA pin・<code>permissions: contents: read</code>・publish しない）</td><td><strong>やる</strong></td></tr><tr><td>P2</td><td><code>SECURITY.md</code></td><td><strong>やる</strong></td></tr></tbody></table></div>
+<p><strong>測定より後に置く理由</strong>は不確実性の大きさです。P1 が踏まれるのは 「第三者が任意の archive を渡す運用」で、<strong>その運用はまだ存在しません</strong>（配布経路は GitHub の tarball 固定）。 一方 <code>verifiedPhysical</code> は false のままで、モデルの主張そのものが実測で変わりえます。</p>
+<p><strong>ただし人間の待ち時間があります。</strong>部品の発注から到着まで、AI 側は測定を進められません。 <strong>その間に P1 / P2 を全部終わらせるのが最も効率的です。</strong></p>
+<ul><li><strong>[AI]</strong> <code>SOURCE_UNAVAILABLE</code> / <code>ARCHIVE_INVALID</code> / <code>MISMATCH</code> を分ける（今は一括で失敗になる）</li><li><strong>[AI]</strong> 資源上限を入れる。<strong>上限を超える入力を実際に作って、止まることを実測する</strong></li><li><strong>[AI]</strong> tar parser を PAX / GNU long name / checksum 不正 / path traversal / symlink の 5 種で試験する</li><li><strong>[AI]</strong> 壊れた archive を生成するテスト用ヘルパーを書く（手で作った 1 個だけで通さない）</li><li><strong>[AI]</strong> read-only CI を入れる。action は full commit SHA で固定する（tag 参照は書き換わる）</li><li><strong>[AI]</strong> CI が publish 権限を持たないことを、<code>permissions</code> の実値で確認する</li><li><strong>[AI]</strong> <code>SECURITY.md</code> を書く（報告先・対象範囲・<strong>このプロジェクトが保証しないこと</strong>）</li><li><strong>[人間]</strong> <code>SECURITY.md</code> に載せる連絡先を決める（個人アドレスを公開するかの判断）</li></ul>
+<div class="note"><p><strong>連絡先は判断が要ります。</strong>過去に別リポジトリで、公開ファイルに個人アドレスが</p><p>平文で入っていたことがあります。**GitHub の private vulnerability reporting を使えば</p><p>アドレスを書かずに済みます。<strong> </strong>[AI]<strong> その設定手順を調べて出す。</strong>[人間]** 有効化する。</p></div>
+<hr>
+<h2 id="s3">3. allowlist の宣言 32 種 — <strong>「覆っている」しか測っていません</strong></h2>
+<p>v0.5.2 で入れた <code>HANDLED_KEYWORDS</code> は 32 種です。テストが見ているのは 2 つだけです。</p>
+<pre><code>✓ 現行 schema が使う keyword 23 種が、宣言集合に入っている（覆っている）
+✓ 宣言集合が「全部入り」ではない（弾かれる keyword が実在する）
+
+✗ 宣言した 32 種を、判定器が本当に正しく扱えるか   ← 測っていない</code></pre>
+<p><strong><code>oneOf</code> は「扱える」と思っていて実は扱えていませんでした。</strong>同じことが残り 31 種で 起きていないという根拠は、いまのところ<strong>ありません。</strong></p>
+<h3>3-1. 何を証明すれば足りるか</h3>
+<p>keyword ごとに「判定器の答え」と「言語の包含関係の真値」が一致すればよい。 真値は ajv で決められます。<strong>新旧 2 つの schema と、値の集合があれば機械で出せます。</strong></p>
+<pre><code>判定器      diffSchemaObjects(old, new).verdict ∈ {HOLD, HOLD_RECORD, BUMP}
+真値        ajv で old / new をコンパイルし、値の集合で valid / invalid を突き合わせる
+            新だけが通す値がある → 広がっている → BUMP でなければ**危険側の誤り**</code></pre>
+<p><strong>必要なのは「危険側が無いこと」です。</strong>安全側（本当は据え置けるのに BUMP）は 判別力が落ちるだけで、契約は壊れません。</p>
+<h3>3-2. どうやるか — 3 段で登る</h3>
+<ul><li><strong>[AI]</strong> <strong>手書きペア</strong>: 32 種それぞれに広げる変更・狭める変更・変えない変更を 1 組ずつ作る（96 ペア）</li><li><strong>[AI]</strong> 各ペアで ajv の真値と判定器の答えを突き合わせ、<strong>危険側が 0 件であることを実測する</strong></li><li><strong>[AI]</strong> <strong>組み合わせ</strong>: keyword を 2 つ重ねたときに壊れないか（<code>enum</code> × <code>additionalProperties</code> など）を試す</li><li><strong>[AI]</strong> <strong>自動生成</strong>: 小さな schema をランダム生成し、ajv の真値と判定器を突き合わせ続ける（property-based）</li><li><strong>[AI]</strong> 生成器が現行 schema に無い形（深いネスト・<code>$ref</code> の連鎖）も作ることを、対照つきで確かめる</li><li><strong>[AI]</strong> 反例が出たら、直す前に回帰テストへ入れる（v0.5.1 / v0.5.2 と同じ順序）</li></ul>
+<div class="note"><p><strong>値の集合をどう作るかが肝です。</strong>「新だけが通す値」を見つけられなければ、</p><p>反例があっても検出できません。<strong>[AI]</strong> keyword ごとに境界値の作り方を決めてから書く</p><p>（<code>minimum</code> なら境界の前後、<code>pattern</code> ならマッチする最短文字列、など）。</p></div>
+<h3>3-3. どこで止めるか</h3>
+<p><strong>全数証明はできません。</strong>JSON Schema の言語包含は一般には決定不能な方向へ行きます。</p>
+<ul><li><strong>[AI]</strong> 条文の「限界」節へ、<strong>何を測って何を測っていないか</strong>を書く（v0.5.1 で足した節の続き）</li><li><strong>[AI]</strong> 「宣言したものを正しく扱えることは、96 ペア + 自動生成 N 件で反例が出なかったところまで」と書く</li><li><strong>[AI]</strong> <strong>「起きない」とは書かない</strong>（v0.5.0 でその嘘を書いて v0.5.1 で訂正している）</li></ul>
+<hr>
+<h2 id="s4">4. 順序と、待ち時間の使い方</h2>
+<pre><code>[人間] 方針を決める（§0）
+   ├─ 反転する ──→ [人間] 部品を発注 ──（到着待ち 1〜3 週間）──→ [人間] 測る
+   │                    │
+   │                    └─ この間に AI は下を全部やる
+   └─ 維持する ──→ 測定は「来たとき用」のまま。下は同じだけやる
+
+[AI] §1-1 verifiedPhysical のゲートを条文にする      ← 測定が来る前に決めておく
+[AI] §1-2 区分の設計（版を上げるかの判断材料まで）
+[AI] §1-6 受け皿（記録の schema・判定器・変異試験）
+[AI] §2   P1 / P2 を全部
+[AI] §3   allowlist の 96 ペア + 自動生成
+
+[人間] §1-2 の版上げタイミングを決める
+[人間] §2  SECURITY.md の連絡先を決める
+[人間] §1-1 の合格条件で true と名乗ってよいか判断する
+[人間] release の公開ボタン</code></pre>
+<p><strong>AI 側は人間の到着を待たずに全部進められます。</strong> 逆に、<strong>人間にしか渡していないのは 6 行だけ</strong>です（方針判断・発注・実測・版上げ判断・連絡先判断・公開）。</p>
+<hr>
+<h2 id="s5">5. この計画でやらないこと</h2>
+<ul><li><strong>測定値の捏造・推定での穴埋め。</strong>測っていないものは <code>ASSUMPTION</code> のままにします。</li><li><strong><code>verifiedPhysical</code> のリテラル書き換え。</strong>判定器が記録から決める形にしてからにします。</li><li><strong><code>anyOf</code> / <code>allOf</code> を予防的に <code>UNDEC</code> へ倒すこと。</strong>単調性を破る反例が出たらやります（→ v0.5.2 §6）。</li><li><strong>公開済み asset の上書き。</strong>v0.1.0 〜 v0.5.2 の 181 件は触りません。</li><li><strong>P1 / P2 を理由に測定を後回しにすること。</strong>待ち時間に埋めるものであって、置き換えではありません。</li></ul>
+</div>
+</body>
+</html>
