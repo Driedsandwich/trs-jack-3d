@@ -21,6 +21,7 @@
  *
  * 5 が落ちたら、他の結果は全部無効として非 0 で終わる。
  */
+import { execFileSync } from 'node:child_process'
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { TARGETS, renderToString } from './mdToHtml.mjs'
@@ -148,18 +149,34 @@ function declarations() {
       tp.assumed.L.shoulderGapMm === 2.14 && tp.drawing.L.shoulderGapMm === 0.69],
     ['docs/V060_MEASUREMENT_DECISION_20260805.md', '8.33 か 8.67 か',
       tp.assumed.GND.shoulderGapMm === 8.33 && tp.drawing.GND.shoulderGapMm === 8.67],
-    // v0.6.0 の release notes（受け手が最初に読む数字なので宣言で縛る）
-    ['docs/release/v0.6.0-notes.md', `v0.6.0  ${trs.profileId}`, true],
-    ['docs/release/v0.6.0-notes.md', `v0.6.0  ${trrs.profileId}`, true],
-    ['docs/release/v0.6.0-notes.md', `| 単体テスト | 570 | **${tc.total}**（skip ${tc.skipped}）|`.replace('）|', '） |'),
-      tc.skipped === 0],
     ['docs/release/v0.6.0-notes.md', `| 検証対象（\`validate:profiles\`） | 13 | **${vr.targetsTotal}** |`, true],
     ['docs/release/v0.6.0-notes.md', `| 根拠の区分 | FACT ${vs.FACT} / DERIVED ${vs.DERIVED} / ASSUMPTION ${vs.ASSUMPTION} | **変わらず** |`, true],
     ['docs/release/v0.6.0-notes.md', `**変わらず**（TRS ${trs.intervals.length}/${trs.events.length}・TRRS ${trrs.intervals.length}/${trrs.events.length}）`, true],
-    ['docs/release/v0.6.0-notes.md', trrs.modelLimitations.physicalVerificationRef.split(' ')[0],
-      trrs.modelLimitations.verifiedPhysical === false],
   ]
 }
+
+// ---------------------------------------------------------------- 公開済み文書の凍結値
+//
+// **公開した release notes は、作業ツリーの artifact を追いかけない。**
+//
+// v0.6.0 を出したあとに profile を作り直すと ID が変わる。
+// それに合わせて notes を書き換えると、**公開済みの本文と手元の notes がずれる**——
+// しかも本文のほうが古いまま残るので、受け手が読む数字と食い違う。
+// 公開した本文は編集しない方針なので、**手元の控えのほうを凍結する。**
+//
+// 凍結して確かめるのは「公開したときの値が、いまも同じ文字列で書いてあるか」だけになる。
+// artifact との突き合わせは、その release を出したときに済んでいる
+// （`docs/release/<tag>-SHA256SUMS.txt` が配布物そのものの控え）。
+//
+// **凍結できるのは tag が実在する release の notes だけ。**
+// 未公開の文書を凍結すると、artifact との照合から静かに逃げられてしまう。
+
+const FROZEN = [
+  { tag: 'v0.6.0', file: 'docs/release/v0.6.0-notes.md', text: 'v0.6.0  trs-jack-3d:TRS|JACK-TRS:480daac80519' },
+  { tag: 'v0.6.0', file: 'docs/release/v0.6.0-notes.md', text: 'v0.6.0  trs-jack-3d:TRS|JACK-TRRS:b5b1e5ff2dba' },
+  { tag: 'v0.6.0', file: 'docs/release/v0.6.0-notes.md', text: '| 単体テスト | 570 | **681**（skip 0） |' },
+  { tag: 'v0.6.0', file: 'docs/release/v0.6.0-notes.md', text: 'docs/measurements/measurement-records.v1.json@sha256:dfe5020f9198' },
+]
 
 // ---------------------------------------------------------------- 説明済みの未照合値
 //
@@ -192,14 +209,38 @@ function explain(unbacked) {
 // ---------------------------------------------------------------- 実行
 
 function runDeclarations(overrideDoc) {
-  const res = { ok: 0, mismatch: [], absent: [] }
+  const res = { ok: 0, mismatch: [], absent: [], frozen: 0 }
   for (const [file, needle, truth] of declarations()) {
     const body = overrideDoc && overrideDoc.file === file ? overrideDoc.body : read(file)
     if (!body.includes(needle)) { res.absent.push(`${file}: "${needle}"`); continue }
     if (!truth) { res.mismatch.push(`${file}: "${needle}"`); continue }
     res.ok++
   }
+  /**
+   * **凍結値。**公開済み notes は artifact を追いかけないので、
+   * 「公開したときの文字列がいまも書いてあるか」だけを見る。
+   * **凍結できるのは tag が実在する release の notes だけ**——
+   * 未公開の文書を凍結すると、artifact との照合から静かに逃げられる。
+   */
+  for (const { tag, file, text } of FROZEN) {
+    if (!/^docs\/release\/v[0-9.]+-notes\.md$/.test(file)) {
+      res.mismatch.push(`${file}: 凍結できるのは公開済み release notes だけ`)
+      continue
+    }
+    if (!tagExists(tag)) { res.mismatch.push(`${file}: 凍結の根拠にした tag ${tag} が実在しない`); continue }
+    const body = overrideDoc && overrideDoc.file === file ? overrideDoc.body : read(file)
+    if (!body.includes(text)) { res.absent.push(`${file}（${tag} 時点で凍結）: "${text}"`); continue }
+    res.frozen++
+  }
   return res
+}
+
+/** tag が実在するか。**凍結の前提**なので、無ければ凍結そのものを不合格にする */
+function tagExists(tag) {
+  try {
+    execFileSync('git', ['rev-parse', '--verify', `refs/tags/${tag}`], { cwd: ROOT, stdio: 'pipe' })
+    return true
+  } catch { return false }
 }
 
 function runMmSweep(extraDocs = []) {
@@ -299,6 +340,7 @@ console.log(`      うち理由を付けた      ${sweep.unbacked.length - rest.
 console.log(`      **まだ誰も見ていない** ${rest.length} 件`)
 console.log()
 console.log(`  宣言照合            一致 ${decl.ok} / 不一致 ${decl.mismatch.length} / 本文に無い ${decl.absent.length}`)
+console.log(`  公開済みの凍結値    ${decl.frozen} 件（公開した release notes は artifact を追いかけない）`)
 console.log(`  md → html 同期      ${sync.checked} 件検査 / ずれ ${sync.drift.length} 件`)
 console.log()
 console.log('  自己検査（対照）')

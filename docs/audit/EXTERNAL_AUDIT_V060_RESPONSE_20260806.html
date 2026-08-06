@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>外部監査（v0.6.0）への対応 — 指摘 7 件はすべて実在した</title>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#1f2328;--muted:#5b6470;--line:#e3e5e8;--accent:#2f6f4f;--code:#f2f3f5}
+@media(prefers-color-scheme:dark){:root{--bg:#16181c;--card:#1d2025;--ink:#e6e8ea;--muted:#a3abb5;--line:#2e3238;--accent:#7fc4a0;--code:#24272d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);line-height:1.85;
+ font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+ font-size:16px;-webkit-text-size-adjust:100%}
+.wrap{max-width:840px;margin:0 auto;padding:32px 20px 80px}
+article{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px 30px}
+@media(max-width:640px){article{padding:20px 16px;border-radius:10px}.wrap{padding:16px 10px 48px}}
+h1{font-size:1.6rem;line-height:1.5;margin:0 0 18px;padding-bottom:14px;border-bottom:2px solid var(--accent)}
+h2{font-size:1.24rem;margin:38px 0 12px;padding-left:11px;border-left:4px solid var(--accent)}
+h3{font-size:1.06rem;margin:26px 0 8px;color:var(--accent)}
+h4{font-size:.98rem;margin:20px 0 6px}
+p{margin:12px 0}
+ul,ol{margin:12px 0;padding-left:1.5em}li{margin:5px 0}
+hr{border:0;border-top:1px solid var(--line);margin:34px 0}
+code{background:var(--code);border-radius:4px;padding:1px 5px;font-size:.9em;
+ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.pre-wrap{overflow-x:auto;background:var(--code);border:1px solid var(--line);border-radius:8px;margin:14px 0}
+pre{margin:0;padding:14px 16px}
+pre code{background:none;padding:0;font-size:.86em;line-height:1.65;white-space:pre}
+.table-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:min(100%,480px);font-size:.94rem}
+th,td{border-bottom:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+th{background:var(--code);font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+blockquote{margin:16px 0;padding:12px 16px;background:var(--code);
+ border-left:4px solid var(--accent);border-radius:0 8px 8px 0;color:var(--muted)}
+strong{font-weight:700}
+</style>
+</head>
+<body><div class="wrap"><article>
+<h1>外部監査（v0.6.0）への対応 — 指摘 7 件はすべて実在した</h1>
+<p>2026-08-06 ／ 対象 <code>Driedsandwich/trs-jack-3d</code> v0.6.0 ／ <strong>tag と release には触れていない</strong></p>
+<p>外部監査（ChatGPT / GPT-5.6）から P0 4 件・P1 3 件の指摘を受け取りました。<br><strong>受け取った指摘をそのまま信じず、7 件すべてについて反例をこちらで再現してから</strong>直しています。<br><strong>7 件とも実在しました。捏造・誤検知は 0 件です。</strong></p>
+<p>配布パケット（<code>trs-jack-3d-v0.6.0-audit-packet_20260806.zip</code>）は<br>宣言された sha256 <code>22ed4f11…586f60</code> と実測が一致しました。中身 9 ファイル、追加取得は不要でした。</p>
+<hr>
+<h2>1. 何を測って、何が出たか</h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>指摘</th><th>再現したか</th><th>直したか</th></tr></thead><tbody><tr><td>P0-A</td><td>相反する記録があっても <code>verified: true</code>・順序で結果が変わる</td><td><strong>した</strong></td><td>した</td></tr><tr><td>P0-B</td><td>分解能 1.0 mm が許容 0.29 mm の判定を通る</td><td><strong>した</strong></td><td>した</td></tr><tr><td>P0-C</td><td><code>verifiedPhysical</code> の主張範囲が広すぎる</td><td><strong>した</strong></td><td>した</td></tr><tr><td>P0-D</td><td><code>ARCHIVE_INVALID</code> を配布 schema が表現できない</td><td><strong>した</strong></td><td><strong>版を上げずに閉じた</strong>（後述）</td></tr><tr><td>P1-A</td><td>同名 tar entry が後勝ちで黙って通る</td><td><strong>した</strong></td><td>した</td></tr><tr><td>P1-B</td><td>ディレクトリ入力の symlink ループで生の例外</td><td><strong>した</strong></td><td>した</td></tr><tr><td>P1-C</td><td>圧縮入力そのものに上限が無い</td><td><strong>した</strong></td><td>した</td></tr></tbody></table></div>
+<p>さらに、確認の過程で<strong>こちら側で 2 件見つけて</strong>直しました。</p>
+<ul><li><code>check:doc-numbers</code> が<strong>公開済みの release notes を作業ツリーの artifact と照合していた</strong></li></ul>
+<p>（release 後に profile を作り直すと、公開済み文書を書き換えろと言い続ける）</p>
+<ul><li><strong>CHANGELOG に v0.6.0 の節が無かった</strong>（公開したのに記録が無い状態）</li><li><strong>テストが 1 件、負荷時にだけ落ちていた</strong>（<code>trrs.test.ts</code> の走査試験。<strong>指摘とは無関係の既存の不安定さ</strong>）</li></ul>
+<h3>P0-A — 実測した反例</h3>
+<div class="pre-wrap"><pre><code>[一致, 矛盾] → verified=true  rejected 0 件
+[矛盾, 一致] → verified=true  rejected 1 件</code></pre></div>
+<p><strong>どちらも <code>true</code> である</strong>ことと、<strong>同じ台帳なのに出力が違う</strong>ことの両方が起きていました。<br>一致する記録を 1 件見つけた時点で <code>break</code> していたためです。</p>
+<p>対照として、空の台帳と矛盾のみの台帳は正しく <code>false</code> を返しており、判定器自体は動いていました。</p>
+<h3>P0-B — 実測した反例</h3>
+<div class="pre-wrap"><pre><code>tolerance 0.29 mm / resolution 1.0 mm / values 2.0, 2.0, 2.0
+  → verified: true</code></pre></div>
+<p><code>resolutionMm &gt; 0</code> しか見ていませんでした。1 mm 刻みで「2」と読んだ値は真値が 1.5〜2.5 の<br>どこでもありうるので、<strong>許容 0.29 mm の一致を名乗ってはいけません。</strong></p>
+<h3>P0-C — 実測した事実</h3>
+<p><code>TRS|JACK-TRRS</code> profile の必須観測点は 1 点だけで、しかも<br><strong>別 variant（<code>TRRS-CTIA|JACK-TRRS</code>）の幾何量</strong>です。この 1 点が合っても、<br><code>IV028</code> の「L/R が別導体」「GND 開放」「短絡なし」は<strong>何も確かめていません。</strong></p>
+<h3>P0-D — ajv で実測</h3>
+<div class="pre-wrap"><pre><code>status=ARCHIVE_INVALID      → FAIL   （道具は v5 からこれを出す）
+status=OK / MISMATCH / …    → PASS   （宣言済み 5 値）
+対照 status=NONSENSE        → FAIL</code></pre></div>
+<h3>P1-A / P1-B / P1-C — 実測</h3>
+<div class="pre-wrap"><pre><code>P1-A  root/dup.txt を 2 回 → エラーなし・dup.txt = &quot;SECOND&quot;
+P1-B  loop -&gt; . が 1 本   → exit 1 / stdout 0 行 / stderr に ELOOP のスタック
+P1-C  120 MB の入力       → 最大 RSS 165.0 MB（1 MB のときは 45.0 MB）</code></pre></div>
+<hr>
+<h2>2. 直したもの</h2>
+<h3>2-1. <code>verifiedPhysical</code> の条文を v2 へ（<code>docs/VERIFIED_PHYSICAL_GATE.md</code>）</h3>
+<div class="table-wrap"><table><thead><tr><th>直したこと</th><th>中身</th></tr></thead><tbody><tr><td>全候補を評価</td><td><code>recordId</code> で並べ直してから全部見る。<strong>順序に依存しない</strong></td></tr><tr><td>相反の扱い</td><td>一致と矛盾が併存したら <code>AMBIGUOUS</code>（= <code>false</code>）。第10条を新設</td></tr><tr><td>分解能</td><td>観測点ごとに<strong>許容の 1/3 以下</strong>を要求（L は 0.05 mm 以下）。生値が目盛に乗っているかも見る</td></tr><tr><td>主張の範囲</td><td><code>claimScope: geometry-only</code> を判定器と <code>physicalVerificationRef</code> の両方に出す。第9条を新設</td></tr><tr><td>台帳の重複</td><td><code>recordId</code> が重複したら判定ごと拒む（<code>INVALID_LEDGER</code>）</td></tr></tbody></table></div>
+<p><strong>認定できないことと、矛盾を見逃すことを分けました。</strong><br>粗い測定器でも「予測より 1.45 mm ずれている」は言えます。それを「使えない記録」として<br>捨てると、<strong>測ってもらったのにモデルの誤りを見逃します。</strong><br>食い違いの判定には測定器の不確かさ（分解能/2）を足し、<strong>認定側には足しません</strong>——<br>足すと粗い道具ほど通りやすくなるためです。</p>
+<p><strong><code>supersedes</code> は入れていません。</strong>新しい記録が古い記録を黙って上書きできる仕組みを作らないためで、<br>決着は「モデルを直す」か「<code>retracted</code> を付ける」かの 2 つだけです。<br><code>retracted</code> は既に台帳 schema にあるので、<strong><code>measurement-record.v1</code> の版も上がりません。</strong></p>
+<h3>2-2. 検算ツールを v6 へ（<code>scripts/verifyReleaseSourceInputs.mjs</code>）</h3>
+<div class="table-wrap"><table><thead><tr><th>直したこと</th><th>実測した効果</th></tr></thead><tbody><tr><td>同名 entry</td><td><code>ARCHIVE_INVALID</code> で止まる。中身が同一でも拒む</td></tr><tr><td>symlink</td><td><code>lstat</code> で見て追わない。fs エラーは構造化 status へ（<strong>stdout 220 行の JSON・stderr 0 行</strong>）</td></tr><tr><td>圧縮入力の上限</td><td><code>maxCompressedBytes</code> 64 MB。<strong>最大 RSS 165.0 MB → 43.6 MB</strong></td></tr></tbody></table></div>
+<p>network は <code>Content-Length</code> を補助として見たうえで、<strong>受け取りながら</strong>打ち切ります<br>（<code>arrayBuffer()</code> は読み終えてからしか返さないので使いません）。</p>
+<p><strong>塞ぎすぎていないことも同じテストで見ています。</strong>26 個・6 種類の壊れた tar は v5 と同じ結末で、<br>正常な tar・gzip・実物の GitHub tarball（v0.5.2・246 ファイル）は今までどおり読めます。</p>
+<h3>2-3. <code>ARCHIVE_INVALID</code> の契約 — <strong>版を上げずに閉じた</strong></h3>
+<p>判定器（<code>scripts/schemaLanguageDiff.mjs</code>）で実測しました。</p>
+<div class="table-wrap"><table><thead><tr><th>案</th><th>判定</th></tr></thead><tbody><tr><td><code>enum</code> へ <code>ARCHIVE_INVALID</code> を足す</td><td><strong><code>BUMP</code></strong>（schema v2・<strong>下流の lock が止まる</strong>）</td></tr><tr><td><code>description</code> にずれを書く</td><td><strong><code>HOLD</code></strong>（版据え置き）</td></tr><tr><td>対照: 何も変えない</td><td><code>HOLD</code></td></tr><tr><td>対照: <code>enum</code> から 1 つ削る</td><td><code>HOLD_RECORD</code></td></tr></tbody></table></div>
+<p>版を上げずに次の 3 つで閉じました。</p>
+<ol><li>schema 自身が「この v1 では <code>ARCHIVE_INVALID</code> を表現できない」と名指しで書く</li><li>生成器が、表現できない status を<strong>近い値へ丸めずに止まる</strong>（<code>process.exit(1)</code>）</li><li>ずれが <code>ARCHIVE_INVALID</code> <strong>1 個だけ</strong>であることをテストで固定（7 個目が増えたら落ちる）</li></ol>
+<p><strong>丸めないことが要点です。</strong>「archive が壊れていた」を「取れなかった」に化けさせると、<br>受け手が通信の問題と改竄を読み分けられなくなります。</p>
+<h3>2-4. こちらで見つけた 2 件</h3>
+<p><strong>公開済み notes の凍結。</strong><code>check:doc-numbers</code> が v0.6.0 の notes を現在の artifact と<br>突き合わせていました。release 後に profile を作り直すと ID が変わるので、この検査は<br><strong>公開済み文書を書き換えろと言い続けます。</strong>公開本文は編集しない方針なので、手元の控えを凍結しました。<br><strong>凍結できるのは tag が実在する release notes だけ</strong>にしてあります<br>（未公開文書が照合から静かに逃げないように）。</p>
+<p><strong>CHANGELOG に v0.6.0 の節を追加。</strong>公開したのに記録が無い状態でした。</p>
+<p><strong>テスト 1 件の時間枠を広げました（判定条件は変えていません）。</strong><br><code>trrs.test.ts</code> の走査試験が、全 25 ファイルを並列で回したときだけ 30 秒を超えて落ちていました<br>（実測 6 回中 2 回。どちらも他の処理と競合した回）。<br>単独では <strong>2.4〜5.6 秒</strong>で、<strong>この変更を入れる前（2434 ms）とも同じ範囲</strong>なので、<br>今回の修正が原因ではありません。<strong>落ちた理由は結論ではなく wall-clock</strong> なので、<br>枠を 30 秒 → 120 秒にしました。分割数や刻みを減らせば速くなりますが、<br>それは<strong>この検査が見ている範囲を狭める</strong>ので、時間のほうを譲っています。</p>
+<hr>
+<h2>3. 直していないもの（理由つき）</h2>
+<h3>P1-D 物理検証 evidence asset ／ P1-E <code>evidenceSources</code></h3>
+<p><strong>どちらも「最初の実測記録が入る前に」という条件つきの指摘で、その条件はまだ来ていません。</strong></p>
+<p>実測しました。</p>
+<div class="pre-wrap"><pre><code>台帳の記録数                        0
+profile 中の MR#### の出現           0   （実測由来の FACT）
+gradeCounts                         FACT 53 / DERIVED 28 / ASSUMPTION 54
+profile の evidenceGrade entry      152（DERIVED 1 / ASSUMPTION 151）</code></pre></div>
+<p><code>evidenceSources</code> を profile schema へ足すと <strong><code>BUMP</code></strong> です（実測。当該 node が<br><code>additionalProperties: false</code> のため）。<strong>中身が空のうちに下流を止めると、止める理由を実物で説明できません。</strong><br>これは v0.6.0 で <code>evidenceGrade</code> の案 A を見送ったときと同じ判断です。</p>
+<p><strong>実測記録が 1 件入った時点で、この 2 件は前提が変わります。</strong>そのときに実施します。</p>
+<h3>監査が挙げたその他</h3>
+<div class="table-wrap"><table><thead><tr><th></th><th>なぜいま入れないか</th></tr></thead><tbody><tr><td>annotated tag の署名</td><td>判定の意味を変えない。次の release の作業として分ける</td></tr><tr><td>CI failure-path テスト</td><td>同上（非阻害と監査自身も分類）</td></tr><tr><td>dangling GNU <code>L</code> の strict mode</td><td>現状 <code>ARCHIVE_INVALID</code> になる。挙動は既に安全側</td></tr></tbody></table></div>
+<hr>
+<h2>4. 検証したこと</h2>
+<p>すべて実行し、出力を確認しています。</p>
+<div class="pre-wrap"><pre><code>npm run typecheck          exit=0
+npm run test               exit=0   706 件 / 25 ファイル / 失敗 0
+npm run validate:profiles  exit=0   14/14 適合
+npm run check:vacuity      exit=0   空振り 0 件（記録 706 = 実行 706）
+npm run check:doc-numbers  exit=0   宣言 15 一致 / 凍結 4 / 未点検 0 件
+npm run lint               exit=0
+npm run release:evidence   exit=0   artifactValidation PASS / releaseReadiness READY</code></pre></div>
+<p><strong>新しい検査は、変異を実際に入れて鳴ることを確かめています</strong>（変異が入ったことを sha256 の変化で先に確認）。</p>
+<div class="table-wrap"><table><thead><tr><th>変異</th><th>結果</th></tr></thead><tbody><tr><td>notes の profileId を 1 文字変える</td><td><code>check:doc-numbers</code> exit=1・凍結 4 → 3</td></tr><tr><td>実在しない tag で凍結する</td><td>exit=1「tag v9.9.9 が実在しない」</td></tr><tr><td>道具に 7 個目の status を足す</td><td>テスト 3 件が落ちる</td></tr><tr><td>生成器の「止まる」経路を外す</td><td>該当テスト 1 件が落ちる</td></tr><tr><td>変異を戻す（対照）</td><td>すべて緑に復帰</td></tr></tbody></table></div>
+<p><strong>全体を 3 回続けて回し、3 回とも 706/706 でした</strong>（<code>Duration</code> 16.5s / 16.1s / 16.4s）。</p>
+<h3>tag と release に触れていないこと</h3>
+<div class="pre-wrap"><pre><code>tag v0.6.0     → 7bfed3c（変わらず）
+release v0.6.0 → draft=false / asset 28 件 / latest=true / published 2026-08-06T04:23:18Z</code></pre></div>
+<p><strong>過去 release の asset は 1 つも触っていません。</strong>この作業はすべてローカルです。</p>
+<hr>
+<h2>5. 判断が要ること（2 件）</h2>
+<h3>(1) <code>source-verification-result</code> を v2 へ上げるか</h3>
+<p>いま <code>ARCHIVE_INVALID</code> は<strong>表現できないまま</strong>で、生成器が止まる形にしてあります。<br>v2 へ上げれば表現できますが、<strong>下流の lock が止まります。</strong></p>
+<ul><li><strong>上げない（現状・推奨）</strong> … 受け手が道具を直接回せば <code>ARCHIVE_INVALID</code> は stdout に出ます。</li></ul>
+<p>詰まるのは「こちらの自己申告 artifact がその状態を書けない」場面だけで、<br>そのときは生成器が止まるので黙って間違った値が出ることはありません。</p>
+<ul><li>上げる … 次の release で下流に lock 再生成を求めることになります。</li></ul>
+<p>profileId は毎 release 変わるので lock 再生成自体は元々必要ですが、<br><strong><code>schemaId</code> が変わるのは下流のコード変更</strong>を伴います。</p>
+<p><strong>推奨は「上げない」です。</strong>実際に <code>ARCHIVE_INVALID</code> を自己申告する必要が出た日に上げれば、<br>そのとき理由を実物で示せます（<code>evidenceGrade</code> 案 A と同じ考え方です）。</p>
+<h3>(2) v0.6.1 として release を出すか</h3>
+<p>検算ツールの v6 は<strong>受け手が使う道具</strong>なので、出さないと手元にしかありません。<br>一方、いま出すと profileId が再び変わります（<code>fddf3c173ac6</code> / <code>027f5e2fff6a</code>）。</p>
+<ul><li><strong>いま出す（推奨）</strong> … 直したのは受け手が回す道具の欠陥です。手元に置いたままにする理由が弱い。</li><li>ためる … P1-D / P1-E を実測記録と一緒に出す v0.7.0 まで待つ。ただし<strong>実測はいつ来るか分かりません</strong>。</li></ul>
+<p><strong>推奨は「いま出す」です。</strong>待つ理由が「まだ来ていない実測」に依存しています。</p>
+</article></div></body>
+</html>

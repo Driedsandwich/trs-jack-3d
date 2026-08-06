@@ -15,6 +15,87 @@
 
 ---
 
+## v0.6.1（未公開）— 外部監査の反例 7 件を、こちらで再現してから直した
+
+2026-08-06
+
+外部監査（ChatGPT / GPT-5.6）が P0 4 件・P1 3 件を出しました。
+**7 件すべて、こちらで反例を再現してから**直しています。
+実測記録は依然 0 件で、`verifiedPhysical` は `false` のままです。
+
+### 訂正 — `verifiedPhysical` の判定器に穴が 3 つあった（条文 v1 → v2）
+
+| | v1 で何が起きていたか（実測） | v2 |
+|---|---|---|
+| **相反する記録** | 一致する記録を 1 件見つけた時点で止めていた。**矛盾する記録が同じ台帳にあっても `true`**。しかも `[一致, 矛盾]` は `rejected` 0 件、`[矛盾, 一致]` は 1 件と、**並び順で出力が変わった** | 全候補を評価し `recordId` で順序を固定。併存したら `AMBIGUOUS`（= `false`） |
+| **測定の分解能** | `resolutionMm > 0` しか見ていなかった。**許容 0.29 mm の判定を、分解能 1.0 mm・生値 2.0 mm×3 の記録が通った** | 観測点ごとに要求分解能を許容の 1/3 から導く（L は 0.05 mm 以下）。生値が目盛に乗っているかも見る |
+| **主張の範囲** | `verifiedPhysical: true` が「接点トポロジーを実物で確かめた」と読めた。実際は**別 variant の幾何量 1 点** | `claimScope: geometry-only` を判定器と `physicalVerificationRef` の両方に出す |
+
+**認定できないことと、矛盾を見逃すことを分けました。**粗い測定器でも「予測より 1.45 mm ずれている」は言えます。
+「使えない記録」として捨てると**モデルの誤りを見逃す**ので、`true` を出す資格と警報を鳴らす資格を別に置いています。
+
+`recordId` の重複した台帳は判定ごと拒みます（`INVALID_LEDGER`）。
+`supersedes` は**入れていません**——新しい記録が古い記録を黙って上書きできる仕組みを作らないためで、
+決着は「モデルを直す」か「`retracted` を付ける」かの 2 つだけです。
+
+### 訂正 — 検算ツールの archive parser（`toolVersion` 5 → 6）
+
+| | v5 で何が起きていたか（実測） | v6 |
+|---|---|---|
+| **同名 entry** | 同じパスが 2 回あると**後の中身が黙って勝った**（`dup.txt` が `SECOND` になる） | `ARCHIVE_INVALID` で止まる。中身が同一でも拒む |
+| **symlink ループ** | ディレクトリ入力に `loop -> .` が 1 本あるだけで、**生のスタックトレースを吐いて exit 1**。構造化 JSON が 1 行も出なかった | `lstat` で見てリンクは追わず読み飛ばす。fs エラーは構造化 status へ |
+| **圧縮入力の上限** | 展開後にしか上限が無く、**相手が送ってきた量が全部メモリに載った**（120 MB の入力で最大 RSS 165 MB） | `maxCompressedBytes` 64 MB。ローカルは `stat` で先に見る。network は受け取りながら止める（165 MB → 43.6 MB） |
+
+### 追加 — `ARCHIVE_INVALID` を配布 schema が表現できない件を、隠さないようにした
+
+道具は v5 から `ARCHIVE_INVALID` を出しますが、同梱の `source-verification-result.v1` の
+enum には入っていません。**enum へ足すと言語が広がって v2 になり、下流の lock が止まります**
+（`schemaLanguageDiff.mjs` で実測: enum 追加 = `BUMP` ／ description のみ = `HOLD`）。
+
+**版は上げず**、次の 3 つで閉じました。
+
+- schema 自身が「この v1 では表現できない」と名指しで書く
+- 生成器が、表現できない status を**近い値へ丸めずに止まる**
+- ずれが `ARCHIVE_INVALID` **1 個だけ**であることをテストで固定（7 個目が増えたら落ちる）
+
+**v2 へ上げるかは未決**です（下流が止まるため）。
+
+### 訂正 — 公開済み release notes を、作業ツリーの artifact と照合していた
+
+`check:doc-numbers` が v0.6.0 の notes を**現在の** artifact と突き合わせていました。
+release 後に profile を作り直すと ID が変わるので、この検査は**公開済み文書を書き換えろ**と言い続けます。
+公開した本文は編集しない方針なので、**手元の控えのほうを凍結**しました。
+凍結できるのは **tag が実在する release notes だけ**です（未公開文書が照合から静かに逃げないように）。
+
+### 訂正 — CHANGELOG に v0.6.0 の節が無かった
+
+公開したのに記録が無い状態でした。下に追加しています。
+
+---
+
+## v0.6.0 — 実測の受け皿と、信頼できない archive への防御
+
+2026-08-06 公開 ／ tag `v0.6.0` → `7bfed3c` ／ **schema は 1 本も上げていない**
+
+- **`verifiedPhysical` をリテラルから機械判定へ。**条文 `docs/VERIFIED_PHYSICAL_GATE.md` と
+  判定器 `scripts/measurementGate.mjs`、台帳 `docs/measurements/measurement-records.v1.json` を新設。
+  **記録は 0 件で、`false` のままが正しい状態**です（実測は募集していますが必須にしていません）。
+- **`physicalVerificationRef` が `null` から文字列になりました。**判定の根拠（台帳の sha256・
+  条文の版・満たした観測点・欠けている観測点）を artifact 自身が持ちます。
+- **検算ツールを `toolVersion` 5 へ。**header checksum の検算・PAX を拾わない・`..` と絶対パスを拒む・
+  symlink と hardlink をファイルとして扱わない・資源上限。**26 個・6 種類の壊れた tar で試験**しています。
+  あわせて `ARCHIVE_INVALID` を `SOURCE_UNAVAILABLE` から分離しました。
+- **CI を read-only に**（`permissions: contents: read`・action は full commit SHA 固定・
+  `persist-credentials: false`）。`SECURITY.md` を新設し、報告経路を private vulnerability reporting にしました。
+- profileId は変わります（`TRS` `480daac80519` / `TRRS` `b5b1e5ff2dba`）。**lock の作り直しが要ります。**
+- 区間・event の数は変わっていません（TRS 23/32・TRRS 30/36）。`IV028` は 13.30〜13.52 mm・`ASSUMPTION` のままです。
+
+> **公開後に private vulnerability reporting を有効化したため、公開した release 本文の
+> 「まだ有効化されていません」という 1 項目だけが実状態と食い違っています**（4 行ぶん）。
+> 公開済み本文は編集しない方針のため、手元の `docs/release/v0.6.0-notes.md` のみ直してあります。
+
+---
+
 ## v0.5.2 — 判定器を allowlist 方式へ（**版は据え置き**）
 
 2026-08-05
