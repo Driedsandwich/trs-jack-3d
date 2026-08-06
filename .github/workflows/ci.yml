@@ -1,0 +1,72 @@
+# **read-only の CI。**（v0.6.0 P2・外部監査の指摘）
+#
+# 守ること
+#   1. **何も publish しない。**permissions は contents: read だけ。
+#      token に書き込み権が無ければ、間違って push する経路そのものが存在しない
+#   2. **action は full commit SHA で固定する。**tag 参照 (@v4) は書き換えられる。
+#      「同じ tag を指したまま中身が変わる」ことが実際に起きる形式なので使わない
+#   3. **重い成果物を再生成しない。**search:topology / sensitivity / search:robustness は
+#      合計 30 分以上かかる。CI で回すと、通らないから通るまで回す運用になり、
+#      artifact が CI の都合で動く。再実行が要るかは check:stale が判定する
+#
+# **この 3 つは test/ciWorkflow.test.ts が機械で固定している。**
+# tag 参照が混ざったり permissions が広がったら、テストが落ちる。
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# **既定を read に落とす。**job 側で足さない限り、これ以上の権限は付かない
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: 型検査・テスト・成果物の検証
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      # actions/checkout v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          # **tag も要る。**test/schemaVersioningPolicy.test.ts と
+          # test/contractMigration.test.ts が過去 tag の schema を git show で読む
+          fetch-depth: 0
+          persist-credentials: false
+
+      # actions/setup-node v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: 型検査
+        run: npm run typecheck
+
+      - name: 単体テスト
+        run: npm run test
+
+      - name: 成果物の検証
+        run: npm run validate:profiles
+
+      - name: 空振り検査
+        run: npm run check:vacuity
+
+      - name: 文書の数値照合
+        run: npm run check:doc-numbers
+
+      - name: lint
+        run: npm run lint
