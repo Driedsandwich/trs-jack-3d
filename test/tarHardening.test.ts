@@ -118,10 +118,32 @@ describe('tar 強化 ③ 塞ぎすぎていない', () => {
     expect(r.files!.size).toBe(2)
   })
 
+  /**
+   * **この試験は 2026-08-06 まで空振りしていた。**
+   *
+   * `buildTar` へ 807 文字の名前を渡していたが、**素の USTAR header の name 欄は 100 バイト**しかない。
+   * 実際に組まれた tar のパスは 100 文字へ切り詰められ、しかも末尾が `a/` になっていた——
+   * つまり「上限 1024 のすぐ内側」ではなく「100 文字の壊れたパス」を試していた。
+   *
+   * v0.6.2 で末尾スラッシュを拒むようにしたら、この材料が引っかかって発覚した。
+   * **長いパスは GNU long name (`L`) を通さないと表現できない**（`res-long-path` と同じ落とし穴）。
+   */
   it('**上限のすぐ内側は通る**（境界を 1 方向でしか試さない状態にしない）', () => {
-    const near = buildTar([{ name: `x/${'a/'.repeat(400)}f.txt`, data: 'x' }])
+    const long = `x/${'a/'.repeat(400)}f.txt`
+    expect(long.length, '材料が上限の内側でない').toBeLessThan(TAR_LIMITS.maxPathLength)
+    expect(long.length, '材料が短すぎて境界を試せていない').toBeGreaterThan(700)
+    const near = buildTar([
+      { name: '././@LongLink', type: 'L', data: `${long}\0` },
+      { name: 'ignored-because-longlink', data: 'x' },
+    ])
     const r = read(near)
     expect(r.error, 'パス長の上限内なのに止まった').toBeFalsy()
+    /**
+     * **材料が本当にその長さで届いているか。**切り詰められていたらここで落ちる。
+     * 先頭の `x/` は `stripTopLevel` が剥がす（GitHub の tarball と同じ扱い。単一の親だから）。
+     */
+    expect([...r.files!.keys()]).toEqual([long.slice('x/'.length)])
+    expect([...r.files!.keys()][0].length, '100 文字へ切り詰められている').toBeGreaterThan(700)
   })
 
   it('**実物の GitHub tarball（v0.5.2）が通り、entry 数が実測と合う**', () => {
