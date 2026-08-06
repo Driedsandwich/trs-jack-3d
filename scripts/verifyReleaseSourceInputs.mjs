@@ -65,8 +65,14 @@ import { join, resolve } from 'node:path'
  *       ディレクトリ入力の symlink ループで生スタックトレースを吐いて落ちていた → lstat + 構造化 status。
  *       圧縮された入力そのものに上限が無く、相手が送ってきた量が全部メモリに載っていた → maxCompressedBytes。
  *       **1 件目は判定が変わる**（v6 で止まる archive が v5 では通った）ので版を上げる
+ *   7 … **外部監査 2026-08-06 の追加 2 件（こちらで再現してから直した）。**
+ *       `root/./file.txt` のような別の綴りが、`root/file.txt` と別ものとして通っていた。
+ *       通常ファイルと同名の symlink を読み飛ばしていたため、**検算が見た中身と
+ *       ふつうに展開してできる中身が食い違う** archive が OK になっていた（P0-2）。
+ *       ディレクトリ入力に資源上限が無く、検証に使わない 70 MB を置くだけで RSS が 3 倍近くになった（P1）。
+ *       **判定が変わる**（v7 で止まる archive が v6 では通った）ので版を上げる
  */
-export const TOOL_VERSION = 6
+export const TOOL_VERSION = 7
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -174,6 +180,39 @@ function assertSafePath(name) {
   if (/^[A-Za-z]:/.test(name)) throw new ArchiveInvalid('ドライブレターつきの entry がある', { name })
   if (name.includes('\\')) throw new ArchiveInvalid('バックスラッシュを含む entry がある', { name })
   if (name.split('/').includes('..')) throw new ArchiveInvalid('.. を含む entry がある（archive の外を指す）', { name })
+  assertCanonicalPath(name)
+}
+
+/**
+ * **同じ場所を指す別の綴りを拒む（v0.6.2・外部監査 P0-2）。**
+ *
+ * v0.6.1 は「文字列として同じか」だけを見ていたので、次が別物として通っていた（実測）。
+ *
+ * ```
+ * root/file.txt    = FIRST      ← 検算はこちらを「source にあった」と言う
+ * root/./file.txt  = SECOND     ← ふつうの tar で展開するとこちらが残る
+ * ```
+ *
+ * **受け手が検算した中身と、展開して手元にできる中身が違う。**
+ * これは「合っている」と言いながら別のものを渡せるということで、
+ * checksum を通す意味そのものが無くなる。
+ *
+ * **正規化して受け入れない。拒む。**正規化して通すと、
+ * 「どの綴りで来ても同じ 1 つに畳む」という別の判断が要る——
+ * 畳んだ先が衝突したときにどちらを採るかを、また決めることになる。
+ * **正しい source archive はこんな綴りを含まない**（実物の GitHub tarball で確認済み）。
+ */
+function assertCanonicalPath(name) {
+  const parts = name.split('/')
+  if (parts.includes('.')) {
+    throw new ArchiveInvalid('. を含む entry がある（同じ場所を別の綴りで指せてしまう）', { name })
+  }
+  if (parts.some((p) => p === '')) {
+    throw new ArchiveInvalid('空のパス要素がある（// や末尾の / を含む）', { name })
+  }
+  if (Array.from(name).some((c) => c.codePointAt(0) < 0x20 || c.codePointAt(0) === 0x7f)) {
+    throw new ArchiveInvalid('制御文字を含む entry がある', { name: JSON.stringify(name).slice(0, 80) })
+  }
 }
 
 /**
@@ -200,6 +239,8 @@ function assertSafePath(name) {
  */
 function readTar(buf) {
   const files = new Map()
+  /** **読み飛ばした entry の名前も覚える。**衝突の判定にはファイル以外も要る（v0.6.2） */
+  const seenPaths = new Set()
   let off = 0
   let longName = null
   let entries = 0
@@ -254,11 +295,39 @@ function readTar(buf) {
     const name = longName ?? (str(345, 155) ? `${str(345, 155)}/${str(0, 100)}` : str(0, 100))
     longName = null
 
+    if (!name) continue
+
+    /**
+     * **読み飛ばす entry も、パスの衝突だけは見る（v0.6.2・外部監査 P0-2）。**
+     *
+     * v0.6.1 はリンクを「ファイルとして扱わない」だけで、名前を覚えていなかった。
+     * そのため次が `OK` で通っていた（実測）。
+     *
+     * ```
+     * regular root/file.txt  = FIRST      ← 検算はこちらを見る
+     * symlink root/file.txt -> target.txt ← ふつうに展開すると file.txt はこのリンクになる
+     * regular root/target.txt = SECOND    ← 辿った先はこちら
+     * ```
+     *
+     * 検算は `file.txt = FIRST` を「source にあった」と言うが、
+     * **展開した手元の `file.txt` は `SECOND` を指す。**
+     * 中身を拾わないことと、その名前を無かったことにするのは別である。
+     */
+    const dirName = name.endsWith('/') ? name.slice(0, -1) : name
+    if (dirName) {
+      if (seenPaths.has(dirName)) {
+        throw new ArchiveInvalid(
+          '同じパスが 2 回出てくる（片方はファイル以外。展開した結果と検算した中身が食い違う）',
+          { name: dirName, entryIndex: entries, type },
+        )
+      }
+      seenPaths.add(dirName)
+    }
+
     // **リンクはファイルとして扱わない。**中身が無いのに「source にあった」ことになる
     if (type === '1' || type === '2') continue
     if (type !== '0') continue
 
-    if (!name) continue
     assertSafePath(name)
     /**
      * **同じパスが 2 回出てきたら止める（v0.6.1・外部監査 P1-A）。**

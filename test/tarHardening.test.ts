@@ -265,3 +265,99 @@ describe('tar 強化 ⑤ v0.6.1 — 重複 entry・symlink ループ・圧縮入
     }
   }, 60_000)
 })
+
+/**
+ * **v0.6.2（外部監査 2026-08-06 の P0-2）。**
+ *
+ * v0.6.1 は「文字列として同じパスか」だけを見ていた。
+ * そのため**検算が見た中身と、ふつうに展開してできる中身が食い違う** archive が `OK` で通った。
+ * checksum を通す意味そのものが無くなるので、これは P0 である。
+ *
+ * ここでの oracle は**ふつうの tar 展開**である。「展開したらどうなるか」と
+ * 「検算は何を見たか」がずれたら不合格、という基準で試験する。
+ */
+describe('tar 強化 ⑥ v0.6.2 — 同じ場所を指す別の綴り', () => {
+  const hdr = (name: string, size: number, type = '0', link = '') => {
+    const b = Buffer.alloc(512)
+    b.write(name, 0, 100, 'utf8')
+    b.write('0000644\0', 100); b.write('0000000\0', 108); b.write('0000000\0', 116)
+    b.write(size.toString(8).padStart(11, '0') + '\0', 124)
+    b.write('00000000000\0', 136)
+    b.write('        ', 148)
+    b.write(type, 156)
+    if (link) b.write(link, 157, 100, 'utf8')
+    b.write('ustar\0', 257); b.write('00', 263)
+    let sum = 0
+    for (let i = 0; i < 512; i++) sum += b[i]
+    b.write(sum.toString(8).padStart(6, '0') + '\0 ', 148)
+    return b
+  }
+  const entry = (n: string, c: string, t = '0', l = '') => {
+    const d = Buffer.from(c)
+    const isLink = t === '2' || t === '1'
+    return Buffer.concat([
+      hdr(n, isLink ? 0 : d.length, t, l),
+      isLink ? Buffer.alloc(0) : d,
+      isLink ? Buffer.alloc(0) : Buffer.alloc((512 - (d.length % 512)) % 512),
+    ])
+  }
+  const tarOf = (...es: Buffer[]) => Buffer.concat([...es, Buffer.alloc(1024)])
+
+  it('**`root/./file.txt` は止まる**（v0.6.1 は別ファイルとして受理していた）', () => {
+    const r = read(tarOf(entry('root/file.txt', 'FIRST'), entry('root/./file.txt', 'SECOND')))
+    expect(r.error, '同じ場所の別の綴りを受理している').toBeTruthy()
+    expect(r.kind).toBe('ARCHIVE_INVALID')
+    // **v0.6.1 の挙動を名指しで固定する。**両方拾って返す形に戻ったらここで落ちる
+    expect(r.files, '中身を返してしまっている').toBeUndefined()
+  })
+
+  it('`//` と末尾の `/` も止まる', () => {
+    for (const bad of ['root//file.txt', 'root/file.txt/']) {
+      const r = read(tarOf(entry(bad, 'X')))
+      expect(r.kind, bad).toBe('ARCHIVE_INVALID')
+    }
+  })
+
+  it('制御文字を含むパスは止まる', () => {
+    const r = read(tarOf(entry(`root/${String.fromCharCode(1)}file.txt`, 'X')))
+    expect(r.kind).toBe('ARCHIVE_INVALID')
+    expect(r.error).toContain('制御文字')
+  })
+
+  it('**通常ファイルと同名の symlink は止まる**（v0.6.1 はリンクを無視して OK を返した）', () => {
+    const r = read(tarOf(
+      entry('root/file.txt', 'FIRST'),
+      entry('root/file.txt', '', '2', 'target.txt'),
+      entry('root/target.txt', 'SECOND'),
+    ))
+    expect(r.error, 'リンクを無視した結果、展開結果と食い違う').toBeTruthy()
+    expect(r.kind).toBe('ARCHIVE_INVALID')
+    expect(r.files).toBeUndefined()
+  })
+
+  it('hardlink・ディレクトリでも同じパスの衝突は止まる', () => {
+    for (const t of ['1', '5']) {
+      const r = read(tarOf(entry('root/x.txt', 'FIRST'), entry('root/x.txt', '', t, 'other.txt')))
+      expect(r.kind, `typeflag ${t}`).toBe('ARCHIVE_INVALID')
+    }
+  })
+
+  it('対照 — 衝突していないリンクとディレクトリは、これまでどおり読み飛ばすだけ', () => {
+    const r = read(tarOf(
+      entry('root/dir/', '', '5'),
+      entry('root/dir/a.txt', 'A'),
+      entry('root/link.txt', '', '2', 'a.txt'),
+      entry('root/b.txt', 'B'),
+    ))
+    expect(r.error, `塞ぎすぎている: ${r.error}`).toBeFalsy()
+    expect([...r.files!.keys()].sort()).toEqual(['b.txt', 'dir/a.txt'])
+  })
+
+  it('対照 — 実物の GitHub tarball は正規化検査を通る（ディレクトリ entry を含む）', () => {
+    const cached = '/tmp/src.tar.gz'
+    if (!existsSync(cached)) return
+    const r = read(readFileSync(cached), true)
+    expect(r.error, `実物が止まった: ${r.error}`).toBeFalsy()
+    expect(r.files!.size).toBe(246)
+  })
+})
