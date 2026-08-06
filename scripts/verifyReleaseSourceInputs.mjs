@@ -71,8 +71,17 @@ import { join, resolve } from 'node:path'
  *       ふつうに展開してできる中身が食い違う** archive が OK になっていた（P0-2）。
  *       ディレクトリ入力に資源上限が無く、検証に使わない 70 MB を置くだけで RSS が 3 倍近くになった（P1）。
  *       **判定が変わる**（v7 で止まる archive が v6 では通った）ので版を上げる
+ *   8 … **外部監査 2026-08-06（v0.6.2 に対する回）の 3 件。**
+ *       PAX の `path=` / `size=` 上書きに従わないだけで、**止めてもいなかった**。
+ *       読み飛ばす entry（リンク・ディレクトリ）に正規化の検査をかけていなかったので、
+ *       別の綴りにするだけで衝突検査をすり抜けられた。
+ *       ヘッダの文字列を読むとき数値欄と同じく `.trim()` していたので、
+ *       末尾に空白のあるパスが別名に化けた。
+ *       **3 つとも「検算が見た view」と「ふつうに展開した view」が食い違う**形で、
+ *       ふつうの tar を oracle にした差分試験で捕まえた。
+ *       **判定が変わる**ので版を上げる
  */
-export const TOOL_VERSION = 7
+export const TOOL_VERSION = 8
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -213,6 +222,126 @@ function assertCanonicalPath(name) {
   if (Array.from(name).some((c) => c.codePointAt(0) < 0x20 || c.codePointAt(0) === 0x7f)) {
     throw new ArchiveInvalid('制御文字を含む entry がある', { name: JSON.stringify(name).slice(0, 80) })
   }
+  /**
+   * **前後の空白を許さない（v0.6.3・外部監査 P0-3）。**
+   *
+   * v0.6.2 はヘッダの文字列を読むときに `.trim()` していた。
+   * そのため `root/file.txt␠`（末尾に空白）が `root/file.txt` として登録され、
+   * **ふつうに展開すると空白つきの別ファイルができる**のに、検算は空白なしを見ていた（実測）。
+   *
+   * 途中の空白は許す（`my file.txt` は正当な名前）。**端の空白だけを拒む。**
+   */
+  for (const part of name.split('/')) {
+    if (part !== part.trim()) {
+      throw new ArchiveInvalid('パス要素の前後に空白がある（展開結果と食い違う）', { name: JSON.stringify(name).slice(0, 80) })
+    }
+  }
+}
+
+/**
+ * **PAX（`x` / `g`）のレコードを読む（v0.6.3・外部監査 P0-1）。**
+ *
+ * v0.6.2 は PAX を「中身をファイルとして拾わない」だけで読み飛ばしていた。
+ * だが **PAX は後続 entry の意味を変えられる。**実測でこうなった。
+ *
+ * ```
+ * ヘッダの名前 root/file.txt ／ PAX path=root/other.txt ／ 中身 EXPECTED
+ *   検算器 : file.txt = EXPECTED     status OK
+ *   実展開 : root/other.txt ができ、root/file.txt は存在しない
+ *
+ * ヘッダの size 8 ／ PAX size=4 ／ 中身 ABCDEFGH
+ *   検算器 : file.txt = ABCDEFGH (8 B)  status OK
+ *   実展開 : root/file.txt = ABCD (4 B)
+ * ```
+ *
+ * **拾わないことと、無かったことにするのは別である。**
+ * 「PAX を完全に実装する」か「意味を変える鍵があったら止める」かの二択で、後者を採る——
+ * sparse や `linkpath` まで正しく実装する面積は、この道具が引き受けるべき量を超える。
+ *
+ * 形式は `"<全長> <鍵>=<値>\n"` で、`<全長>` は自身を含む。
+ * **読めない形式も拒む**（読めないものを黙って飛ばすと、そこに何が書いてあっても通る）。
+ */
+/**
+ * **中身の見え方を変える鍵。**`path` はここに入れない——正しく解釈する（下）。
+ *
+ * | 鍵 | なぜ止めるか |
+ * |---|---|
+ * | `size` | データの範囲が変わる。実測: ヘッダ 8 / PAX 4 で、展開は 4 バイトになる |
+ * | `linkpath` | リンク先が変わる。リンクは読み飛ばすが、名前の衝突判定に影響しうる |
+ * | `hdrcharset` | **ヘッダの解釈が変わる**ので、名前そのものが別物になりうる |
+ * | `GNU.sparse.*` / `SCHILY.realsize` | 疎ファイル。archive の中身と実ファイルが一致しない |
+ *
+ * `mtime` / `uid` / `xattr` などは**見え方を変えないので通す。**
+ * 実物の macOS tar は `mtime` と `LIBARCHIVE.xattr.*` / `SCHILY.xattr.*` を書く（実測）。
+ * ここを prefix `SCHILY.` で一括で止めると、**ふつうに作った tar.gz が読めなくなる。**
+ */
+const PAX_KEYS_THAT_CHANGE_VIEW = ['size', 'linkpath', 'hdrcharset', 'SCHILY.realsize']
+const PAX_PREFIXES_THAT_CHANGE_VIEW = ['GNU.sparse.']
+
+/**
+ * **PAX（`x` / `g`）のレコードを読む（v0.6.3・外部監査 P0-1）。**
+ *
+ * v0.6.2 は PAX を「中身をファイルとして拾わない」だけで読み飛ばしていた。
+ * だが **PAX は後続 entry の意味を変えられる。**実測でこうなった。
+ *
+ * ```
+ * ヘッダの名前 root/file.txt ／ PAX path=root/other.txt ／ 中身 EXPECTED
+ *   検算器 : file.txt = EXPECTED     status OK
+ *   実展開 : root/other.txt ができ、root/file.txt は存在しない
+ *
+ * ヘッダの size 8 ／ PAX size=4 ／ 中身 ABCDEFGH
+ *   検算器 : file.txt = ABCDEFGH (8 B)  status OK
+ *   実展開 : root/file.txt = ABCD (4 B)
+ * ```
+ *
+ * **`path` は拒まずに解釈する。**GNU tar は長いパスを `path=` で書くので、
+ * 拒むと**ふつうに作った tar.gz が読めなくなる。**解釈すれば展開と同じものが見える。
+ * 見え方を変えるのに解釈しない鍵（`size` など）だけを止める。
+ *
+ * **レコード長はバイト数である。**v0.6.3 の最初の実装は decode 後の文字列で数えていて、
+ * xattr に生バイトを入れる実物の tar（macOS）を「壊れている」と誤判定した。
+ * ここは Buffer のまま数える。
+ *
+ * 形式は `"<全長> <鍵>=<値>\n"` で `<全長>` は自身を含む。
+ * **読めない形式も拒む**（読めないものを黙って飛ばすと、そこに何が書いてあっても通る）。
+ */
+function readPaxRecords(data, kind) {
+  const out = new Map()
+  let i = 0
+  while (i < data.length) {
+    const sp = data.indexOf(0x20, i)   // 半角空白
+    if (sp < 0) throw new ArchiveInvalid(`PAX (${kind}) のレコードが読めない（長さの区切りが無い）`, { at: i })
+    const lenText = data.subarray(i, sp).toString('ascii')
+    const len = Number(lenText)
+    if (!/^[0-9]+$/.test(lenText) || !Number.isInteger(len) || len <= 0 || i + len > data.length) {
+      throw new ArchiveInvalid(`PAX (${kind}) のレコード長が壊れている`, { at: i, len: lenText.slice(0, 20) })
+    }
+    const rec = data.subarray(sp + 1, i + len)
+    if (rec[rec.length - 1] !== 0x0a) throw new ArchiveInvalid(`PAX (${kind}) のレコードが改行で終わっていない`, { at: i })
+    const eq = rec.indexOf(0x3d)       // =
+    if (eq < 0) throw new ArchiveInvalid(`PAX (${kind}) のレコードに = が無い`, { at: i })
+    const key = rec.subarray(0, eq).toString('utf8')
+    if (out.has(key)) throw new ArchiveInvalid(`PAX (${kind}) に同じ鍵が 2 回ある: ${key}`, { key })
+    out.set(key, rec.subarray(eq + 1, rec.length - 1).toString('utf8'))
+    i += len
+  }
+  const bad = [...out.keys()].filter(
+    (k) => PAX_KEYS_THAT_CHANGE_VIEW.includes(k) || PAX_PREFIXES_THAT_CHANGE_VIEW.some((p) => k.startsWith(p)),
+  )
+  if (bad.length) {
+    throw new ArchiveInvalid(
+      `PAX (${kind}) が entry の見え方を変えようとしている: ${bad.join(', ')}`,
+      { kind, keys: bad },
+    )
+  }
+  /**
+   * **global（`g`）の `path` は止める。**後続すべての名前を差し替えることになり、
+   * 「どの entry の話か」が消える。実物の GitHub tarball の `g` は `comment` だけ（実測）。
+   */
+  if (kind === 'g' && out.has('path')) {
+    throw new ArchiveInvalid('PAX (g) が全 entry の path を差し替えようとしている', { kind })
+  }
+  return out
 }
 
 /**
@@ -257,8 +386,17 @@ function readTar(buf) {
       throw new ArchiveInvalid('ヘッダの checksum が合わない', { entryIndex: entries, offset: off })
     }
 
-    const str = (a, l) => header.subarray(a, a + l).toString('utf8').replace(/\0.*$/, '').trim()
-    const sizeField = str(124, 12)
+    /**
+     * **数値欄とパス欄で読み方を分ける（v0.6.3・外部監査 P0-3）。**
+     *
+     * v0.6.2 は両方に `.trim()` をかけていた。数値欄は実装によって空白で詰められるので
+     * trim が要るが、**パス欄で trim すると `root/file.txt␠` が `root/file.txt` に化ける。**
+     * 展開すると空白つきの別ファイルができるので、検算の結果と食い違う。
+     */
+    const numField = (a, l) => header.subarray(a, a + l).toString('utf8').replace(/\0.*$/, '').trim()
+    const pathField = (a, l) => header.subarray(a, a + l).toString('utf8').replace(/\0.*$/, '')
+    const str = numField
+    const sizeField = numField(124, 12)
     if (sizeField && !/^[0-7]+$/.test(sizeField)) {
       throw new ArchiveInvalid('size 欄が 8 進数ではない', { entryIndex: entries, sizeField })
     }
@@ -282,8 +420,25 @@ function readTar(buf) {
     const data = buf.subarray(dataStart, dataStart + size)
     off = dataStart + Math.ceil(size / 512) * 512
 
-    // **PAX は拾わない。**上書き指示にも従わない（従うと checksum を通った名前と別名になりうる）
-    if (type === 'x' || type === 'g') { longName = null; continue }
+    /**
+     * **PAX は中身を拾わないうえに、意味を変える鍵があれば止める（v0.6.3・外部監査 P0-1）。**
+     * v0.6.2 は黙って読み飛ばしていたので、`path=` / `size=` の上書きで
+     * 検算の view と展開の view を食い違わせられた（実測）。
+     */
+    if (type === 'x' || type === 'g') {
+      const recs = readPaxRecords(data, type)
+      /**
+       * **`path` は解釈する（v0.6.3）。**GNU tar は長いパスをこれで書く。
+       * 拒むとふつうに作った tar.gz が読めなくなり、解釈すれば展開と同じものが見える。
+       * `L`（GNU long name）と同じ扱いで、次の entry の名前になる。
+       */
+      if (type === 'x' && recs.has('path')) {
+        const p = recs.get('path')
+        assertSafePath(p)
+        longName = p
+      }
+      continue
+    }
 
     if (type === 'L') {
       const decoded = data.toString('utf8').replace(/\0.*$/, '')
@@ -292,45 +447,34 @@ function readTar(buf) {
       continue
     }
 
-    const name = longName ?? (str(345, 155) ? `${str(345, 155)}/${str(0, 100)}` : str(0, 100))
+    const rawName = longName ?? (pathField(345, 155) ? `${pathField(345, 155)}/${pathField(0, 100)}` : pathField(0, 100))
     longName = null
 
-    if (!name) continue
+    if (!rawName) continue
 
     /**
-     * **読み飛ばす entry も、パスの衝突だけは見る（v0.6.2・外部監査 P0-2）。**
+     * **すべての entry 型に、同じパス検査を先にかける（v0.6.3・外部監査 P0-2）。**
      *
-     * v0.6.1 はリンクを「ファイルとして扱わない」だけで、名前を覚えていなかった。
-     * そのため次が `OK` で通っていた（実測）。
+     * v0.6.2 は衝突の記録だけを全 type で行い、**正規化の検査は通常ファイルにしかかけていなかった。**
+     * そのため、リンクの名前を別の綴りにするだけで衝突検査をすり抜けた（実測）。
      *
      * ```
-     * regular root/file.txt  = FIRST      ← 検算はこちらを見る
-     * symlink root/file.txt -> target.txt ← ふつうに展開すると file.txt はこのリンクになる
-     * regular root/target.txt = SECOND    ← 辿った先はこちら
+     * regular root/file.txt        = FIRST         ← 検算はこちらを見る
+     * symlink root/./file.txt -> target.txt        ← 別の綴りなので衝突しない扱いだった
+     * regular root/target.txt      = SECOND
+     *   → 展開すると root/file.txt は symlink になり、中身は SECOND
      * ```
      *
-     * 検算は `file.txt = FIRST` を「source にあった」と言うが、
-     * **展開した手元の `file.txt` は `SECOND` を指す。**
-     * 中身を拾わないことと、その名前を無かったことにするのは別である。
+     * ディレクトリ entry の末尾スラッシュだけは tar の表記なので剥がしてから見る。
+     * 剥がした名前で衝突を見るので、`root/dir/` と `root/dir` も同じものとして扱う。
      */
-    const dirName = name.endsWith('/') ? name.slice(0, -1) : name
-    if (dirName) {
-      if (seenPaths.has(dirName)) {
-        throw new ArchiveInvalid(
-          '同じパスが 2 回出てくる（片方はファイル以外。展開した結果と検算した中身が食い違う）',
-          { name: dirName, entryIndex: entries, type },
-        )
-      }
-      seenPaths.add(dirName)
-    }
-
-    // **リンクはファイルとして扱わない。**中身が無いのに「source にあった」ことになる
-    if (type === '1' || type === '2') continue
-    if (type !== '0') continue
-
+    const isDirEntry = rawName.endsWith('/')
+    const name = isDirEntry ? rawName.replace(/\/+$/, '') : rawName
+    if (!name) throw new ArchiveInvalid('パスがスラッシュだけの entry がある', { entryIndex: entries })
     assertSafePath(name)
+
     /**
-     * **同じパスが 2 回出てきたら止める（v0.6.1・外部監査 P1-A）。**
+     * **同じパスが 2 回出てきたら止める（v0.6.1 P1-A / v0.6.2 P0-2）。**
      *
      * v0.6.0 は `Map` へ入れるだけだったので**後の entry が黙って勝った**（実測: `dup.txt` が `SECOND` になる）。
      * 受け手は manifest のパスでこの Map を引くので、
@@ -338,9 +482,19 @@ function readTar(buf) {
      * 中身が同一でも拒む——同じ内容を 2 回入れる正当な理由が無く、
      * 「同一なら許す」にすると比較のぶんだけ判断が増える。
      */
-    if (files.has(name)) {
-      throw new ArchiveInvalid('同じパスの entry が 2 回ある（どちらが本物か決められない）', { name, entryIndex: entries })
+    if (seenPaths.has(name)) {
+      throw new ArchiveInvalid(
+        '同じパスの entry が 2 回ある（どちらが本物か決められない）',
+        { name, entryIndex: entries, type },
+      )
     }
+    seenPaths.add(name)
+
+    // **リンクはファイルとして扱わない。**中身が無いのに「source にあった」ことになる
+    if (type === '1' || type === '2') continue
+    if (type !== '0') continue
+    if (isDirEntry) throw new ArchiveInvalid('通常ファイルの名前が / で終わっている', { name })
+    // 重複は上の `seenPaths` で既に止めている（ここへ来る時点で name は初出）
     files.set(name, data)
   }
   return files
