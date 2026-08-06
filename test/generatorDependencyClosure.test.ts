@@ -136,3 +136,77 @@ describe('生成器の依存が inputDigest に入っている（外部監査 P0
     expect(inProfile, 'profile 自身の入力一覧に入っていない').toContain('scripts/measurementGate.mjs')
   })
 })
+
+
+/**
+ * **`import` だけでは足りない——直接読んでいるファイルも追う（外部監査 v0.6.2 の P0-4）。**
+ *
+ * v0.6.2 の閉包検査は相対 `import` しか辿らなかった。
+ * そのため、生成器が `readFileSync(resolve(ROOT, 'artifacts/real_jack_comparison.json'))` で
+ * 直接読んでいたファイルが**宣言の外に残り**、変えても `profileId` が動かなかった（実測）。
+ *
+ * **同じ形の穴を、次は静的に潰す。**ソースから「リテラルのパスを読んでいる箇所」を拾い、
+ * 追跡対象か・除外してよい理由があるかを突き合わせる。
+ */
+describe('生成器が直接読むファイルも追跡されている（外部監査 P0-4）', () => {
+  const manifest = R('artifacts/source-input-manifest.json')
+  const tracked = new Set<string>((manifest.inputFiles ?? []).map((f: { path: string }) => f.path))
+
+  /**
+   * **読んでよいのに追跡しない、と決めたもの。**理由を必ず書く。
+   * ここへ足すこと自体が「宣言外の読み込みを許す」判断なので、理由の無い追加はできない。
+   */
+  const ALLOWED_UNTRACKED: Record<string, string> = {
+    'docs/measurements/measurement-records.v1.json':
+      '実測記録の台帳。**意図的に inputDigest から外している**'
+      + '（記録 0 件のいま入れると全 artifact の ID が動く。理由は docs/VERIFIED_PHYSICAL_GATE.md 第6条）',
+  }
+
+  /** ソースから、リテラルで書かれた読み込み先を拾う */
+  function literalReads(file: string): string[] {
+    const src = readFileSync(resolve(ROOT, file), 'utf8')
+    const out = new Set<string>()
+    // readFileSync('x') / readFileSync(resolve(ROOT, 'x')) / read('x') / R('x')
+    for (const m of src.matchAll(/(?:readFileSync|read|R)\(\s*(?:resolve\(\s*ROOT\s*,\s*)?['"]([^'"]+\.(?:json|ts|mjs|js))['"]/g)) {
+      out.add(m[1])
+    }
+    // const P = 'x' の形で定数に置いてから読むもの
+    for (const m of src.matchAll(/=\s*['"]((?:artifacts|src|schemas|docs)\/[^'"]+\.(?:json|ts|mjs|js))['"]/g)) {
+      out.add(m[1])
+    }
+    return [...out]
+  }
+
+  it('読み込み先を実際に拾えている（母集団が空でない）', () => {
+    const all = new Set(RELEASE_GENERATORS.flatMap((g) => literalReads(g)))
+    expect(all.size, '直接読み込みを 1 件も拾えていない').toBeGreaterThan(0)
+    // **必ず入っているはずのもの**（拾い方が壊れていたらここで落ちる）
+    expect(literalReads('scripts/exportHalfPlugProfile.ts')).toContain('src/data/dimensions.json')
+  })
+
+  it.each(RELEASE_GENERATORS)('%s が直接読むファイルは、全部追跡されている', (gen) => {
+    const untracked = literalReads(gen).filter((p) => !tracked.has(p) && !(p in ALLOWED_UNTRACKED))
+    expect(untracked, `${gen} が宣言外のファイルを読んでいる（変えても profileId が動かない）`).toEqual([])
+  })
+
+  it('**検証器も同じ規律で見る**（判定を左右するファイルが宣言外にあると、判定が再現しない）', () => {
+    const untracked = literalReads('scripts/validateProfiles.mjs')
+      .filter((p) => !tracked.has(p) && !(p in ALLOWED_UNTRACKED))
+      // 検証対象そのもの（artifacts/*.json）は入力ではなく出力なので除く
+      .filter((p) => !p.startsWith('artifacts/'))
+    expect(untracked, 'validateProfiles が宣言外の入力を読んでいる').toEqual([])
+  })
+
+  it('**除外の理由が書いてある**（理由なしで宣言外にできない）', () => {
+    for (const [p, why] of Object.entries(ALLOWED_UNTRACKED)) {
+      expect(why.length, `${p}: 理由が短すぎる`).toBeGreaterThan(20)
+      expect(existsSync(resolve(ROOT, p)), `${p}: 実在しない除外が残っている`).toBe(true)
+    }
+  })
+
+  it('**この検査が空振りしていない**（宣言外の読み込みを 1 つ足せば落ちる）', () => {
+    const fake = [...literalReads('scripts/exportHalfPlugProfile.ts'), 'artifacts/not_tracked_at_all.json']
+    const untracked = fake.filter((p) => !tracked.has(p) && !(p in ALLOWED_UNTRACKED))
+    expect(untracked).toEqual(['artifacts/not_tracked_at_all.json'])
+  })
+})
