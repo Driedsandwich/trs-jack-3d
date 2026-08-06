@@ -98,25 +98,27 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-06",
- "generatedFromCommit": "eb63db4a1b70215bcc1af7b9b8aa1c82a4e093c7",
+ "generatedFromCommit": "e8fab3969aec3c3288d358b85c830a5bafa42ff9",
  "purpose": "release asset の provenance.inputFiles[].sha256 を、tag source の実ファイルと独立に検算するための一覧。**この manifest 自身は証明ではない。**GitHub の tag source archive を取得して、ここに並ぶ path の sha256 を自分で計算し、突き合わせること。",
- "inputFilesTotal": 30,
+ "inputFilesTotal": 32,
  "inconsistentAcrossArtifacts": 0,
  "mismatchedWithWorkingTreeAtBuild": 0,
  "inputScope": {
   "file": "source-input-scope.v1.json",
-  "sha256": "b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5",
+  "sha256": "ba7a855da4a06cd05f99a5387ab6537d741339d2b6c3aa86b06bd4454161dd43",
   "recursiveDirectories": [
    "src/data",
    "src/model"
   ],
   "requiredExactFiles": [
-   "package-lock.json",
    "contract-migration.v1.json",
+   "package-lock.json",
    "schemas/event-sensitivity.v2.schema.json",
    "schemas/half-plug-topology-profile.v3.schema.json",
    "schemas/topology-robustness.v3.schema.json",
+   "scripts/contractMigration.mjs",
    "scripts/exportHalfPlugProfile.ts",
+   "scripts/measurementGate.mjs",
    "scripts/provenance.ts",
    "scripts/searchTopologyRobustness.ts",
    "scripts/sensitivityEvents.ts",
@@ -174,9 +176,9 @@
   {
    "path": "artifacts/sensitivity.trs_jack_trrs.json",
    "role": "sensitivity-input",
-   "recordedSha256": "d310102a144006034bb4c0b653b458f8ce2926627200684a7ce96bee6abd06f4",
+   "recordedSha256": "f6ae10a7b92da338cc163353e3f1d8fe1842e25eda56a5ddf4d40cccf62849ee",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "d310102a144006034bb4c0b653b458f8ce2926627200684a7ce96bee6abd06f4",
+   "actualSha256AtBuild": "f6ae10a7b92da338cc163353e3f1d8fe1842e25eda56a5ddf4d40cccf62849ee",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json"
@@ -185,9 +187,9 @@
   {
    "path": "artifacts/sensitivity.trs_jack_trs.json",
    "role": "sensitivity-input",
-   "recordedSha256": "b964873c0274b6f3d0e40e8aa91e5232a9cbfe9196ddcf8fd06088bc87fcfa87",
+   "recordedSha256": "774108b13c41d761e189285671143bea5de5442ebe2a7131826862274454d8d8",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "b964873c0274b6f3d0e40e8aa91e5232a9cbfe9196ddcf8fd06088bc87fcfa87",
+   "actualSha256AtBuild": "774108b13c41d761e189285671143bea5de5442ebe2a7131826862274454d8d8",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json"
@@ -259,15 +261,45 @@
    ]
   },
   {
+   "path": "scripts/contractMigration.mjs",
+   "role": "generator",
+   "recordedSha256": "a8b62087dc36cad3aa21d24de9ac4b93c4a4fc5700f784146f6d89f977e9b21e",
+   "consistentAcrossArtifacts": true,
+   "actualSha256AtBuild": "a8b62087dc36cad3aa21d24de9ac4b93c4a4fc5700f784146f6d89f977e9b21e",
+   "matchesWorkingTree": true,
+   "consumedBy": [
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
+    "artifacts/sensitivity.trs_jack_trrs.json",
+    "artifacts/sensitivity.trs_jack_trs.json",
+    "artifacts/topology-robustness.trs_jack_trrs.json"
+   ]
+  },
+  {
    "path": "scripts/exportHalfPlugProfile.ts",
    "role": "generator",
-   "recordedSha256": "12fc18cd9c80e32bee7f417fe4c4943fec4cbc703eee2b25eeaa9d9a4451033b",
+   "recordedSha256": "bf9036acc77485d6743817ca2b148ed99d6a1a3a2930d53f1261994e2404553b",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "12fc18cd9c80e32bee7f417fe4c4943fec4cbc703eee2b25eeaa9d9a4451033b",
+   "actualSha256AtBuild": "bf9036acc77485d6743817ca2b148ed99d6a1a3a2930d53f1261994e2404553b",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
     "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json"
+   ]
+  },
+  {
+   "path": "scripts/measurementGate.mjs",
+   "role": "generator",
+   "recordedSha256": "9c950d357c76696fef64a05d4f0d21ffed4ad24def826f33c83e1858ec35816e",
+   "consistentAcrossArtifacts": true,
+   "actualSha256AtBuild": "9c950d357c76696fef64a05d4f0d21ffed4ad24def826f33c83e1858ec35816e",
+   "matchesWorkingTree": true,
+   "consumedBy": [
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
+    "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
+    "artifacts/sensitivity.trs_jack_trrs.json",
+    "artifacts/sensitivity.trs_jack_trs.json",
+    "artifacts/topology-robustness.trs_jack_trrs.json"
    ]
   },
   {
@@ -311,9 +343,9 @@
   {
    "path": "source-input-scope.v1.json",
    "role": "input-scope",
-   "recordedSha256": "b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5",
+   "recordedSha256": "ba7a855da4a06cd05f99a5387ab6537d741339d2b6c3aa86b06bd4454161dd43",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5",
+   "actualSha256AtBuild": "ba7a855da4a06cd05f99a5387ab6537d741339d2b6c3aa86b06bd4454161dd43",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",

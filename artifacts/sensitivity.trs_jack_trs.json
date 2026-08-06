@@ -103,15 +103,15 @@
   "jack.contact.sleeve.axialCenter",
   "jack.contact.sleeve.padWidth"
  ],
- "generatedFromCommit": "23e6e2a3ba8023d0e20bbd32ed1cf77e9a8a0b3a",
+ "generatedFromCommit": "e8fab3969aec3c3288d358b85c830a5bafa42ff9",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "23e6e2a3ba8023d0e20bbd32ed1cf77e9a8a0b3a",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "e8fab3969aec3c3288d358b85c830a5bafa42ff9",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "0a3e5f596104efee86f82d441118fd7879593eb3561816caf9a46fe16c8519ee",
+  "inputDigest": "f6178757bb7861cc75ffa0294eec78490ec59774828aaf0ce4a91f61488ca192",
   "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 6 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
   "inputSettings": {
    "variantId": "TRS|JACK-TRS",
@@ -138,6 +138,16 @@
     "role": "schema"
    },
    {
+    "path": "scripts/contractMigration.mjs",
+    "sha256": "a8b62087dc36cad3aa21d24de9ac4b93c4a4fc5700f784146f6d89f977e9b21e",
+    "role": "generator"
+   },
+   {
+    "path": "scripts/measurementGate.mjs",
+    "sha256": "9c950d357c76696fef64a05d4f0d21ffed4ad24def826f33c83e1858ec35816e",
+    "role": "generator"
+   },
+   {
     "path": "scripts/provenance.ts",
     "sha256": "ad943f639e4cd9531fc13f1bc549ad891a8f3247911f66c21bc712fca6062f00",
     "role": "generator"
@@ -149,7 +159,7 @@
    },
    {
     "path": "source-input-scope.v1.json",
-    "sha256": "b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5",
+    "sha256": "ba7a855da4a06cd05f99a5387ab6537d741339d2b6c3aa86b06bd4454161dd43",
     "role": "input-scope"
    },
    {
@@ -238,7 +248,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run sensitivity:events -- --variant \"TRS|JACK-TRS\" --release",
+  "command": "npm run sensitivity:events -- --variant \"TRS|JACK-TRS\"",
   "artifactDate": "2026-08-06"
  },
  "generatedAt": "2026-08-06",
