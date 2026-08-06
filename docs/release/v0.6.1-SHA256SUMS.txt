@@ -1,0 +1,50 @@
+# trs-jack-3d v0.6.1 — release asset の sha256
+#
+# **固定には inputDigest を使ってください。**
+# ファイル単位の sha256 は「この配布物が改変されていないか」を見るためのものです。
+#
+# **この版の profile は schemaVersion 3 です。v2 とは非互換です。**
+# 対応表は profile の contractMigration.history と、同梱の contract-migration.v1.json にあります。
+# 旧版を期待する実装は schemaVersion を見て停止してください（沈黙より停止のほうが安全です）。
+#
+# TRS|JACK-TRS   inputDigest = 38b692a12af6531d753a5184279ce433d9e0523e002827f4233dfd0fe2d10c6f
+#                profileId   = trs-jack-3d:TRS|JACK-TRS:38b692a12af6
+# TRS|JACK-TRRS  inputDigest = eaccc9119c920c583c340b5ee0b4b42bb229ce558da9df5ff6691fcc1c7f7941
+#                profileId   = trs-jack-3d:TRS|JACK-TRRS:eaccc9119c92
+#
+# generatedFromCommit = eb9cfa0a93707741a167188a5c912512dd91f6dd
+# artifactKind        = release
+#
+# v0.1.1 から外したもの（消えた理由）:
+#   half-plug-topology-profile.v1.schema.json — v2 へ置き換えた。v1 schema は v0.1.1 の asset として immutable に残っている
+#   half_plug_topology_profile.v1.trs_jack_trs.json — ファイル名は契約の一部（下流の lock が filename で引く）なので、schemaVersion と一緒に v2 へ移した
+#   half_plug_topology_profile.v1.trs_jack_trrs.json — 同上
+#
+# 検算: shasum -a 256 -c SHA256SUMS
+046cc9177d15a2e4d7d1f604d4844784a245761b866e636ec22178548e9afd61  source-snapshot.v1.schema.json
+06a26fe4ed66d91e64a6a7ec39649028e5148701681c02842e8e641865ca8358  source-input-manifest.v2.schema.json
+0cc6ba30e4ff130b9056310227c82ea320388d2ac015d3b2cc17989cdfc55c24  validation-results.v2.schema.json
+10ec667f043c2c65a017ae3ae2ed2765679a90026eb450d59fb02f4bc70bd1c3  topology-robustness.v3.schema.json
+1d85eeb96375621aea3e1ab35e2c0eccdd3562f61f9a1102a8246ddc972699b0  test_counts.json
+23199aa88003c6e6fc36b7a52ef8aa9e48fcfe907eb5e473c7af7c03fa5ac37d  test-counts.v2.schema.json
+24d85873781f23c9f81da25676cbf98c2b9ea5a0de90a81275f936e5f4a93be4  real-jack-comparison.v1.schema.json
+2d945c38655bfe1b3573c1f0cc173eeb408b3df8af19e0f376ffe2e1817d548e  topology-robustness.trs_jack_trrs.json
+5928b45f52b5ed95b568d8538b7e4ea30eec9bbc50781356f9c4dfa83db1e424  contract-migration.v1.schema.json
+607b7f6ce9c39500e2f479941ae723d04ae761047ec1ba68ed4f0b84b0b2b2a6  source-input-scope.v1.schema.json
+6331d129a83c39e3205bbea23249e86917d0c4136ecf836de89678316dfc78fa  source-snapshot.v1.json
+6f027d40aad8a0affb6440cda7824b8a5805331660202bcf49250792503d347c  source-input-manifest.json
+8b33e236c248543f70ce8d9de06004ef73f8b4e18f434a8c946e482a883665c5  contract-migration.v1.json
+95e344b76f6c823266cf597606dbf1d3e85dd78e489499ca4ad7e8c185b9ae0b  source-verification-result.v1.schema.json
+99e09bde49999137311ac98c9bdcfc1277aa8d7544fb060d0e29d4ea6439b1b0  trs-jack-3d-release-index.v1.json
+b1e391725206d7590b579a6294119bccc3b87e3b012894e1cd5747a7122e97fa  verifyReleaseSourceInputs.mjs
+b8989fdcd99d68156ecf8aad53585cb3c5a61b23f9dc4f244fa429616631f6d5  source-input-scope.v1.json
+b964873c0274b6f3d0e40e8aa91e5232a9cbfe9196ddcf8fd06088bc87fcfa87  sensitivity.trs_jack_trs.json
+b986b063677905b7d1edae3f18e7b8aace61c5ee833c53b059640a34d73e88f9  trs-jack-3d-release-index.v1.schema.json
+d20169002ddaa16e9709f3775be0d375ac611e6557619ec70595ef701a7856a2  source-verification-result.json
+d310102a144006034bb4c0b653b458f8ce2926627200684a7ce96bee6abd06f4  sensitivity.trs_jack_trrs.json
+d385a2694876ca0ebb4d9d5c3ed5857047ccf535900dde29cfe2ddb79370014d  half_plug_topology_profile.v3.trs_jack_trrs.json
+d6dc207471e2ddb7bc78d6d39dab43fff5063e067ff183b7b8dcecd8c7ef7433  half-plug-topology-profile.v3.schema.json
+d7904318a00cd842b9d780bd84fd0e40fd8634a4dc6844ed1c7ec6fa9eff9c4f  topology-search.v1.schema.json
+e9cd21c7cb09e496aa9e5609e126493e06871e0bac99cf9dcec79f8d8e7f80ce  event-sensitivity.v2.schema.json
+f079f9c61266d1dc7353006bef3a4a77f100043cabe0628b8ce692181ed75a72  half_plug_topology_profile.v3.trs_jack_trs.json
+ff32d1247d4ad55f88a1c2112aa0533724bb5eaeb02c0dd9a4a0ef22b42c34d0  validation-results.json
