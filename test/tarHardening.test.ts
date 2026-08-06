@@ -31,6 +31,8 @@ const EXPECTED: Record<string, 'invalid' | 'safe'> = {
   traversal: 'invalid',
   link: 'safe',       // リンクは読み飛ばす。止める必要は無い
   resource: 'invalid',
+  entryType: 'invalid',  // 中身を持つのに扱いを決めていない型。リンクだけ safe（下の個別指定）
+  encoding: 'invalid',   // パスが UTF-8 として読めない
 }
 
 /**
@@ -59,6 +61,18 @@ const EXPECTED_BY_ID: Record<string, 'invalid' | 'safe'> = {
   'gnu-L-very-long': 'invalid',
   'gnu-L-traversal': 'invalid',
   'gnu-L-size-lie': 'invalid',
+  // v0.6.4（外部監査 P0-A/B/C）。**同じ member に上書きが 2 つ効く形は、実装ごとに結末が割れる**
+  'pax-path-then-gnu-longname': 'invalid',
+  'gnu-longname-then-pax-path': 'invalid',
+  'pax-path-twice': 'invalid',
+  'pax-path-then-second-pax': 'invalid',
+  'pax-g-path-override': 'invalid',
+  // 中身を持つのに扱いを決めていない型は止める（inventory に載るだけでは、中身を検算できない）
+  'typeflag-7-contiguous': 'invalid',
+  'typeflag-S-gnu-sparse': 'invalid',
+  // **リンクは止めない。**inventory に載せて、範囲の完全性検査がそれを見る
+  'symlink-under-scope': 'safe',
+  'hardlink-under-scope': 'safe',
 }
 
 describe('tar 強化 ① 26 個すべてについて、どうなるかを実測する', () => {
