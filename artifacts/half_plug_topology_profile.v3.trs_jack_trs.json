@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRS:6df4546829d9",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:0661012b839d",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -323,16 +323,16 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "e8fab3969aec3c3288d358b85c830a5bafa42ff9",
+ "sourceRevision": "63dbc4386bd9a54f48200b2cdb2889bc1329b521",
  "generatedAt": "2026-08-06",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "e8fab3969aec3c3288d358b85c830a5bafa42ff9",
-  "workingTreeDirty": true,
+  "generatedFromCommit": "63dbc4386bd9a54f48200b2cdb2889bc1329b521",
+  "workingTreeDirty": false,
   "revisionOverride": false,
-  "artifactKind": "local",
+  "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "6df4546829d9778b59845e6812a69cb90990393f3d826167f004e9b67e8e3159",
+  "inputDigest": "0661012b839d923ead6defc4f27554becafd02268c0f7c667b5d269aeb9911de",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -342,7 +342,7 @@
    },
    {
     "path": "artifacts/sensitivity.trs_jack_trs.json",
-    "sha256": "774108b13c41d761e189285671143bea5de5442ebe2a7131826862274454d8d8",
+    "sha256": "40ad23ca0634e7b093312876afd0dbff18b2e99231094c8d8d5f94ae08482337",
     "role": "sensitivity-input"
    },
    {
@@ -352,7 +352,7 @@
    },
    {
     "path": "package-lock.json",
-    "sha256": "54c2bd1c1cf1fc501bd70cbfab197888f00117e4afc8e0adf6b9a7d2e6060621",
+    "sha256": "055e8002869339f1e60dfbed8c71edfa71b96c2b72c2df8bbfe7b404bf786595",
     "role": "lockfile"
    },
    {
@@ -471,7 +471,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\"",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" --release",
   "artifactDate": "2026-08-06"
  },
  "fullInsertionDepthMm": 14,
@@ -4058,8 +4058,8 @@
     "jack.contact.sleeve.axialCenter",
     "jack.contact.sleeve.padWidth"
    ],
-   "generatedFromCommit": "e8fab3969aec3c3288d358b85c830a5bafa42ff9",
-   "inputDigest": "f6178757bb7861cc75ffa0294eec78490ec59774828aaf0ce4a91f61488ca192",
+   "generatedFromCommit": "0dbad39da3c0b1cceaf64dcc205493c2e2d4af17",
+   "inputDigest": "96df61ceabb886e3dbb11792d8c5025649e4405e71e9cbc8c5cde289fef0e65c",
    "configurationsUsable": 869,
    "shippedInsideSweptRange": true
   },
