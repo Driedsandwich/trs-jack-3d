@@ -97,6 +97,7 @@
     <li><a href="#s5">第5条（許容の決め方）</a></li>
     <li><a href="#s6">第6条（台帳と profile がずれないようにする）</a></li>
     <li><a href="#s7">第7条（この条文の限界）</a></li>
+    <li><a href="#s8">第8条（実測値をどの区分へ置くか）— 2026-08-06 決定</a></li>
   </ol>
 </nav>
 <h1><code>verifiedPhysical</code> の合格条件（条文 v1）</h1>
@@ -139,8 +140,24 @@ modelLimitations.physicalVerificationRef 台帳のパスと sha256・条文の�
 <p>そのうえで <code>npm run validate:profiles</code> の semantic 規則 <code>measurementRecords</code> が、 <strong>現在の台帳から判定をやり直して、profile に書いてある値と突き合わせる。</strong> 台帳だけ書き換えて profile を作り直さなければ、そこで落ちる。</p>
 <div class="note"><p><strong><code>inputDigest</code> に入れるほうが素直ではあります。</strong>記録が実際に入って</p><p><code>verifiedPhysical</code> が動くようになったら、そのタイミングで入れ直すのが筋です。</p><p><strong>いまは入れない理由が「空だから」なので、空でなくなったら理由も消えます。</strong></p></div>
 <h2 id="s7">第7条（この条文の限界）</h2>
-<ul><li><strong>必須観測点の選び方そのものは、この条文では正当化していない。</strong> 「看板の結論に効く」という判断で選んでいて、<strong>別の選び方もありうる。</strong></li><li><strong>1 人が 1 個の部品を 3 回測った記録</strong>で <code>true</code> になる。 個体差・ロット差は見ていない。<strong>複数個体を要求していない。</strong></li><li>予測と一致したことは示せるが、<strong>一致した理由がモデルの正しさとは限らない</strong> （たまたま合うパラメータ組み合わせが他にもありうる）。</li><li><strong><code>true</code> になっても、<code>evidenceGrade</code> は動かない。</strong>測った値を置く区分が <code>FACT / DERIVED / ASSUMPTION / UNKNOWN</code> の中に無いためで、これは別途の課題である （区分を足すのは <code>enum</code> 追加＝<code>BUMP</code> で profile v4 になる → <code>docs/V060_PLAN_20260805.md</code> §1-2）。</li></ul>
+<ul><li><strong>必須観測点の選び方そのものは、この条文では正当化していない。</strong> 「看板の結論に効く」という判断で選んでいて、<strong>別の選び方もありうる。</strong></li><li><strong>1 人が 1 個の部品を 3 回測った記録</strong>で <code>true</code> になる。 個体差・ロット差は見ていない。<strong>複数個体を要求していない。</strong></li><li>予測と一致したことは示せるが、<strong>一致した理由がモデルの正しさとは限らない</strong> （たまたま合うパラメータ組み合わせが他にもありうる）。</li><li><strong><code>true</code> になっても、<code>evidenceGrade</code> の値そのものは動かない</strong>（→ 第8条）。</li></ul>
 <p><strong>「起きない」とは書かない。</strong>この条文で言えるのは <strong>「いま定義した観測点については、記録が無ければ <code>true</code> にならない」まで</strong>である。</p>
+<hr>
+<h2 id="s8">第8条（実測値をどの区分へ置くか）— <strong>2026-08-06 決定</strong></h2>
+<p><strong>実測値も <code>FACT</code> に置く。区分は増やさない。</strong></p>
+<p><code>FACT</code> の意味を「メーカーのデータシート・図面の<strong>記載寸法</strong>」から 「<strong>一次情報</strong>（記載寸法、および第3条〜第5条どおりに受け取った実測記録）」へ広げる。</p>
+<h3>記載寸法と実測は <code>sources</code> で分ける</h3>
+<pre><code>記載寸法  sources: ["ds-1532-10"]   一次資料の ID
+実測      sources: ["MR0001"]       docs/measurements/measurement-records.v1.json の記録 ID</code></pre>
+<p><strong><code>grade</code> を見て区別しない。<code>sources</code> を見る。</strong>下流が両者を分ける必要がある場面は実在する。</p>
+<div class="tw"><table><thead><tr><th>場面</th><th>なぜ分けたいか</th></tr></thead><tbody><tr><td>第三者が独立に再現する</td><td>記載寸法は誰でも同じ値を引けるが、<strong>実測は 1 個体・1 回</strong>のもの</td></tr><tr><td>公差の扱い</td><td>記載値の公差（φ3.5±0.05）と、実測の<strong>ばらつき</strong>は意味が違う</td></tr><tr><td>別部品へ一般化する</td><td>記載値は型番全体の仕様、実測値は<strong>その個体</strong>。混ぜると一般化の根拠が壊れる</td></tr></tbody></table></div>
+<p><strong>そのすべてが <code>sources</code> で足りる。</strong>区分を増やす必要はない。</p>
+<h3>なぜ区分を増やさなかったか — 実測して決めた</h3>
+<p>条文の判定器（<code>scripts/schemaLanguageDiff.mjs</code>）に両案を当てた（2026-08-06 実測）。</p>
+<div class="tw"><table><thead><tr><th>案</th><th>変更</th><th>判定</th></tr></thead><tbody><tr><td><strong>B（採用）</strong></td><td><code>grade</code> の <code>description</code> を広げる</td><td><strong><code>HOLD</code></strong>（差分 0 件・版据え置き）</td></tr><tr><td>A（見送り）</td><td><code>enum</code> へ <code>MEASURED</code> を足す</td><td><strong><code>BUMP</code></strong>（profile v4・<strong>下流が止まる</strong>）</td></tr></tbody></table></div>
+<p>対照: <code>enum</code> から 1 つ削ると <code>HOLD_RECORD</code>、同一 schema 同士は <code>HOLD</code>。</p>
+<p><strong>A を見送った理由は「いま入れる値が無い」ことである。</strong> 2026-08-06 時点の <code>FACT</code> <strong>53 件はすべて記載寸法で、実測由来は 0 件</strong>（実測）。 中身が空のうちに下流を止めると、<strong>止める理由を実物で説明できない。</strong></p>
+<p><strong>実測記録が入り、<code>sources</code> では足りない場面が実際に出たら、そのとき A を検討する。</strong> そのときは理由を実物で示せる。</p>
 </div>
 </body>
 </html>

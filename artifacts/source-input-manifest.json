@@ -98,7 +98,7 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-06",
- "generatedFromCommit": "6e151bcdb495f7a26715cbe0ee466b31d07d9466",
+ "generatedFromCommit": "76026660e9e422040c99a18cd622c87bccb524b4",
  "purpose": "release asset の provenance.inputFiles[].sha256 を、tag source の実ファイルと独立に検算するための一覧。**この manifest 自身は証明ではない。**GitHub の tag source archive を取得して、ここに並ぶ path の sha256 を自分で計算し、突き合わせること。",
  "inputFilesTotal": 30,
  "inconsistentAcrossArtifacts": 0,
@@ -238,9 +238,9 @@
   {
    "path": "schemas/half-plug-topology-profile.v3.schema.json",
    "role": "schema",
-   "recordedSha256": "ea5948a9b7631176bfaf5d3fe8e7cd422ef333cc07b6de67521c1c8dbcb735dd",
+   "recordedSha256": "d6dc207471e2ddb7bc78d6d39dab43fff5063e067ff183b7b8dcecd8c7ef7433",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "ea5948a9b7631176bfaf5d3fe8e7cd422ef333cc07b6de67521c1c8dbcb735dd",
+   "actualSha256AtBuild": "d6dc207471e2ddb7bc78d6d39dab43fff5063e067ff183b7b8dcecd8c7ef7433",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",

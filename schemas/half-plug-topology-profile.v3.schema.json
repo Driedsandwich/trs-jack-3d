@@ -911,7 +911,8 @@
     "DERIVED",
     "ASSUMPTION",
     "UNKNOWN"
-   ]
+   ],
+   "description": "**根拠の区分。**FACT = 一次情報（メーカーのデータシート・図面の記載寸法、および docs/VERIFIED_PHYSICAL_GATE.md の条文どおりに受け取った実測記録）。DERIVED = FACT からの演算。ASSUMPTION = 仮定。UNKNOWN = 不明。**記載寸法と実測を区分では分けない。**分ける必要があるときは sources を見ること（記載寸法は資料 ID、実測は記録 ID `MR####` が入る）。2026-08-06 時点の FACT 53 件はすべて記載寸法で、実測由来は 0 件。"
   },
   "interval": {
    "type": "object",

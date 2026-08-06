@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:1246a9c582d0",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:918b83558298",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -327,16 +327,16 @@
    ]
   }
  },
- "sourceRevision": "6e151bcdb495f7a26715cbe0ee466b31d07d9466",
+ "sourceRevision": "76026660e9e422040c99a18cd622c87bccb524b4",
  "generatedAt": "2026-08-06",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "6e151bcdb495f7a26715cbe0ee466b31d07d9466",
+  "generatedFromCommit": "76026660e9e422040c99a18cd622c87bccb524b4",
   "workingTreeDirty": true,
   "revisionOverride": false,
   "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "1246a9c582d04a25d346958929e365da984ae7c4f320e08854b37ce414eb2df1",
+  "inputDigest": "918b83558298c24f993a4a46958369be73e9fd6dccbf8fece5bdd85f5b16de58",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -356,7 +356,7 @@
    },
    {
     "path": "schemas/half-plug-topology-profile.v3.schema.json",
-    "sha256": "ea5948a9b7631176bfaf5d3fe8e7cd422ef333cc07b6de67521c1c8dbcb735dd",
+    "sha256": "d6dc207471e2ddb7bc78d6d39dab43fff5063e067ff183b7b8dcecd8c7ef7433",
     "role": "schema"
    },
    {
