@@ -127,7 +127,39 @@ function mismatchesOf(buf: Buffer): string[] {
     if (!file) bad.push(`${k}: 展開結果に通常ファイルとして存在しない（実際は ${cand.map((c) => c.type).join(',') || 'なし'}）`)
     else if (file.content !== v.toString('utf8')) bad.push(`${k}: 中身が違う`)
   }
+  bad.push(...omissionsOf(r, o))
   return bad
+}
+
+/**
+ * **逆向きも見る（v0.6.4・外部監査 P0-B）。**
+ *
+ * v0.6.3 の差分試験は**片方向**だった——「検算器が返した key が展開木に在るか」しか見ていない。
+ * そのため **`typeflag 7` のように「展開されるのに検算器が数えない」欠陥は素通りした。**
+ * 実測: この検査を外す変異を入れても、片方向の 48 件は 1 件も落ちなかった。
+ *
+ * 逆向きの要件はこうである。
+ *
+ * > 展開してできた通常ファイルは、検算器の `files` か `inventory` のどちらかに
+ * > 現れていなければならない。どちらにも無いなら、**検算器から見えていないファイルが
+ * > source に混じる**ことになる。止まった（`ARCHIVE_INVALID`）なら合格。
+ *
+ * `inventory` はリンクやディレクトリも載せるので、**ファイルとして読まない entry を
+ * 「見なかったこと」にはしない。**範囲の完全性検査はこちらを母集団にする。
+ */
+function omissionsOf(
+  r: { files?: Map<string, Buffer>, inventory?: { name: string }[] },
+  o: { entries: Extracted[], failed: boolean },
+): string[] {
+  if (o.failed) return []                        // 展開できない archive は比べようがない
+  const seen = new Set<string>([
+    ...[...(r.files ?? new Map()).keys()],
+    ...(r.inventory ?? []).map((e) => e.name),
+  ])
+  const known = (p: string) => [...seen].some((k) => p === k || p.endsWith(`/${k}`))
+  return o.entries
+    .filter((e) => e.type === 'file' && !known(e.path))
+    .map((e) => `${e.path}: 展開されるのに検算器の一覧に現れない（見えないファイルが source に混じる）`)
 }
 
 // --------------------------------------------------------------------------- 試験
