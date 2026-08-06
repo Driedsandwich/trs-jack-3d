@@ -54,8 +54,14 @@ import { join, resolve } from 'node:path'
  *       範囲定義が無い場合に既定へ戻さず performed:false を出す (v0.3.0 フォローアップ P1-2)
  *   3 … --fetch github を gh から Node の fetch へ替えた（外部コマンド依存を無くした）。
  *       toolVersion を全出口へ入れた。どちらも v0.4.0 で受け手が実際に困った点 (v0.4.1)
+ *   4 … --source が tar.gz も受けるようにした (v0.5.0)
+ *   5 … **信頼できない archive に対して安全にした (v0.6.0 P1)。**
+ *       header checksum の検算・PAX を拾わない・.. と絶対パスを拒む・
+ *       symlink と hardlink をファイルとして扱わない・資源上限。
+ *       あわせて ARCHIVE_INVALID を SOURCE_UNAVAILABLE から分離した。
+ *       **判定の意味が変わる**（v0.5.2 までなら読めていた archive が止まる）ので版を上げる
  */
-export const TOOL_VERSION = 4
+export const TOOL_VERSION = 5
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -97,29 +103,149 @@ const done = (payload, code) => {
 // ---------------------------------------------------------------------------
 
 /**
- * USTAR の最小実装。512 バイトのヘッダとデータブロックが並ぶだけの形式である。
- * 長いパスの GNU 拡張 (`L` typeflag) にも対応する — src/model の階層で普通に出る。
+ * **信頼できない archive を読むための制限。**（v0.6.0 P1）
+ *
+ * 値は v0.5.2 の実物を測ってから決めた（2026-08-06 実測）。
+ *
+ * ```
+ * GitHub tarball v0.5.2   gz 9.76 MB → tar 15.09 MB（1.5 倍）
+ *                          entry 268（ファイル 246 / ディレクトリ 21 / pax global 1）
+ *                          最大 entry 1.33 MB ／ 最長パス 95 文字
+ * ```
+ *
+ * **実物の 6〜20 倍に置く。**きつくすると正常な tarball を弾き、
+ * 緩くすると上限の意味が無くなる。**上限を超える入力を実際に作って、
+ * 止まることを試験している**（`test/tarHardening.test.ts`）。
+ */
+export const TAR_LIMITS = {
+  maxEntries: 5000,            // 実測 268 の約 19 倍
+  maxEntryBytes: 8 << 20,      // 8 MB。実測の最大 1.33 MB の約 6 倍
+  maxTotalBytes: 256 << 20,    // 256 MB。実測 15.09 MB の約 17 倍。gunzip の上限にも使う
+  maxPathLength: 1024,         // 実測の最長 95 の約 10 倍
+  fetchTimeoutMs: 60_000,      // 取得が返らないまま止まらないため
+}
+
+/** archive が壊れている／敵対的であることを表す。**取れなかった（SOURCE_UNAVAILABLE）とは別物** */
+export class ArchiveInvalid extends Error {
+  constructor(reason, detail = {}) {
+    super(reason)
+    this.name = 'ArchiveInvalid'
+    this.detail = detail
+  }
+}
+
+/** ヘッダの checksum を検算する。checksum 欄を空白 8 個で埋めた状態の総和 */
+function headerChecksumOk(header) {
+  const stored = /^[0-7]+/.exec(header.subarray(148, 156).toString('ascii'))
+  if (!stored) return false
+  let sum = 0
+  for (let i = 0; i < 512; i++) sum += i >= 148 && i < 156 ? 0x20 : header[i]
+  return parseInt(stored[0], 8) === sum
+}
+
+/**
+ * **パスが archive の外へ出ないことを確かめる。**
+ *
+ * `..` を含む・絶対パス・Windows 風の区切りを拒む。
+ * 展開はしないので直ちに書き込まれるわけではないが、
+ * **この Map は受け手が manifest のパスで引く。**外を指す名前を入れた時点で、
+ * 「source の中にあった」という主張が嘘になる。
+ */
+function assertSafePath(name) {
+  if (name.length > TAR_LIMITS.maxPathLength) {
+    throw new ArchiveInvalid(`entry のパスが長すぎる (${name.length} > ${TAR_LIMITS.maxPathLength})`, { name: name.slice(0, 80) })
+  }
+  if (name.startsWith('/')) throw new ArchiveInvalid('絶対パスの entry がある', { name })
+  if (/^[A-Za-z]:/.test(name)) throw new ArchiveInvalid('ドライブレターつきの entry がある', { name })
+  if (name.includes('\\')) throw new ArchiveInvalid('バックスラッシュを含む entry がある', { name })
+  if (name.split('/').includes('..')) throw new ArchiveInvalid('.. を含む entry がある（archive の外を指す）', { name })
+}
+
+/**
+ * USTAR を読む。**展開しない**（メモリ上の Map にするだけ）。
+ *
+ * v0.5.2 までは「512 バイトずつ読んで typeflag が `0` なら拾う」だけだった。
+ * 外部監査の P1 で指摘されたとおり、**信頼できない archive に対して無防備**だった。
+ * v0.6.0 で次を足した。**どれも実物の壊れた tar で試験している。**
+ *
+ * | 何 | 何をする |
+ * |---|---|
+ * | header checksum | 合わなければ `ArchiveInvalid` |
+ * | PAX (`x` / `g`) | **中身をファイルとして拾わない。**上書き指示にも従わない |
+ * | GNU long name (`L`) | 受けるが、長さ上限を超えたら止める |
+ * | `..` / 絶対パス / `\` | `ArchiveInvalid` |
+ * | symlink (`2`) / hardlink (`1`) | **ファイルとして扱わない**（読み飛ばす） |
+ * | ディレクトリ (`5`) など | 読み飛ばす |
+ * | entry 数・サイズ・総量 | 上限を超えたら止める |
+ *
+ * **PAX の上書き指示に従わないのは意図的である。**`path=` を honor すると、
+ * checksum を通った名前とは別の名前で登録できてしまう。
+ * 実物の GitHub tarball は `pax_global_header` を 1 個持つだけで、
+ * ファイル名の上書きには使っていない（実測）。
  */
 function readTar(buf) {
   const files = new Map()
   let off = 0
   let longName = null
+  let entries = 0
+  let total = 0
+
   while (off + 512 <= buf.length) {
     const header = buf.subarray(off, off + 512)
     if (header.every((b) => b === 0)) break
-    const str = (s, l) => header.subarray(s, s + l).toString('utf8').replace(/\0.*$/, '').trim()
-    const name = longName ?? (str(345, 155) ? `${str(345, 155)}/${str(0, 100)}` : str(0, 100))
-    const size = parseInt(str(124, 12) || '0', 8) || 0
+
+    if (++entries > TAR_LIMITS.maxEntries) {
+      throw new ArchiveInvalid(`entry が多すぎる (> ${TAR_LIMITS.maxEntries})`, { entries })
+    }
+    if (!headerChecksumOk(header)) {
+      throw new ArchiveInvalid('ヘッダの checksum が合わない', { entryIndex: entries, offset: off })
+    }
+
+    const str = (a, l) => header.subarray(a, a + l).toString('utf8').replace(/\0.*$/, '').trim()
+    const sizeField = str(124, 12)
+    if (sizeField && !/^[0-7]+$/.test(sizeField)) {
+      throw new ArchiveInvalid('size 欄が 8 進数ではない', { entryIndex: entries, sizeField })
+    }
+    const size = parseInt(sizeField || '0', 8) || 0
+    if (size < 0 || !Number.isSafeInteger(size)) {
+      throw new ArchiveInvalid('size 欄が扱える範囲を超えている', { entryIndex: entries, sizeField })
+    }
+    if (size > TAR_LIMITS.maxEntryBytes) {
+      throw new ArchiveInvalid(`entry が大きすぎる (${size} > ${TAR_LIMITS.maxEntryBytes})`, { entryIndex: entries, name: str(0, 100) })
+    }
+    total += size
+    if (total > TAR_LIMITS.maxTotalBytes) {
+      throw new ArchiveInvalid(`展開後の総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total })
+    }
+
     const type = header[156] === 0 ? '0' : String.fromCharCode(header[156])
     const dataStart = off + 512
+    if (dataStart + size > buf.length) {
+      throw new ArchiveInvalid('entry のデータが archive の末尾を超えている', { entryIndex: entries, size })
+    }
     const data = buf.subarray(dataStart, dataStart + size)
     off = dataStart + Math.ceil(size / 512) * 512
+
+    // **PAX は拾わない。**上書き指示にも従わない（従うと checksum を通った名前と別名になりうる）
+    if (type === 'x' || type === 'g') { longName = null; continue }
+
     if (type === 'L') {
-      longName = data.toString('utf8').replace(/\0.*$/, '')
+      const decoded = data.toString('utf8').replace(/\0.*$/, '')
+      assertSafePath(decoded)
+      longName = decoded
       continue
     }
+
+    const name = longName ?? (str(345, 155) ? `${str(345, 155)}/${str(0, 100)}` : str(0, 100))
     longName = null
-    if (type === '0') files.set(name, data)
+
+    // **リンクはファイルとして扱わない。**中身が無いのに「source にあった」ことになる
+    if (type === '1' || type === '2') continue
+    if (type !== '0') continue
+
+    if (!name) continue
+    assertSafePath(name)
+    files.set(name, data)
   }
   return files
 }
@@ -131,6 +257,28 @@ function stripTopLevel(files) {
   const first = names[0].split('/')[0]
   if (!names.every((n) => n.startsWith(`${first}/`))) return files
   return new Map(names.map((n) => [n.slice(first.length + 1), files.get(n)]))
+}
+
+/** gunzip。**展開後のサイズに上限を置く**（zip bomb で落ちないため） */
+function gunzipLimited(buf) {
+  try {
+    return gunzipSync(buf, { maxOutputLength: TAR_LIMITS.maxTotalBytes })
+  } catch (e) {
+    throw new ArchiveInvalid(`gzip を展開できない: ${String(e.message).split('\n')[0]}`)
+  }
+}
+
+/**
+ * archive を読む共通の入口。**例外を「壊れている」と「取れない」に分けて返す。**
+ * 受け手が保存した記録から、どちらだったかを後で読めるようにするため。
+ */
+export function readArchiveBuffer(buf, { gzip }) {
+  try {
+    return { files: stripTopLevel(readTar(gzip ? gunzipLimited(buf) : buf)) }
+  } catch (e) {
+    if (e instanceof ArchiveInvalid) return { error: e.message, kind: 'ARCHIVE_INVALID', detail: e.detail }
+    return { error: `archive を読めない: ${String(e.message).split('\n')[0]}`, kind: 'ARCHIVE_INVALID' }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -147,19 +295,20 @@ function stripTopLevel(files) {
  */
 function loadFromArchive(path) {
   const abs = resolve(ROOT, path)
-  if (!existsSync(abs)) return { error: `source archive が無い: ${path}` }
+  if (!existsSync(abs)) return { error: `source archive が無い: ${path}`, kind: 'SOURCE_UNAVAILABLE' }
+  let buf
   try {
-    const buf = readFileSync(abs)
-    const tar = /\.(tgz|tar\.gz)$/i.test(path) ? gunzipSync(buf) : buf
-    return { files: stripTopLevel(readTar(tar)), origin: `archive:${path}` }
+    buf = readFileSync(abs)
   } catch (e) {
-    return { error: `source archive を読めない (${path}): ${e.message}` }
+    return { error: `source archive を読めない (${path}): ${e.message}`, kind: 'SOURCE_UNAVAILABLE' }
   }
+  const r = readArchiveBuffer(buf, { gzip: /\.(tgz|tar\.gz)$/i.test(path) })
+  return r.error ? r : { files: r.files, origin: `archive:${path}` }
 }
 
 function loadFromDir(dir) {
   const abs = resolve(ROOT, dir)
-  if (!existsSync(abs)) return { error: `source ディレクトリが無い: ${dir}` }
+  if (!existsSync(abs)) return { error: `source ディレクトリが無い: ${dir}`, kind: 'SOURCE_UNAVAILABLE' }
   // ファイルを渡されたら archive として読む（**ENOTDIR で落とさない**）
   if (!statSync(abs).isDirectory()) return loadFromArchive(dir)
   const files = new Map()
@@ -189,14 +338,16 @@ function loadFromLocalTag(tag) {
   try {
     execFileSync('git', ['rev-parse', '--verify', `refs/tags/${tag}`], { cwd: ROOT, stdio: ['ignore', 'ignore', 'ignore'] })
   } catch {
-    return { error: `tag ${tag} が手元に無い（fetch していないか、存在しない）` }
+    return { error: `tag ${tag} が手元に無い（fetch していないか、存在しない）`, kind: 'SOURCE_UNAVAILABLE' }
   }
+  let tar
   try {
-    const tar = execFileSync('git', ['archive', '--format=tar', tag], { cwd: ROOT, maxBuffer: 1 << 30 })
-    return { files: readTar(tar), origin: `git-archive:${tag}` }
+    tar = execFileSync('git', ['archive', '--format=tar', tag], { cwd: ROOT, maxBuffer: 1 << 30 })
   } catch (e) {
-    return { error: `git archive に失敗: ${e.message}` }
+    return { error: `git archive に失敗: ${e.message}`, kind: 'SOURCE_UNAVAILABLE' }
   }
+  const r = readArchiveBuffer(tar, { gzip: false })
+  return r.error ? r : { files: r.files, origin: `git-archive:${tag}` }
 }
 
 /**
@@ -214,218 +365,251 @@ async function loadFromGithub(tag) {
   const url = `https://api.github.com/repos/${REPO}/tarball/${tag}`
   let res
   try {
-    res = await fetch(url, { headers: { 'user-agent': 'trs-jack-3d-verify', accept: 'application/vnd.github+json' } })
+    // **timeout を置く（v0.6.0 P1）。**返らない相手に当たると、道具が止まったまま戻らない
+    res = await fetch(url, {
+      headers: { 'user-agent': 'trs-jack-3d-verify', accept: 'application/vnd.github+json' },
+      signal: AbortSignal.timeout(TAR_LIMITS.fetchTimeoutMs),
+    })
   } catch (e) {
-    return { error: `GitHub へ接続できなかった (${url}): ${String(e.message).split('\n')[0]}` }
+    const timedOut = e?.name === 'TimeoutError' || e?.name === 'AbortError'
+    return {
+      error: timedOut
+        ? `GitHub からの応答が ${TAR_LIMITS.fetchTimeoutMs} ms 以内に来なかった (${url})`
+        : `GitHub へ接続できなかった (${url}): ${String(e.message).split('\n')[0]}`,
+      kind: 'SOURCE_UNAVAILABLE',
+    }
   }
-  if (!res.ok) return { error: `GitHub が ${res.status} ${res.statusText} を返した (${url})` }
+  if (!res.ok) return { error: `GitHub が ${res.status} ${res.statusText} を返した (${url})`, kind: 'SOURCE_UNAVAILABLE' }
+  let gz
   try {
-    const gz = Buffer.from(await res.arrayBuffer())
-    return { files: stripTopLevel(readTar(gunzipSync(gz))), origin: `github-tarball:${REPO}@${tag}` }
+    gz = Buffer.from(await res.arrayBuffer())
   } catch (e) {
-    return { error: `取得した tarball を読めなかった: ${String(e.message).split('\n')[0]}` }
+    return { error: `本文を受け取れなかった: ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE' }
   }
+  const r = readArchiveBuffer(gz, { gzip: true })
+  return r.error ? r : { files: r.files, origin: `github-tarball:${REPO}@${tag}` }
 }
 
 // ---------------------------------------------------------------------------
 
-const manifestAbs = resolve(ROOT, MANIFEST)
-if (!existsSync(manifestAbs)) {
-  done({ status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST, reason: 'manifest が無い' }, 2)
-}
-let manifest
-try {
-  manifest = JSON.parse(readFileSync(manifestAbs, 'utf8'))
-} catch (e) {
-  done({ status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST, reason: `manifest を読めない: ${e.message}` }, 2)
-}
+/**
+ * **import されたときは実行しない（v0.6.0）。**
+ * `test/tarHardening.test.ts` が parser を直接呼ぶため。
+ * 以前は import した時点で main が走り、`process.exit(2)` でテストごと落ちていた。
+ */
+const RUN_AS_CLI = typeof process.argv[1] === 'string' && /verifyReleaseSourceInputs\.mjs$/.test(process.argv[1])
 
-const loaded = await (SOURCE_DIR
-  ? loadFromDir(SOURCE_DIR)
-  : FETCH === 'github' && TAG
-    ? loadFromGithub(TAG)
-    : TAG
-      ? loadFromLocalTag(TAG)
-      : { error: '--source か --tag のどちらかが要る' })
+if (RUN_AS_CLI) {
+  const manifestAbs = resolve(ROOT, MANIFEST)
+  if (!existsSync(manifestAbs)) {
+    done({ status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST, reason: 'manifest が無い' }, 2)
+  }
+  let manifest
+  try {
+    manifest = JSON.parse(readFileSync(manifestAbs, 'utf8'))
+  } catch (e) {
+    done({ status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST, reason: `manifest を読めない: ${e.message}` }, 2)
+  }
 
-if (loaded.error) {
-  // **不一致ではない。**取れなかっただけで、検証は「していない」
+  const loaded = await (SOURCE_DIR
+    ? loadFromDir(SOURCE_DIR)
+    : FETCH === 'github' && TAG
+      ? loadFromGithub(TAG)
+      : TAG
+        ? loadFromLocalTag(TAG)
+        : { error: '--source か --tag のどちらかが要る' })
+
+  if (loaded.error) {
+    /**
+     * **3 つを潰さない（v0.6.0 P1）。**
+     *   SOURCE_UNAVAILABLE … 取れなかった（無い・繋がらない・timeout）。検証していない
+     *   ARCHIVE_INVALID    … 取れたが archive が壊れているか敵対的。**中身を信用しない**
+     *   MISMATCH           … 読めたが記録と合わない（下の突き合わせで出る）
+     * v0.5.2 までは前 2 つが同じ SOURCE_UNAVAILABLE だった。
+     * **受け手が記録を保存しても、通信の問題なのか改竄なのか読み分けられない。**
+     */
+    const kind = loaded.kind === 'ARCHIVE_INVALID' ? 'ARCHIVE_INVALID' : 'SOURCE_UNAVAILABLE'
+    done({
+      status: kind,
+      reason: loaded.error,
+      detail: loaded.detail ?? null,
+      manifest: MANIFEST,
+      tag: TAG,
+      fetch: FETCH,
+      note: kind === 'ARCHIVE_INVALID'
+        ? '**これは不一致ではない。**archive そのものが壊れているか、安全に読めない形だったので、'
+          + '中身を見ていない。渡した source を疑うこと。'
+        : '**これは不一致ではない。**source を取れなかったので、検証していない。'
+          + 'network を使わずに確かめるなら --source <展開済みディレクトリ> を渡すこと。',
+    }, 2)
+  }
+
+  const src = loaded.files
+
+  // ---------------------------------------------------------------------------
+  // 突き合わせ
+  // ---------------------------------------------------------------------------
+
+  const results = []
+  for (const f of manifest.inputFiles ?? []) {
+    const recorded = Array.isArray(f.recordedSha256) ? null : f.recordedSha256
+    const data = src.get(f.path)
+    if (data === undefined) {
+      results.push({ path: f.path, outcome: 'MISSING_IN_SOURCE', recordedSha256: f.recordedSha256, actualSha256: null })
+      continue
+    }
+    const actual = sha256(data)
+    results.push({
+      path: f.path,
+      outcome: recorded === null
+        ? 'RECORDED_INCONSISTENT'
+        : actual === recorded ? 'MATCH' : 'MISMATCH',
+      recordedSha256: f.recordedSha256,
+      actualSha256: actual,
+    })
+  }
+
+  // ---------------------------------------------------------------------------
+  // 記録漏れの検出（v0.3.0 フォローアップ P1-2）
+  // ---------------------------------------------------------------------------
+
+  /**
+   * **範囲定義は生成側と共有する。**
+   *
+   * 2026-08-03 まで、ここには `['src/data','src/model']` が直書きされていた。
+   * 生成側 (`provenance.ts`) が読む入力はもっと広かったので、
+   * **manifest から `scripts/`・`schemas/`・`package-lock.json` を落としても素通りした**
+   * （入力 28 件のうち検出できたのは 8 件だけ）。
+   *
+   * **見つからなければ既定値へ戻さない。**戻すと範囲が狭いまま黙って動く——塞いだはずの穴に戻る。
+   */
+  function loadScope() {
+    if (SCOPE_OVERRIDE) {
+      try {
+        return { scope: JSON.parse(readFileSync(resolve(ROOT, SCOPE_OVERRIDE), 'utf8')), origin: `override:${SCOPE_OVERRIDE}` }
+      } catch (e) {
+        return { error: `--scope ${SCOPE_OVERRIDE} を読めない: ${e.message}` }
+      }
+    }
+    const buf = src.get(SCOPE_FILE)
+    if (buf === undefined)
+      return {
+        error: `検証対象の source に ${SCOPE_FILE} が無い`
+          + '（v0.3.0 以前の tag には入っていない）。--scope <file> で明示すれば検出できる。',
+      }
+    try {
+      return { scope: JSON.parse(buf.toString('utf8')), origin: `source:${SCOPE_FILE}` }
+    } catch (e) {
+      return { error: `${SCOPE_FILE} を parse できない: ${e.message}` }
+    }
+  }
+
+  const recordedPaths = new Set((manifest.inputFiles ?? []).map((f) => f.path))
+  const loadedScope = loadScope()
+  const scope = loadedScope.scope ?? null
+
+  /**
+   * **記録されていない入力候補。**範囲定義の中にあるのに manifest へ載っていないファイルは、
+   * digest が覆っていない。モデル・生成器・schema・lockfile のどれを足し忘れても出る。
+   */
+  let extra = []
+  /** 出力にしてはいけないものを入力に記録している＝自己参照の事故 */
+  let selfReferencing = []
+  if (scope) {
+    const inScope = new Set()
+    for (const d of scope.recursiveDirectories ?? [])
+      for (const p of src.keys()) if (p.startsWith(`${d}/`)) inScope.add(p)
+    for (const p of [...(scope.requiredExactFiles ?? []), ...(scope.allowedGeneratedInputs ?? [])])
+      if (src.has(p)) inScope.add(p)
+    extra = [...inScope].filter((p) => !recordedPaths.has(p)).sort()
+
+    const allowed = new Set(scope.allowedGeneratedInputs ?? [])
+    selfReferencing = [...recordedPaths]
+      .filter((p) => (scope.excludedOutputs ?? []).some((d) => p.startsWith(`${d}/`)) && !allowed.has(p))
+      .sort()
+  }
+
+  /**
+   * **0 件を検証して「OK」と言わない。**
+   * manifest が空なら、この実行は何も確かめていない。通すほうが危ない。
+   */
+  if (!results.length) {
+    done({
+      status: 'NOTHING_TO_VERIFY',
+      origin: loaded.origin,
+      manifest: MANIFEST,
+      reason: 'manifest の inputFiles が 0 件。**この実行は何も検証していない。**',
+    }, 2)
+  }
+
+  const counts = results.reduce((m, r) => ({ ...m, [r.outcome]: (m[r.outcome] ?? 0) + 1 }), {})
+  const bad = results.filter((r) => r.outcome !== 'MATCH')
+  const status = bad.length || extra.length || selfReferencing.length ? 'MISMATCH' : 'OK'
+
+  /**
+   * **記録漏れの検出をやったのか、やらなかったのか。**
+   *
+   * 範囲定義が無いときに黙って「候補 0 件」と出すと、受け手には
+   * 「探して見つからなかった」と読める。**探していないなら探していないと書く。**
+   */
+  const detection = scope
+    ? {
+        performed: true,
+        scopeSource: loadedScope.origin,
+        scopeSchemaId: scope.schemaId,
+        recursiveDirectories: scope.recursiveDirectories ?? [],
+        requiredExactFiles: (scope.requiredExactFiles ?? []).length,
+        allowedGeneratedInputs: (scope.allowedGeneratedInputs ?? []).length,
+        excludedOutputs: scope.excludedOutputs ?? [],
+      }
+    : {
+        performed: false,
+        scopeSource: null,
+        reason: loadedScope.error,
+        note: '**記録漏れの検出はしていない。**既定の範囲へ戻すことは意図的にしていない——'
+          + '狭い範囲のまま黙って通すのが、この範囲定義で塞いだ穴そのものだから。'
+          + `sha256 の突き合わせ（${results.length} 件）は実施済みで、そちらの結果は有効である。`,
+      }
+
   done({
-    status: 'SOURCE_UNAVAILABLE',
-    reason: loaded.error,
+    status,
+    origin: loaded.origin,
+    networkUsed: loaded.origin.startsWith('github-tarball'),
     manifest: MANIFEST,
     tag: TAG,
-    fetch: FETCH,
-    note: '**これは不一致ではない。**source を取れなかったので、検証していない。'
-      + 'network を使わずに確かめるなら --source <展開済みディレクトリ> を渡すこと。',
-  }, 2)
+    /** manifest 自身が名乗っている数（**自己申告**） */
+    selfReported: {
+      inputFilesTotal: manifest.inputFilesTotal,
+      inconsistentAcrossArtifacts: manifest.inconsistentAcrossArtifacts,
+      mismatchedWithWorkingTreeAtBuild: manifest.mismatchedWithWorkingTreeAtBuild,
+      generatedFromCommit: manifest.generatedFromCommit,
+    },
+    /** ここで実際に計算し直した結果（**独立検証**） */
+    independentVerification: {
+      checked: results.length,
+      matched: counts.MATCH ?? 0,
+      mismatched: counts.MISMATCH ?? 0,
+      missingInSource: counts.MISSING_IN_SOURCE ?? 0,
+      recordedInconsistent: counts.RECORDED_INCONSISTENT ?? 0,
+      unrecordedInputCandidates: extra.length,
+      selfReferencingInputs: selfReferencing.length,
+    },
+    unrecordedInputDetection: detection,
+    mismatches: bad,
+    unrecordedInputCandidates: extra,
+    /** 出力を入力として記録している＝artifact を作り直すたびに digest が変わる */
+    selfReferencingInputs: selfReferencing,
+    /** **digest が覆っていない範囲。**「一致した」を「全部同じだった」と読ませない */
+    notCoveredByDigest: scope?.notCovered ?? null,
+    notes: [
+      '**自己申告 (selfReported) と独立検証 (independentVerification) を分けてある。**'
+        + '前者は manifest がそう名乗っているだけで、後者がこの実行で計算し直した結果である。',
+      'unrecordedInputCandidates は範囲定義 (source-input-scope.v1.json) の中にあるのに'
+        + ' manifest へ載っていないファイル。**digest が覆っていない入力**を意味する。'
+        + '**範囲は生成側 (provenance.ts) と共有している。**',
+      'notCoveredByDigest は、範囲定義が「覆えない」と自己申告しているもの'
+        + '（Node のバージョン・ロケール・環境変数など）。**一致は、これらが同じだったことを意味しない。**',
+      'この検証はファイルを 1 つも書かない。tar は展開せずメモリ上で読んでいる。',
+    ],
+  }, status === 'OK' ? 0 : 1)
 }
-
-const src = loaded.files
-
-// ---------------------------------------------------------------------------
-// 突き合わせ
-// ---------------------------------------------------------------------------
-
-const results = []
-for (const f of manifest.inputFiles ?? []) {
-  const recorded = Array.isArray(f.recordedSha256) ? null : f.recordedSha256
-  const data = src.get(f.path)
-  if (data === undefined) {
-    results.push({ path: f.path, outcome: 'MISSING_IN_SOURCE', recordedSha256: f.recordedSha256, actualSha256: null })
-    continue
-  }
-  const actual = sha256(data)
-  results.push({
-    path: f.path,
-    outcome: recorded === null
-      ? 'RECORDED_INCONSISTENT'
-      : actual === recorded ? 'MATCH' : 'MISMATCH',
-    recordedSha256: f.recordedSha256,
-    actualSha256: actual,
-  })
-}
-
-// ---------------------------------------------------------------------------
-// 記録漏れの検出（v0.3.0 フォローアップ P1-2）
-// ---------------------------------------------------------------------------
-
-/**
- * **範囲定義は生成側と共有する。**
- *
- * 2026-08-03 まで、ここには `['src/data','src/model']` が直書きされていた。
- * 生成側 (`provenance.ts`) が読む入力はもっと広かったので、
- * **manifest から `scripts/`・`schemas/`・`package-lock.json` を落としても素通りした**
- * （入力 28 件のうち検出できたのは 8 件だけ）。
- *
- * **見つからなければ既定値へ戻さない。**戻すと範囲が狭いまま黙って動く——塞いだはずの穴に戻る。
- */
-function loadScope() {
-  if (SCOPE_OVERRIDE) {
-    try {
-      return { scope: JSON.parse(readFileSync(resolve(ROOT, SCOPE_OVERRIDE), 'utf8')), origin: `override:${SCOPE_OVERRIDE}` }
-    } catch (e) {
-      return { error: `--scope ${SCOPE_OVERRIDE} を読めない: ${e.message}` }
-    }
-  }
-  const buf = src.get(SCOPE_FILE)
-  if (buf === undefined)
-    return {
-      error: `検証対象の source に ${SCOPE_FILE} が無い`
-        + '（v0.3.0 以前の tag には入っていない）。--scope <file> で明示すれば検出できる。',
-    }
-  try {
-    return { scope: JSON.parse(buf.toString('utf8')), origin: `source:${SCOPE_FILE}` }
-  } catch (e) {
-    return { error: `${SCOPE_FILE} を parse できない: ${e.message}` }
-  }
-}
-
-const recordedPaths = new Set((manifest.inputFiles ?? []).map((f) => f.path))
-const loadedScope = loadScope()
-const scope = loadedScope.scope ?? null
-
-/**
- * **記録されていない入力候補。**範囲定義の中にあるのに manifest へ載っていないファイルは、
- * digest が覆っていない。モデル・生成器・schema・lockfile のどれを足し忘れても出る。
- */
-let extra = []
-/** 出力にしてはいけないものを入力に記録している＝自己参照の事故 */
-let selfReferencing = []
-if (scope) {
-  const inScope = new Set()
-  for (const d of scope.recursiveDirectories ?? [])
-    for (const p of src.keys()) if (p.startsWith(`${d}/`)) inScope.add(p)
-  for (const p of [...(scope.requiredExactFiles ?? []), ...(scope.allowedGeneratedInputs ?? [])])
-    if (src.has(p)) inScope.add(p)
-  extra = [...inScope].filter((p) => !recordedPaths.has(p)).sort()
-
-  const allowed = new Set(scope.allowedGeneratedInputs ?? [])
-  selfReferencing = [...recordedPaths]
-    .filter((p) => (scope.excludedOutputs ?? []).some((d) => p.startsWith(`${d}/`)) && !allowed.has(p))
-    .sort()
-}
-
-/**
- * **0 件を検証して「OK」と言わない。**
- * manifest が空なら、この実行は何も確かめていない。通すほうが危ない。
- */
-if (!results.length) {
-  done({
-    status: 'NOTHING_TO_VERIFY',
-    origin: loaded.origin,
-    manifest: MANIFEST,
-    reason: 'manifest の inputFiles が 0 件。**この実行は何も検証していない。**',
-  }, 2)
-}
-
-const counts = results.reduce((m, r) => ({ ...m, [r.outcome]: (m[r.outcome] ?? 0) + 1 }), {})
-const bad = results.filter((r) => r.outcome !== 'MATCH')
-const status = bad.length || extra.length || selfReferencing.length ? 'MISMATCH' : 'OK'
-
-/**
- * **記録漏れの検出をやったのか、やらなかったのか。**
- *
- * 範囲定義が無いときに黙って「候補 0 件」と出すと、受け手には
- * 「探して見つからなかった」と読める。**探していないなら探していないと書く。**
- */
-const detection = scope
-  ? {
-      performed: true,
-      scopeSource: loadedScope.origin,
-      scopeSchemaId: scope.schemaId,
-      recursiveDirectories: scope.recursiveDirectories ?? [],
-      requiredExactFiles: (scope.requiredExactFiles ?? []).length,
-      allowedGeneratedInputs: (scope.allowedGeneratedInputs ?? []).length,
-      excludedOutputs: scope.excludedOutputs ?? [],
-    }
-  : {
-      performed: false,
-      scopeSource: null,
-      reason: loadedScope.error,
-      note: '**記録漏れの検出はしていない。**既定の範囲へ戻すことは意図的にしていない——'
-        + '狭い範囲のまま黙って通すのが、この範囲定義で塞いだ穴そのものだから。'
-        + `sha256 の突き合わせ（${results.length} 件）は実施済みで、そちらの結果は有効である。`,
-    }
-
-done({
-  status,
-  origin: loaded.origin,
-  networkUsed: loaded.origin.startsWith('github-tarball'),
-  manifest: MANIFEST,
-  tag: TAG,
-  /** manifest 自身が名乗っている数（**自己申告**） */
-  selfReported: {
-    inputFilesTotal: manifest.inputFilesTotal,
-    inconsistentAcrossArtifacts: manifest.inconsistentAcrossArtifacts,
-    mismatchedWithWorkingTreeAtBuild: manifest.mismatchedWithWorkingTreeAtBuild,
-    generatedFromCommit: manifest.generatedFromCommit,
-  },
-  /** ここで実際に計算し直した結果（**独立検証**） */
-  independentVerification: {
-    checked: results.length,
-    matched: counts.MATCH ?? 0,
-    mismatched: counts.MISMATCH ?? 0,
-    missingInSource: counts.MISSING_IN_SOURCE ?? 0,
-    recordedInconsistent: counts.RECORDED_INCONSISTENT ?? 0,
-    unrecordedInputCandidates: extra.length,
-    selfReferencingInputs: selfReferencing.length,
-  },
-  unrecordedInputDetection: detection,
-  mismatches: bad,
-  unrecordedInputCandidates: extra,
-  /** 出力を入力として記録している＝artifact を作り直すたびに digest が変わる */
-  selfReferencingInputs: selfReferencing,
-  /** **digest が覆っていない範囲。**「一致した」を「全部同じだった」と読ませない */
-  notCoveredByDigest: scope?.notCovered ?? null,
-  notes: [
-    '**自己申告 (selfReported) と独立検証 (independentVerification) を分けてある。**'
-      + '前者は manifest がそう名乗っているだけで、後者がこの実行で計算し直した結果である。',
-    'unrecordedInputCandidates は範囲定義 (source-input-scope.v1.json) の中にあるのに'
-      + ' manifest へ載っていないファイル。**digest が覆っていない入力**を意味する。'
-      + '**範囲は生成側 (provenance.ts) と共有している。**',
-    'notCoveredByDigest は、範囲定義が「覆えない」と自己申告しているもの'
-      + '（Node のバージョン・ロケール・環境変数など）。**一致は、これらが同じだったことを意味しない。**',
-    'この検証はファイルを 1 つも書かない。tar は展開せずメモリ上で読んでいる。',
-  ],
-}, status === 'OK' ? 0 : 1)

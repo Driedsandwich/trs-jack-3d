@@ -190,7 +190,15 @@ export const resourceCases = () => [
     Array.from({ length: 20000 }, (_, i) => ({ name: `${TOP}/f${i}.txt`, data: 'x' })),
   ) },
   { id: 'res-huge-entry', tar: buildTar([{ name: `${TOP}/big.bin`, data: Buffer.alloc(12 << 20, 0x41) }]) },
-  { id: 'res-long-path', tar: buildTar([{ name: `${TOP}/${'a/'.repeat(3000)}f.txt`, data: 'x' }]) },
+  /**
+   * **長いパスは USTAR の name 欄（100 バイト）に入らない。**
+   * 素の header に書くと切り捨てられて短いパスになり、上限を試験できない
+   * （2026-08-06 に実測して気づいた）。GNU long name 経由で渡す。
+   */
+  { id: 'res-long-path', tar: buildTar([
+    { name: '././@LongLink', type: 'L', data: `${TOP}/${'a/'.repeat(3000)}f.txt\0` },
+    { name: `${TOP}/truncated`, data: 'x' },
+  ]) },
   { id: 'res-size-overflow', tar: buildTar([{ name: `${TOP}/a.txt`, declaredSize: 0o77777777777, data: 'A' }]) },
 ]
 

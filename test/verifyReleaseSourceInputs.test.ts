@@ -287,12 +287,23 @@ describe('§5-3c --source に archive を渡せる', () => {
     expect(String(fromDir.json.origin)).toContain('directory:')
   })
 
-  it('壊れた archive は SOURCE_UNAVAILABLE（不一致に潰さない）', () => {
+  /**
+   * **v0.6.0 で ARCHIVE_INVALID を分けた（TOOL_VERSION 5）。**
+   * v0.5.2 までは「取れなかった」も「取れたが壊れている」も SOURCE_UNAVAILABLE だった。
+   * 受け手が記録を保存しても、**通信の問題なのか改竄なのかを読み分けられない。**
+   */
+  it('壊れた archive は ARCHIVE_INVALID（取れなかったのとは別に扱う）', () => {
     const broken = join(mkdtempSync(join(tmpdir(), 'brokenarch-')), 'src.tar.gz')
     writeFileSync(broken, Buffer.from('これは tar.gz ではない'))
     const r = run(['--manifest', 'artifacts/source-input-manifest.json', '--source', broken])
+    expect(r.json.status).toBe('ARCHIVE_INVALID')
+    expect(String(r.json.reason)).toContain('gzip')
+    expect(String(r.json.note)).toContain('不一致ではない')
+  })
+
+  it('**存在しない archive は SOURCE_UNAVAILABLE のまま**（2 つを取り違えていない）', () => {
+    const r = run(['--manifest', 'artifacts/source-input-manifest.json', '--source', '/no/such/src.tar.gz'])
     expect(r.json.status).toBe('SOURCE_UNAVAILABLE')
-    expect(String(r.json.reason)).toContain('archive')
   })
 })
 
