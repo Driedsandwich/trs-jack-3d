@@ -133,6 +133,11 @@ function declarations() {
     ['docs/VERIFICATION_PLAN.md', 'Ring2（GND）= **-0.34**', delta['trrs.jack.contact.ring2.axialCenter'] === -0.34],
     ['docs/VERIFICATION_PLAN.md', '> **Tip だけが 1.45 mm 奥**です', delta['trrs.jack.contact.tip.axialCenter'] === 1.45],
     ['docs/REAL_JACK_COMPARISON.md', 'Tip 接点が 1.45 mm 奥へ動いたため', delta['trrs.jack.contact.tip.axialCenter'] === 1.45],
+    // 募集文（2026-08-06 追記）。**測る方が最初に読む数字なので、宣言で縛る**
+    ['docs/VERIFICATION_PLAN.md', '| 見分けたいのは | すき間が **2.14 mm** か **0.69 mm** か |',
+      tp.assumed.L.shoulderGapMm === 2.14 && tp.drawing.L.shoulderGapMm === 0.69],
+    ['docs/VERIFICATION_PLAN.md', '| その差 | **1.45 mm** ＝ **デジタルノギスの分解能 0.01 mm の 145 倍** |',
+      Math.abs(gap('L')) === 1.45 && Math.round(Math.abs(gap('L')) / 0.01) === 145],
     ['docs/V060_PLAN_20260805.md', 'IV028  nominalStartMm 13.3  /  nominalEndMm 13.52   幅 0.22 mm',
       iv.nominalStartMm === 13.3 && iv.nominalEndMm === 13.52],
     ['docs/V060_MEASUREMENT_DECISION_20260805.md', 'すき間 **2.14 mm** か **0.69 mm** か',
