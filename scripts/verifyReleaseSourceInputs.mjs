@@ -475,20 +475,56 @@ function loadFromDir(dir) {
    * リンクは**追わずに読み飛ばす**。archive 側（typeflag `1`/`2`）と同じ扱いで、
    * **中身が無いのに「source にあった」ことにしない**ためでもある。
    */
+  /**
+   * **archive と同じ上限をディレクトリにも効かせる（v0.6.2・外部監査 P1）。**
+   *
+   * v0.6.1 は archive 側にだけ上限があり、ディレクトリ経路は**中身を全部 `readFileSync`** していた。
+   * 実測（2026-08-06）: 検証に使わない 70 MB のファイルを 1 個置くだけで、
+   * **最大 RSS が 43.8 MB → 114.8 MB** になった。**検算に使わないデータで潰せる。**
+   *
+   * 読む前に `lstat` で件数・パス長・サイズ・総量を見る。
+   * **上限は archive と同じ値を使う**（片方だけ緩いと、緩いほうから入られる）。
+   */
+  let count = 0
+  let total = 0
   const walk = (rel) => {
     for (const n of readdirSync(join(abs, rel) || abs).sort()) {
       const r = rel ? `${rel}/${n}` : n
       if (n === 'node_modules' || n === '.git') continue
       const st = lstatSync(join(abs, r))
       if (st.isSymbolicLink()) { skippedLinks.push(r); continue }
-      if (st.isDirectory()) walk(r)
-      else if (st.isFile()) files.set(r, readFileSync(join(abs, r)))
+      if (st.isDirectory()) { walk(r); continue }
+      if (!st.isFile()) continue
+
+      if (++count > TAR_LIMITS.maxEntries) {
+        throw new ArchiveInvalid(`ファイルが多すぎる (> ${TAR_LIMITS.maxEntries})`, { count })
+      }
+      if (r.length > TAR_LIMITS.maxPathLength) {
+        throw new ArchiveInvalid(`パスが長すぎる (${r.length} > ${TAR_LIMITS.maxPathLength})`, { name: r.slice(0, 80) })
+      }
+      if (st.size > TAR_LIMITS.maxEntryBytes) {
+        throw new ArchiveInvalid(`ファイルが大きすぎる (${st.size} > ${TAR_LIMITS.maxEntryBytes})`, { name: r, size: st.size })
+      }
+      total += st.size
+      if (total > TAR_LIMITS.maxTotalBytes) {
+        throw new ArchiveInvalid(`総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total })
+      }
+      // **読むのは上限を全部通ったあと。**判定より先に載せない
+      files.set(r, readFileSync(join(abs, r)))
     }
   }
   try {
     walk('')
   } catch (e) {
-    // **fs のエラーを構造化 status へ変える。**生の例外で落とすと出力が JSON でなくなる
+    /**
+     * **上限超過（ArchiveInvalid）と、fs のエラーを分ける。**
+     * 前者は「取れたが受け取れない量／形」、後者は「取れなかった」。
+     * どちらも生の例外で落とさない——出力が JSON でなくなると、
+     * 受け手は「合わなかった」と「道具が落ちた」を区別できない。
+     */
+    if (e instanceof ArchiveInvalid) {
+      return { error: `source ディレクトリ (${dir}): ${e.message}`, kind: 'ARCHIVE_INVALID', detail: e.detail }
+    }
     return {
       error: `source ディレクトリを走査できない (${dir}): ${String(e.message).split('\n')[0]}`,
       kind: 'SOURCE_UNAVAILABLE',
