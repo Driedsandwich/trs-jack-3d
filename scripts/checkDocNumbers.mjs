@@ -122,6 +122,10 @@ function declarations() {
   const tp = rj.testerPredictions
   const gap = (k) => +(tp.assumed[k].shoulderGapMm - tp.drawing[k].shoulderGapMm).toFixed(2)
   const trrs = JSON.parse(read('artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json'))
+  const trs = JSON.parse(read('artifacts/half_plug_topology_profile.v3.trs_jack_trs.json'))
+  const tc = JSON.parse(read('artifacts/test_counts.json'))
+  const vr = JSON.parse(read('artifacts/validation-results.json'))
+  const vs = JSON.parse(read('artifacts/verification_summary.json')).gradeCounts
   const iv = trrs.intervals.find((x) => x.intervalId === 'IV028')
 
   return [
@@ -144,6 +148,16 @@ function declarations() {
       tp.assumed.L.shoulderGapMm === 2.14 && tp.drawing.L.shoulderGapMm === 0.69],
     ['docs/V060_MEASUREMENT_DECISION_20260805.md', '8.33 か 8.67 か',
       tp.assumed.GND.shoulderGapMm === 8.33 && tp.drawing.GND.shoulderGapMm === 8.67],
+    // v0.6.0 の release notes（受け手が最初に読む数字なので宣言で縛る）
+    ['docs/release/v0.6.0-notes.md', `v0.6.0  ${trs.profileId}`, true],
+    ['docs/release/v0.6.0-notes.md', `v0.6.0  ${trrs.profileId}`, true],
+    ['docs/release/v0.6.0-notes.md', `| 単体テスト | 570 | **${tc.total}**（skip ${tc.skipped}）|`.replace('）|', '） |'),
+      tc.skipped === 0],
+    ['docs/release/v0.6.0-notes.md', `| 検証対象（\`validate:profiles\`） | 13 | **${vr.targetsTotal}** |`, true],
+    ['docs/release/v0.6.0-notes.md', `| 根拠の区分 | FACT ${vs.FACT} / DERIVED ${vs.DERIVED} / ASSUMPTION ${vs.ASSUMPTION} | **変わらず** |`, true],
+    ['docs/release/v0.6.0-notes.md', `**変わらず**（TRS ${trs.intervals.length}/${trs.events.length}・TRRS ${trrs.intervals.length}/${trrs.events.length}）`, true],
+    ['docs/release/v0.6.0-notes.md', trrs.modelLimitations.physicalVerificationRef.split(' ')[0],
+      trrs.modelLimitations.verifiedPhysical === false],
   ]
 }
 
