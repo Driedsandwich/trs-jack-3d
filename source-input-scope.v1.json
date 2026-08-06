@@ -3,37 +3,33 @@
  "schemaId": "trs-jack-3d-source-input-scope.v1",
  "purpose": "artifact の inputDigest が覆う入力の範囲を、生成側と検証側が同じ 1 か所から読むための定義。**この定義自身も入力である**（requiredExactFiles に入っている）。ここを変えれば digest が変わるのが正しい。",
  "why": "2026-08-03 まで、検証側の未記録入力の探索範囲は verifyReleaseSourceInputs.mjs に直書きされた ['src/data','src/model'] だけだった。manifest から scripts/・schemas/・package-lock.json を落としても exit 0 で素通りし、**入力 28 件のうち記録漏れを検出できるのは 8 件だけだった**。生成側の一覧（provenance.ts の add 呼び出し）と検証側の探索範囲が別々に書かれていたのが原因で、片方だけ増やしても気づけない。",
-
  "recursiveDirectories": [
   "src/data",
   "src/model"
  ],
-
  "requiredExactFiles": [
-  "package-lock.json",
   "contract-migration.v1.json",
+  "package-lock.json",
   "schemas/event-sensitivity.v2.schema.json",
   "schemas/half-plug-topology-profile.v3.schema.json",
   "schemas/topology-robustness.v3.schema.json",
+  "scripts/contractMigration.mjs",
   "scripts/exportHalfPlugProfile.ts",
+  "scripts/measurementGate.mjs",
   "scripts/provenance.ts",
   "scripts/searchTopologyRobustness.ts",
   "scripts/sensitivityEvents.ts",
   "source-input-scope.v1.json"
  ],
-
  "allowedGeneratedInputs": [
   "artifacts/sensitivity.json",
   "artifacts/sensitivity.trs_jack_trrs.json",
   "artifacts/sensitivity.trs_jack_trs.json"
  ],
-
  "excludedOutputs": [
   "artifacts"
  ],
-
  "excludedOutputsNote": "ディレクトリ接頭辞。**artifacts/ は生成物なので入力にしてはいけない**（自己参照になり、artifact を作り直すたびに digest が変わって固定できなくなる）。唯一の例外が allowedGeneratedInputs の 3 件で、profile が感度解析の結果を実際に読んでいる。ここに挙げた接頭辞の下のファイルが allowedGeneratedInputs 以外で入力に記録されていたら、それは事故である。",
-
  "generators": {
   "profile": {
    "schema": "schemas/half-plug-topology-profile.v3.schema.json",
@@ -53,17 +49,16 @@
    "usesGeneratedInputs": false
   }
  },
-
  "generatorsNote": "generators は requiredExactFiles の**部分集合を役割別に見た射影**であり、別の一覧ではない。ここに現れる schema / generator のパスはすべて requiredExactFiles に載っていなければならない（validate:profiles が照合する）。増やすときは両方に足す。",
-
  "commonInputs": [
-  "scripts/provenance.ts",
-  "source-input-scope.v1.json",
   "contract-migration.v1.json",
-  "package-lock.json"
+  "package-lock.json",
+  "scripts/contractMigration.mjs",
+  "scripts/measurementGate.mjs",
+  "scripts/provenance.ts",
+  "source-input-scope.v1.json"
  ],
- "commonInputsNote": "どの生成器も読む入力。recursiveDirectories 配下と合わせて、全 artifact に共通で入る。",
-
+ "commonInputsNote": "どの生成器も読む入力。recursiveDirectories 配下と合わせて、全 artifact に共通で入る。 / **scripts/contractMigration.mjs と scripts/measurementGate.mjs を 2026-08-06 に足した（外部監査 P0-1）。** それまで、生成器が import している実行コードなのに入力に入っておらず、 measurementGate.mjs を書き換えて profile の中身が変わっても inputDigest も profileId も動かなかった（実測）。 つまり ID が「何を入力にして作ったか」を指していなかった。 / **measurementGate.mjs を import しているのは profile 生成器だけである。** 生成器ごとの依存を書くには generators へ欄を足すことになり、 判定器で実測したところ source-input-scope.v1 が BUMP（下流の lock が止まる）になる。 入れすぎ（関係ない生成器の ID まで動く）と入れ忘れ（変えても ID が動かない）なら、 **入れすぎのほうが安全側**なので common に置いた。",
  "notCovered": [
   {
    "what": "Node.js の実行系そのもの（node / tsx のバージョン）",
