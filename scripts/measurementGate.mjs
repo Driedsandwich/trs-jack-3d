@@ -379,3 +379,33 @@ export function predictionsFromEvents(events, fullDepthMm) {
   void fullDepthMm
   return out
 }
+
+/**
+ * **配布物だけから予測を作り直す（v0.6.2・外部監査 P0-3）。**
+ *
+ * `validateProfiles` は plain node で動くので、モデル（TypeScript）を読めない。
+ * v0.6.1 まではそのため `predictions: {}` で判定を呼び、
+ * **「予測が渡されていない」を「まだ true を名乗ってよい」と読み替えていた。**
+ * 実測（2026-08-06）: モデルの予測 2.14 mm と 1.45 mm 食い違う記録が台帳にあっても、
+ * その規則は `couldBeVerified = true` を返した。**矛盾を検出できていなかった。**
+ *
+ * ここは artifact だけから予測を組み直す。
+ *
+ * | 観測点 | どこから出すか |
+ * |---|---|
+ * | `RING_BREAK_OPEN_DEPTH_MM` / `TIP_BREAK_OPEN_DEPTH_MM` | **profile 自身の event 列**（`eventIdentity` で引く） |
+ * | `L_FIRST_CONTACT_SHOULDER_GAP_MM` | `artifacts/real_jack_comparison.json` の `testerPredictions.assumed.L` |
+ *
+ * L は別 variant の量なので profile の event 列には出ない（→ `predictionsFromEvents`）。
+ * 代わりに、**同じモデルから作られた別 artifact** が同じ値を持っているので、そちらを使う。
+ * **生成器側は自分の計算値がこれと一致することを確かめてから書く**ので、
+ * 2 つが黙ってずれることはない（`scripts/exportHalfPlugProfile.ts`）。
+ *
+ * **渡せなかった観測点は満たせない**（fail closed）。空で呼ぶのと同じにはしない。
+ */
+export function predictionsFromArtifacts({ profile, realJackComparison } = {}) {
+  const out = { ...predictionsFromEvents(profile?.events, profile?.fullInsertionDepthMm) }
+  const l = realJackComparison?.testerPredictions?.assumed?.L?.shoulderGapMm
+  if (typeof l === 'number' && Number.isFinite(l)) out.L_FIRST_CONTACT_SHOULDER_GAP_MM = l
+  return out
+}

@@ -31,7 +31,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'n
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkWindowInvariants } from './robustnessWindows.mjs'
-import { checkRecord, evaluateGate, REQUIRED_FOR_PROFILE, GATE_DOCUMENT, LEDGER_PATH, GATE_VERSION, CLAIM_SCOPE } from './measurementGate.mjs'
+import { checkRecord, evaluateGate, predictionsFromArtifacts, REQUIRED_FOR_PROFILE, GATE_DOCUMENT, LEDGER_PATH, GATE_VERSION, CLAIM_SCOPE } from './measurementGate.mjs'
 
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
@@ -272,11 +272,52 @@ const SEMANTIC = {
       if (kv.required !== (required.join(',') || '-')) {
         errs.push(`${f}: physicalVerificationRef の required が条文と違う (${kv.required} ≠ ${required.join(',') || '-'})`)
       }
-      // **判定そのものをやり直す。**予測はモデル側なので、ここでは「記録が足りているか」だけ見る
-      const gate = evaluateGate({ ledger: a, profileVariantId: p.variantId, predictions: {} })
-      const couldBeVerified = gate.verified || gate.rejected.some((r) => r.reasons.some((x) => x.includes('予測が渡されていない')))
-      if (p.modelLimitations.verifiedPhysical === true && !couldBeVerified) {
-        errs.push(`${f}: verifiedPhysical が true だが、現在の台帳には条件を満たす記録が無い`)
+      /**
+       * **判定そのものを、予測ごとやり直す（v0.6.2・外部監査 P0-3）。**
+       *
+       * v0.6.1 は `predictions: {}` で呼び、「予測が渡されていない」という却下理由を
+       * **「まだ true を名乗ってよい」と読み替えていた。**
+       * そのため、モデルの予測と 1.45 mm 食い違う記録が台帳にあっても、
+       * `verifiedPhysical: true` を手で書いた profile をこの規則では拒めなかった（実測）。
+       *
+       * 予測は artifact だけから組み直す（→ `predictionsFromArtifacts`）。
+       * **組めなかった観測点は満たせない**ので、fail closed のままである。
+       */
+      let realJackComparison = null
+      try { realJackComparison = read('artifacts/real_jack_comparison.json') } catch { /* 無ければ L は組めない */ }
+      const predictions = predictionsFromArtifacts({ profile: p, realJackComparison })
+      const gate = evaluateGate({ ledger: a, profileVariantId: p.variantId, predictions })
+
+      for (const id of REQUIRED_FOR_PROFILE[p.variantId] ?? []) {
+        if (typeof predictions[id] !== 'number') {
+          errs.push(`${f}: 観測点 ${id} の予測を配布物から作り直せない（作り直せないものは検証済みにしない）`)
+        }
+      }
+
+      // **やり直した判定と、profile が名乗っている値を突き合わせる**
+      if (p.modelLimitations.verifiedPhysical !== gate.verified) {
+        errs.push(`${f}: verifiedPhysical (${p.modelLimitations.verifiedPhysical}) が、`
+          + `いまの台帳と現行の予測から作り直した判定 (${gate.verified}) と違う`)
+      }
+      for (const [key, actual] of [
+        ['verdict', gate.verdict],
+        ['conflicting', String(gate.conflicting.length)],
+        ['notCertified', String(gate.notCertified.length)],
+        ['retracted', String(gate.retracted.length)],
+        ['dupIds', String(gate.duplicateRecordIds.length)],
+        ['ambiguous', gate.ambiguous.join(',') || '-'],
+        ['satisfied', gate.satisfied.map((x) => x.observation).join(',') || '-'],
+        ['missing', gate.missing.join(',') || '-'],
+        ['decidedBy', gate.decidedBy.join(',') || '-'],
+      ]) {
+        if (kv[key] !== undefined && kv[key] !== actual) {
+          errs.push(`${f}: physicalVerificationRef の ${key} (${kv[key]}) が、作り直した判定 (${actual}) と違う`)
+        }
+      }
+      if (gate.conflicting.length) {
+        errs.push(`${f}: 台帳に**現行モデルと矛盾する記録**がある: `
+          + gate.conflicting.map((c) => `${c.recordId} (実測 ${c.measuredMm} / 予測 ${c.predictedMm} / 差 ${c.deltaMm})`).join(', ')
+          + '。モデルのほうを直すこと')
       }
       /**
        * **`false` なのに「足りない理由」がどこにも書いていない状態を作らせない（条文 v2）。**

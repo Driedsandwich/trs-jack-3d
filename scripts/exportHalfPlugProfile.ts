@@ -20,7 +20,7 @@
  */
 
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 import { getModel } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
@@ -547,6 +547,28 @@ const gatePredictions: Record<string, number> = {
 }
 const lGap = predictLShoulderGap()
 if (typeof lGap === 'number') gatePredictions.L_FIRST_CONTACT_SHOULDER_GAP_MM = lGap
+
+/**
+ * **受け手（と validator）が使う値と、こちらの計算値が同じであることを確かめる（v0.6.2）。**
+ *
+ * `validateProfiles` はモデルを読めないので、L の予測を
+ * `artifacts/real_jack_comparison.json` の `testerPredictions.assumed.L` から取る。
+ * その 2 つが黙ってずれると、**validator は別の予測で判定することになる。**
+ * ここで止めておけば、ずれたまま出荷されることはない。
+ */
+if (typeof lGap === 'number') {
+  const rjPath = resolve(ROOT, 'artifacts/real_jack_comparison.json')
+  if (existsSync(rjPath)) {
+    const rj = JSON.parse(readFileSync(rjPath, 'utf8'))
+    const fromArtifact = rj?.testerPredictions?.assumed?.L?.shoulderGapMm
+    if (typeof fromArtifact === 'number' && Math.abs(fromArtifact - lGap) > 1e-6) {
+      throw new Error(
+        `L の予測がずれている: モデル ${lGap} mm ≠ real_jack_comparison ${fromArtifact} mm\n`
+        + '  validator はこの artifact 側の値で判定をやり直す。両方を作り直すこと。',
+      )
+    }
+  }
+}
 
 const gate = evaluateGate({ ledger, profileVariantId: String(VARIANT), predictions: gatePredictions })
 

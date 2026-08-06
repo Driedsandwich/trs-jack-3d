@@ -82,3 +82,12 @@ export declare function predictionsFromEvents(
   events: unknown,
   fullDepthMm?: number,
 ): Record<string, number>
+
+/**
+ * 配布物だけから予測を作り直す（validator 用・v0.6.2）。
+ * profile の event 列と real_jack_comparison から組む。**渡せない観測点は満たせない**
+ */
+export declare function predictionsFromArtifacts(o?: {
+  profile?: unknown
+  realJackComparison?: unknown
+}): Record<string, number>
