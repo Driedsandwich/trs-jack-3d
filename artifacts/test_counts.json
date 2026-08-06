@@ -174,7 +174,7 @@
  },
  "generatedAt": "2026-08-06",
  "note": "npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。byFile は npm run check:vacuity の下限としても使う。件数が減る変更は理由を書く。",
- "total": 726,
+ "total": 770,
  "byFile": {
   "ciWorkflow.test.ts": 28,
   "contact.test.ts": 41,
@@ -182,9 +182,9 @@
   "corruptTar.test.ts": 18,
   "dimensions.test.ts": 16,
   "docs.test.ts": 72,
-  "generatorDependencyClosure.test.ts": 7,
+  "generatorDependencyClosure.test.ts": 14,
   "halfPlugProfile.test.ts": 23,
-  "measurementGate.test.ts": 40,
+  "measurementGate.test.ts": 41,
   "provenance.test.ts": 8,
   "realJackComparison.test.ts": 12,
   "releaseIndex.test.ts": 28,
@@ -195,6 +195,7 @@
   "sensitivityVariant.test.ts": 9,
   "sourceInputScope.test.ts": 26,
   "sourceVerificationResult.test.ts": 23,
+  "tarExtractionOracle.test.ts": 36,
   "tarHardening.test.ts": 56,
   "topology.test.ts": 15,
   "topologyRobustness.test.ts": 44,
@@ -212,5 +213,5 @@
  "runner": "vitest",
  "runnerVersion": "4.1.10",
  "nodeVersion": "v22.22.3",
- "generatedFromCommit": "1783ee06fff709958f3d2eb5fe19442d5943f831"
+ "generatedFromCommit": "34a4feafc23ecf1e3b3983ff12301412c9d6a5d3"
 }

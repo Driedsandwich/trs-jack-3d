@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:1628038f74bf",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:93c989534c9c",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -327,21 +327,21 @@
    ]
   }
  },
- "sourceRevision": "63dbc4386bd9a54f48200b2cdb2889bc1329b521",
+ "sourceRevision": "34a4feafc23ecf1e3b3983ff12301412c9d6a5d3",
  "generatedAt": "2026-08-06",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "63dbc4386bd9a54f48200b2cdb2889bc1329b521",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "34a4feafc23ecf1e3b3983ff12301412c9d6a5d3",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "1628038f74bf6d98e0e00e107f461fe862de9e6d2f69634057559588abeba602",
+  "inputDigest": "93c989534c9c957ee13656251cb4c3143def6c98c14373ebcabd93af6e567900",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "e0456ae877d8336da74eb85f3ed11593263aa93c51c4629e1567366e61841bd4",
+    "sha256": "61d6e609f1ac562a2067d26a27669a67c71ff985549e0d433f584d1683990509",
     "role": "sensitivity-input"
    },
    {
@@ -366,12 +366,12 @@
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "bf9036acc77485d6743817ca2b148ed99d6a1a3a2930d53f1261994e2404553b",
+    "sha256": "1e2700ced8a6c086609fc75a1bab10534888b12735914b8e34dfeb344ea008a7",
     "role": "generator"
    },
    {
     "path": "scripts/measurementGate.mjs",
-    "sha256": "9c950d357c76696fef64a05d4f0d21ffed4ad24def826f33c83e1858ec35816e",
+    "sha256": "1be8f4248f43bbe14f0f0e34bd68c0875d2cfc5d840a50ab93ec63a3d3cbcef5",
     "role": "generator"
    },
    {
@@ -470,7 +470,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\" --release",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
   "artifactDate": "2026-08-06"
  },
  "fullInsertionDepthMm": 14,
@@ -496,7 +496,7 @@
  },
  "modelLimitations": {
   "verifiedPhysical": false,
-  "physicalVerificationRef": "docs/measurements/measurement-records.v1.json@sha256:8540415effae gate=docs/VERIFIED_PHYSICAL_GATE.md@v2 scope=geometry-only verdict=UNVERIFIED records=0 required=L_FIRST_CONTACT_SHOULDER_GAP_MM satisfied=- missing=L_FIRST_CONTACT_SHOULDER_GAP_MM ambiguous=- conflicting=0 notCertified=0 retracted=0 dupIds=0 decidedBy=- rejected=0",
+  "physicalVerificationRef": "docs/measurements/measurement-records.v1.json@sha256:8540415effae gate=docs/VERIFIED_PHYSICAL_GATE.md@v2 scope=geometry-only verdict=UNVERIFIED records=0 required=L_FIRST_CONTACT_SHOULDER_GAP_MM satisfied=- missing=L_FIRST_CONTACT_SHOULDER_GAP_MM ambiguous=- conflicting=0 notCertified=0 retracted=0 dupIds=0 decidedBy=- predicted=L_FIRST_CONTACT_SHOULDER_GAP_MM:2.14,RING_BREAK_OPEN_DEPTH_MM:8.48,TIP_BREAK_OPEN_DEPTH_MM:11.92 rejected=0",
   "notes": [
    "実物と突き合わせた検証をしていない。ジャック内部の接点ばね寸法は仮定である。",
    "この profile は Lumberg 1532 10 × 4極ジャック (端子系 Lumberg 1503 28 / 接点位置は仮定) の 1 組についてのものであり、3.5mm ジャック全般を代表しない。",
@@ -5687,8 +5687,8 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "0dbad39da3c0b1cceaf64dcc205493c2e2d4af17",
-   "inputDigest": "ca0c5a7f4fe4c5d346647896cd9d1395c5cfcb6dd5c48d870227dbeccbf239be",
+   "generatedFromCommit": "34a4feafc23ecf1e3b3983ff12301412c9d6a5d3",
+   "inputDigest": "4903d2031feebb76c7b107c3f3975f931871ead47cb2042db537869f431dc4cc",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
   },
