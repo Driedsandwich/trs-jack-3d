@@ -1,7 +1,7 @@
 {
   "name": "trs-jack-3d",
   "private": true,
-  "version": "0.6.2",
+  "version": "0.6.3",
   "license": "MIT",
   "type": "module",
   "scripts": {
