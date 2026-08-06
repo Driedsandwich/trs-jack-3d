@@ -1,7 +1,5 @@
 # 検算ツール `verifyReleaseSourceInputs.mjs` を v6 にしました（受け手向け）
 
-> この文書の HTML 版（同名 `.html`）は `npm run docs:html` で生成しています。**HTML を直接編集しないでください。**
-
 対象: 配布物に同梱している `verifyReleaseSourceInputs.mjs`
 出力の `toolVersion` が **5 → 6** になります。
 

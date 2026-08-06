@@ -31,7 +31,7 @@
 **対象**
 
 - `main` の最新
-- 直近の release 1 本（現時点では v0.6.0）
+- 直近の release 1 本（現時点では v0.6.2）
 
 **対象外**
 
@@ -81,10 +81,14 @@ modelLimitations.verifiedPhysical   false
 - v0.6.0（`toolVersion` 5）で、信頼できない archive に対して安全に止まるようにしましたが、
   **すべての細工に耐えることは示していません。**26 個・6 種類で試験した範囲までです
   （[docs/release/verify-tool-v5-notes.md](docs/release/verify-tool-v5-notes.md)）。
-  **現に、v5 で塞いだつもりだった穴が 3 つ残っていました**——同名 entry の後勝ち・
-  ディレクトリ入力の symlink ループ・圧縮入力の上限なし。外部監査（2026-08-06）の指摘で
-  `main` の `toolVersion` 6 で直しています（[verify-tool-v6-notes.md](docs/release/verify-tool-v6-notes.md)）。
-  **release にはまだ載っていません**（v0.6.0 の同梱物は v5 のままです）。
+  **現に、塞いだつもりの穴が繰り返し残っていました。**
+  v5 → v6 で 3 つ（同名 entry の後勝ち・ディレクトリ入力の symlink ループ・圧縮入力の上限なし）、
+  v6 → v7 で 2 つ（同じ場所を指す別の綴り・読み飛ばす entry との衝突）、
+  v7 → v8 で 3 つ（PAX の上書き・読み飛ばす entry の正規化漏れ・パス末尾の空白）。
+  **どれも外部監査の指摘で、こちらで反例を再現してから直しています。**
+  v8 からは**ふつうの tar 展開を oracle にした差分試験**を置き、
+  「検算が見た中身」と「展開してできる中身」が食い違ったら落ちるようにしました
+  （[verify-tool-v8-notes.md](docs/release/verify-tool-v8-notes.md)）。
 
 ### そのほか
 
