@@ -117,6 +117,12 @@ export const SOURCE_ONLY_TARGETS = [
     reason: 'package.json ↔ package-lock.json の version 一致を見るための対象 (v0.3.0 フォローアップ P1-1)。'
       + 'artifact ではないので配布しない。受け手が確かめたいなら tag source を見ること',
   },
+  {
+    path: 'docs/measurements/measurement-records.v1.json',
+    reason: '実測記録の正本 (v0.6.0)。**profile の verifiedPhysical はここから機械で決まる**が、'
+      + '判定の結果は profile の physicalVerificationRef に入っているので、受け手はそちらを見れば足りる。'
+      + '台帳そのものは runtime 入力ではない',
+  },
 ]
 
 export const REMOVED_SINCE_V011 = [

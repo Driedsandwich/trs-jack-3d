@@ -153,24 +153,24 @@
   ]
  },
  "generatedBy": "npm run release:evidence",
- "generatedAt": "2026-08-05",
- "generatedFromCommit": "9a582f4ecc0fb9d5d22bab7763751faddb44a356",
+ "generatedAt": "2026-08-06",
+ "generatedFromCommit": "6e151bcdb495f7a26715cbe0ee466b31d07d9466",
  "command": "npm run validate:profiles",
- "targetsTotal": 13,
- "targetsPassed": 13,
+ "targetsTotal": 14,
+ "targetsPassed": 14,
  "allPassed": true,
  "artifactValidationStatus": "PASS",
  "releaseReadinessStatus": "READY",
  "releaseReadinessReasons": [],
  "testEvidence": {
-  "total": 570,
+  "total": 591,
   "failed": 0,
   "skipped": 0,
   "exitCode": 0,
   "allPassed": true
  },
  "distributedTargets": 10,
- "sourceOnlyTargets": 3,
+ "sourceOnlyTargets": 4,
  "results": [
   {
    "artifact": "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json",
@@ -295,6 +295,16 @@
   {
    "artifact": "package.json",
    "schema": null,
+   "missing": false,
+   "distribution": "SOURCE_ONLY",
+   "schemaErrorCount": 0,
+   "semanticErrorCount": 0,
+   "schemaErrors": [],
+   "semanticErrors": []
+  },
+  {
+   "artifact": "docs/measurements/measurement-records.v1.json",
+   "schema": "schemas/measurement-record.v1.schema.json",
    "missing": false,
    "distribution": "SOURCE_ONLY",
    "schemaErrorCount": 0,

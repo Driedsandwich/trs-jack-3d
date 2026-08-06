@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:ba8261c707ff",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:1246a9c582d0",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -327,16 +327,16 @@
    ]
   }
  },
- "sourceRevision": "cfae16b45765182f1fbc01430e5b0759781c87d9",
- "generatedAt": "2026-08-05",
+ "sourceRevision": "6e151bcdb495f7a26715cbe0ee466b31d07d9466",
+ "generatedAt": "2026-08-06",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "cfae16b45765182f1fbc01430e5b0759781c87d9",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "6e151bcdb495f7a26715cbe0ee466b31d07d9466",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "ba8261c707ffc0e822661ee9f031f099a4eb857fc8b8782626019b85c14fc3bd",
+  "inputDigest": "1246a9c582d04a25d346958929e365da984ae7c4f320e08854b37ce414eb2df1",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -361,7 +361,7 @@
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "26cfc68fa755f849a4e88e7d843fbdb7acc8bc6d0a63603b2c1b8e7f57cdf510",
+    "sha256": "d45a514525decc6290bdb56cd5a74102d222c124703afc13bd824c91d2c4a197",
     "role": "generator"
    },
    {
@@ -460,8 +460,8 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\" --release",
-  "artifactDate": "2026-08-05"
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
+  "artifactDate": "2026-08-06"
  },
  "fullInsertionDepthMm": 14,
  "stepMm": 0.02,
@@ -486,7 +486,7 @@
  },
  "modelLimitations": {
   "verifiedPhysical": false,
-  "physicalVerificationRef": null,
+  "physicalVerificationRef": "docs/measurements/measurement-records.v1.json@sha256:dfe5020f9198 gate=docs/VERIFIED_PHYSICAL_GATE.md@v1 records=0 required=L_FIRST_CONTACT_SHOULDER_GAP_MM satisfied=- missing=L_FIRST_CONTACT_SHOULDER_GAP_MM rejected=0",
   "notes": [
    "実物と突き合わせた検証をしていない。ジャック内部の接点ばね寸法は仮定である。",
    "この profile は Lumberg 1532 10 × 4極ジャック (端子系 Lumberg 1503 28 / 接点位置は仮定) の 1 組についてのものであり、3.5mm ジャック全般を代表しない。",

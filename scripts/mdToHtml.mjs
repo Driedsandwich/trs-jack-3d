@@ -121,6 +121,11 @@ export const TARGETS = [
     title: 'v0.6.0 作業計画 — 実物測定を先に置く (2026-08-05)',
   },
   {
+    md: 'docs/VERIFIED_PHYSICAL_GATE.md',
+    html: 'docs/VERIFIED_PHYSICAL_GATE.html',
+    title: 'verifiedPhysical の合格条件（条文 v1）',
+  },
+  {
     md: 'docs/V060_MEASUREMENT_DECISION_20260805.md',
     html: 'docs/V060_MEASUREMENT_DECISION_20260805.html',
     title: 'v0.6.0 §0 の判断材料 — 実測方針を反転するか (2026-08-05)',

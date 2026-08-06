@@ -161,7 +161,11 @@ describe('Half-Plug Topology Profile v2', () => {
   // 7. 未測定 profile に verifiedPhysical=true を設定できない
   it('7. 実測していないので verifiedPhysical は false', () => {
     expect(profile.modelLimitations.verifiedPhysical).toBe(false)
-    expect(profile.modelLimitations.physicalVerificationRef).toBeNull()
+    // **null ではなくなった（v0.6.0）。**条文の判定結果を文字列で持つ。
+    // 「記録が 0 件だから false」であることが、artifact だけを見て分かるようにするため
+    expect(profile.modelLimitations.physicalVerificationRef).toContain('measurement-records.v1.json')
+    expect(profile.modelLimitations.physicalVerificationRef).toContain('records=0')
+    expect(profile.modelLimitations.physicalVerificationRef).toMatch(/missing=[A-Z]/)
     // 実測記録が無い状態で true にできる経路がコードに無いこと
     const src = readFileSync(resolve(ROOT, 'scripts/exportHalfPlugProfile.ts'), 'utf8')
     expect(src).not.toMatch(/verifiedPhysical:\s*true/)

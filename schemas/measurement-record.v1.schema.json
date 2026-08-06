@@ -1,0 +1,106 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/measurement-record.v1.schema.json",
+ "title": "trs-jack-3d measurement records v1",
+ "description": "**実測記録の正本。**`verifiedPhysical` はこの台帳から機械で決まる（条文 = docs/VERIFIED_PHYSICAL_GATE.md・判定器 = scripts/measurementGate.mjs）。**記録が 0 件なら false のままで、それが正しい状態である。**空だからといって埋める必要はない（実測は募集するが必須にしていない → docs/VERIFICATION_PLAN.md 冒頭）。",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "schemaVersion",
+  "schemaId",
+  "purpose",
+  "why",
+  "gateDocument",
+  "gateVersion",
+  "verifiedBy",
+  "records"
+ ],
+ "properties": {
+  "schemaVersion": { "const": 1 },
+  "schemaId": { "const": "trs-jack-3d-measurement-records.v1" },
+  "purpose": { "type": "string", "minLength": 1 },
+  "why": { "type": "string", "minLength": 1 },
+  "gateDocument": { "const": "docs/VERIFIED_PHYSICAL_GATE.md" },
+  "gateVersion": { "type": "integer", "minimum": 1 },
+  "verifiedBy": {
+   "type": "string",
+   "minLength": 1,
+   "description": "**この台帳と profile の食い違いを、どの検査が捕まえるか。**書いただけの表にしないため"
+  },
+  "records": {
+   "type": "array",
+   "description": "**古い順に並べる。**取り下げても消さない（retracted: true にする）。消すと、その記録で一度 true になっていた事実が追えなくなる",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "recordId",
+     "observation",
+     "variantId",
+     "measuredBy",
+     "measuredOn",
+     "instrument",
+     "parts",
+     "valuesMm"
+    ],
+    "properties": {
+     "recordId": { "type": "string", "pattern": "^MR[0-9]{4}$" },
+     "observation": {
+      "enum": [
+       "L_FIRST_CONTACT_SHOULDER_GAP_MM",
+       "RING_BREAK_OPEN_DEPTH_MM",
+       "TIP_BREAK_OPEN_DEPTH_MM"
+      ],
+      "description": "**観測点の定義は scripts/measurementGate.mjs の OBSERVATIONS が正本。**ここは形だけを見る"
+     },
+     "variantId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9-]+\\|[A-Za-z0-9-]+$",
+      "description": "**測った組み合わせ。**観測点の定義と一致しない記録は判定器が弾く"
+     },
+     "measuredBy": {
+      "type": "string",
+      "minLength": 1,
+      "description": "**誰の記録かを追えるようにする。**氏名でなくハンドルや Issue 番号でよい"
+     },
+     "measuredOn": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+     "instrument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "resolutionMm"],
+      "properties": {
+       "kind": { "type": "string", "minLength": 1 },
+       "resolutionMm": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "**必須。**分解能が分からない値は、ばらつきが許容内かを判断できない"
+       },
+       "model": { "type": "string" }
+      }
+     },
+     "parts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jack", "plug"],
+      "properties": {
+       "jack": { "type": "string", "minLength": 1 },
+       "jackLot": { "type": "string" },
+       "plug": { "type": "string", "minLength": 1 },
+       "plugLot": { "type": "string" }
+      }
+     },
+     "valuesMm": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "type": "number", "exclusiveMinimum": 0 },
+      "description": "**生値をそのまま並べる。3 回以上。**平均だけの記録は受け取らない。ばらつきが見えないと、その値がどれくらい信用できるか誰にも分からない"
+     },
+     "note": { "type": "string" },
+     "retracted": { "type": "boolean" },
+     "retractedReason": { "type": "string" },
+     "sourceUrl": { "type": "string", "description": "Issue や PR など、提供のやりとりが残っている場所" }
+    }
+   }
+  }
+ }
+}

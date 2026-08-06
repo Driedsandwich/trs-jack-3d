@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>verifiedPhysical の合格条件（条文 v1）</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">なぜ要るのか</a></li>
+    <li><a href="#s1">第1条（何を主張するか）</a></li>
+    <li><a href="#s2">第2条（必須観測点）</a></li>
+    <li><a href="#s3">第3条（記録が有効であるための条件）</a></li>
+    <li><a href="#s4">第4条（一致の判定）</a></li>
+    <li><a href="#s5">第5条（許容の決め方）</a></li>
+    <li><a href="#s6">第6条（台帳と profile がずれないようにする）</a></li>
+    <li><a href="#s7">第7条（この条文の限界）</a></li>
+  </ol>
+</nav>
+<h1><code>verifiedPhysical</code> の合格条件（条文 v1）</h1>
+<div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
+<p>作成 2026-08-06 ／ 条文 v1 ／ 実装 <code>scripts/measurementGate.mjs</code> ／ 台帳 <code>docs/measurements/measurement-records.v1.json</code></p>
+<h2 id="s0">なぜ要るのか</h2>
+<p>配布 profile の <code>modelLimitations.verifiedPhysical</code> は、<strong>2026-08-06 まで生成器のリテラル <code>false</code></strong> でした。 schema の説明はこう書いてあるだけです。</p>
+<div class="note"><p>実物と突き合わせて検証済みか。未実測の profile では必ず false。<strong>true にできるのは実測記録が伴う場合のみ</strong></p></div>
+<p><strong>何を何点測れば足りるのかが、どこにも書いてありませんでした。</strong> つまり実態は「<strong>誰かがリテラルを書き換えたら <code>true</code></strong>」で、それは検証ではありません。</p>
+<p>この条文は、その 1 行を<strong>記録から機械で決まる値</strong>に変えるためのものです。</p>
+<div class="note"><p><strong>急ぐ話ではありません。</strong>実測は募集していますが必須にしていません（<code>docs/VERIFICATION_PLAN.md</code> 冒頭）。</p><p><strong>記録が 0 件なら <code>false</code> のままで、それが正しい状態です。</strong></p><p>条文を先に書くのは、<strong>記録が来た日に判断が要らないようにする</strong>ためです。</p><p>判断が要る形にしておくと、たいてい甘い方へ倒れます。</p></div>
+<hr>
+<h2 id="s1">第1条（何を主張するか）</h2>
+<p><code>verifiedPhysical: true</code> は、<strong>その profile の必須観測点がすべて実測で裏付けられた</strong>ことだけを言う。</p>
+<p><strong>「この profile のすべての値が実測である」とは言わない。</strong> 現に TRS profile の <code>evidenceGrade</code> は <code>ASSUMPTION</code> が 93 件、TRRS は 151 件ある（2026-08-05 実測）。 必須観測点が全部埋まっても、この数は 0 にならない。</p>
+<p><strong>「モデルと実物が一致した」を含む。</strong>単に「突き合わせた」ではない。 実測が予測から離れていたら、<strong>モデルのほうを直してから</strong>でなければ <code>true</code> にならない（→ 第4条）。</p>
+<h2 id="s2">第2条（必須観測点）</h2>
+<p>profile ごとに、必須観測点を名指しで決める。<code>scripts/measurementGate.mjs</code> の <code>REQUIRED_FOR_PROFILE</code> が正本。</p>
+<div class="tw"><table><thead><tr><th>profile</th><th>必須観測点</th></tr></thead><tbody><tr><td>`TRS\</td><td>JACK-TRS`</td><td><code>RING_BREAK_OPEN_DEPTH_MM</code> ／ <code>TIP_BREAK_OPEN_DEPTH_MM</code></td></tr><tr><td>`TRS\</td><td>JACK-TRRS`</td><td><code>L_FIRST_CONTACT_SHOULDER_GAP_MM</code></td></tr></tbody></table></div>
+<p><strong>必須観測点が定義されていない profile は、必ず <code>false</code> になる。</strong> 「必須が 0 件だから全部満たしている」で <code>true</code> にすると、 <strong>profile を 1 本足しただけで検証済みを名乗れてしまう。</strong>空集合は合格にしない。</p>
+<div class="note"><p><strong><code>TRS|JACK-TRRS</code> の必須観測点は、別の variant（<code>TRRS-CTIA|JACK-TRRS</code>）の量です。</strong></p><p>4極ジャックの接点位置を決める測定なので、3極プラグを挿した profile の event 列には現れません。</p><p>生成器がその variant を別に評価して予測を渡します。<strong>渡されなければ満たせません。</strong></p></div>
+<h2 id="s3">第3条（記録が有効であるための条件）</h2>
+<p>次を<strong>すべて</strong>満たす記録だけを数える。1 つでも欠ければ、その記録は使わない。</p>
+<div class="tw"><table><thead><tr><th></th><th>条件</th><th>なぜ</th></tr></thead><tbody><tr><td>a</td><td><code>observation</code> が条文に定義されている</td><td>定義していない量を根拠にしない</td></tr><tr><td>b</td><td><code>variantId</code> が観測点の定義と一致する</td><td>別の組み合わせで測った値を混ぜない</td></tr><tr><td>c</td><td><strong>生値が 3 回以上</strong>ある（平均だけの記録は受け取らない）</td><td>ばらつきが見えないと、その値の信用度が誰にも分からない</td></tr><tr><td>d</td><td>測定器の<strong>分解能</strong>が書かれている</td><td>c のばらつきが許容内かを判断できない</td></tr><tr><td>e</td><td><strong>ばらつき（3 回の最大−最小）が許容以内</strong></td><td>→ 第5条</td></tr><tr><td>f</td><td>測った人・測定日・ジャックとプラグの型番がある</td><td>誰の記録かを追えるようにする</td></tr><tr><td>g</td><td><code>retracted: true</code> でない</td><td>取り下げた記録は消さずに残す。消すと、一度 <code>true</code> になっていた事実が追えない</td></tr></tbody></table></div>
+<h2 id="s4">第4条（一致の判定）</h2>
+<p>有効な記録の<strong>平均</strong>と、<strong>そのとき生成器が計算した現行モデルの予測</strong>の差が、 許容以内であることを求める。</p>
+<pre><code>|平均(生値) − 現行モデルの予測| ≤ その観測点の許容</code></pre>
+<p><strong>予測は artifact から引かない。生成器がその場で計算した値を使う。</strong> artifact から引くと、モデルを直したのに古い予測と照合し続けることが起きる。</p>
+<p><strong>差が許容を超えたら <code>false</code> になる。</strong>そのとき直すのは記録ではなく<strong>モデル</strong>である。 記録のほうを合わせにいったら、この条文は意味を失う。</p>
+<h2 id="s5">第5条（許容の決め方）</h2>
+<p>許容は、<strong>その観測点で見分けたい差の 1/5</strong> を基準に置く。</p>
+<div class="tw"><table><thead><tr><th>観測点</th><th class="num">見分けたい差</th><th class="num">許容</th></tr></thead><tbody><tr><td><code>L_FIRST_CONTACT_SHOULDER_GAP_MM</code></td><td class="num"><strong>1.45 mm</strong>（本モデル 2.14 mm ↔ 実在部品 PS000001 由来 0.69 mm）</td><td class="num"><strong>0.29 mm</strong></td></tr><tr><td><code>RING_BREAK_OPEN_DEPTH_MM</code></td><td class="num">約 1.5 mm</td><td class="num">0.3 mm</td></tr><tr><td><code>TIP_BREAK_OPEN_DEPTH_MM</code></td><td class="num">約 1.5 mm</td><td class="num">0.3 mm</td></tr></tbody></table></div>
+<p><strong>判定に効かない桁を要求しない。</strong><code>L</code> はデジタルノギスの分解能 0.01 mm の <strong>145 倍</strong>の差を見る測定で、 0.1 mm 単位で読んでも 14.5 倍ある。ここで 0.02 mm の一致を求めると、 <strong>測ってもらったのに弾く</strong>ことになる。</p>
+<h2 id="s6">第6条（台帳と profile がずれないようにする）</h2>
+<p>台帳は <code>inputDigest</code> に<strong>入れていない</strong>。<strong>理由を書いておく。</strong></p>
+<p><code>docs/measurements/measurement-records.v1.json</code> を共通入力に足すと、 <strong>記録が 1 件も無い今の時点で、全 artifact の ID が動く。</strong> 中身が変わっていないのに ID が変わる状態を自分から作ることになる （<code>source-input-scope.v1.json</code> の <code>commonInputsNote</code> が避けている問題と同じ型）。</p>
+<p>代わりに、<strong>profile 自身に判定の結果を書き込む</strong>。</p>
+<pre><code>modelLimitations.verifiedPhysical        判定結果
+modelLimitations.physicalVerificationRef 台帳のパスと sha256・条文の版・満たした観測点・欠けている観測点</code></pre>
+<p>そのうえで <code>npm run validate:profiles</code> の semantic 規則 <code>measurementRecords</code> が、 <strong>現在の台帳から判定をやり直して、profile に書いてある値と突き合わせる。</strong> 台帳だけ書き換えて profile を作り直さなければ、そこで落ちる。</p>
+<div class="note"><p><strong><code>inputDigest</code> に入れるほうが素直ではあります。</strong>記録が実際に入って</p><p><code>verifiedPhysical</code> が動くようになったら、そのタイミングで入れ直すのが筋です。</p><p><strong>いまは入れない理由が「空だから」なので、空でなくなったら理由も消えます。</strong></p></div>
+<h2 id="s7">第7条（この条文の限界）</h2>
+<ul><li><strong>必須観測点の選び方そのものは、この条文では正当化していない。</strong> 「看板の結論に効く」という判断で選んでいて、<strong>別の選び方もありうる。</strong></li><li><strong>1 人が 1 個の部品を 3 回測った記録</strong>で <code>true</code> になる。 個体差・ロット差は見ていない。<strong>複数個体を要求していない。</strong></li><li>予測と一致したことは示せるが、<strong>一致した理由がモデルの正しさとは限らない</strong> （たまたま合うパラメータ組み合わせが他にもありうる）。</li><li><strong><code>true</code> になっても、<code>evidenceGrade</code> は動かない。</strong>測った値を置く区分が <code>FACT / DERIVED / ASSUMPTION / UNKNOWN</code> の中に無いためで、これは別途の課題である （区分を足すのは <code>enum</code> 追加＝<code>BUMP</code> で profile v4 になる → <code>docs/V060_PLAN_20260805.md</code> §1-2）。</li></ul>
+<p><strong>「起きない」とは書かない。</strong>この条文で言えるのは <strong>「いま定義した観測点については、記録が無ければ <code>true</code> にならない」まで</strong>である。</p>
+</div>
+</body>
+</html>

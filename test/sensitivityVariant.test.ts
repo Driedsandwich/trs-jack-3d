@@ -56,8 +56,10 @@ function exportWith(variant: string, slug: string, mutate: (a: Record<string, un
   tmps.push(d)
   // コードと依存は symlink で共有する（複製すると vite の解決が壊れる）
   // `source-input-scope.v1.json` も入力（v0.3.0 フォローアップ P1-2）。
+  // `docs` は実測記録の台帳のため（v0.6.0）。無いと exportHalfPlugProfile が落ちる——
+  // 台帳が消えただけで「条文どおり false」に見えるのを避ける設計なので、それが正しい
   // 無いと exportHalfPlugProfile が落ちる——既定値へ黙って戻さない設計なので、それが正しい
-  for (const sub of ['node_modules', 'src', 'scripts', 'schemas', 'package.json', 'package-lock.json', 'source-input-scope.v1.json', 'contract-migration.v1.json', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json', 'tsconfig.scripts.json'])
+  for (const sub of ['node_modules', 'src', 'scripts', 'schemas', 'package.json', 'package-lock.json', 'source-input-scope.v1.json', 'contract-migration.v1.json', 'docs', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json', 'tsconfig.scripts.json'])
     symlinkSync(resolve(ROOT, sub), join(d, sub))
   // artifacts だけ実体を複製する
   cpSync(resolve(ROOT, 'artifacts'), join(d, 'artifacts'), { recursive: true })

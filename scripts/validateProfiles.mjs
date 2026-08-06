@@ -31,6 +31,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'n
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkWindowInvariants } from './robustnessWindows.mjs'
+import { checkRecord, evaluateGate, REQUIRED_FOR_PROFILE, GATE_DOCUMENT, LEDGER_PATH, GATE_VERSION } from './measurementGate.mjs'
 
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
@@ -148,6 +149,16 @@ const TARGETS = [
     schema: null,
     semantic: 'packageVersionParity',
   },
+  /**
+   * 実測記録の正本（v0.6.0 で新設）。
+   * **profile の verifiedPhysical はここから機械で決まる**（条文 = docs/VERIFIED_PHYSICAL_GATE.md）。
+   * 台帳だけ書き換えて profile を作り直さないと、ここで落ちる。
+   */
+  {
+    artifact: 'docs/measurements/measurement-records.v1.json',
+    schema: 'schemas/measurement-record.v1.schema.json',
+    semantic: 'measurementRecords',
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -214,6 +225,65 @@ function checkProvenance(p, selfMarker, errs) {
 }
 
 const SEMANTIC = {
+  /**
+   * 実測記録の台帳と、配布 profile の `verifiedPhysical` を突き合わせる。
+   *
+   * **台帳は inputDigest に入れていない**（条文 第6条）。記録が 0 件のいま入れると
+   * 全 artifact の ID が動くためで、代わりに**ここで縛る。**
+   * 台帳を書き換えて profile を作り直さなければ、この規則が落ちる。
+   */
+  measurementRecords(a, errs) {
+    if (a.gateDocument !== GATE_DOCUMENT) errs.push(`gateDocument が条文と違う: ${a.gateDocument}`)
+    if (a.gateVersion !== GATE_VERSION) errs.push(`gateVersion が実装と違う: ${a.gateVersion} ≠ ${GATE_VERSION}`)
+
+    const ids = new Set()
+    for (const r of a.records ?? []) {
+      if (ids.has(r.recordId)) errs.push(`recordId が重複している: ${r.recordId}`)
+      ids.add(r.recordId)
+      if (r.retracted === true && !r.retractedReason) errs.push(`${r.recordId}: 取り下げたのに理由が無い`)
+      // **schema では書けない規則。**分解能より細かいばらつきはありえない
+      const c = checkRecord(r)
+      if (c.rangeMm !== null && r.instrument?.resolutionMm && c.rangeMm > 0 && c.rangeMm < r.instrument.resolutionMm) {
+        errs.push(`${r.recordId}: ばらつき ${c.rangeMm} mm が測定器の分解能 ${r.instrument.resolutionMm} mm より小さい`)
+      }
+    }
+
+    const ledgerRaw = readFileSync(resolve(ROOT, LEDGER_PATH), 'utf8')
+    const sha12 = createHash('sha256').update(ledgerRaw).digest('hex').slice(0, 12)
+
+    for (const f of [
+      'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json',
+      'artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json',
+    ]) {
+      let p
+      try { p = read(f) } catch { continue }
+      const ref = p.modelLimitations?.physicalVerificationRef
+      if (typeof ref !== 'string') { errs.push(`${f}: physicalVerificationRef が文字列でない`); continue }
+      const kv = Object.fromEntries(
+        ref.split(' ').map((t) => (t.includes('=') ? [t.slice(0, t.indexOf('=')), t.slice(t.indexOf('=') + 1)] : ['ledger', t])),
+      )
+      if (kv.ledger !== `${LEDGER_PATH}@sha256:${sha12}`) {
+        errs.push(`${f}: physicalVerificationRef の台帳 sha が現在の台帳と違う (${kv.ledger} ≠ ${LEDGER_PATH}@sha256:${sha12})`)
+      }
+      if (kv.records !== String((a.records ?? []).length)) {
+        errs.push(`${f}: physicalVerificationRef の records 件数が台帳と違う (${kv.records} ≠ ${(a.records ?? []).length})`)
+      }
+      const required = REQUIRED_FOR_PROFILE[p.variantId] ?? []
+      if (kv.required !== (required.join(',') || '-')) {
+        errs.push(`${f}: physicalVerificationRef の required が条文と違う (${kv.required} ≠ ${required.join(',') || '-'})`)
+      }
+      // **判定そのものをやり直す。**予測はモデル側なので、ここでは「記録が足りているか」だけ見る
+      const gate = evaluateGate({ ledger: a, profileVariantId: p.variantId, predictions: {} })
+      const couldBeVerified = gate.verified || gate.rejected.some((r) => r.reasons.some((x) => x.includes('予測が渡されていない')))
+      if (p.modelLimitations.verifiedPhysical === true && !couldBeVerified) {
+        errs.push(`${f}: verifiedPhysical が true だが、現在の台帳には条件を満たす記録が無い`)
+      }
+      if (p.modelLimitations.verifiedPhysical === false && kv.missing === '-') {
+        errs.push(`${f}: verifiedPhysical が false なのに missing が空`)
+      }
+    }
+  },
+
   profile(a, errs) {
     // --- 区間が穴も重複もなく連なっているか ---
     const iv = a.intervals ?? []

@@ -19,6 +19,7 @@
  *   乱数も現在時刻も使わない。
  */
 
+import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 import { getModel } from '../src/data'
@@ -28,6 +29,7 @@ import type { TrsModel } from '../src/model/engine'
 import { ALL_TOPOLOGY_CLASSES, classifyFromEvaluation } from '../src/model/topology'
 import { buildProvenance } from './provenance'
 import { migrationFor } from './contractMigration.mjs'
+import { evaluateGate, predictionsFromEvents, GATE_DOCUMENT, LEDGER_PATH } from './measurementGate.mjs'
 
 const ROOT = resolve(process.cwd())
 const STEP_MM = 0.02
@@ -501,6 +503,72 @@ const events = rawEvents.map((e) => {
   }
 })
 
+// ---------------------------------------------------------------------------
+// verifiedPhysical — **条文（docs/VERIFIED_PHYSICAL_GATE.md）に従って記録から決める**
+//
+// 2026-08-06 まで、ここはリテラル `false` だった。schema の説明は
+// 「true にできるのは実測記録が伴う場合のみ」だけで、**何を何点測れば足りるのかが無かった**。
+// つまり「誰かが書き換えたら true」で、検証ではなかった。
+// ---------------------------------------------------------------------------
+
+const ledgerRaw = (() => {
+  try {
+    return readFileSync(resolve(ROOT, LEDGER_PATH), 'utf8')
+  } catch {
+    // **台帳が無いのは異常。**黙って「記録 0 件」にすると、
+    // ファイルを消しただけで「条文どおり false」に見えてしまう
+    throw new Error(
+      `実測記録の台帳 ${LEDGER_PATH} が読めない。\n`
+      + `  ${GATE_DOCUMENT} の条文はこの台帳を正本にしている。空でも置いておくこと。`,
+    )
+  }
+})()
+const ledger = JSON.parse(ledgerRaw) as { records?: unknown[] }
+
+/**
+ * **`TRS|JACK-TRRS` の必須観測点は、4極プラグ（`TRRS-CTIA|JACK-TRRS`）の量である。**
+ * 3極プラグを挿したこの profile の event 列には現れないので、別に評価して渡す。
+ * ここを渡さないと、その観測点は永久に満たせない（fail closed）。
+ */
+function predictLShoulderGap(): number | undefined {
+  const [, jackId] = String(VARIANT).split('|')
+  if (jackId !== 'JACK-TRRS') return undefined
+  const four = getModel('TRRS-CTIA|JACK-TRRS')
+  const rows = sweep(four, { stepMm: STEP_MM, faults: DEFAULT_FAULTS })
+  for (const row of rows) {
+    const c = row.contacts.find((x) => x.contactId === 'JC_TIP')
+    if (c && c.connectedNets.includes('TIP')) return +(four.fullDepthMm - row.depthMm).toFixed(4)
+  }
+  return undefined
+}
+
+const gatePredictions: Record<string, number> = {
+  ...predictionsFromEvents(events, m.fullDepthMm),
+}
+const lGap = predictLShoulderGap()
+if (typeof lGap === 'number') gatePredictions.L_FIRST_CONTACT_SHOULDER_GAP_MM = lGap
+
+const gate = evaluateGate({ ledger, profileVariantId: String(VARIANT), predictions: gatePredictions })
+
+/**
+ * **判定の根拠を artifact 自身へ残す。**台帳を書き換えて profile を作り直さなければ
+ * `validate:profiles` の semantic 規則 `measurementRecords` が落ちる。
+ *
+ * **文字列で持つ。**schema の `physicalVerificationRef` は `["string","null"]` なので、
+ * 構造を足すと言語が広がって **profile v4（BUMP）**になり、下流が止まる
+ * （→ docs/SCHEMA_VERSIONING_POLICY.md）。**この commit で版は上げない。**
+ * 形式は `docs/VERIFIED_PHYSICAL_GATE.md` 第6条。区切りは空白 1 個で固定する。
+ */
+const gateRef = [
+  `${LEDGER_PATH}@sha256:${createHash('sha256').update(ledgerRaw).digest('hex').slice(0, 12)}`,
+  `gate=${GATE_DOCUMENT}@v${gate.gateVersion}`,
+  `records=${Array.isArray(ledger.records) ? ledger.records.length : 0}`,
+  `required=${gate.required.join(',') || '-'}`,
+  `satisfied=${gate.satisfied.map((x) => x.observation).join(',') || '-'}`,
+  `missing=${gate.missing.join(',') || '-'}`,
+  `rejected=${gate.rejected.length}`,
+].join(' ')
+
 // eventId は決定的で、同じ入力からは同じ値になる。重複が出たら識別子として使えない
 const dupIds = [...new Map<string, number>(
   events.map((e) => [e.eventId, events.filter((x) => x.eventId === e.eventId).length]),
@@ -608,9 +676,13 @@ const profile = {
     attribution: 'trs-jack-3d (https://github.com/Driedsandwich/trs-jack-3d) — CC BY 4.0',
   },
   modelLimitations: {
-    // 実測していないので false 以外にできない
-    verifiedPhysical: false,
-    physicalVerificationRef: null,
+    /**
+     * **リテラルではない。**`docs/VERIFIED_PHYSICAL_GATE.md` の条文に従って、
+     * `docs/measurements/measurement-records.v1.json` の記録から機械で決める。
+     * 記録が 0 件なら `false`。**それが正しい状態である**（実測は募集しているが必須にしていない）。
+     */
+    verifiedPhysical: gate.verified,
+    physicalVerificationRef: gateRef,
     notes: [
       '実物と突き合わせた検証をしていない。ジャック内部の接点ばね寸法は仮定である。',
       // **variant ごとに書き分ける。** 2026-08-03 まで全 variant へ 1532 10 × 1503 09 と書いていた
