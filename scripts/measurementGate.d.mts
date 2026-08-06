@@ -83,11 +83,15 @@ export declare function predictionsFromEvents(
   fullDepthMm?: number,
 ): Record<string, number>
 
+/** `physicalVerificationRef` の `predicted=` を読む（v0.6.3） */
+export declare function recordedPredictions(ref: unknown): Record<string, number>
+
 /**
- * 配布物だけから予測を作り直す（validator 用・v0.6.2）。
- * profile の event 列と real_jack_comparison から組む。**渡せない観測点は満たせない**
+ * 配布 profile だけから、判定に使う予測を組み直す（validator 用・v0.6.3）。
+ * event 列から計算し直せるものは記録値との一致を要求する。
+ * **`problems` が空でなければ検証は不合格**
  */
-export declare function predictionsFromArtifacts(o?: {
-  profile?: unknown
-  realJackComparison?: unknown
-}): Record<string, number>
+export declare function predictionsForValidation(profile: unknown): {
+  predictions: Record<string, number>
+  problems: string[]
+}

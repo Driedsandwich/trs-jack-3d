@@ -31,7 +31,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'n
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkWindowInvariants } from './robustnessWindows.mjs'
-import { checkRecord, evaluateGate, predictionsFromArtifacts, REQUIRED_FOR_PROFILE, GATE_DOCUMENT, LEDGER_PATH, GATE_VERSION, CLAIM_SCOPE } from './measurementGate.mjs'
+import { checkRecord, evaluateGate, predictionsForValidation, REQUIRED_FOR_PROFILE, GATE_DOCUMENT, LEDGER_PATH, GATE_VERSION, CLAIM_SCOPE } from './measurementGate.mjs'
 
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
@@ -280,12 +280,11 @@ const SEMANTIC = {
        * そのため、モデルの予測と 1.45 mm 食い違う記録が台帳にあっても、
        * `verifiedPhysical: true` を手で書いた profile をこの規則では拒めなかった（実測）。
        *
-       * 予測は artifact だけから組み直す（→ `predictionsFromArtifacts`）。
+       * 予測は配布 profile だけから組み直す（→ `predictionsForValidation`）。
        * **組めなかった観測点は満たせない**ので、fail closed のままである。
        */
-      let realJackComparison = null
-      try { realJackComparison = read('artifacts/real_jack_comparison.json') } catch { /* 無ければ L は組めない */ }
-      const predictions = predictionsFromArtifacts({ profile: p, realJackComparison })
+      const { predictions, problems } = predictionsForValidation(p)
+      for (const x of problems) errs.push(`${f}: ${x}`)
       const gate = evaluateGate({ ledger: a, profileVariantId: p.variantId, predictions })
 
       for (const id of REQUIRED_FOR_PROFILE[p.variantId] ?? []) {
@@ -293,6 +292,25 @@ const SEMANTIC = {
           errs.push(`${f}: 観測点 ${id} の予測を配布物から作り直せない（作り直せないものは検証済みにしない）`)
         }
       }
+
+      /**
+       * **手元に別 artifact があるときだけの二次的な突き合わせ（v0.6.3）。**
+       *
+       * `artifacts/real_jack_comparison.json` は**配布物ではない**ので、受け手の手元には無い。
+       * だからこれは判定の根拠にせず、**あれば矛盾を足す**だけにする。
+       * 判定そのものは profile が記録した予測（→ `predictionsForValidation`）で行う。
+       * v0.6.2 はここを根拠にしていたため、宣言外のファイルが判定を左右していた。
+       */
+      try {
+        const rj = read('artifacts/real_jack_comparison.json')
+        const fromArtifact = rj?.testerPredictions?.assumed?.L?.shoulderGapMm
+        const recorded = predictions.L_FIRST_CONTACT_SHOULDER_GAP_MM
+        if (typeof fromArtifact === 'number' && typeof recorded === 'number'
+          && Math.abs(fromArtifact - recorded) > 1e-6) {
+          errs.push(`${f}: profile が記録した L の予測 ${recorded} mm が、`
+            + `real_jack_comparison.json の ${fromArtifact} mm と違う（どちらかが古い）`)
+        }
+      } catch { /* 手元に無ければ何もしない。判定には使っていない */ }
 
       // **やり直した判定と、profile が名乗っている値を突き合わせる**
       if (p.modelLimitations.verifiedPhysical !== gate.verified) {

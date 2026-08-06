@@ -12,7 +12,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   CLAIM_SCOPE, GATE_VERSION, LEDGER_PATH, OBSERVATIONS, REQUIRED_FOR_PROFILE, RESOLUTION_DIVISOR,
-  checkRecord, evaluateGate, predictionsFromArtifacts, predictionsFromEvents,
+  checkRecord, evaluateGate, predictionsForValidation, predictionsFromEvents,
 } from '../scripts/measurementGate.mjs'
 
 const ROOT = resolve(__dirname, '..')
@@ -352,60 +352,69 @@ describe('verifiedPhysical のゲート ⑤ 条文 v2 — 相反・分解能・�
  * `couldBeVerified = true` になり、手で `verifiedPhysical: true` にした profile を
  * この規則では拒めなかった。
  */
-describe('verifiedPhysical のゲート ⑥ 配布物だけから予測を作り直す', () => {
-  const rj = read('artifacts/real_jack_comparison.json')
+describe('verifiedPhysical のゲート ⑥ 配布 profile だけから予測を作り直す', () => {
   const trrs = read('artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json')
   const trs = read('artifacts/half_plug_topology_profile.v3.trs_jack_trs.json')
 
-  it('配布物だけで、必須観測点の予測が全部そろう', () => {
+  it('配布 profile だけで、必須観測点の予測が全部そろう', () => {
     for (const p of [trs, trrs]) {
-      const pred = predictionsFromArtifacts({ profile: p, realJackComparison: rj })
+      const { predictions, problems } = predictionsForValidation(p)
+      expect(problems, `${p.variantId}: 問題が出ている`).toEqual([])
       for (const id of REQUIRED_FOR_PROFILE[p.variantId]) {
-        expect(pred[id], `${p.variantId}: ${id} の予測を作り直せない`).toBeTypeOf('number')
+        expect(predictions[id], `${p.variantId}: ${id} の予測を作り直せない`).toBeTypeOf('number')
       }
     }
   })
 
-  it('**L の予測は、生成器が計算した値と同じ**（2 つの経路がずれていない）', () => {
-    const pred = predictionsFromArtifacts({ profile: trrs, realJackComparison: rj })
-    // artifact 側の値
-    expect(pred[L]).toBe(rj.testerPredictions.assumed.L.shoulderGapMm)
-    // profile が判定に使った値と同じであること（ref に書いてある satisfied/missing と整合）
-    expect(pred[L]).toBe(PRED_L)
-    // **生成器はこの一致を確かめてから書く**（ずれたら export が落ちる）
-    const src = readFileSync(resolve(ROOT, 'scripts/exportHalfPlugProfile.ts'), 'utf8')
-    expect(src, '生成器側の突き合わせが無い').toContain('L の予測がずれている')
+  it('**event 列から計算し直せるものは、記録値との一致を要求する**', () => {
+    const tampered = structuredClone(trrs)
+    const ref = tampered.modelLimitations.physicalVerificationRef as string
+    const m = /RING_BREAK_OPEN_DEPTH_MM:([0-9.]+)/.exec(ref)
+    expect(m, '記録された予測が見つからない').toBeTruthy()
+    tampered.modelLimitations.physicalVerificationRef = ref.replace(m![0], 'RING_BREAK_OPEN_DEPTH_MM:9.99')
+    const { problems } = predictionsForValidation(tampered)
+    expect(problems.join(' '), '記録の書き換えを検出できていない').toContain('計算し直した')
+  })
+
+  it('**記録が無ければ満たせない**（旧形式の profile を検証済みにしない）', () => {
+    const old = structuredClone(trrs)
+    old.modelLimitations.physicalVerificationRef =
+      (old.modelLimitations.physicalVerificationRef as string).replace(/ predicted=[^ ]*/, '')
+    const { problems } = predictionsForValidation(old)
+    expect(problems.length, '記録が無いのに問題が出ていない').toBeGreaterThan(0)
+    expect(problems.join(' ')).toContain('記録されていない')
   })
 
   it('**矛盾する記録があれば true を拒める**（v0.6.1 は拒めなかった）', () => {
-    const pred = predictionsFromArtifacts({ profile: trrs, realJackComparison: rj })
+    const { predictions } = predictionsForValidation(trrs)
     const bad = ledgerOf([{ ...goodRecord(L, [0.68, 0.70, 0.69]), recordId: 'MR9001' }])
-    const g = evaluateGate({ ledger: bad, profileVariantId: trrs.variantId, predictions: pred })
+    const g = evaluateGate({ ledger: bad, profileVariantId: trrs.variantId, predictions })
     expect(g.verified).toBe(false)
     expect(g.conflicting).toHaveLength(1)
-    // validator が使っている読み替えが、もう成立しないこと
     const couldBeVerified = g.verified || g.rejected.some((r) => r.reasons.some((x) => x.includes('予測が渡されていない')))
     expect(couldBeVerified, '「予測が無いから true でよい」に戻っている').toBe(false)
   })
 
   it('対照 — 一致する記録なら、これまでどおり true になる', () => {
-    const pred = predictionsFromArtifacts({ profile: trrs, realJackComparison: rj })
+    const { predictions } = predictionsForValidation(trrs)
     const ok = ledgerOf([{ ...goodRecord(L, [2.13, 2.15, 2.14]), recordId: 'MR9002' }])
-    const g = evaluateGate({ ledger: ok, profileVariantId: trrs.variantId, predictions: pred })
+    const g = evaluateGate({ ledger: ok, profileVariantId: trrs.variantId, predictions })
     expect(g.verified).toBe(true)
     expect(g.verdict).toBe('VERIFIED')
   })
 
-  it('**予測を作り直せなければ満たせない**（空で呼ぶのと同じにしない）', () => {
-    const pred = predictionsFromArtifacts({ profile: trrs, realJackComparison: null })
-    expect(pred[L], 'material が無いのに予測が出ている').toBeUndefined()
-    const ok = ledgerOf([{ ...goodRecord(L, [2.13, 2.15, 2.14]), recordId: 'MR9003' }])
-    expect(evaluateGate({ ledger: ok, profileVariantId: trrs.variantId, predictions: pred }).verified).toBe(false)
+  it('**生成器は宣言外のファイルを読まない**（v0.6.2 の依存を外した）', () => {
+    const src = readFileSync(resolve(ROOT, 'scripts/exportHalfPlugProfile.ts'), 'utf8')
+    // **コメントは除いて、実際に読んでいる箇所だけを見る**（説明文に名前が出るのは構わない）
+    const code = src.split('\n').filter((l) => !/^\s*(\*|\/\/|\/\*)/.test(l)).join('\n')
+    expect(code, '宣言外の artifact を直接読んでいる')
+      .not.toMatch(/readFileSync\([^)]*real_jack_comparison/)
+    expect(code, '判定に使った予測を記録していない').toContain('predicted=')
   })
 
   it('validator が空の予測で判定を呼んでいない（読み替えの経路が残っていない）', () => {
     const src = readFileSync(resolve(ROOT, 'scripts/validateProfiles.mjs'), 'utf8')
     expect(src, '空の予測で呼ぶ経路が残っている').not.toMatch(/evaluateGate\(\{[^}]*predictions:\s*\{\}/)
-    expect(src).toContain('predictionsFromArtifacts')
+    expect(src).toContain('predictionsForValidation')
   })
 })

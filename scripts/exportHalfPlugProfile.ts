@@ -20,7 +20,7 @@
  */
 
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 import { getModel } from '../src/data'
 import { DEFAULT_FAULTS } from '../src/model/contact'
@@ -549,26 +549,21 @@ const lGap = predictLShoulderGap()
 if (typeof lGap === 'number') gatePredictions.L_FIRST_CONTACT_SHOULDER_GAP_MM = lGap
 
 /**
- * **受け手（と validator）が使う値と、こちらの計算値が同じであることを確かめる（v0.6.2）。**
+ * **判定に使った予測を artifact 自身へ記録する（v0.6.3・外部監査 P0-4）。**
  *
- * `validateProfiles` はモデルを読めないので、L の予測を
- * `artifacts/real_jack_comparison.json` の `testerPredictions.assumed.L` から取る。
- * その 2 つが黙ってずれると、**validator は別の予測で判定することになる。**
- * ここで止めておけば、ずれたまま出荷されることはない。
+ * v0.6.2 はここで `artifacts/real_jack_comparison.json` を直接読み、
+ * その値と自分の計算値を突き合わせていた。**その読み込みが宣言されていなかった**ので、
+ * 同ファイルを変えても `inputDigest` も `profileId` も動かなかった（実測）。
+ * しかもそのファイルは release asset ではないので、**受け手の手元には無い。**
+ *
+ * 代わりに、**使った予測をここへ書き出す。**profile の中に入るので、
+ * 書き換えれば `profileId` も asset の sha256 も動く。
+ * 受け手は配布物だけで判定をやり直せる（→ `predictionsForValidation`）。
  */
-if (typeof lGap === 'number') {
-  const rjPath = resolve(ROOT, 'artifacts/real_jack_comparison.json')
-  if (existsSync(rjPath)) {
-    const rj = JSON.parse(readFileSync(rjPath, 'utf8'))
-    const fromArtifact = rj?.testerPredictions?.assumed?.L?.shoulderGapMm
-    if (typeof fromArtifact === 'number' && Math.abs(fromArtifact - lGap) > 1e-6) {
-      throw new Error(
-        `L の予測がずれている: モデル ${lGap} mm ≠ real_jack_comparison ${fromArtifact} mm\n`
-        + '  validator はこの artifact 側の値で判定をやり直す。両方を作り直すこと。',
-      )
-    }
-  }
-}
+const predictedRecord = Object.entries(gatePredictions)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([k, v]) => `${k}:${+v.toFixed(4)}`)
+  .join(',') || '-'
 
 const gate = evaluateGate({ ledger, profileVariantId: String(VARIANT), predictions: gatePredictions })
 
@@ -601,6 +596,8 @@ const gateRef = [
   `retracted=${gate.retracted.length}`,
   `dupIds=${gate.duplicateRecordIds.length}`,
   `decidedBy=${gate.decidedBy.join(',') || '-'}`,
+  // **判定に使った予測**（v0.6.3）。受け手が配布物だけで判定をやり直すために要る
+  `predicted=${predictedRecord}`,
   `rejected=${gate.rejected.length}`,
 ].join(' ')
 

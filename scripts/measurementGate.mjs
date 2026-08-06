@@ -381,31 +381,74 @@ export function predictionsFromEvents(events, fullDepthMm) {
 }
 
 /**
- * **配布物だけから予測を作り直す（v0.6.2・外部監査 P0-3）。**
+ * `physicalVerificationRef` に書かれた**判定に使った予測**を読み出す（v0.6.3）。
+ * 形式は `predicted=OBS:値,OBS:値`。読めなければ空を返す。
+ */
+export function recordedPredictions(ref) {
+  const token = String(ref ?? '').split(' ').find((t) => t.startsWith('predicted='))
+  if (!token) return {}
+  const body = token.slice('predicted='.length)
+  if (!body || body === '-') return {}
+  const out = {}
+  for (const pair of body.split(',')) {
+    const i = pair.lastIndexOf(':')
+    if (i < 0) continue
+    const v = Number(pair.slice(i + 1))
+    if (Number.isFinite(v)) out[pair.slice(0, i)] = v
+  }
+  return out
+}
+
+/**
+ * **配布 profile だけから、判定に使う予測を組み直す（v0.6.3・外部監査 P0-4）。**
  *
- * `validateProfiles` は plain node で動くので、モデル（TypeScript）を読めない。
- * v0.6.1 まではそのため `predictions: {}` で判定を呼び、
- * **「予測が渡されていない」を「まだ true を名乗ってよい」と読み替えていた。**
- * 実測（2026-08-06）: モデルの予測 2.14 mm と 1.45 mm 食い違う記録が台帳にあっても、
- * その規則は `couldBeVerified = true` を返した。**矛盾を検出できていなかった。**
+ * ## v0.6.2 で何が悪かったか
  *
- * ここは artifact だけから予測を組み直す。
+ * v0.6.2 は L の予測を `artifacts/real_jack_comparison.json` から取っていた。
+ * ところがこのファイルは、
+ *
+ * - **生成器の入力として宣言されていない**（変えても `inputDigest` も `profileId` も動かない・実測）
+ * - **release asset にも入っていない**（受け手の手元には無い）
+ *
+ * つまり「受け手が配布物だけで判定をやり直す」ことも、
+ * 「変えたら ID が動く」ことも、どちらも成り立っていなかった。
+ * **P0-3 を直すために入れた依存が、別の穴を開けていた。**
+ *
+ * ## v0.6.3 の形
  *
  * | 観測点 | どこから出すか |
  * |---|---|
- * | `RING_BREAK_OPEN_DEPTH_MM` / `TIP_BREAK_OPEN_DEPTH_MM` | **profile 自身の event 列**（`eventIdentity` で引く） |
- * | `L_FIRST_CONTACT_SHOULDER_GAP_MM` | `artifacts/real_jack_comparison.json` の `testerPredictions.assumed.L` |
+ * | `RING_BREAK_OPEN_DEPTH_MM` / `TIP_BREAK_OPEN_DEPTH_MM` | **profile 自身の event 列から計算し直す**（独立） |
+ * | `L_FIRST_CONTACT_SHOULDER_GAP_MM` | profile が `physicalVerificationRef` に**記録した値** |
  *
- * L は別 variant の量なので profile の event 列には出ない（→ `predictionsFromEvents`）。
- * 代わりに、**同じモデルから作られた別 artifact** が同じ値を持っているので、そちらを使う。
- * **生成器側は自分の計算値がこれと一致することを確かめてから書く**ので、
- * 2 つが黙ってずれることはない（`scripts/exportHalfPlugProfile.ts`）。
+ * **記録した値は profile の中にある。**書き換えれば `profileId` も asset の sha256 も動くので、
+ * 差し替えは検算で分かる。そのうえで、**event 列から計算し直せる観測点については
+ * 記録値と一致することを要求する**——検算できるものについて記録が嘘をつけないようにするため。
  *
- * **渡せなかった観測点は満たせない**（fail closed）。空で呼ぶのと同じにはしない。
+ * **限界を明記する。**`L` は配布 profile からは計算し直せない（別 variant の量）。
+ * ここで言えるのは「記録された予測との整合」までで、
+ * **その予測がモデルの出力である保証は、この関数の外**（生成器と `inputDigest`）にある。
+ *
+ * @returns `{ predictions, problems }` — `problems` が空でなければ検証は不合格
  */
-export function predictionsFromArtifacts({ profile, realJackComparison } = {}) {
-  const out = { ...predictionsFromEvents(profile?.events, profile?.fullInsertionDepthMm) }
-  const l = realJackComparison?.testerPredictions?.assumed?.L?.shoulderGapMm
-  if (typeof l === 'number' && Number.isFinite(l)) out.L_FIRST_CONTACT_SHOULDER_GAP_MM = l
-  return out
+export function predictionsForValidation(profile) {
+  const problems = []
+  const recomputed = predictionsFromEvents(profile?.events, profile?.fullInsertionDepthMm)
+  const recorded = recordedPredictions(profile?.modelLimitations?.physicalVerificationRef)
+
+  // **計算し直せるものは、記録が合っているかを見る。**合わなければ記録のほうを信じない
+  for (const [id, v] of Object.entries(recomputed)) {
+    if (!(id in recorded)) {
+      problems.push(`予測 ${id} が physicalVerificationRef に記録されていない（profile を作り直すこと）`)
+    } else if (Math.abs(recorded[id] - v) > 1e-6) {
+      problems.push(`予測 ${id} の記録値 ${recorded[id]} が、profile の event 列から計算し直した ${v} と違う`)
+    }
+  }
+  const required = REQUIRED_FOR_PROFILE[profile?.variantId] ?? []
+  for (const id of required) {
+    if (!(id in recorded) && !(id in recomputed)) {
+      problems.push(`必須観測点 ${id} の予測が配布物から得られない（記録も無く、計算し直せもしない）`)
+    }
+  }
+  return { predictions: { ...recorded, ...recomputed }, problems }
 }
