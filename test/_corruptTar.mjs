@@ -114,7 +114,141 @@ export const paxCases = () => {
       { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('size', '999999999') },
       { name: `${TOP}/a.txt`, data: 'A' },
     ]) },
+
+    /**
+     * **同じ member に名前の上書きが 2 つ効く形（v0.6.4・外部監査 P0-A）。**
+     *
+     * v0.6.3 は `longName` を後勝ちで置いていたので、**実装ごとに結末が割れる archive**を
+     * 「読めた」と言っていた。同じ archive を 3 者で読んだ実測（2026-08-06）:
+     *
+     * ```
+     * PAX path= → GNU L    検算 gnu.txt ／ bsdtar pax.txt ／ python pax.txt
+     * GNU L → PAX path=    検算 pax.txt ／ bsdtar gnu.txt ／ python gnu.txt
+     * PAX path= を 2 回     検算 two.txt ／ bsdtar 拒否   ／ python one.txt
+     * PAX path= → PAX x    検算 pax.txt ／ bsdtar 拒否   ／ python pax.txt
+     * ```
+     *
+     * **どれが正しいかを決める立場にない。**正しい source archive にこの形は出てこないので、
+     * 「実装間で結末が割れるもの」は読まずに止める。
+     */
+    { id: 'pax-path-then-gnu-longname', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('path', `${TOP}/from-pax.txt`) },
+      { name: '././@LongLink', type: 'L', data: `${TOP}/from-gnu.txt\0` },
+      { name: `${TOP}/raw.txt`, data: 'A' },
+    ]) },
+    { id: 'gnu-longname-then-pax-path', tar: buildTar([
+      { name: '././@LongLink', type: 'L', data: `${TOP}/from-gnu.txt\0` },
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('path', `${TOP}/from-pax.txt`) },
+      { name: `${TOP}/raw.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-path-twice', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('path', `${TOP}/one.txt`) },
+      { name: `${TOP}/PaxHeaders/0/b.txt`, type: 'x', data: rec('path', `${TOP}/two.txt`) },
+      { name: `${TOP}/raw.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-path-then-second-pax', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('path', `${TOP}/from-pax.txt`) },
+      { name: `${TOP}/PaxHeaders/0/b.txt`, type: 'x', data: rec('mtime', '1') },
+      { name: `${TOP}/raw.txt`, data: 'A' },
+    ]) },
+    /** global header が名前を上書きする形。実物の `pax_global_header` は `comment` だけ */
+    { id: 'pax-g-path-override', tar: buildTar([
+      { name: 'pax_global_header', type: 'g', data: rec('path', `${TOP}/from-global.txt`) },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
   ]
+}
+
+/**
+ * **展開されるのに、検算の母集団から消える entry（v0.6.4・外部監査 P0-B）。**
+ *
+ * v0.6.3 は通常ファイル（typeflag `0`）だけを `files` に入れ、
+ * **未記録入力の探索もその key しか見ていなかった。**
+ * 実測（2026-08-06）: `typeflag 7` を scope 配下へ置くと、
+ * 検算は `status OK` / 未記録候補 0 件と言い、bsdtar と python はどちらも通常ファイルとして展開した。
+ */
+export const entryTypeCases = () => [
+  { id: 'typeflag-7-contiguous', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/src/model/extra.ts`, type: '7', data: 'EXTRA' },
+  ]) },
+  { id: 'typeflag-S-gnu-sparse', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/src/model/sparse.ts`, type: 'S', data: 'SPARSE' },
+  ]) },
+  /**
+   * リンクそのものは正当な archive でも出てくるので**止めない**。
+   * 止める代わりに inventory へ載せ、範囲の完全性検査がそれを見る。
+   */
+  { id: 'symlink-under-scope', ok: true, tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/src/model/link.ts`, type: '2', linkname: 'a.txt' },
+  ]) },
+  { id: 'hardlink-under-scope', ok: true, tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/src/model/hl.ts`, type: '1', linkname: `${TOP}/a.txt` },
+  ]) },
+]
+
+/**
+ * **パスのバイト列が UTF-8 として読めない形（v0.6.4・外部監査 P0-C）。**
+ *
+ * v0.6.3 は `toString('utf8')` で読んでいたので、不正なバイトが U+FFFD へ黙って置換された。
+ * 実測: 検算のパスは `file<FFFD>.txt`、bsdtar と python はどちらも生バイトのまま扱う。
+ * **置換して続けると、検算が見た名前と展開してできる名前が別物になる。**
+ *
+ * 生バイトを入れてから checksum を計算する（先に計算すると checksum 不正で止まり、
+ * **エンコーディングの検査を通っていないのに合格して見える**）。
+ */
+export const encodingCases = () => {
+  const withRawByte = (buf, at, byte) => { const b = Buffer.from(buf); b[at] = byte; return b }
+  const rec = (k, v) => {
+    const body = ` ${k}=${v}\n`
+    const len = String(body.length + String(body.length + 2).length).length + body.length
+    return `${len}${body}`
+  }
+  // ustar の name 欄に 0xFF を入れ、そのうえで checksum を計算し直す
+  const badName = (() => {
+    const name = `${TOP}/fileX.txt`
+    const h = header({ name, size: 4 })
+    const patched = withRawByte(h, name.indexOf('X'), 0xff)
+    return Buffer.concat([recheck(patched), body4('DATA'), Buffer.alloc(1024)])
+  })()
+  return [
+    { id: 'invalid-utf8-ustar-name', tar: badName },
+    { id: 'invalid-utf8-gnu-longname', tar: buildTar([
+      { name: '././@LongLink', type: 'L', data: withRawByte(Buffer.from(`${TOP}/fileX.txt\0`), `${TOP}/file`.length, 0xff) },
+      { name: `${TOP}/raw.txt`, data: 'A' },
+    ]) },
+    /** USTAR の prefix 欄（345〜499）。name 欄とは別の経路なので個別に試す */
+    { id: 'invalid-utf8-ustar-prefix', tar: (() => {
+      const h = header({ name: 'file.txt', prefix: `${TOP}/subX`, size: 4 })
+      const at = h.indexOf(Buffer.from('subX'), 345) + 3
+      return Buffer.concat([recheck(withRawByte(h, at, 0xff)), body4('DATA'), Buffer.alloc(1024)])
+    })() },
+    { id: 'invalid-utf8-pax-path', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: withRawByte(Buffer.from(rec('path', `${TOP}/fileX.txt`)), rec('path', `${TOP}/file`).length - 1, 0xff) },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+  ]
+}
+
+/** checksum 欄を今のヘッダ内容で計算し直す（生バイトを入れたあとに使う） */
+function recheck(h) {
+  const b = Buffer.from(h)
+  b.fill(0x20, 148, 156)
+  let sum = 0
+  for (const x of b) sum += x
+  Buffer.from(`${sum.toString(8).padStart(6, '0')}\0 `).copy(b, 148)
+  return b
+}
+
+/** 512 バイト境界まで詰めた本体 */
+function body4(s) {
+  const d = Buffer.from(s)
+  const n = Buffer.alloc(Math.ceil(d.length / BLOCK) * BLOCK)
+  d.copy(n)
+  return n
 }
 
 /** GNU long name。正常系と、宣言長を偽った異常系 */
@@ -210,4 +344,6 @@ export const allCases = () => ({
   traversal: traversalCases(),
   link: linkCases(),
   resource: resourceCases(),
+  entryType: entryTypeCases(),
+  encoding: encodingCases(),
 })
