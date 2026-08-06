@@ -94,15 +94,18 @@
     <li><a href="#s2">第2条（必須観測点）</a></li>
     <li><a href="#s3">第3条（記録が有効であるための条件）</a></li>
     <li><a href="#s4">第4条（一致の判定）</a></li>
-    <li><a href="#s5">第5条（許容の決め方）</a></li>
+    <li><a href="#s5">第5条（許容と、要求する分解能）</a></li>
     <li><a href="#s6">第6条（台帳と profile がずれないようにする）</a></li>
-    <li><a href="#s7">第7条（この条文の限界）</a></li>
-    <li><a href="#s8">第8条（実測値をどの区分へ置くか）— 2026-08-06 決定</a></li>
+    <li><a href="#s7">第9条（この判定が主張する範囲）— v2 で新設</a></li>
+    <li><a href="#s8">第10条（相反する記録の扱い）— v2 で新設</a></li>
+    <li><a href="#s9">第7条（この条文の限界）</a></li>
+    <li><a href="#s10">第8条（実測値をどの区分へ置くか）— 2026-08-06 決定</a></li>
   </ol>
 </nav>
-<h1><code>verifiedPhysical</code> の合格条件（条文 v1）</h1>
+<h1><code>verifiedPhysical</code> の合格条件（条文 v2）</h1>
 <div class="note"><p>この文書の HTML 版（同名 <code>.html</code>）は <code>npm run docs:html</code> で生成しています。<strong>HTML を直接編集しないでください。</strong></p></div>
-<p>作成 2026-08-06 ／ 条文 v1 ／ 実装 <code>scripts/measurementGate.mjs</code> ／ 台帳 <code>docs/measurements/measurement-records.v1.json</code></p>
+<p>作成 2026-08-06 ／ <strong>条文 v2（同日改訂）</strong> ／ 実装 <code>scripts/measurementGate.mjs</code> ／ 台帳 <code>docs/measurements/measurement-records.v1.json</code></p>
+<div class="note"><p><strong>v1 は穴が 3 つ空いていました。</strong>外部監査（2026-08-06）が反例を出し、こちらで再現してから直しています。</p><p><strong>記録が 0 件のうちに直しました。</strong><code>true</code> になった実績はまだ 1 件もありません。</p><p>| | v1 で何が起きたか | v2 |</p><p>|---|---|---|</p><p>| 相反する記録 | 一致する記録を 1 件見つけた時点で止めていたので、<strong>矛盾する記録が同じ台帳にあっても <code>true</code></strong>。しかも<strong>並び順で結果が変わった</strong> | 全候補を評価する。一致と矛盾が併存したら <code>AMBIGUOUS</code>（＝ <code>false</code>）→ <strong>第10条</strong> |</p><p>| 測定の分解能 | 「分解能が書いてある」しか見ていないので、<strong>許容 0.29 mm の判定を分解能 1.0 mm の道具が通った</strong> | 観測点ごとに要求分解能を許容から導き、超えたら認定しない → <strong>第5条</strong> |</p><p>| 主張の範囲 | <code>verifiedPhysical: true</code> が「接点トポロジーを実物で確かめた」と読めた | <code>claimScope</code> を出力し、<strong>幾何の観測点が合っただけ</strong>であることを機械可読にする → <strong>第9条</strong> |</p></div>
 <h2 id="s0">なぜ要るのか</h2>
 <p>配布 profile の <code>modelLimitations.verifiedPhysical</code> は、<strong>2026-08-06 まで生成器のリテラル <code>false</code></strong> でした。 schema の説明はこう書いてあるだけです。</p>
 <div class="note"><p>実物と突き合わせて検証済みか。未実測の profile では必ず false。<strong>true にできるのは実測記録が伴う場合のみ</strong></p></div>
@@ -122,15 +125,24 @@
 <h2 id="s3">第3条（記録が有効であるための条件）</h2>
 <p>次を<strong>すべて</strong>満たす記録だけを数える。1 つでも欠ければ、その記録は使わない。</p>
 <div class="tw"><table><thead><tr><th></th><th>条件</th><th>なぜ</th></tr></thead><tbody><tr><td>a</td><td><code>observation</code> が条文に定義されている</td><td>定義していない量を根拠にしない</td></tr><tr><td>b</td><td><code>variantId</code> が観測点の定義と一致する</td><td>別の組み合わせで測った値を混ぜない</td></tr><tr><td>c</td><td><strong>生値が 3 回以上</strong>ある（平均だけの記録は受け取らない）</td><td>ばらつきが見えないと、その値の信用度が誰にも分からない</td></tr><tr><td>d</td><td>測定器の<strong>分解能</strong>が書かれている</td><td>c のばらつきが許容内かを判断できない</td></tr><tr><td>e</td><td><strong>ばらつき（3 回の最大−最小）が許容以内</strong></td><td>→ 第5条</td></tr><tr><td>f</td><td>測った人・測定日・ジャックとプラグの型番がある</td><td>誰の記録かを追えるようにする</td></tr><tr><td>g</td><td><code>retracted: true</code> でない</td><td>取り下げた記録は消さずに残す。消すと、一度 <code>true</code> になっていた事実が追えない</td></tr></tbody></table></div>
+<h3><strong>「使えない」を 2 つに分ける（v2）</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th>意味</th><th>どう扱うか</th></tr></thead><tbody><tr><td><strong>記録として壊れている</strong></td><td>上の a〜f が欠けている</td><td><strong>中身を読まない。</strong>数えない</td></tr><tr><td><strong>認定には足りない</strong></td><td>読めるが、分解能が粗い・生値が目盛に乗っていない（→ 第5条）</td><td><strong><code>true</code> にはしない。</strong>ただし<strong>モデルとの食い違いは見る</strong></td></tr></tbody></table></div>
+<p>分けるのは、<strong>粗い測定でもモデルの誤りは検出できる</strong>からである。 分解能 1 mm の道具でも「予測より 1.45 mm ずれている」は言える。 それを「使えない記録」として捨てると、<strong>測ってもらったのにモデルの誤りを見逃す。</strong> <code>true</code> を出す資格と、警報を鳴らす資格は別に置く。</p>
 <h2 id="s4">第4条（一致の判定）</h2>
 <p>有効な記録の<strong>平均</strong>と、<strong>そのとき生成器が計算した現行モデルの予測</strong>の差が、 許容以内であることを求める。</p>
-<pre><code>|平均(生値) − 現行モデルの予測| ≤ その観測点の許容</code></pre>
+<pre><code>認定する      |平均(生値) − 現行モデルの予測| ≤ 許容
+矛盾と見なす  |平均(生値) − 現行モデルの予測| &gt;  許容 + 分解能/2</code></pre>
 <p><strong>予測は artifact から引かない。生成器がその場で計算した値を使う。</strong> artifact から引くと、モデルを直したのに古い予測と照合し続けることが起きる。</p>
 <p><strong>差が許容を超えたら <code>false</code> になる。</strong>そのとき直すのは記録ではなく<strong>モデル</strong>である。 記録のほうを合わせにいったら、この条文は意味を失う。</p>
-<h2 id="s5">第5条（許容の決め方）</h2>
-<p>許容は、<strong>その観測点で見分けたい差の 1/5</strong> を基準に置く。</p>
-<div class="tw"><table><thead><tr><th>観測点</th><th class="num">見分けたい差</th><th class="num">許容</th></tr></thead><tbody><tr><td><code>L_FIRST_CONTACT_SHOULDER_GAP_MM</code></td><td class="num"><strong>1.45 mm</strong>（本モデル 2.14 mm ↔ 実在部品 PS000001 由来 0.69 mm）</td><td class="num"><strong>0.29 mm</strong></td></tr><tr><td><code>RING_BREAK_OPEN_DEPTH_MM</code></td><td class="num">約 1.5 mm</td><td class="num">0.3 mm</td></tr><tr><td><code>TIP_BREAK_OPEN_DEPTH_MM</code></td><td class="num">約 1.5 mm</td><td class="num">0.3 mm</td></tr></tbody></table></div>
+<div class="note"><p><strong>矛盾の判定にだけ <code>分解能/2</code> を足すのは（v2）</strong>、目盛の量子化で最大それだけずれるからである。</p><p>足さないと、<strong>粗い道具で測っただけでモデルが間違っていることになる。</strong></p><p>逆に認定側へ足すと、粗い道具ほど通りやすくなる。<strong>片側にだけ足す。</strong></p></div>
+<h2 id="s5">第5条（許容と、要求する分解能）</h2>
+<p>許容は、<strong>その観測点で見分けたい差の 1/5</strong> を基準に置く。 <strong>要求する分解能は、その許容の 1/3 以下</strong>——ただし実在する道具の刻みへ切り下げる（v2）。</p>
+<div class="tw"><table><thead><tr><th>観測点</th><th class="num">見分けたい差</th><th class="num">許容</th><th class="num"><strong>要求分解能</strong></th></tr></thead><tbody><tr><td><code>L_FIRST_CONTACT_SHOULDER_GAP_MM</code></td><td class="num"><strong>1.45 mm</strong>（本モデル 2.14 mm ↔ 実在部品 PS000001 由来 0.69 mm）</td><td class="num"><strong>0.29 mm</strong></td><td class="num"><strong>0.05 mm 以下</strong></td></tr><tr><td><code>RING_BREAK_OPEN_DEPTH_MM</code></td><td class="num">約 1.5 mm</td><td class="num">0.3 mm</td><td class="num">0.1 mm 以下</td></tr><tr><td><code>TIP_BREAK_OPEN_DEPTH_MM</code></td><td class="num">約 1.5 mm</td><td class="num">0.3 mm</td><td class="num">0.1 mm 以下</td></tr></tbody></table></div>
 <p><strong>判定に効かない桁を要求しない。</strong><code>L</code> はデジタルノギスの分解能 0.01 mm の <strong>145 倍</strong>の差を見る測定で、 0.1 mm 単位で読んでも 14.5 倍ある。ここで 0.02 mm の一致を求めると、 <strong>測ってもらったのに弾く</strong>ことになる。</p>
+<p><strong><code>docs/VERIFICATION_PLAN.md</code> が求めているデジタルノギス（0.01 mm）は、3 観測点すべてで通る。</strong> 表の値は手で書いていない。許容から計算して、<code>0.001 / 0.002 / 0.005 / 0.01 / 0.02 / 0.05 / 0.1 / 0.2 / 0.5 / 1</code> の中へ切り下げている。</p>
+<h3>なぜ分解能を要求するのか — v1 で起きたこと</h3>
+<p>v1 は「分解能が書いてある」しか見ていなかった。<strong>分解能 1.0 mm、生値 2.0 mm ×3</strong> の記録が 許容 0.29 mm の判定を<strong>通った</strong>（外部監査の反例。こちらで再現済み）。 1 mm 刻みで「2」と読んだ値は、真値が 1.5〜2.5 のどこでもありうる。 <strong>許容 0.29 mm の一致を、それで名乗ってはいけない。</strong></p>
+<p><strong>生値が目盛に乗っていることも見る。</strong>分解能 0.05 mm の道具で「2.143」は読めない。 読めない値が書いてあるなら、分解能か生値のどちらかが違う。</p>
 <h2 id="s6">第6条（台帳と profile がずれないようにする）</h2>
 <p>台帳は <code>inputDigest</code> に<strong>入れていない</strong>。<strong>理由を書いておく。</strong></p>
 <p><code>docs/measurements/measurement-records.v1.json</code> を共通入力に足すと、 <strong>記録が 1 件も無い今の時点で、全 artifact の ID が動く。</strong> 中身が変わっていないのに ID が変わる状態を自分から作ることになる （<code>source-input-scope.v1.json</code> の <code>commonInputsNote</code> が避けている問題と同じ型）。</p>
@@ -139,11 +151,38 @@
 modelLimitations.physicalVerificationRef 台帳のパスと sha256・条文の版・満たした観測点・欠けている観測点</code></pre>
 <p>そのうえで <code>npm run validate:profiles</code> の semantic 規則 <code>measurementRecords</code> が、 <strong>現在の台帳から判定をやり直して、profile に書いてある値と突き合わせる。</strong> 台帳だけ書き換えて profile を作り直さなければ、そこで落ちる。</p>
 <div class="note"><p><strong><code>inputDigest</code> に入れるほうが素直ではあります。</strong>記録が実際に入って</p><p><code>verifiedPhysical</code> が動くようになったら、そのタイミングで入れ直すのが筋です。</p><p><strong>いまは入れない理由が「空だから」なので、空でなくなったら理由も消えます。</strong></p></div>
-<h2 id="s7">第7条（この条文の限界）</h2>
-<ul><li><strong>必須観測点の選び方そのものは、この条文では正当化していない。</strong> 「看板の結論に効く」という判断で選んでいて、<strong>別の選び方もありうる。</strong></li><li><strong>1 人が 1 個の部品を 3 回測った記録</strong>で <code>true</code> になる。 個体差・ロット差は見ていない。<strong>複数個体を要求していない。</strong></li><li>予測と一致したことは示せるが、<strong>一致した理由がモデルの正しさとは限らない</strong> （たまたま合うパラメータ組み合わせが他にもありうる）。</li><li><strong><code>true</code> になっても、<code>evidenceGrade</code> の値そのものは動かない</strong>（→ 第8条）。</li></ul>
+<h2 id="s7">第9条（この判定が主張する範囲）— <strong>v2 で新設</strong></h2>
+<p>判定器は <code>claimScope</code> を出す。値は <strong><code>geometry-only</code></strong> で固定である。</p>
+<pre><code>verifiedPhysical: true が言うこと
+  → 条文が名指しした幾何量が、現行モデルの予測と、条文の許容の内側で合った
+
+言わないこと
+  → target-topology  どの端子がどの導体と繋がるか・GND が開放か・短絡が無いか
+  → acoustic         音がどうなるか
+  → lot-variation    別個体・別ロットでも同じか</code></pre>
+<p>配布 profile の <code>physicalVerificationRef</code> にも <code>scope=geometry-only</code> が入る。 <strong>文字列の中に置いてある</strong>のは、<code>physicalVerificationRef</code> の型が <code>["string","null"]</code> で、 構造を足すと言語が広がって <strong>profile v4（BUMP）</strong>になり下流が止まるためである（→ 第6条・<code>docs/SCHEMA_VERSIONING_POLICY.md</code>）。</p>
+<h3>なぜ書くのか</h3>
+<p><code>TRS|JACK-TRRS</code> profile の必須観測点は <code>L_FIRST_CONTACT_SHOULDER_GAP_MM</code> <strong>1 点だけ</strong>で、 しかも<strong>別 variant（<code>TRRS-CTIA|JACK-TRRS</code>）の量</strong>である（→ 第2条）。</p>
+<p>この 1 点が合っても、<code>IV028</code>（左右が別導体・共通帰線だけ開放）の次は<strong>何も確かめていない。</strong></p>
+<div class="tw"><table><thead><tr><th></th><th>確かめたか</th></tr></thead><tbody><tr><td>L が期待した端子に繋がる</td><td>いいえ</td></tr><tr><td>R が期待した端子に繋がる</td><td>いいえ</td></tr><tr><td>L と R が別の導体である</td><td>いいえ</td></tr><tr><td>GND が開いている</td><td>いいえ</td></tr><tr><td>信号どうし・信号と帰線が短絡していない</td><td>いいえ</td></tr></tbody></table></div>
+<p><strong>この profile を使う側が <code>verifiedPhysical: true</code> を「トポロジーを実物で確かめた」と読むと、間違える。</strong> だから機械可読で範囲を出す。トポロジーを確かめたければ、 <code>docs/VERIFICATION_PLAN.md</code> §2-2 の導通測定が要る（<strong>まだ 1 件も来ていない</strong>）。</p>
+<h2 id="s8">第10条（相反する記録の扱い）— <strong>v2 で新設</strong></h2>
+<p><strong>必須観測点ごとに、候補となる記録を全部評価する。</strong>一致を 1 件見つけても止めない。</p>
+<div class="tw"><table><thead><tr><th>状態</th><th>判定</th></tr></thead><tbody><tr><td>一致する記録があり、矛盾する記録が無い</td><td><code>VERIFIED</code></td></tr><tr><td><strong>一致する記録と矛盾する記録が併存する</strong></td><td><strong><code>AMBIGUOUS</code>（＝ <code>false</code>）</strong></td></tr><tr><td>一致する記録が無い</td><td><code>UNVERIFIED</code></td></tr><tr><td>台帳に <code>recordId</code> の重複がある</td><td><strong><code>INVALID_LEDGER</code>（＝ <code>false</code>）</strong></td></tr></tbody></table></div>
+<p><strong>結果は記録の並び順に依存しない。</strong><code>recordId</code> で並べ直してから評価する。</p>
+<p>v1 は一致を 1 件見つけた時点で止めていたので、次の 2 つが起きていた（実測）。</p>
+<pre><code>[一致, 矛盾] → verified=true  rejected=0 件   ← 矛盾する記録が評価すらされない
+[矛盾, 一致] → verified=true  rejected=1 件   ← 同じ台帳なのに出力が違う</code></pre>
+<p><strong>どちらも <code>true</code> である</strong>ことが問題である。矛盾は「弾いて先へ進む」ものではない。</p>
+<h3>併存したときにどうするか</h3>
+<p><strong><code>supersedes</code> は入れない。</strong>新しい記録が古い記録を黙って上書きできる仕組みは作らない。 決着のさせ方は 2 つだけで、どちらも<strong>書いた人の判断が残る。</strong></p>
+<ol><li><strong>モデルのほうが間違っている</strong> → モデルを直す。直せば矛盾は消える（第4条）</li><li><strong>その記録が間違っていた</strong> → <code>retracted: true</code> と <code>retractedReason</code> を付ける。<strong>記録は消さない</strong></li></ol>
+<p><code>retracted</code> は既に台帳 schema にある。<strong>新しい欄を足さずに済む</strong>ので、 <code>measurement-record.v1</code> の版も上がらない（<code>additionalProperties: false</code> なので、欄を足すと BUMP になる）。</p>
+<h2 id="s9">第7条（この条文の限界）</h2>
+<ul><li><strong>必須観測点の選び方そのものは、この条文では正当化していない。</strong> 「看板の結論に効く」という判断で選んでいて、<strong>別の選び方もありうる。</strong></li><li><strong>1 人が 1 個の部品を 3 回測った記録</strong>で <code>true</code> になる。 個体差・ロット差は見ていない。<strong>複数個体を要求していない。</strong></li><li><strong><code>true</code> は幾何量についてしか言わない</strong>（→ 第9条）。接点トポロジーも音響も含まない。</li><li><strong>矛盾の検出は、台帳に記録が入った分しか働かない。</strong>測って矛盾に気づいた人が 記録を出さなければ、この条文は何も言わない。</li><li>予測と一致したことは示せるが、<strong>一致した理由がモデルの正しさとは限らない</strong> （たまたま合うパラメータ組み合わせが他にもありうる）。</li><li><strong><code>true</code> になっても、<code>evidenceGrade</code> の値そのものは動かない</strong>（→ 第8条）。</li></ul>
 <p><strong>「起きない」とは書かない。</strong>この条文で言えるのは <strong>「いま定義した観測点については、記録が無ければ <code>true</code> にならない」まで</strong>である。</p>
 <hr>
-<h2 id="s8">第8条（実測値をどの区分へ置くか）— <strong>2026-08-06 決定</strong></h2>
+<h2 id="s10">第8条（実測値をどの区分へ置くか）— <strong>2026-08-06 決定</strong></h2>
 <p><strong>実測値も <code>FACT</code> に置く。区分は増やさない。</strong></p>
 <p><code>FACT</code> の意味を「メーカーのデータシート・図面の<strong>記載寸法</strong>」から 「<strong>一次情報</strong>（記載寸法、および第3条〜第5条どおりに受け取った実測記録）」へ広げる。</p>
 <h3>記載寸法と実測は <code>sources</code> で分ける</h3>

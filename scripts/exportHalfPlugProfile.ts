@@ -562,10 +562,23 @@ const gate = evaluateGate({ ledger, profileVariantId: String(VARIANT), predictio
 const gateRef = [
   `${LEDGER_PATH}@sha256:${createHash('sha256').update(ledgerRaw).digest('hex').slice(0, 12)}`,
   `gate=${GATE_DOCUMENT}@v${gate.gateVersion}`,
+  // **何を主張しているか**を機械可読で置く（条文 v2 第9条）。
+  // これが無いと verifiedPhysical=true が「接点トポロジーを実物で確かめた」と読まれる
+  // （この行に `verifiedPhysical:` と `true` を続けて書かないこと。
+  //  test/halfPlugProfile.test.ts §7 が「true にできる経路がコードに無い」を文字列で見ている）
+  `scope=${gate.claimScope}`,
+  `verdict=${gate.verdict}`,
   `records=${Array.isArray(ledger.records) ? ledger.records.length : 0}`,
   `required=${gate.required.join(',') || '-'}`,
   `satisfied=${gate.satisfied.map((x) => x.observation).join(',') || '-'}`,
   `missing=${gate.missing.join(',') || '-'}`,
+  // 一致と矛盾が併存している観測点。**missing とは別**（記録はあるが決まらない）
+  `ambiguous=${gate.ambiguous.join(',') || '-'}`,
+  `conflicting=${gate.conflicting.length}`,
+  `notCertified=${gate.notCertified.length}`,
+  `retracted=${gate.retracted.length}`,
+  `dupIds=${gate.duplicateRecordIds.length}`,
+  `decidedBy=${gate.decidedBy.join(',') || '-'}`,
   `rejected=${gate.rejected.length}`,
 ].join(' ')
 

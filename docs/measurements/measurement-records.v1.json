@@ -4,7 +4,7 @@
   "purpose": "実物を測った記録の正本。profile の modelLimitations.verifiedPhysical はここから機械で決まる。",
   "why": "2026-08-06 まで verifiedPhysical は生成器のリテラル false だった。schema には「true にできるのは実測記録が伴う場合のみ」としか書いておらず、何を何点測れば足りるのかが無かった。つまり実態は「誰かがリテラルを書き換えたら true」で、検証ではなかった。",
   "gateDocument": "docs/VERIFIED_PHYSICAL_GATE.md",
-  "gateVersion": 1,
+  "gateVersion": 2,
   "verifiedBy": "npm run validate:profiles の semantic 規則 measurementRecords が、この台帳と配布 profile の verifiedPhysical / physicalVerificationRef を突き合わせる。台帳だけ書き換えて profile を作り直さなければ、そこで落ちる。",
   "records": []
 }

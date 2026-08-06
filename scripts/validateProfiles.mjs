@@ -31,7 +31,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'n
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkWindowInvariants } from './robustnessWindows.mjs'
-import { checkRecord, evaluateGate, REQUIRED_FOR_PROFILE, GATE_DOCUMENT, LEDGER_PATH, GATE_VERSION } from './measurementGate.mjs'
+import { checkRecord, evaluateGate, REQUIRED_FOR_PROFILE, GATE_DOCUMENT, LEDGER_PATH, GATE_VERSION, CLAIM_SCOPE } from './measurementGate.mjs'
 
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
@@ -278,8 +278,30 @@ const SEMANTIC = {
       if (p.modelLimitations.verifiedPhysical === true && !couldBeVerified) {
         errs.push(`${f}: verifiedPhysical が true だが、現在の台帳には条件を満たす記録が無い`)
       }
-      if (p.modelLimitations.verifiedPhysical === false && kv.missing === '-') {
-        errs.push(`${f}: verifiedPhysical が false なのに missing が空`)
+      /**
+       * **`false` なのに「足りない理由」がどこにも書いていない状態を作らせない（条文 v2）。**
+       * v1 では `missing` だけを見ていたが、v2 は
+       * 「記録はあるが一致と矛盾が併存している（`ambiguous`）」「台帳の recordId が重複している（`dupIds`）」でも
+       * `false` になる。**そのとき `missing` は空になりうる。**
+       */
+      const notVerifiedReason = [
+        kv.missing !== '-' && 'missing',
+        kv.ambiguous && kv.ambiguous !== '-' && 'ambiguous',
+        kv.dupIds && kv.dupIds !== '0' && 'dupIds',
+      ].filter(Boolean)
+      if (p.modelLimitations.verifiedPhysical === false && !notVerifiedReason.length) {
+        errs.push(`${f}: verifiedPhysical が false なのに、足りない理由（missing / ambiguous / dupIds）が 1 つも書かれていない`)
+      }
+      if (p.modelLimitations.verifiedPhysical === true && notVerifiedReason.length) {
+        errs.push(`${f}: verifiedPhysical が true なのに ${notVerifiedReason.join(' / ')} が残っている`)
+      }
+      // **主張の範囲を必ず書かせる（条文 v2 第9条）。**無いと「接点トポロジーを確かめた」と読まれる
+      if (kv.scope !== CLAIM_SCOPE) {
+        errs.push(`${f}: physicalVerificationRef の scope が条文と違う (${kv.scope} ≠ ${CLAIM_SCOPE})`)
+      }
+      const verdictSaysTrue = kv.verdict === 'VERIFIED'
+      if (verdictSaysTrue !== (p.modelLimitations.verifiedPhysical === true)) {
+        errs.push(`${f}: physicalVerificationRef の verdict (${kv.verdict}) が verifiedPhysical=${p.modelLimitations.verifiedPhysical} と噛み合っていない`)
       }
     }
   },

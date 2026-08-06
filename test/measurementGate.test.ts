@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
-  GATE_VERSION, LEDGER_PATH, OBSERVATIONS, REQUIRED_FOR_PROFILE,
+  CLAIM_SCOPE, GATE_VERSION, LEDGER_PATH, OBSERVATIONS, REQUIRED_FOR_PROFILE, RESOLUTION_DIVISOR,
   checkRecord, evaluateGate, predictionsFromEvents,
 } from '../scripts/measurementGate.mjs'
 
@@ -103,7 +103,6 @@ describe('verifiedPhysical のゲート ③ 変異を 1 か所ずつ入れて、
     ['測った人が無い', (r) => { delete r.measuredBy }, 'measuredBy'],
     ['測定日の形が違う', (r) => { r.measuredOn = '2026/08/06' }, 'YYYY-MM-DD'],
     ['ジャックの型番が無い', (r) => { r.parts = { plug: 'SYNTH-PLUG' } }, 'parts.jack'],
-    ['取り下げられている', (r) => { r.retracted = true }, '取り下げ'],
     ['variantId が観測点と違う', (r) => { r.variantId = 'TRS|JACK-TRS' }, 'variantId'],
     ['観測点が定義に無い', (r) => { r.observation = 'NOT_DEFINED' }, '定義されていない'],
     ['ばらつきが許容を超える', (r) => { r.valuesMm = [2.13, 2.15, 2.90] }, 'ばらつき'],
@@ -180,5 +179,163 @@ describe('verifiedPhysical のゲート ④ 配布物とつながっている', 
   it('L の観測点は profile の event 列からは出せない（別 variant なので）', () => {
     const p = read('artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json')
     expect(predictionsFromEvents(p.events, p.fullInsertionDepthMm)[L]).toBeUndefined()
+  })
+})
+
+/**
+ * **条文 v2（2026-08-06）。外部監査が出した反例を、こちらで再現してから直した分。**
+ *
+ * v1 は一致する記録を 1 件見つけた時点で `break` していたので、
+ * ①矛盾する記録があっても `true` ②同じ台帳でも並び順で `rejected` の中身が変わる
+ * ③分解能 1.0 mm の測定器が許容 0.29 mm の判定を通る、の 3 つが起きていた。
+ *
+ * **材料は「壊れた記録」ではなく「読めるが認定してはいけない記録」である。**
+ * 壊れた記録で試すと、v1 でも弾けたものしか試さないことになる。
+ */
+describe('verifiedPhysical のゲート ⑤ 条文 v2 — 相反・分解能・主張の範囲', () => {
+  const runL = (records: unknown[]) => evaluateGate({
+    ledger: ledgerOf(records), profileVariantId: 'TRS|JACK-TRRS', predictions: { [L]: PRED_L },
+  })
+  /** モデルの予測と合う記録 */
+  const agrees = { ...goodRecord(L, [2.13, 2.15, 2.14]), recordId: 'MR0001' }
+  /** **読める記録なのに**モデルと 1.45 mm 食い違う（実在部品 PS000001 由来の予測と同じ値） */
+  const disagrees = { ...goodRecord(L, [0.68, 0.70, 0.69]), recordId: 'MR0002' }
+
+  it('対照 — 一致する記録だけなら、v1 と同じく true になる', () => {
+    expect(checkRecord(agrees).valid, '材料の記録がそもそも無効').toBe(true)
+    expect(checkRecord(disagrees).valid, '**矛盾する記録も「読める記録」でなければ反例にならない**').toBe(true)
+    expect(runL([agrees]).verified).toBe(true)
+  })
+
+  it('**一致と矛盾が併存したら true にしない**（v1 は true だった）', () => {
+    for (const order of [[agrees, disagrees], [disagrees, agrees]]) {
+      const g = runL(order)
+      expect(g.verified, '矛盾する記録があるのに検証済みを名乗っている').toBe(false)
+      expect(g.verdict).toBe('AMBIGUOUS')
+      expect(g.ambiguous).toContain(L)
+    }
+  })
+
+  it('**並び順で結果が変わらない**（v1 は rejected の中身が変わった）', () => {
+    expect(runL([agrees, disagrees])).toEqual(runL([disagrees, agrees]))
+    // 3 件でも同じ。**全順列で同一**
+    const third = { ...goodRecord(L, [2.14, 2.14, 2.14]), recordId: 'MR0003' }
+    const perms = [
+      [agrees, disagrees, third], [agrees, third, disagrees], [disagrees, agrees, third],
+      [disagrees, third, agrees], [third, agrees, disagrees], [third, disagrees, agrees],
+    ]
+    const first = JSON.stringify(runL(perms[0]))
+    for (const p of perms) expect(JSON.stringify(runL(p)), '並び順で結果が変わった').toBe(first)
+  })
+
+  it('**取り下げれば矛盾は数えない**（消さずに残したまま決着できる）', () => {
+    const withdrawn = { ...disagrees, retracted: true, retractedReason: '別個体と取り違えた' }
+    const g = runL([agrees, withdrawn])
+    expect(g.verified).toBe(true)
+    expect(g.retracted.map((r) => r.recordId)).toEqual(['MR0002'])
+    // **取り下げは「壊れた記録」ではない。**理由つきで残る
+    expect(g.rejected.map((r) => r.recordId)).not.toContain('MR0002')
+    expect(g.retracted[0].reason).toContain('取り違えた')
+  })
+
+  it('**分解能が許容に対して粗い記録では認定しない**（v1 は 1.0 mm が通った）', () => {
+    const coarse = { ...goodRecord(L, [2, 2, 2]), instrument: { kind: 'ものさし', resolutionMm: 1 } }
+    expect(checkRecord(coarse).valid, '記録としては読める').toBe(true)
+    expect(checkRecord(coarse).certifiable, '認定してはいけない').toBe(false)
+    const g = runL([coarse])
+    expect(g.verified).toBe(false)
+    expect(g.notCertified).toHaveLength(1)
+    // **矛盾扱いにはしない。**1 mm の目盛で 2.0 と読めたことは 2.14 と矛盾しない
+    expect(g.conflicting).toHaveLength(0)
+  })
+
+  it('必要な分解能は許容から導く（手で書いた値ではない）', () => {
+    for (const [id, o] of Object.entries(OBSERVATIONS)) {
+      expect(o.maxResolutionMm, `${id}: 許容の 1/${RESOLUTION_DIVISOR} を超えている`)
+        .toBeLessThanOrEqual(o.toleranceMm / RESOLUTION_DIVISOR + 1e-12)
+      expect(o.maxResolutionMm, `${id}: 分解能の要求が 0 以下`).toBeGreaterThan(0)
+    }
+    // **募集している道具が弾かれないこと。**デジタルノギス 0.01 mm は全観測点で通る
+    for (const [id, o] of Object.entries(OBSERVATIONS)) {
+      expect(0.01, `${id}: デジタルノギスが弾かれる`).toBeLessThanOrEqual(o.maxResolutionMm)
+    }
+  })
+
+  it('**分解能の目盛に乗っていない生値は認定しない**（その測定器では読めない値）', () => {
+    const offGrid = { ...goodRecord(L, [2.143, 2.14, 2.14]) }
+    expect(checkRecord(offGrid).certifiable).toBe(false)
+    expect(checkRecord(offGrid).notCertifiableReasons.join(' ')).toContain('目盛に乗っていない')
+    expect(runL([offGrid]).verified).toBe(false)
+    // 対照: 目盛に乗っている値なら通る
+    expect(checkRecord(goodRecord(L, [2.13, 2.15, 2.14])).certifiable).toBe(true)
+  })
+
+  it('**粗い測定器でもモデルとの食い違いは検出する**（認定できないことと矛盾を見逃すことは別）', () => {
+    const coarseAndWrong = { ...goodRecord(L, [0.7, 0.7, 0.7]), instrument: { kind: 'ものさし', resolutionMm: 0.1 } }
+    const g = runL([coarseAndWrong])
+    expect(g.verified).toBe(false)
+    expect(g.conflicting, '粗い測定器だからと矛盾を捨てている').toHaveLength(1)
+    expect(g.conflicting[0].reasons.join(' ')).toContain('モデルのほうを直すこと')
+  })
+
+  it('食い違いの判定には測定器の不確かさを足す（粗いだけでモデルが誤りにならない）', () => {
+    // 分解能 0.5 mm で 2.5 と読めた。予測 2.14 との差 0.36 は許容 0.29 を超えるが、
+    // 目盛の量子化 ±0.25 を足した 0.54 の内側なので**矛盾とは言わない**
+    const coarseNear = { ...goodRecord(L, [2.5, 2.5, 2.5]), instrument: { kind: 'ものさし', resolutionMm: 0.5 } }
+    const g = runL([coarseNear])
+    expect(g.conflicting, '測定器の粗さでモデルを誤りにしている').toHaveLength(0)
+    expect(g.verified, 'それでも認定はしない').toBe(false)
+  })
+
+  it('**recordId が重複した台帳は判定ごと拒む**（根拠が一意に指せない）', () => {
+    const g = runL([agrees, { ...agrees, valuesMm: [2.14, 2.14, 2.14] }])
+    expect(g.verdict).toBe('INVALID_LEDGER')
+    expect(g.verified).toBe(false)
+    expect(g.duplicateRecordIds).toEqual(['MR0001'])
+    // 対照: ID を分ければ通る
+    expect(runL([agrees, { ...agrees, recordId: 'MR0009' }]).verified).toBe(true)
+  })
+
+  it('**何を主張しているかを出力に持つ**（接点トポロジーも音響も含まない）', () => {
+    const g = runL([agrees])
+    expect(g.verified).toBe(true)
+    expect(g.claimScope).toBe(CLAIM_SCOPE)
+    expect(CLAIM_SCOPE).toBe('geometry-only')
+    for (const notCovered of ['target-topology', 'acoustic', 'lot-variation']) {
+      expect(g.notCoveredByThisClaim, `${notCovered} が「含まない」側に無い`).toContain(notCovered)
+    }
+    // **判定に使った記録を指せる**
+    expect(g.decidedBy).toEqual(['MR0001'])
+  })
+
+  it('主張の範囲は配布 profile にも書いてある', () => {
+    for (const f of [
+      'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json',
+      'artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json',
+    ]) {
+      expect(read(f).modelLimitations.physicalVerificationRef, f).toContain(`scope=${CLAIM_SCOPE}`)
+    }
+  })
+
+  it('**L の必須観測点は配布 profile とは別 variant である**ことが条文に書いてある', () => {
+    // 監査が「claim scope が広い」と言った実体。**書いてあることを機械で固定する**
+    expect(OBSERVATIONS[L].variantId).toBe('TRRS-CTIA|JACK-TRRS')
+    expect(REQUIRED_FOR_PROFILE['TRS|JACK-TRRS']).toEqual([L])
+    expect(OBSERVATIONS[L].variantId, '同じ variant なら claim scope の断りは要らない')
+      .not.toBe('TRS|JACK-TRRS')
+    const doc = readFileSync(resolve(ROOT, 'docs/VERIFIED_PHYSICAL_GATE.md'), 'utf8')
+    expect(doc).toContain('TRRS-CTIA|JACK-TRRS')
+    expect(doc, '条文が主張の範囲を書いていない').toContain('geometry-only')
+  })
+
+  it('条文の版が実装・台帳・生成物で揃っている', () => {
+    expect(GATE_VERSION).toBe(2)
+    expect(read(LEDGER_PATH).gateVersion, '台帳の gateVersion が実装とずれている').toBe(GATE_VERSION)
+    for (const f of [
+      'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json',
+      'artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json',
+    ]) {
+      expect(read(f).modelLimitations.physicalVerificationRef, f).toContain(`@v${GATE_VERSION}`)
+    }
   })
 })
