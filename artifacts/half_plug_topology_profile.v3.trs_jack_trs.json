@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRS:480daac80519",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:fddf3c173ac6",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -323,16 +323,16 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "3f04056f2f139c1a74cdbf6f0ccc142526603bc6",
+ "sourceRevision": "33a4bfce53b281d5f465083019a687b2f1633bd9",
  "generatedAt": "2026-08-06",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "3f04056f2f139c1a74cdbf6f0ccc142526603bc6",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "33a4bfce53b281d5f465083019a687b2f1633bd9",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "480daac8051955c25f8335e07d1bed860cafe8b4fa173f0078b68b7e492b1e5c",
+  "inputDigest": "fddf3c173ac6ff0a69116935c4d2f00e0faaa7d5cdd7f628ea7985a06e9dcf36",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -362,7 +362,7 @@
    },
    {
     "path": "scripts/exportHalfPlugProfile.ts",
-    "sha256": "d45a514525decc6290bdb56cd5a74102d222c124703afc13bd824c91d2c4a197",
+    "sha256": "12fc18cd9c80e32bee7f417fe4c4943fec4cbc703eee2b25eeaa9d9a4451033b",
     "role": "generator"
    },
    {
@@ -461,7 +461,7 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" --release",
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\"",
   "artifactDate": "2026-08-06"
  },
  "fullInsertionDepthMm": 14,
@@ -487,7 +487,7 @@
  },
  "modelLimitations": {
   "verifiedPhysical": false,
-  "physicalVerificationRef": "docs/measurements/measurement-records.v1.json@sha256:dfe5020f9198 gate=docs/VERIFIED_PHYSICAL_GATE.md@v1 records=0 required=RING_BREAK_OPEN_DEPTH_MM,TIP_BREAK_OPEN_DEPTH_MM satisfied=- missing=RING_BREAK_OPEN_DEPTH_MM,TIP_BREAK_OPEN_DEPTH_MM rejected=0",
+  "physicalVerificationRef": "docs/measurements/measurement-records.v1.json@sha256:8540415effae gate=docs/VERIFIED_PHYSICAL_GATE.md@v2 scope=geometry-only verdict=UNVERIFIED records=0 required=RING_BREAK_OPEN_DEPTH_MM,TIP_BREAK_OPEN_DEPTH_MM satisfied=- missing=RING_BREAK_OPEN_DEPTH_MM,TIP_BREAK_OPEN_DEPTH_MM ambiguous=- conflicting=0 notCertified=0 retracted=0 dupIds=0 decidedBy=- rejected=0",
   "notes": [
    "実物と突き合わせた検証をしていない。ジャック内部の接点ばね寸法は仮定である。",
    "この profile は Lumberg 1532 10 × Lumberg 1503 09 の 1 組についてのものであり、3.5mm ジャック全般を代表しない。",
