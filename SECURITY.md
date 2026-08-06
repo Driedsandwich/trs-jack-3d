@@ -81,6 +81,10 @@ modelLimitations.verifiedPhysical   false
 - v0.6.0（`toolVersion` 5）で、信頼できない archive に対して安全に止まるようにしましたが、
   **すべての細工に耐えることは示していません。**26 個・6 種類で試験した範囲までです
   （[docs/release/verify-tool-v5-notes.md](docs/release/verify-tool-v5-notes.md)）。
+  **現に、v5 で塞いだつもりだった穴が 3 つ残っていました**——同名 entry の後勝ち・
+  ディレクトリ入力の symlink ループ・圧縮入力の上限なし。外部監査（2026-08-06）の指摘で
+  `main` の `toolVersion` 6 で直しています（[verify-tool-v6-notes.md](docs/release/verify-tool-v6-notes.md)）。
+  **release にはまだ載っていません**（v0.6.0 の同梱物は v5 のままです）。
 
 ### そのほか
 

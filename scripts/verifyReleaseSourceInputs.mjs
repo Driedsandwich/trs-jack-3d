@@ -43,7 +43,7 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { gunzipSync } from 'node:zlib'
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, lstatSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 /**
@@ -60,8 +60,13 @@ import { join, resolve } from 'node:path'
  *       symlink と hardlink をファイルとして扱わない・資源上限。
  *       あわせて ARCHIVE_INVALID を SOURCE_UNAVAILABLE から分離した。
  *       **判定の意味が変わる**（v0.5.2 までなら読めていた archive が止まる）ので版を上げる
+ *   6 … **外部監査 2026-08-06 の 3 件（こちらで再現してから直した）。**
+ *       同じパスの entry が 2 回あると後勝ちで黙って通っていた → ARCHIVE_INVALID。
+ *       ディレクトリ入力の symlink ループで生スタックトレースを吐いて落ちていた → lstat + 構造化 status。
+ *       圧縮された入力そのものに上限が無く、相手が送ってきた量が全部メモリに載っていた → maxCompressedBytes。
+ *       **1 件目は判定が変わる**（v6 で止まる archive が v5 では通った）ので版を上げる
  */
-export const TOOL_VERSION = 5
+export const TOOL_VERSION = 6
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -123,6 +128,16 @@ export const TAR_LIMITS = {
   maxTotalBytes: 256 << 20,    // 256 MB。実測 15.09 MB の約 17 倍。gunzip の上限にも使う
   maxPathLength: 1024,         // 実測の最長 95 の約 10 倍
   fetchTimeoutMs: 60_000,      // 取得が返らないまま止まらないため
+  /**
+   * **圧縮された入力そのものの上限（v0.6.1）。**
+   *
+   * v0.6.0 は展開後にしか上限が無く、`readFileSync` / `arrayBuffer()` で
+   * **入力を全部メモリへ載せてから**判定していた。
+   * 実測（2026-08-06）: 120 MB の入力を渡すと最大 RSS 165 MB、1 MB のときは 45 MB。
+   * **相手が送ってきた量がそのまま常駐する。**
+   * 64 MB は実物の source tarball 9.76 MB の約 6.5 倍。
+   */
+  maxCompressedBytes: 64 << 20,
 }
 
 /** archive が壊れている／敵対的であることを表す。**取れなかった（SOURCE_UNAVAILABLE）とは別物** */
@@ -245,6 +260,18 @@ function readTar(buf) {
 
     if (!name) continue
     assertSafePath(name)
+    /**
+     * **同じパスが 2 回出てきたら止める（v0.6.1・外部監査 P1-A）。**
+     *
+     * v0.6.0 は `Map` へ入れるだけだったので**後の entry が黙って勝った**（実測: `dup.txt` が `SECOND` になる）。
+     * 受け手は manifest のパスでこの Map を引くので、
+     * **checksum を通った最初の中身とは別の中身を「source にあった」と読むことになる。**
+     * 中身が同一でも拒む——同じ内容を 2 回入れる正当な理由が無く、
+     * 「同一なら許す」にすると比較のぶんだけ判断が増える。
+     */
+    if (files.has(name)) {
+      throw new ArchiveInvalid('同じパスの entry が 2 回ある（どちらが本物か決められない）', { name, entryIndex: entries })
+    }
     files.set(name, data)
   }
   return files
@@ -266,6 +293,41 @@ function gunzipLimited(buf) {
   } catch (e) {
     throw new ArchiveInvalid(`gzip を展開できない: ${String(e.message).split('\n')[0]}`)
   }
+}
+
+/**
+ * **受け取りながら上限を効かせる（v0.6.1）。**
+ *
+ * `res.arrayBuffer()` は全部読み終えてから返すので、
+ * **上限を超えていることが分かるのは、超えた量を受け取り終えた後**になる。
+ * ここは chunk を数えながら読み、超えた時点で body を捨てる。
+ *
+ * @param res  fetch の Response
+ * @param limit 受け取ってよい最大バイト数
+ */
+export async function readBodyLimited(res, limit) {
+  if (!res.body) return Buffer.from(await res.arrayBuffer())
+  const reader = res.body.getReader()
+  const chunks = []
+  let total = 0
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      total += value.byteLength
+      if (total > limit) {
+        await reader.cancel()
+        throw new ArchiveInvalid(
+          `受け取った本文が大きすぎる (> ${limit} バイト)`,
+          { receivedBytes: total, limit },
+        )
+      }
+      chunks.push(Buffer.from(value))
+    }
+  } finally {
+    reader.releaseLock?.()
+  }
+  return Buffer.concat(chunks, total)
 }
 
 /**
@@ -298,6 +360,18 @@ function loadFromArchive(path) {
   if (!existsSync(abs)) return { error: `source archive が無い: ${path}`, kind: 'SOURCE_UNAVAILABLE' }
   let buf
   try {
+    /**
+     * **読む前に大きさを見る（v0.6.1・外部監査 P1-C）。**
+     * `readFileSync` してから判定すると、判定するころには全部メモリに載っている。
+     */
+    const size = statSync(abs).size
+    if (size > TAR_LIMITS.maxCompressedBytes) {
+      return {
+        error: `source archive が大きすぎる (${size} > ${TAR_LIMITS.maxCompressedBytes} バイト)`,
+        kind: 'ARCHIVE_INVALID',
+        detail: { path, size, limit: TAR_LIMITS.maxCompressedBytes },
+      }
+    }
     buf = readFileSync(abs)
   } catch (e) {
     return { error: `source archive を読めない (${path}): ${e.message}`, kind: 'SOURCE_UNAVAILABLE' }
@@ -310,17 +384,48 @@ function loadFromDir(dir) {
   const abs = resolve(ROOT, dir)
   if (!existsSync(abs)) return { error: `source ディレクトリが無い: ${dir}`, kind: 'SOURCE_UNAVAILABLE' }
   // ファイルを渡されたら archive として読む（**ENOTDIR で落とさない**）
-  if (!statSync(abs).isDirectory()) return loadFromArchive(dir)
+  let rootStat
+  try {
+    rootStat = lstatSync(abs)
+  } catch (e) {
+    return { error: `source を読めない (${dir}): ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE' }
+  }
+  if (rootStat.isSymbolicLink()) {
+    return { error: `source がシンボリックリンクである: ${dir}`, kind: 'ARCHIVE_INVALID', detail: { path: dir } }
+  }
+  if (!rootStat.isDirectory()) return loadFromArchive(dir)
   const files = new Map()
+  const skippedLinks = []
+  /**
+   * **`lstatSync` で見る（v0.6.1・外部監査 P1-B）。**
+   *
+   * v0.6.0 は `statSync` でリンクを追っていたので、`loop -> .` を 1 本置くだけで
+   * **`ELOOP` の生スタックトレースを吐いて exit 1**——構造化 JSON が 1 行も出なかった（実測）。
+   * 受け手は「合わなかった」と「道具が落ちた」を出力から区別できない。
+   *
+   * リンクは**追わずに読み飛ばす**。archive 側（typeflag `1`/`2`）と同じ扱いで、
+   * **中身が無いのに「source にあった」ことにしない**ためでもある。
+   */
   const walk = (rel) => {
     for (const n of readdirSync(join(abs, rel) || abs).sort()) {
       const r = rel ? `${rel}/${n}` : n
       if (n === 'node_modules' || n === '.git') continue
-      if (statSync(join(abs, r)).isDirectory()) walk(r)
-      else files.set(r, readFileSync(join(abs, r)))
+      const st = lstatSync(join(abs, r))
+      if (st.isSymbolicLink()) { skippedLinks.push(r); continue }
+      if (st.isDirectory()) walk(r)
+      else if (st.isFile()) files.set(r, readFileSync(join(abs, r)))
     }
   }
-  walk('')
+  try {
+    walk('')
+  } catch (e) {
+    // **fs のエラーを構造化 status へ変える。**生の例外で落とすと出力が JSON でなくなる
+    return {
+      error: `source ディレクトリを走査できない (${dir}): ${String(e.message).split('\n')[0]}`,
+      kind: 'SOURCE_UNAVAILABLE',
+      detail: { code: e?.code ?? null, path: e?.path ?? null },
+    }
+  }
   /**
    * **展開した tarball を直接渡せるようにする（v0.3.0 フォローアップ P1-3）。**
    *
@@ -331,7 +436,11 @@ function loadFromDir(dir) {
    * （リポジトリの root は複数の親を持つので、そちらは何も起きない）。
    */
   const stripped = stripTopLevel(files)
-  return { files: stripped, origin: `directory:${dir}${stripped === files ? '' : ' (先頭の 1 階層を剥がした)'}` }
+  return {
+    files: stripped,
+    origin: `directory:${dir}${stripped === files ? '' : ' (先頭の 1 階層を剥がした)'}`
+      + (skippedLinks.length ? ` (symlink ${skippedLinks.length} 件を読み飛ばした)` : ''),
+  }
 }
 
 function loadFromLocalTag(tag) {
@@ -380,10 +489,28 @@ async function loadFromGithub(tag) {
     }
   }
   if (!res.ok) return { error: `GitHub が ${res.status} ${res.statusText} を返した (${url})`, kind: 'SOURCE_UNAVAILABLE' }
+  /**
+   * **Content-Length は補助にしか使わない。**相手が付けてこないことも、嘘をつくこともある。
+   * 付いていて上限を超えていれば、そこで body を読まずに終える。
+   */
+  const declared = Number(res.headers.get('content-length'))
+  if (Number.isFinite(declared) && declared > TAR_LIMITS.maxCompressedBytes) {
+    return {
+      error: `GitHub が申告した本文が大きすぎる (${declared} > ${TAR_LIMITS.maxCompressedBytes} バイト)`,
+      kind: 'ARCHIVE_INVALID',
+      detail: { declaredBytes: declared, limit: TAR_LIMITS.maxCompressedBytes },
+    }
+  }
   let gz
   try {
-    gz = Buffer.from(await res.arrayBuffer())
+    /**
+     * **`arrayBuffer()` を使わない（v0.6.1・外部監査 P1-C）。**
+     * あれは相手が送ってきた量をそのまま全部メモリへ載せてから返す。
+     * 上限に届いた時点で受け取りをやめる。
+     */
+    gz = await readBodyLimited(res, TAR_LIMITS.maxCompressedBytes)
   } catch (e) {
+    if (e instanceof ArchiveInvalid) return { error: e.message, kind: 'ARCHIVE_INVALID', detail: e.detail }
     return { error: `本文を受け取れなかった: ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE' }
   }
   const r = readArchiveBuffer(gz, { gzip: true })
