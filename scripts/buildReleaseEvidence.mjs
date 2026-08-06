@@ -204,6 +204,30 @@ try {
 }
 
 const EXIT_OF = { OK: 0, MISMATCH: 1, SOURCE_UNAVAILABLE: 2, MANIFEST_UNAVAILABLE: 2, NOTHING_TO_VERIFY: 2 }
+
+/**
+ * **道具が出した status を、この自己申告 artifact が表現できるか。**（外部監査 2026-08-06 P0-D）
+ *
+ * `verifyReleaseSourceInputs.mjs` は v5 から `ARCHIVE_INVALID` を出すが、
+ * 同梱している `source-verification-result.v1.schema.json` の enum には入っていない
+ * （**入れると言語が広がって v2 になり、下流が止まる**ので v0.6.x では入れていない
+ * → `docs/SCHEMA_VERSIONING_POLICY.md`・判定は `schemaLanguageDiff.mjs` で実測済み）。
+ *
+ * **表現できない status を、近い値へ丸めて出すことは絶対にしない。**
+ * 丸めると「archive が壊れていた」が「取れなかった」に化けて、受け手が読み分けられなくなる。
+ * ここで止めて、**版を上げるかどうかを人が決める。**
+ */
+const STATUS_EXPRESSIBLE_IN_V1 = new Set(['OK', 'MISMATCH', 'SOURCE_UNAVAILABLE', 'MANIFEST_UNAVAILABLE', 'NOTHING_TO_VERIFY'])
+if (!STATUS_EXPRESSIBLE_IN_V1.has(verifyOut.status)) {
+  console.error(
+    `\n  ✗ 検算ツールが status=${verifyOut.status} を返したが、`
+    + 'source-verification-result.v1 はこの値を表現できない。\n'
+    + '    **別の値へ丸めて出さない。**schema を v2 へ上げるか（＝下流が止まる。要判断）、\n'
+    + '    archive のほうを直してから作り直すこと。\n'
+    + `    理由: ${verifyOut.reason ?? '(なし)'}\n`,
+  )
+  process.exit(1)
+}
 const iv = verifyOut.independentVerification ?? {}
 const sourceVerification = {
   schemaVersion: 1,

@@ -65,7 +65,7 @@
     "status": {
       "type": "string",
       "enum": ["OK", "MISMATCH", "SOURCE_UNAVAILABLE", "MANIFEST_UNAVAILABLE", "NOTHING_TO_VERIFY"],
-      "description": "**取れなかった (SOURCE_UNAVAILABLE) と合わなかった (MISMATCH) を潰していない。**0 件を OK にしないため NOTHING_TO_VERIFY も別にしてある"
+      "description": "**取れなかった (SOURCE_UNAVAILABLE) と合わなかった (MISMATCH) を潰していない。**0 件を OK にしないため NOTHING_TO_VERIFY も別にしてある。/ **この v1 では ARCHIVE_INVALID を表現できない（既知の欠け・2026-08-06 外部監査 P0-D）。**同梱の verifyReleaseSourceInputs.mjs は v5 からこの status を出す（取れたが archive が壊れているか敵対的）。enum へ足すと受理する文書が増えて言語が広がるため v2 になり、下流の lock が止まる (docs/SCHEMA_VERSIONING_POLICY.md・判定は scripts/schemaLanguageDiff.mjs で実測)。**生成器は表現できない status を近い値へ丸めず、そこで止まる** (scripts/buildReleaseEvidence.mjs)。受け手が道具を直接回した場合の stdout はこの schema の対象ではなく、ARCHIVE_INVALID がそのまま出る"
     },
     "exitCode": { "type": "integer", "enum": [0, 1, 2] },
 

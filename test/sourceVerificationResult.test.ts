@@ -174,3 +174,74 @@ describe('P1-3-3 配布一覧の整合', () => {
     expect(mustFind(RELEASE_ASSETS, (a) => a.path === VERIFIER, '検証ツールの配布定義').role).toBe('tool')
   })
 })
+
+/**
+ * **道具が出す status と、配布 schema が受ける status のずれ（外部監査 2026-08-06 P0-D）。**
+ *
+ * `verifyReleaseSourceInputs.mjs` は v5 から `ARCHIVE_INVALID` を出すが、
+ * 同梱の `source-verification-result.v1.schema.json` の enum には入っていない。
+ * **入れると受理する文書が増えて言語が広がるので v2 になり、下流の lock が止まる**
+ * （`scripts/schemaLanguageDiff.mjs` で実測: enum 追加 = BUMP / description のみ = HOLD）。
+ *
+ * v0.6.1 で閉じたのは次の 3 つ。**版は上げていない。**
+ *
+ *   1. ずれの中身を schema 自身が書いている（受け手が読める）
+ *   2. 生成器が、表現できない status を**近い値へ丸めずに止まる**
+ *   3. ずれが `ARCHIVE_INVALID` 1 個だけであることを、ここで機械的に固定する
+ */
+describe('P1-3-4 status の契約 — 道具と schema のずれを隠さない', () => {
+  const SCHEMA = 'schemas/source-verification-result.v1.schema.json'
+  const enumOf = () => R(SCHEMA).properties.status.enum as string[]
+  /** 道具が出しうる status。**コードから読む**（手で並べると増えたときに気づけない） */
+  const emittedByTool = () => {
+    const src = readFileSync(resolve(ROOT, VERIFIER), 'utf8')
+    const found = new Set<string>()
+    for (const m of src.matchAll(/status: '([A-Z_]+)'/g)) found.add(m[1])
+    for (const m of src.matchAll(/kind: '([A-Z_]+)'/g)) found.add(m[1])
+    for (const m of src.matchAll(/'(MISMATCH)' : '(OK)'/g)) { found.add(m[1]); found.add(m[2]) }
+    return found
+  }
+
+  it('道具は 6 種類の status を出す（読み取りが空振りしていない）', () => {
+    const got = emittedByTool()
+    expect([...got].sort()).toEqual([
+      'ARCHIVE_INVALID', 'MANIFEST_UNAVAILABLE', 'MISMATCH', 'NOTHING_TO_VERIFY', 'OK', 'SOURCE_UNAVAILABLE',
+    ])
+  })
+
+  it('**ずれは ARCHIVE_INVALID 1 個だけ**（7 個目が増えたらここで落ちる）', () => {
+    const gap = [...emittedByTool()].filter((s) => !enumOf().includes(s))
+    expect(gap).toEqual(['ARCHIVE_INVALID'])
+    // 逆向き: schema にあって道具が出さない status が無いこと
+    expect(enumOf().filter((s) => !emittedByTool().has(s))).toEqual([])
+  })
+
+  it('ajv で実際に落ちる（enum が飾りでない）', () => {
+    const ajv = new Ajv({ allErrors: true, strict: false })
+    const validate = ajv.compile(R(SCHEMA))
+    expect(validate({ ...result, status: 'ARCHIVE_INVALID' }), 'v1 が受けてしまっている').toBe(false)
+    // 対照: 宣言済みの 5 値は通り、でたらめな値は落ちる
+    for (const s of enumOf()) expect(validate({ ...result, status: s }), s).toBe(true)
+    expect(validate({ ...result, status: 'NONSENSE' })).toBe(false)
+  })
+
+  it('**schema 自身が、表現できない status を名指しで書いている**', () => {
+    const desc = R(SCHEMA).properties.status.description as string
+    expect(desc).toContain('ARCHIVE_INVALID')
+    expect(desc, 'なぜ入れていないかが書かれていない').toMatch(/v2|言語|下流/)
+  })
+
+  it('**生成器は、表現できない status を丸めずに止まる**', () => {
+    const src = readFileSync(resolve(ROOT, 'scripts/buildReleaseEvidence.mjs'), 'utf8')
+    const guard = /STATUS_EXPRESSIBLE_IN_V1[\s\S]{0,400}?process\.exit\(1\)/.exec(src)
+    expect(guard, '表現できない status で止まる経路が無い').toBeTruthy()
+    // 許している 5 値が schema の enum と同じであること（片方だけ増えないように）
+    const listed = [...(/STATUS_EXPRESSIBLE_IN_V1 = new Set\(\[([^\]]+)\]\)/.exec(src)?.[1] ?? '')
+      .matchAll(/'([A-Z_]+)'/g)].map((m) => m[1])
+    expect(listed.sort()).toEqual([...enumOf()].sort())
+  })
+
+  it('現物の artifact は表現できる status を持っている', () => {
+    expect(enumOf()).toContain(result.status)
+  })
+})
