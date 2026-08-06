@@ -25,12 +25,40 @@ const read = (buf: Buffer, gzip = false) => readArchiveBuffer(buf, { gzip })
 
 /** 期待する結末。`invalid` = 止まる ／ `safe` = 読めるが危険な entry を含まない */
 const EXPECTED: Record<string, 'invalid' | 'safe'> = {
-  pax: 'safe',        // 拾わなければよい。止める必要は無い
+  pax: 'safe',        // **中身を拾わないだけでは足りない。**意味を変える鍵があれば止める（下の個別指定）
   longName: 'safe',   // 正常な GNU long name は通る。危険なものだけ止まる
   checksum: 'invalid',
   traversal: 'invalid',
   link: 'safe',       // リンクは読み飛ばす。止める必要は無い
   resource: 'invalid',
+}
+
+/**
+ * **種類ごとの既定より個別 id を優先する。**
+ *
+ * ## この表そのものが 2026-08-06 まで間違っていた
+ *
+ * `pax-x-path` と `pax-x-size-override` は**最初から材料としてあった**のに、
+ * 期待値が `pax: 'safe'`（＝「PAX ヘッダをファイルとして拾わなければよい」）だった。
+ * その基準では通ってしまう——**拾わないことと、上書き指示を無視してよいことは別**である。
+ *
+ * ```
+ * ヘッダ名 root/file.txt ／ PAX path=root/other.txt
+ *   検算器 : file.txt を検証して OK        ← 「拾っていない」ので当時の基準では合格
+ *   実展開 : root/other.txt ができる       ← 検算した名前は存在しない
+ * ```
+ *
+ * **材料は正しく、判定基準のほうが間違っていた。**
+ * 手で書いた期待値は、コードと同じ思い違いを共有しうる。
+ * だから `test/tarExtractionOracle.test.ts` で、
+ * **期待値を手で書かずにふつうの tar 展開から作る**検査を別に置いた。
+ */
+const EXPECTED_BY_ID: Record<string, 'invalid' | 'safe'> = {
+  // 'pax-x-path' は **safe**。v0.6.3 で `path=` を解釈するようにしたので、展開結果と一致する
+  'pax-x-size-override': 'invalid',  // size 上書き → 読む長さが食い違う
+  'gnu-L-very-long': 'invalid',
+  'gnu-L-traversal': 'invalid',
+  'gnu-L-size-lie': 'invalid',
 }
 
 describe('tar 強化 ① 26 個すべてについて、どうなるかを実測する', () => {
@@ -44,12 +72,10 @@ describe('tar 強化 ① 26 個すべてについて、どうなるかを実測�
       const outcome = r.error ? 'ARCHIVE_INVALID' : 'READ'
       table.push({ id: c.id, kind, outcome, files: r.files ? r.files.size : 0 })
 
-      if (EXPECTED[kind] === 'invalid') {
+      const want = EXPECTED_BY_ID[c.id] ?? EXPECTED[kind]
+      if (want === 'invalid') {
         expect(r.error, `${c.id}: 止まっていない`).toBeTruthy()
         expect(r.kind).toBe('ARCHIVE_INVALID')
-      } else if (['gnu-L-very-long', 'gnu-L-traversal', 'gnu-L-size-lie'].includes(c.id)) {
-        // 同じ種類でも、危険なものは止まる
-        expect(r.error, `${c.id}: 止まっていない`).toBeTruthy()
       } else {
         // 止まらない場合でも、**危険な名前が Map に入っていないこと**が要件
         expect(r.error, `${c.id}: 止まってしまった（塞ぎすぎ）`).toBeFalsy()
