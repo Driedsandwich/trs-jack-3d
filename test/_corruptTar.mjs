@@ -97,6 +97,12 @@ export const paxCases = () => {
     const len = String(body.length + String(body.length + 2).length).length + body.length
     return `${len}${body}`
   }
+  /** 値に生バイト（NUL 等）を入れる版。**長さはバイトで数える** */
+  const recBuf = (k, vBuf) => {
+    const body = Buffer.concat([Buffer.from(` ${k}=`), vBuf, Buffer.from('\n')])
+    const len = String(body.length + String(body.length + 2).length).length + body.length
+    return Buffer.concat([Buffer.from(String(len)), body])
+  }
   return [
     { id: 'pax-x-path', tar: buildTar([
       { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('path', `${TOP}/renamed.txt`) },
@@ -150,6 +156,41 @@ export const paxCases = () => {
       { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('path', `${TOP}/from-pax.txt`) },
       { name: `${TOP}/PaxHeaders/0/b.txt`, type: 'x', data: rec('mtime', '1') },
       { name: `${TOP}/raw.txt`, data: 'A' },
+    ]) },
+    /**
+     * **PAX の可変長テキストに NUL（v0.6.5・外部監査 P0-3）。**
+     * PAX はレコードを長さで区切るので、NUL は詰め物ではなく値の一部である。
+     * 実測: 検算 v9 は NUL 以降を捨てて OK ／ bsdtar も切り捨て ／ python は展開に失敗。
+     */
+    { id: 'pax-path-with-nul', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: recBuf('path', Buffer.concat([Buffer.from(`${TOP}/a.ts`), Buffer.from([0]), Buffer.from('evil')])) },
+      { name: `${TOP}/raw.txt`, data: 'A' },
+    ]) },
+    /**
+     * **denylist は閉じていない（v0.6.5・外部監査 P0-4）。**
+     * 実測: 検算 v9 は未知の鍵として無視して OK ／ **bsdtar は Parse error で archive ごと拒否** ／
+     * python は展開できる。**3 者で結末が割れる。**数え上げでは閉じないので allowlist にした。
+     */
+    { id: 'pax-sun-holesdata', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('SUN.holesdata', '0 4 4 4') },
+      { name: `${TOP}/a.txt`, data: 'AAAABBBB' },
+    ]) },
+    /** 未知の vendor 鍵は既定で拒む */
+    { id: 'pax-unknown-vendor-key', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('ACME.magic', 'x') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /**
+     * **独立した 2 つの member が、それぞれ 1 回ずつ上書きを使う（v0.6.5・外部監査 P1）。**
+     * **これは正当な archive で、止めてはいけない。**v0.6.4 は上書きの出所を
+     * member 消費時に戻し忘れており、2 件目を「二重の上書き」として拒んでいた。
+     * 実測: bsdtar・python はどちらも 2 件とも展開する。
+     */
+    { id: 'pax-two-independent-paths', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('path', `${TOP}/one.txt`) },
+      { name: 'ignored1', data: 'ONE' },
+      { name: `${TOP}/PaxHeaders/0/b`, type: 'x', data: rec('path', `${TOP}/two.txt`) },
+      { name: 'ignored2', data: 'TWO' },
     ]) },
     /** global header が名前を上書きする形。実物の `pax_global_header` は `comment` だけ */
     { id: 'pax-g-path-override', tar: buildTar([
@@ -259,6 +300,21 @@ export const longNameCases = () => {
       { name: '././@LongLink', type: 'L', data: `${long(60)}\0` },
       { name: `${TOP}/truncated`, data: 'A' },
     ]) },
+    /**
+     * **独立した 2 つの member が、それぞれ長い名前を 1 回ずつ使う（v0.6.5・外部監査 P1）。**
+     * **これは正当な archive で、止めてはいけない。**v0.6.4 は `longNameFrom` を
+     * member 消費時に戻し忘れており、2 件目を「二重の上書き」として拒んでいた。
+     * 実測: bsdtar・python はどちらも 2 件とも展開する。
+     *
+     * **この repo の実物では踏まない**（最長パス 95 文字で long name 機構を使わない）。
+     * 「実物が通る」だけでは、過剰拒否は見つけられない。
+     */
+    { id: 'gnu-L-two-independent', ok: true, tar: buildTar([
+      { name: '././@LongLink', type: 'L', data: `${TOP}/${'d1/'.repeat(40)}file1.txt\0` },
+      { name: 'ignored1', data: 'ONE' },
+      { name: '././@LongLink', type: 'L', data: `${TOP}/${'d2/'.repeat(40)}file2.txt\0` },
+      { name: 'ignored2', data: 'TWO' },
+    ]) },
     { id: 'gnu-L-very-long', tar: buildTar([
       { name: '././@LongLink', type: 'L', data: `${TOP}/${'x'.repeat(9000)}\0` },
       { name: `${TOP}/truncated`, data: 'A' },
@@ -316,6 +372,67 @@ export const linkCases = () => [
     { name: `${TOP}/a.txt`, data: 'A' },
     { name: `${TOP}/hard.txt`, type: '1', linkname: `${TOP}/a.txt` },
   ]) },
+
+  /**
+   * **受理する archive は展開できなければならない（v0.6.5・外部監査 P0-2）。**
+   *
+   * hardlink は同じ archive の先行 member を指す。指す先が無ければ展開は失敗する。
+   * v0.6.4 はリンクを「ファイルとして扱わない」だけで、**指す先を見ていなかった。**
+   * 実測: 検算 status OK / 2 件中 2 件一致 ／ bsdtar exit 1 ／ python KeyError。
+   *
+   * **展開できない archive を受理すると、差分試験がそれを「比べようがない＝合格」と数える。**
+   * つまり、ここが見えないファイルを混ぜる足場になる。
+   */
+  { id: 'link-hardlink-missing-target', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/src/model/b.ts`, data: 'B' },
+    { name: `${TOP}/dangling.txt`, type: '1', linkname: `${TOP}/nope.txt` },
+  ]) },
+  /** 先行していない member を指す形（tar は後方参照しか許さない） */
+  { id: 'link-hardlink-forward-reference', tar: buildTar([
+    { name: `${TOP}/hard.txt`, type: '1', linkname: `${TOP}/later.txt` },
+    { name: `${TOP}/later.txt`, data: 'L' },
+  ]) },
+]
+
+/**
+ * **先頭 1 階層を剥がしてよいか（v0.6.5・外部監査 P0-1）。**
+ *
+ * v0.6.4 は「全部が同じ頭で始まる」だけを見て剥がしていた。
+ * **その頭が通常ファイルやリンクとして archive に入っていても剥がしていた**ので、
+ * どの展開器でも作れない木を「source として受理」していた。実測:
+ *
+ * ```
+ * regular root = ROOTFILE ／ regular root/... が 2 件
+ *   検算 v9  status OK・files に空文字の key が残る
+ *   bsdtar   exit 1（root は directory ではない）
+ *   python   NotADirectoryError
+ * ```
+ */
+export const rootStripCases = () => [
+  { id: 'root-is-regular-file', tar: buildTar([
+    { name: TOP, data: 'ROOTFILE' },
+    { name: `${TOP}/source-input-scope.v1.json`, data: '{}' },
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+  ]) },
+  { id: 'root-is-symlink', tar: buildTar([
+    { name: TOP, type: '2', linkname: 'elsewhere' },
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+  ]) },
+  { id: 'root-is-hardlink', tar: buildTar([
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+    { name: TOP, type: '1', linkname: `${TOP}/src/model/a.ts` },
+  ]) },
+  /**
+   * **正当な形は通す。**GitHub の tarball は root をディレクトリ entry として持つ。
+   * mode に実行 bit を入れる——**644 のままだと展開した木へ入れず、
+   * 「oracle が読めない」を「欠陥」と読み違える**（実際に一度そうなった）。
+   */
+  { id: 'root-is-directory', ok: true, tar: buildTar([
+    { name: `${TOP}/`, type: '5', mode: 0o755 },
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/src/model/b.ts`, data: 'B' },
+  ]) },
 ]
 
 /** 資源上限を超える入力 */
@@ -346,4 +463,5 @@ export const allCases = () => ({
   resource: resourceCases(),
   entryType: entryTypeCases(),
   encoding: encodingCases(),
+  rootStrip: rootStripCases(),
 })
