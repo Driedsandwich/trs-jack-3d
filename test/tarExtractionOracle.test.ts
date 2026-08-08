@@ -82,20 +82,22 @@ function paxRecord(key: string, value: string): Buffer {
 
 // --------------------------------------------------------------------------- oracle
 
-type Extracted = { path: string, type: 'file' | 'dir' | 'symlink', content?: string }
+type Extracted = { path: string, type: 'file' | 'dir' | 'symlink', content?: string, bytes?: Buffer }
 
 /** **ふつうの tar で展開して、できた木を列挙する。**これが判定の基準になる */
-function extractWithTar(buf: Buffer): { entries: Extracted[], failed: boolean } {
+function extractWithTar(buf: Buffer): { entries: Extracted[], failed: boolean, stderr: string } {
   const dir = mkdtempSync(join(tmpdir(), 'trs-oracle-'))
   tmps.push(dir)
   const out = join(dir, 'out')
   mkdirSync(out)
   writeFileSync(join(dir, 'a.tar'), buf)
   let failed = false
+  let stderr = ''
   try {
     execFileSync('tar', ['-xf', join(dir, 'a.tar'), '-C', out], { stdio: ['ignore', 'pipe', 'pipe'] })
-  } catch {
+  } catch (e) {
     failed = true
+    stderr = String((e as { stderr?: Buffer }).stderr ?? '').split('\n')[0]
   }
   const found: Extracted[] = []
   const walk = (rel: string) => {
@@ -104,11 +106,13 @@ function extractWithTar(buf: Buffer): { entries: Extracted[], failed: boolean } 
       const st = lstatSync(join(out, r))
       if (st.isSymbolicLink()) found.push({ path: r, type: 'symlink', content: readlinkSync(join(out, r)) })
       else if (st.isDirectory()) { found.push({ path: r, type: 'dir' }); walk(r) }
-      else found.push({ path: r, type: 'file', content: readFileSync(join(out, r)).toString('utf8') })
+      // **中身は生バイトで持つ（v0.6.5・外部監査 P1）。**UTF-8 文字列にすると
+      // 不正バイトが U+FFFD へ潰れ、**違うバイト列が「同じ」に見える。**
+      else found.push({ path: r, type: 'file', bytes: readFileSync(join(out, r)) })
     }
   }
   walk('')
-  return { entries: found, failed }
+  return { entries: found, failed, stderr }
 }
 
 /**
@@ -120,16 +124,97 @@ function mismatchesOf(buf: Buffer): string[] {
   if (r.error) return []
   const o = extractWithTar(buf)
   const bad: string[] = []
+
+  /**
+   * **受理したのに展開できないなら、その時点で食い違い（v0.6.5・外部監査 P0-2）。**
+   *
+   * v0.6.4 は展開失敗を「比べようがない＝合格」と数えていた。
+   * そのため **hardlink の指す先が無いだけで、検算 OK・展開不能の archive が通った。**
+   * 監査の「展開失敗を利用して見えない file を混ぜられるか」はここで再現している。
+   */
+  if (o.failed) return [`検算器は受理したのに、ふつうの tar で展開できない（${o.stderr.slice(0, 80)}）`]
+
+  /**
+   * **剥がした頭は記録された値で戻す（v0.6.5・外部監査 P1）。**
+   * v0.6.4 は `endsWith('/' + k)` で推測していたので、
+   * `a/b.txt` と `x/a/b.txt` のような綴りを取り違えうる。
+   */
+  const full = (k: string) => (r.rootStripped ? `${r.rootStripped}/${k}` : k)
+
   for (const [k, v] of r.files!) {
-    // 検算器は先頭の 1 階層を剥がすことがあるので、両方の綴りで探す
-    const cand = o.entries.filter((e) => e.path === k || e.path.endsWith(`/${k}`))
+    const cand = o.entries.filter((e) => e.path === full(k))
     const file = cand.find((e) => e.type === 'file')
     if (!file) bad.push(`${k}: 展開結果に通常ファイルとして存在しない（実際は ${cand.map((c) => c.type).join(',') || 'なし'}）`)
-    else if (file.content !== v.toString('utf8')) bad.push(`${k}: 中身が違う`)
+    else if (!file.bytes!.equals(v)) bad.push(`${k}: 中身が違う（生バイトで比較）`)
   }
-  bad.push(...omissionsOf(r, o))
+  bad.push(...omissionsOf(r, o, full))
+  bad.push(...oracleDisagreement(buf, o))
   return bad
 }
+
+/**
+ * **必須 oracle を 2 実装にする（v0.6.5・外部監査 §10）。**
+ *
+ * v0.6.4 の差分試験は `tar`（この環境では bsdtar）1 実装だけを機械で強制していた。
+ * **oracle が持つ癖と同じ癖を検算器が持っていると、差分は出ない。**実測でそうなった:
+ *
+ * ```
+ * PAX path に NUL を入れる
+ *   検算 v9  NUL 以降を切り捨てて OK
+ *   bsdtar   同じく切り捨てる          → 差分 0（見つからない）
+ *   python   embedded null で展開に失敗 → ここで初めて割れる
+ * ```
+ *
+ * **必須 oracle どうしが割れる archive は、受理してはいけない。**
+ * どちらが正しいかを決める立場にないので、狭い部分集合だけを受ける。
+ */
+function oracleDisagreement(buf: Buffer, bsd: { entries: Extracted[] }): string[] {
+  const py = extractWithPython(buf)
+  if (py.unavailable) return []                  // python が無い環境では判定しない
+  if (py.failed) return [`bsdtar は展開できたのに python は展開できない（${py.stderr.slice(0, 70)}）`]
+  const a = bsd.entries.filter((e) => e.type !== 'dir').map((e) => e.path).sort()
+  const b = py.files.slice().sort()
+  if (JSON.stringify(a) !== JSON.stringify(b)) {
+    return [`必須 oracle が違う木を作る: bsdtar=${JSON.stringify(a).slice(0, 60)} python=${JSON.stringify(b).slice(0, 60)}`]
+  }
+  return []
+}
+
+function extractWithPython(buf: Buffer): { files: string[], failed: boolean, unavailable: boolean, stderr: string } {
+  const dir = mkdtempSync(join(tmpdir(), 'trs-oracle-py-'))
+  tmps.push(dir)
+  writeFileSync(join(dir, 'a.tar'), buf)
+  try {
+    const out = execFileSync('python3', ['-c', PY_EXTRACT, join(dir, 'a.tar'), join(dir, 'out')], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).toString().trim()
+    if (out.startsWith('FAIL ')) return { files: [], failed: true, unavailable: false, stderr: out.slice(5) }
+    return { files: JSON.parse(out.slice(3)) as string[], failed: false, unavailable: false, stderr: '' }
+  } catch (e) {
+    // python3 が無い / 起動できない場合だけ「判定しない」に倒す
+    const err = String((e as { stderr?: Buffer }).stderr ?? '')
+    if (/ENOENT|not found/i.test(err) || (e as { code?: string }).code === 'ENOENT') {
+      return { files: [], failed: false, unavailable: true, stderr: '' }
+    }
+    return { files: [], failed: true, unavailable: false, stderr: err.split('\n').filter(Boolean).pop() ?? '' }
+  }
+}
+
+const PY_EXTRACT = `
+import sys, os, tarfile, json
+src, dst = sys.argv[1], sys.argv[2]
+os.makedirs(dst, exist_ok=True)
+try:
+    with tarfile.open(src) as t:
+        t.extractall(dst, filter='tar')
+except Exception as e:
+    print("FAIL " + type(e).__name__ + ": " + str(e)[:80]); sys.exit(0)
+got = []
+for root, dirs, files in os.walk(dst):
+    for n in files + [d for d in dirs if os.path.islink(os.path.join(root, d))]:
+        got.append(os.path.relpath(os.path.join(root, n), dst))
+print("OK " + json.dumps(sorted(set(got))))
+`
 
 /**
  * **逆向きも見る（v0.6.4・外部監査 P0-B）。**
@@ -150,16 +235,21 @@ function mismatchesOf(buf: Buffer): string[] {
 function omissionsOf(
   r: { files?: Map<string, Buffer>, inventory?: { name: string }[] },
   o: { entries: Extracted[], failed: boolean },
+  full: (k: string) => string,
 ): string[] {
-  if (o.failed) return []                        // 展開できない archive は比べようがない
   const seen = new Set<string>([
     ...[...(r.files ?? new Map()).keys()],
     ...(r.inventory ?? []).map((e) => e.name),
-  ])
-  const known = (p: string) => [...seen].some((k) => p === k || p.endsWith(`/${k}`))
+  ].map(full))
+  /**
+   * **通常ファイル以外も見る（v0.6.5・外部監査 P1）。**
+   * v0.6.4 は `type === 'file'` だけを母集団にしていたので、
+   * **展開木にだけ現れる symlink** を「見なかったこと」にできた。
+   * ディレクトリは tar が中間階層を暗黙に作るので、この比較からは外す。
+   */
   return o.entries
-    .filter((e) => e.type === 'file' && !known(e.path))
-    .map((e) => `${e.path}: 展開されるのに検算器の一覧に現れない（見えないファイルが source に混じる）`)
+    .filter((e) => e.type !== 'dir' && !seen.has(e.path))
+    .map((e) => `${e.path} (${e.type}): 展開されるのに検算器の一覧に現れない（見えないものが source に混じる）`)
 }
 
 // --------------------------------------------------------------------------- 試験
@@ -168,7 +258,7 @@ describe('tar 展開 oracle ① 検算した view と展開した view が食い
   it('oracle が動いている（正常な tar で木ができる）', () => {
     const o = extractWithTar(tarOf(entry({ name: 'root/a.txt', data: 'A' })))
     expect(o.failed, 'tar コマンドが使えない').toBe(false)
-    expect(o.entries.some((e) => e.path === 'root/a.txt' && e.content === 'A'), '展開できていない').toBe(true)
+    expect(o.entries.some((e) => e.path === 'root/a.txt' && e.bytes?.toString() === 'A'), '展開できていない').toBe(true)
   })
 
   /**
