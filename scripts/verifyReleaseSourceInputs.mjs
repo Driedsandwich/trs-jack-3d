@@ -88,8 +88,19 @@ import { join, resolve } from 'node:path'
  *       パス欄を `toString('utf8')` で読んでいたので、不正なバイトが U+FFFD へ置換され、
  *       **検算が見た名前と展開してできる名前が別物になった。**厳密 decode で止める。
  *       **判定が変わる**ので版を上げる
+ *  10 … **外部監査 2026-08-08（v0.6.4 に対する回）の P0 4 件 + P1 1 件。**
+ *       先頭 1 階層を、それが directory かを確かめずに剥がしていた（root が通常ファイルでも剥がし、
+ *       files に空文字の key が残った）。
+ *       hardlink の指す先が archive に無くても status OK を返していた——
+ *       **検算は通るのに誰も展開できない archive**を受理していた。
+ *       PAX の可変長テキストを固定長欄と同じ関数で読んでいたので、`path` の NUL 以降を捨てていた。
+ *       PAX の鍵を denylist で拒んでいたが閉じておらず、`SUN.holesdata` で 3 者の結末が割れた
+ *       → **allowlist へ変更**。
+ *       **P1 は私の過剰拒否**: 上書きの出所（longNameFrom）を member 消費時に戻し忘れており、
+ *       独立した 2 つの member がそれぞれ長い名前を使う**正当な archive**を拒んでいた。
+ *       **判定が変わる**ので版を上げる
  */
-export const TOOL_VERSION = 9
+export const TOOL_VERSION = 10
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -283,8 +294,36 @@ function assertCanonicalPath(name) {
  * 実物の macOS tar は `mtime` と `LIBARCHIVE.xattr.*` / `SCHILY.xattr.*` を書く（実測）。
  * ここを prefix `SCHILY.` で一括で止めると、**ふつうに作った tar.gz が読めなくなる。**
  */
-const PAX_KEYS_THAT_CHANGE_VIEW = ['size', 'linkpath', 'hdrcharset', 'SCHILY.realsize']
-const PAX_PREFIXES_THAT_CHANGE_VIEW = ['GNU.sparse.']
+/**
+ * **PAX の鍵は allowlist で受ける（v0.6.5・外部監査 P0-4）。**
+ *
+ * v0.6.4 までは「見え方を変える鍵」を denylist で拒み、**未知の鍵は通していた。**
+ * その denylist は閉じていない。実測（2026-08-08）:
+ *
+ * ```
+ * PAX x: SUN.holesdata=...（Solaris の sparse map）
+ *   検算 v9  status OK（未知の鍵として無視）
+ *   bsdtar   exit 1 — Parse error: SUN.holesdata で archive ごと拒否
+ *   python   展開できる
+ * ```
+ *
+ * **3 者で結末が割れる。**未知の鍵を通す限り、この形は数え上げでは閉じない。
+ *
+ * 通す鍵は「**パスにも中身のバイト列にも影響しない**と言えるもの」だけにする。
+ * 実物に出てくる鍵は実測で数えた（GitHub tarball は `g:comment` のみ、
+ * macOS の `tar` は `x:mtime` と `x:LIBARCHIVE.xattr.*` / `x:SCHILY.xattr.*`）。
+ * `path` だけは**解釈する**（GNU tar が長いパスに使う正当な機能）。
+ */
+const PAX_KEYS_ALLOWED = new Set([
+  'path',                                   // 解釈する
+  'mtime', 'atime', 'ctime',                // 時刻
+  'uid', 'gid', 'uname', 'gname',           // 所有者（POSIX 標準・view を変えない）
+  'comment',                                // GitHub の global header
+])
+/** 値を読まない不透明な metadata。**中身のバイト列の外側**であることを明記して通す */
+const PAX_PREFIXES_ALLOWED = ['LIBARCHIVE.xattr.', 'SCHILY.xattr.']
+/** 既定拒否のうち、特に何が起きるかを言えるもの（メッセージ用） */
+const PAX_KEYS_KNOWN_DANGEROUS = ['size', 'linkpath', 'hdrcharset', 'charset', 'SCHILY.realsize', 'SUN.holesdata']
 
 /**
  * **PAX（`x` / `g`）のレコードを読む（v0.6.3・外部監査 P0-1）。**
@@ -340,20 +379,25 @@ function readPaxRecords(data, kind) {
      * 鍵は仕様上 ASCII で、置換しても `path` には化けない（U+FFFD は英字にならない）が、
      * 鍵が読めない時点で分類できないので止める。
      */
-    const key = decodeStrict(rec.subarray(0, eq), `PAX (${kind}) の鍵`, null)
+    const key = decodePaxText(rec.subarray(0, eq), `PAX (${kind}) の鍵`)
     if (out.has(key)) throw new ArchiveInvalid(`PAX (${kind}) に同じ鍵が 2 回ある: ${key}`, { key })
     const raw = rec.subarray(eq + 1, rec.length - 1)
-    out.set(key, key === 'path'
-      ? decodeStrict(raw, `PAX (${kind}) の path`, null)
-      : raw.toString('utf8'))
+    /**
+     * **解釈する値だけ読む（v0.6.5）。**`path` は名前になるので NUL も不正 UTF-8 も止める。
+     * xattr の値は実物が**生バイナリ**を入れるので読まない——中身のバイト列の外側であり、
+     * 読めなくても view は変わらない（v8 と v9 で 2 回、ここで塞ぎすぎた）。
+     */
+    out.set(key, key === 'path' ? decodePaxText(raw, `PAX (${kind}) の path`) : raw)
     i += len
   }
   const bad = [...out.keys()].filter(
-    (k) => PAX_KEYS_THAT_CHANGE_VIEW.includes(k) || PAX_PREFIXES_THAT_CHANGE_VIEW.some((p) => k.startsWith(p)),
+    (k) => !PAX_KEYS_ALLOWED.has(k) && !PAX_PREFIXES_ALLOWED.some((p) => k.startsWith(p)),
   )
   if (bad.length) {
+    const known = bad.filter((k) => PAX_KEYS_KNOWN_DANGEROUS.includes(k))
     throw new ArchiveInvalid(
-      `PAX (${kind}) が entry の見え方を変えようとしている: ${bad.join(', ')}`,
+      `PAX (${kind}) に受け入れていない鍵がある: ${bad.join(', ')}`
+      + (known.length ? `（${known.join(', ')} は entry の見え方を変える）` : '（未知の鍵は既定で拒む）'),
       { kind, keys: bad },
     )
   }
@@ -400,17 +444,49 @@ function readPaxRecords(data, kind) {
  * NUL 終端より後ろは tar の詰め物なので、判定の前に落とす。
  */
 const STRICT_UTF8 = new TextDecoder('utf-8', { fatal: true })
-function decodeStrict(bytes, where, entryIndex) {
-  const nul = bytes.indexOf(0)
-  const head = nul === -1 ? bytes : bytes.subarray(0, nul)
+
+function utf8OrStop(bytes, where, entryIndex) {
   try {
-    return STRICT_UTF8.decode(head)
+    return STRICT_UTF8.decode(bytes)
   } catch {
     throw new ArchiveInvalid(`${where}が UTF-8 として読めないバイトを含む`, {
       entryIndex,
-      bytes: Buffer.from(head).toString('hex').slice(0, 64),
+      bytes: Buffer.from(bytes).toString('hex').slice(0, 64),
     })
   }
+}
+
+/**
+ * **固定長ヘッダ欄を読む。**USTAR の `name` / `prefix`、GNU long name の本体。
+ * これらは**欄を NUL で埋める**仕様なので、最初の NUL より後ろは詰め物として落とす。
+ */
+function decodeStrict(bytes, where, entryIndex) {
+  const nul = bytes.indexOf(0)
+  return utf8OrStop(nul === -1 ? bytes : bytes.subarray(0, nul), where, entryIndex)
+}
+
+/**
+ * **PAX の可変長テキストを読む（v0.6.5・外部監査 P0-3）。**
+ *
+ * PAX のレコードは**長さで区切る**ので、NUL は詰め物ではなく値の一部である。
+ * v0.6.4 は固定長欄と同じ関数で読んでいたため、**NUL 以降を黙って捨てていた。**
+ *
+ * ```
+ * PAX path = root/src/model/a.ts\0evil
+ *   検算 v9  root/src/model/a.ts として status OK
+ *   bsdtar   NUL 以降を切り捨てる（同じ名前になる）
+ *   python   embedded null で展開に失敗する
+ * ```
+ *
+ * **実装ごとに結末が割れる。**切り捨てて続けず、NUL があれば止める。
+ */
+function decodePaxText(bytes, where) {
+  if (bytes.indexOf(0) !== -1) {
+    throw new ArchiveInvalid(`${where}に NUL が入っている（実装ごとに結末が割れる）`, {
+      bytes: Buffer.from(bytes).toString('hex').slice(0, 64),
+    })
+  }
+  return utf8OrStop(bytes, where, null)
 }
 
 /**
@@ -553,7 +629,19 @@ function readTar(buf) {
     }
 
     const rawName = longName ?? (pathField(345, 155) ? `${pathField(345, 155)}/${pathField(0, 100)}` : pathField(0, 100))
+    /**
+     * **上書きは、この member で消費し終わる（v0.6.5・外部監査 P1）。**
+     *
+     * v0.6.4 は `longName` だけを戻し、**`longNameFrom` を戻し忘れていた。**
+     * そのため、独立した 2 つの member がそれぞれ長い名前を 1 回ずつ使うだけの
+     * **正当な archive を「二重の上書き」として拒んでいた**（実測: bsdtar・python は
+     * どちらも 2 件とも展開する）。
+     *
+     * **この repo の実物では踏まなかった**（最長パス 95 文字で long name 機構を使わない）。
+     * 「実物が通る」だけでは、過剰拒否は見つけられない。
+     */
     longName = null
+    longNameFrom = null
 
     if (!rawName) continue
 
@@ -599,7 +687,7 @@ function readTar(buf) {
      * **archive に在るものは、ファイルとして読まないものも全部数える（v0.6.4・P0-B）。**
      * 未記録入力の探索がここを見る。`files` の key だけを見ていたのが穴だった。
      */
-    inventory.push({ name, type, isDirEntry })
+    inventory.push({ name, type, isDirEntry, linkname: type === '1' || type === '2' ? pathField(157, 100) : null })
 
     /**
      * **扱いを決めていない「中身を持つ型」は止める（v0.6.4・外部監査 P0-B）。**
@@ -613,12 +701,54 @@ function readTar(buf) {
       )
     }
 
+    /**
+     * **hardlink の指す先は、この時点で既に出ていなければならない（v0.6.5・外部監査 P0-2）。**
+     *
+     * tar の hardlink は**同じ archive の先行 member**を指す。
+     * v0.6.4 はリンクを「ファイルとして扱わない」だけで、指す先を見ていなかった。実測:
+     *
+     * ```
+     * 指す先が無い          検算 v9 status OK ／ bsdtar・python とも展開に失敗
+     * 指す先が後ろにある     同上（前方参照も両実装で展開できない）
+     * ```
+     *
+     * **「検算は通るのに、誰も展開できない」archive を受理していた。**
+     * 差分試験は展開できない archive を「比べようがない＝合格」と数えるので、
+     * ここを通すと**見えないファイルを混ぜる足場になる**（監査の指摘どおり再現した）。
+     * `seenPaths` はここまでに出た名前だけを持つので、前方参照も同じ検査で落ちる。
+     */
+    if (type === '1') {
+      const target = pathField(157, 100)
+      if (!target || !seenPaths.has(target.replace(/\/+$/, ''))) {
+        throw new ArchiveInvalid(
+          `hardlink の指す先が、ここまでの entry に無い（展開できない）: ${name} -> ${target || '(空)'}`,
+          { name, linkname: target, entryIndex: entries },
+        )
+      }
+    }
+
     // **リンクはファイルとして扱わない。**中身が無いのに「source にあった」ことになる
     if (type === '1' || type === '2') continue
     if (type !== '0') continue
     if (isDirEntry) throw new ArchiveInvalid('通常ファイルの名前が / で終わっている', { name })
     // 重複は上の `seenPaths` で既に止めている（ここへ来る時点で name は初出）
     files.set(name, data)
+  }
+
+  /**
+   * **宙に浮いた名前の上書きを残したまま終わらない（v0.6.5）。**
+   *
+   * GNU long name（`L`）や PAX `path=` は「次の entry の名前」なので、
+   * 次が来ないまま archive が終わるのは壊れている。実測: `tar` は
+   * `Damaged tar archive` で展開を拒む。v0.6.4 は**空の files を返して受理**していた。
+   *
+   * **これは監査の指摘ではなく、強化した差分試験（受理したのに展開できない）が拾った。**
+   */
+  if (longNameFrom) {
+    throw new ArchiveInvalid(
+      `名前の上書き（${longNameFrom}）のあとに entry が無いまま archive が終わっている`,
+      { pending: longName },
+    )
   }
   return { files, inventory }
 }
@@ -632,13 +762,44 @@ function readTar(buf) {
  */
 function stripTopLevel(files, inventory) {
   const all = inventory.map((e) => e.name)
-  if (!all.length) return { files, inventory }
+  if (!all.length) return { files, inventory, rootStripped: null }
   const first = all[0].split('/')[0]
-  if (!all.every((n) => n === first || n.startsWith(`${first}/`))) return { files, inventory }
+  if (!all.every((n) => n === first || n.startsWith(`${first}/`))) {
+    return { files, inventory, rootStripped: null }
+  }
+  /**
+   * **剥がす前に、その頭がディレクトリであることを確かめる（v0.6.5・外部監査 P0-1）。**
+   *
+   * v0.6.4 は「全部が同じ頭で始まる」だけを見て剥がしていた。
+   * **その頭が通常ファイルとして archive に入っていても剥がしていた**ので、
+   * どの展開器でも作れない木を「source として受理」していた。実測:
+   *
+   * ```
+   * regular root = ROOTFILE ／ regular root/... が 2 件
+   *   検算 v9  status OK・files に空文字の key が残る
+   *   bsdtar   exit 1（root は directory ではない）
+   *   python   NotADirectoryError
+   * ```
+   *
+   * 明示的な root entry が無ければ implicit directory として剥がしてよい。
+   * 在るならディレクトリ型（`5` か末尾スラッシュ）だけ許す。
+   */
+  const explicitRoot = inventory.find((e) => e.name === first)
+  if (explicitRoot && !(explicitRoot.type === '5' || explicitRoot.isDirEntry)) {
+    throw new ArchiveInvalid(
+      `先頭の 1 階層 "${first}" が ${explicitRoot.type === '0' ? '通常ファイル' : `type ${explicitRoot.type}`} なのに、`
+      + 'その下に entry がある（どの展開器でもこの木は作れない）',
+      { root: first, type: explicitRoot.type },
+    )
+  }
   const cut = (n) => (n === first ? '' : n.slice(first.length + 1))
+  /** **空 key を作らない。**`files` 側は v0.6.4 で filter が抜けていた */
+  const strippedFiles = new Map()
+  for (const [n, v] of files) { const c = cut(n); if (c) strippedFiles.set(c, v) }
   return {
-    files: new Map([...files.keys()].map((n) => [cut(n), files.get(n)])),
+    files: strippedFiles,
     inventory: inventory.map((e) => ({ ...e, name: cut(e.name) })).filter((e) => e.name),
+    rootStripped: first,
   }
 }
 
@@ -734,7 +895,7 @@ function loadFromArchive(path) {
     return { error: `source archive を読めない (${path}): ${e.message}`, kind: 'SOURCE_UNAVAILABLE' }
   }
   const r = readArchiveBuffer(buf, { gzip: /\.(tgz|tar\.gz)$/i.test(path) })
-  return r.error ? r : { files: r.files, inventory: r.inventory, origin: `archive:${path}` }
+  return r.error ? r : { files: r.files, inventory: r.inventory, rootStripped: r.rootStripped, origin: `archive:${path}` }
 }
 
 function loadFromDir(dir) {
@@ -837,10 +998,11 @@ function loadFromDir(dir) {
     ...[...files.keys()].map((name) => ({ name, type: '0', isDirEntry: false })),
     ...skippedLinks.map((name) => ({ name, type: '2', isDirEntry: false })),
   ]
-  const { files: stripped, inventory: strippedInv } = stripTopLevel(files, dirInventory)
+  const { files: stripped, inventory: strippedInv, rootStripped } = stripTopLevel(files, dirInventory)
   return {
     files: stripped,
     inventory: strippedInv,
+    rootStripped,
     origin: `directory:${dir}${stripped === files ? '' : ' (先頭の 1 階層を剥がした)'}`
       + (skippedLinks.length ? ` (symlink ${skippedLinks.length} 件を読み飛ばした)` : ''),
   }
@@ -859,7 +1021,7 @@ function loadFromLocalTag(tag) {
     return { error: `git archive に失敗: ${e.message}`, kind: 'SOURCE_UNAVAILABLE' }
   }
   const r = readArchiveBuffer(tar, { gzip: false })
-  return r.error ? r : { files: r.files, inventory: r.inventory, origin: `git-archive:${tag}` }
+  return r.error ? r : { files: r.files, inventory: r.inventory, rootStripped: r.rootStripped, origin: `git-archive:${tag}` }
 }
 
 /**
@@ -917,7 +1079,7 @@ async function loadFromGithub(tag) {
     return { error: `本文を受け取れなかった: ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE' }
   }
   const r = readArchiveBuffer(gz, { gzip: true })
-  return r.error ? r : { files: r.files, inventory: r.inventory, origin: `github-tarball:${REPO}@${tag}` }
+  return r.error ? r : { files: r.files, inventory: r.inventory, rootStripped: r.rootStripped, origin: `github-tarball:${REPO}@${tag}` }
 }
 
 // ---------------------------------------------------------------------------

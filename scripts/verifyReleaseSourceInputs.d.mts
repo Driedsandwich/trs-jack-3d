@@ -22,6 +22,13 @@ export declare class ArchiveInvalid extends Error {
 
 export interface ArchiveReadResult {
   files?: Map<string, Buffer>
+  /** 全 entry の型つき一覧（v0.6.4）。完全性の検査はこちらを母集団にする */
+  inventory?: { name: string, type: string, isDirEntry: boolean, linkname: string | null }[]
+  /**
+   * 剥がした先頭 1 階層の名前（v0.6.5）。剥がしていなければ `null`。
+   * **差分試験が綴りを推測しないで済むように記録する。**
+   */
+  rootStripped?: string | null
   error?: string
   kind?: 'ARCHIVE_INVALID'
   detail?: Record<string, unknown>
