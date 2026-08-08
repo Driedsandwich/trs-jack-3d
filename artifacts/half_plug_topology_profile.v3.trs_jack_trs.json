@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRS:104e6a87aa90",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:df6244796ab5",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -323,16 +323,16 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "fa5b6f3755e745cb9b556568dc5c523609436e39",
- "generatedAt": "2026-08-06",
+ "sourceRevision": "3773457e133bed100052bf1826f710e1d7b93b25",
+ "generatedAt": "2026-08-08",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "fa5b6f3755e745cb9b556568dc5c523609436e39",
+  "generatedFromCommit": "3773457e133bed100052bf1826f710e1d7b93b25",
   "workingTreeDirty": false,
   "revisionOverride": false,
   "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "104e6a87aa9065bc05f54fb63fdff3af486cffe03adf5e628c253c6e67f96418",
+  "inputDigest": "df6244796ab583c85a66fcfb31ac399dfec784b0985ae4f4bd0ee41176e325a1",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -342,7 +342,7 @@
    },
    {
     "path": "artifacts/sensitivity.trs_jack_trs.json",
-    "sha256": "b89c24b5defe719db46b5a18ca4b318ea4166f8a5f2a0d6df4747115b4ac8ad8",
+    "sha256": "888c0f88f0c3a671f09ed9b4a9b6f3da502180895acaa6c95fe3547d0d694e7c",
     "role": "sensitivity-input"
    },
    {
@@ -352,7 +352,7 @@
    },
    {
     "path": "package-lock.json",
-    "sha256": "991b6857da67bf2ff99bdcd0866929248872f5e5964d4c4ec8925787c0ccf526",
+    "sha256": "2e2179181a6fdf92f848a472e5ec758dac6e0115df1215022c59faeb7879ea1c",
     "role": "lockfile"
    },
    {
@@ -472,7 +472,7 @@
    }
   ],
   "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" --release",
-  "artifactDate": "2026-08-06"
+  "artifactDate": "2026-08-08"
  },
  "fullInsertionDepthMm": 14,
  "stepMm": 0.02,
@@ -4058,8 +4058,8 @@
     "jack.contact.sleeve.axialCenter",
     "jack.contact.sleeve.padWidth"
    ],
-   "generatedFromCommit": "fc09c22428730ef9824037a11b9859b8763438f5",
-   "inputDigest": "05fcffeac2d031ba26c9f887b2a931deaa28e6195f3cba9ae77475f3f11a02c2",
+   "generatedFromCommit": "1c7ad41739676d37f88806bee42fec1774cb497f",
+   "inputDigest": "defaaad36a3b3c93a9dd80cd00c4cebc44c01a5e731d1c42dac1d71fbbd9fbe4",
    "configurationsUsable": 869,
    "shippedInsideSweptRange": true
   },
