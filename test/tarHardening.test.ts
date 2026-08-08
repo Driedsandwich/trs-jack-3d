@@ -33,6 +33,7 @@ const EXPECTED: Record<string, 'invalid' | 'safe'> = {
   resource: 'invalid',
   entryType: 'invalid',  // 中身を持つのに扱いを決めていない型。リンクだけ safe（下の個別指定）
   encoding: 'invalid',   // パスが UTF-8 として読めない
+  rootStrip: 'invalid',  // 先頭 1 階層が directory でないのに剥がす形。正当な形だけ safe（下の個別指定）
 }
 
 /**
@@ -73,6 +74,26 @@ const EXPECTED_BY_ID: Record<string, 'invalid' | 'safe'> = {
   // **リンクは止めない。**inventory に載せて、範囲の完全性検査がそれを見る
   'symlink-under-scope': 'safe',
   'hardlink-under-scope': 'safe',
+
+  // v0.6.5（外部監査 P0-2/3/4 と P1）
+  'pax-path-with-nul': 'invalid',        // PAX は長さ区切りなので NUL は値の一部
+  'pax-sun-holesdata': 'invalid',        // bsdtar は archive ごと拒否・python は通す＝割れる
+  'pax-unknown-vendor-key': 'invalid',   // 未知の vendor 鍵は既定で拒む（allowlist へ変更）
+  'link-hardlink-missing-target': 'invalid',      // 受理しても誰も展開できない
+  'link-hardlink-forward-reference': 'invalid',   // 前方参照も両実装で展開できない
+  'root-is-regular-file': 'invalid',
+  'root-is-symlink': 'invalid',
+  'root-is-hardlink': 'invalid',
+  /**
+   * **ここから下は「止めてはいけない」もの。**
+   * 独立した 2 member がそれぞれ上書きを 1 回ずつ使うのは正当な archive で、
+   * v0.6.4 はこれを拒んでいた（外部監査 P1・**こちらの過剰拒否**）。
+   */
+  'root-is-directory': 'safe',
+  'gnu-L-two-independent': 'safe',
+  'pax-two-independent-paths': 'safe',
+  /** 名前の上書きのあとに entry が無いまま終わる形。`tar` は Damaged tar archive で拒む */
+  'gnu-L-no-following-entry': 'invalid',
 }
 
 describe('tar 強化 ① 26 個すべてについて、どうなるかを実測する', () => {
@@ -136,11 +157,30 @@ describe('tar 強化 ② 種類ごとに「なぜ止まったか」まで見る'
     }
   })
 
+  /**
+   * **リンクは「拾わない」。ただし全部を通してよいわけではない（v0.6.5）。**
+   *
+   * v0.6.4 まで `link` 群は全件 `safe` だったので、この試験は群ごと通ることを前提にしていた。
+   * v0.6.5 で **指す先の無い hardlink は `ARCHIVE_INVALID`** になったため、
+   * 前提が成り立たなくなった。**主張は緩めず**、通ると決めた材料に限って同じことを見る
+   * （母集団は期待値の表から引くので、通す材料を増やしたら自動でここに入る）。
+   */
   it('symlink と hardlink をファイルとして拾わない', () => {
-    for (const c of cases.link) {
+    const safeLinks = cases.link.filter((c) => (EXPECTED_BY_ID[c.id] ?? EXPECTED.link) === 'safe')
+    expect(safeLinks.length, 'safe なリンク材料が無い（母集団が空）').toBeGreaterThanOrEqual(4)
+    for (const c of safeLinks) {
       const r = read(c.tar)
       expect(r.error, `${c.id}: 止まってしまった`).toBeFalsy()
       expect([...r.files!.keys()].some((n) => n.includes('link')), `${c.id}: リンクを拾っている`).toBe(false)
+    }
+  })
+
+  /** 指す先の無い hardlink は止める（**受理しても誰も展開できない**） */
+  it('指す先の無い hardlink は止まる', () => {
+    const bad = cases.link.filter((c) => (EXPECTED_BY_ID[c.id] ?? EXPECTED.link) === 'invalid')
+    expect(bad.length, '止まるべきリンク材料が無い（母集団が空）').toBeGreaterThanOrEqual(2)
+    for (const c of bad) {
+      expect(read(c.tar).error, `${c.id}: 通ってしまった`).toMatch(/hardlink の指す先/)
     }
   })
 })
