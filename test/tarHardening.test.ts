@@ -34,6 +34,7 @@ const EXPECTED: Record<string, 'invalid' | 'safe'> = {
   entryType: 'invalid',  // 中身を持つのに扱いを決めていない型。リンクだけ safe（下の個別指定）
   encoding: 'invalid',   // パスが UTF-8 として読めない
   rootStrip: 'invalid',  // 先頭 1 階層が directory でないのに剥がす形。正当な形だけ safe（下の個別指定）
+  structural: 'invalid', // 中身を持てない型に本体がある形。正当な形だけ safe（下の個別指定）
 }
 
 /**
@@ -94,6 +95,22 @@ const EXPECTED_BY_ID: Record<string, 'invalid' | 'safe'> = {
   'pax-two-independent-paths': 'safe',
   /** 名前の上書きのあとに entry が無いまま終わる形。`tar` は Damaged tar archive で拒む */
   'gnu-L-no-following-entry': 'invalid',
+
+  // v0.6.6（外部監査 P0-1/2/3 と P1）
+  'link-hardlink-self-reference': 'invalid',
+  'link-hardlink-to-directory': 'invalid',
+  'pax-uid-not-a-number': 'invalid',
+  'pax-mtime-not-a-number': 'invalid',
+  'pax-atime-nan': 'invalid',
+  'pax-ctime-exponent': 'invalid',
+  'pax-linkpath-dangling-hardlink': 'invalid',
+  /**
+   * **止めてはいけないもの。**どちらも 4 実装すべてが展開でき、
+   * v0.6.5 は拒んでいた（**こちらの過剰拒否**）。
+   */
+  'link-gnu-longlink': 'safe',
+  'pax-linkpath-long': 'safe',
+  'dir-entry-without-body': 'safe',
 }
 
 describe('tar 強化 ① 26 個すべてについて、どうなるかを実測する', () => {
@@ -175,12 +192,27 @@ describe('tar 強化 ② 種類ごとに「なぜ止まったか」まで見る'
     }
   })
 
-  /** 指す先の無い hardlink は止める（**受理しても誰も展開できない**） */
-  it('指す先の無い hardlink は止まる', () => {
+  /**
+   * **展開できない hardlink は、理由まで固定する（**受理しても誰も展開できない**）。**
+   *
+   * v0.6.5 は 1 つの正規表現で群をまとめて見ていたが、v0.6.6 で止める理由が 3 種になった。
+   * **ゆるい 1 本にまとめず、id ごとに理由を書く**——まとめると
+   * 「何かの理由で止まった」しか言えず、**別の理由で止まっても通ってしまう。**
+   * 母集団は期待値の表から引くので、止める材料を増やすとここが必ず落ちて、書き足しを促す。
+   */
+  const HARDLINK_REASONS: Record<string, RegExp> = {
+    'link-hardlink-missing-target': /hardlink の指す先が、ここまでの entry に無い/,
+    'link-hardlink-forward-reference': /hardlink の指す先が、ここまでの entry に無い/,
+    'link-hardlink-self-reference': /hardlink が自分自身を指している/,
+    'link-hardlink-to-directory': /hardlink の指す先が通常ファイルではない/,
+  }
+  it('展開できない hardlink は、理由まで一致して止まる', () => {
     const bad = cases.link.filter((c) => (EXPECTED_BY_ID[c.id] ?? EXPECTED.link) === 'invalid')
-    expect(bad.length, '止まるべきリンク材料が無い（母集団が空）').toBeGreaterThanOrEqual(2)
+    expect(bad.length, '止まるべきリンク材料が無い（母集団が空）').toBeGreaterThanOrEqual(4)
     for (const c of bad) {
-      expect(read(c.tar).error, `${c.id}: 通ってしまった`).toMatch(/hardlink の指す先/)
+      const want = HARDLINK_REASONS[c.id]
+      expect(want, `${c.id}: 期待する理由が書かれていない（材料を足したら理由も書く）`).toBeTruthy()
+      expect(read(c.tar).error, `${c.id}: 通ってしまった`).toMatch(want)
     }
   })
 })
