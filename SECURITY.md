@@ -31,7 +31,7 @@
 **対象**
 
 - `main` の最新
-- 直近の release 1 本（現時点では v0.6.4）
+- 直近の release 1 本（現時点では v0.6.5）
 
 **対象外**
 
@@ -87,7 +87,9 @@ modelLimitations.verifiedPhysical   false
   v7 → v8 で 3 つ（PAX の上書き・読み飛ばす entry の正規化漏れ・パス末尾の空白）、
   v8 → v9 で 3 つ（名前の上書きが 2 つ効く形・展開されるのに数えない entry・不正 UTF-8 の置換）、
   v9 → v10 で 4 つ（ディレクトリか確かめずに先頭階層を剥がす・受理するのに展開できない
-  archive・PAX の NUL 切り捨て・閉じていない denylist）。
+  archive・PAX の NUL 切り捨て・閉じていない denylist）、
+  v10 → v11 で 3 つ（自分自身を指す hardlink・ディレクトリを指す hardlink・
+  値が読めない PAX と中身を持てない型の本体）。
   **どれも外部監査の指摘で、こちらで反例を再現してから直しています。**
   v8 からは**ふつうの tar 展開を oracle にした差分試験**を置き、
   「検算が見た中身」と「展開してできる中身」が食い違ったら落ちるようにしました
@@ -97,10 +99,17 @@ modelLimitations.verifiedPhysical   false
   v9 は **oracle が 1 実装だけ**だったので、**oracle と同じ癖の欠陥を見つけられません**でした
   （v10 で python tarfile を必須 oracle に追加。
   [verify-tool-v10-notes.md](docs/release/verify-tool-v10-notes.md)）。
-- **v9 は、正当な archive を拒んでもいました。**独立した 2 つの member が
-  それぞれ長い名前を使うだけで `ARCHIVE_INVALID` になります（v10 で修正）。
+- **正当な archive を拒む欠陥が、2 版続けて見つかりました。**
+  v9 は独立した 2 つの member がそれぞれ長い名前を使うだけで `ARCHIVE_INVALID` になり、
+  v10 は **GNU の長い linkname（`K`）と PAX `linkpath` を拒んで**いました
+  （どちらも 4 実装すべてが展開できる形です。v10 / v11 でそれぞれ修正）。
   **塞ぎすぎは「実物が通る」確認では見つかりません**——この repo の実物は
-  最長パス 95 文字で、その機構を使わないためです。
+  最長パス 95 文字で、これらの機構を使わないためです。
+- **手元で確かめられないことは、確かめられないと書きます。**
+  v11 の 2 件（値が読めない PAX・中身を持てない型の本体）は、
+  **こちらの 2 実装（bsdtar / python）では再現していません。**
+  監査の GNU tar・BusyBox の結果と、構造の理屈にもとづいて直しました
+  （[verify-tool-v11-notes.md](docs/release/verify-tool-v11-notes.md) §4）。
 
 ### そのほか
 
