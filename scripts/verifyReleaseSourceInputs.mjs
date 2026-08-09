@@ -99,8 +99,18 @@ import { join, resolve } from 'node:path'
  *       **P1 は私の過剰拒否**: 上書きの出所（longNameFrom）を member 消費時に戻し忘れており、
  *       独立した 2 つの member がそれぞれ長い名前を使う**正当な archive**を拒んでいた。
  *       **判定が変わる**ので版を上げる
+ *  11 … **外部監査 2026-08-08（v0.6.5 に対する回）の P0 3 件 + P1。**
+ *       自分自身を指す hardlink と、ディレクトリを指す hardlink を受理していた
+ *       （この entry の名前を先に seenPaths へ入れていた／指す先の型を見ていなかった）。
+ *       allowlist の鍵でも `uid=abc` のように**値が読めない**ものを通していた
+ *       （GNU tar は Malformed extended header で拒む）。
+ *       中身を持てない型（ディレクトリ・リンク・デバイス）に本体があっても通していた
+ *       （読み飛ばすかどうかで、その先の解釈が丸ごとずれる）。
+ *       **P1 はこちらの過剰拒否**: GNU の `K`（長い linkname）と PAX `linkpath` を
+ *       拒んでいたが、**4 実装すべてが展開できる**正当な形だった。どちらも解釈する。
+ *       **判定が変わる**ので版を上げる
  */
-export const TOOL_VERSION = 10
+export const TOOL_VERSION = 11
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -315,11 +325,32 @@ function assertCanonicalPath(name) {
  * `path` だけは**解釈する**（GNU tar が長いパスに使う正当な機能）。
  */
 const PAX_KEYS_ALLOWED = new Set([
-  'path',                                   // 解釈する
+  'path', 'linkpath',                       // 解釈する（linkpath は v0.6.6 で追加）
   'mtime', 'atime', 'ctime',                // 時刻
   'uid', 'gid', 'uname', 'gname',           // 所有者（POSIX 標準・view を変えない）
   'comment',                                // GitHub の global header
 ])
+
+/**
+ * **通す鍵は、値の文法まで見る（v0.6.6・外部監査 P0-2）。**
+ *
+ * v0.6.5 は**鍵の名前だけ**を見ていた。`uid=abc` や `mtime=abc` のように
+ * 数値であるべき欄に読めない値が入っていても通していた。実測（監査）:
+ * **GNU tar は `Malformed extended header` で exit 2**、bsdtar・BusyBox・python は通す。
+ *
+ * **「view を変えない鍵だから通す」という理屈は、値が読める前提に乗っている。**
+ * 読めない値は読み手ごとの挙動が決まらないので、そこで割れる。
+ *
+ * POSIX pax の書式に合わせる（`uid`/`gid` は 10 進整数、時刻は 10 進の秒。
+ * 小数部を許す）。`uname`/`gname`/`comment` は自由文字列なので形は見ない。
+ */
+const PAX_VALUE_GRAMMAR = {
+  uid: /^[0-9]+$/,
+  gid: /^[0-9]+$/,
+  mtime: /^[0-9]+(\.[0-9]+)?$/,
+  atime: /^[0-9]+(\.[0-9]+)?$/,
+  ctime: /^[0-9]+(\.[0-9]+)?$/,
+}
 /** 値を読まない不透明な metadata。**中身のバイト列の外側**であることを明記して通す */
 const PAX_PREFIXES_ALLOWED = ['LIBARCHIVE.xattr.', 'SCHILY.xattr.']
 /** 既定拒否のうち、特に何が起きるかを言えるもの（メッセージ用） */
@@ -387,7 +418,20 @@ function readPaxRecords(data, kind) {
      * xattr の値は実物が**生バイナリ**を入れるので読まない——中身のバイト列の外側であり、
      * 読めなくても view は変わらない（v8 と v9 で 2 回、ここで塞ぎすぎた）。
      */
-    out.set(key, key === 'path' ? decodePaxText(raw, `PAX (${kind}) の path`) : raw)
+    if (key === 'path' || key === 'linkpath') {
+      out.set(key, decodePaxText(raw, `PAX (${kind}) の ${key}`))
+    } else if (PAX_VALUE_GRAMMAR[key]) {
+      const v = decodePaxText(raw, `PAX (${kind}) の ${key}`)
+      if (!PAX_VALUE_GRAMMAR[key].test(v)) {
+        throw new ArchiveInvalid(
+          `PAX (${kind}) の ${key} が数値として読めない: ${JSON.stringify(v.slice(0, 32))}`,
+          { kind, key },
+        )
+      }
+      out.set(key, v)
+    } else {
+      out.set(key, raw)
+    }
     i += len
   }
   const bad = [...out.keys()].filter(
@@ -501,7 +545,8 @@ const CONTENT_BEARING_NOT_HANDLED = new Set(['7', 'S', 'D', 'M', 'N'])
 function readTar(buf) {
   const files = new Map()
   /** **読み飛ばした entry の名前も覚える。**衝突の判定にはファイル以外も要る（v0.6.2） */
-  const seenPaths = new Set()
+  /** 名前 -> entry 型。hardlink の指す先が**通常ファイルか**まで見るため（v0.6.6） */
+  const seenPaths = new Map()
   /**
    * **全 entry を型つきで数え上げる（v0.6.4・外部監査 P0-B）。**
    *
@@ -515,6 +560,8 @@ function readTar(buf) {
   let longName = null
   /** `longName` を**どの機構が**置いたか。二重に置かれたら止めるため（v0.6.4・P0-A） */
   let longNameFrom = null
+  /** GNU `K` / PAX `linkpath` で上書きされた linkname（v0.6.6） */
+  let longLink = null
   let entries = 0
   let total = 0
 
@@ -611,17 +658,43 @@ function readTar(buf) {
         longName = p
         longNameFrom = 'PAX'
       }
+      /**
+       * **`linkpath` も解釈する（v0.6.6・外部監査 P1）。**
+       *
+       * v0.6.5 は allowlist に無い鍵として**拒んでいた**。しかし
+       * 長い linkname を持つ archive は GNU tar・bsdtar・BusyBox・python の
+       * **4 実装すべてが展開できる**（監査の実測）——正当な形を拒んでいた。
+       *
+       * リンクの指す先は `files` に入らないので view は変わらないが、
+       * **hardlink の指す先の検査には使う**ので、解釈して覚える。
+       */
+      if (type === 'x' && recs.has('linkpath')) {
+        // readPaxRecords が既に文字列へ decode 済み（NUL と不正 UTF-8 はそこで止まる）
+        longLink = recs.get('linkpath')
+      }
       continue
     }
 
-    if (type === 'L') {
+    if (type === 'L' || type === 'K') {
+      const what = type === 'L' ? 'GNU long name' : 'GNU long linkname'
+      const decoded = decodeStrict(data, what, entries).replace(/\0.*$/, '')
+      if (type === 'K') {
+        /**
+         * **GNU の長い linkname（`K`）を受ける（v0.6.6・外部監査 P1）。**
+         *
+         * v0.6.5 は `K` の分岐が無く、**`K` ヘッダ自身の名前 `././@LongLink` が
+         * 正規化検査に当たって `ARCHIVE_INVALID` になっていた**（実測）。
+         * 4 実装すべてが展開できる archive を拒んでいたので、こちらの過剰拒否である。
+         */
+        longLink = decoded
+        continue
+      }
       if (longNameFrom) {
         throw new ArchiveInvalid(
           `同じ entry に名前の上書きが 2 つ効いている（${longNameFrom} のあとに GNU long name）`,
           { entryIndex: entries },
         )
       }
-      const decoded = decodeStrict(data, 'GNU long name', entries).replace(/\0.*$/, '')
       assertSafePath(decoded)
       longName = decoded
       longNameFrom = 'GNU long name'
@@ -642,6 +715,9 @@ function readTar(buf) {
      */
     longName = null
     longNameFrom = null
+    /** この member 用に控えてから戻す（下の hardlink 検査で使う） */
+    const memberLink = longLink
+    longLink = null
 
     if (!rawName) continue
 
@@ -681,12 +757,28 @@ function readTar(buf) {
         { name, entryIndex: entries, type },
       )
     }
-    seenPaths.add(name)
+    seenPaths.set(name, type)
 
     /**
      * **archive に在るものは、ファイルとして読まないものも全部数える（v0.6.4・P0-B）。**
      * 未記録入力の探索がここを見る。`files` の key だけを見ていたのが穴だった。
      */
+    /**
+     * **中身を持てない型に中身があったら止める（v0.6.6・外部監査 P0-3）。**
+     *
+     * ディレクトリ・リンク・デバイスは中身を持たない。size が 0 でないと、
+     * **読み手がその本体を読み飛ばすかどうかで、その先の解釈が丸ごとずれる。**
+     * 実測（監査）: GNU tar は exit 2、BusyBox は exit 1 で「壊れている」と言う。
+     * こちらの手元（bsdtar 3.5.3 / python 3.14）は読み飛ばして通す——
+     * **つまり実装間で割れる。**割れるものは受理しない。
+     */
+    if (['1', '2', '3', '4', '5', '6'].includes(type) && size !== 0) {
+      throw new ArchiveInvalid(
+        `中身を持てない entry 型に本体がある（typeflag ${type} / size ${size}）。読み手ごとに解釈がずれる`,
+        { name, type, size, entryIndex: entries },
+      )
+    }
+
     inventory.push({ name, type, isDirEntry, linkname: type === '1' || type === '2' ? pathField(157, 100) : null })
 
     /**
@@ -718,11 +810,40 @@ function readTar(buf) {
      * `seenPaths` はここまでに出た名前だけを持つので、前方参照も同じ検査で落ちる。
      */
     if (type === '1') {
-      const target = pathField(157, 100)
-      if (!target || !seenPaths.has(target.replace(/\/+$/, ''))) {
+      const target = (memberLink ?? pathField(157, 100)).replace(/\/+$/, '')
+      /**
+       * **自分自身を指す hardlink を拒む（v0.6.6・外部監査 P0-1）。**
+       *
+       * v0.6.5 は、この entry の名前を `seenPaths` へ入れた**あと**に指す先を見ていたので、
+       * **自分を指すリンクが「指す先が在る」と判定されていた。**実測:
+       * 検算 v10 は status OK ／ bsdtar は `Skipping hardlink pointing to itself` で exit 1 ／
+       * python は KeyError。
+       */
+      if (target === name) {
+        throw new ArchiveInvalid(
+          `hardlink が自分自身を指している（展開できない）: ${name}`,
+          { name, entryIndex: entries },
+        )
+      }
+      const targetType = seenPaths.get(target)
+      if (targetType === undefined) {
         throw new ArchiveInvalid(
           `hardlink の指す先が、ここまでの entry に無い（展開できない）: ${name} -> ${target || '(空)'}`,
           { name, linkname: target, entryIndex: entries },
+        )
+      }
+      /**
+       * **指す先が通常ファイルであることまで見る（v0.6.6・外部監査 P0-1）。**
+       *
+       * v0.6.5 は「名前が在るか」しか見ていなかったので、
+       * **ディレクトリを指す hardlink**が通っていた。実測: 検算 v10 は status OK ／
+       * bsdtar は `Can't create ... Operation not permitted` で exit 1。
+       * hardlink は通常ファイルにしか張れない。
+       */
+      if (targetType !== '0') {
+        throw new ArchiveInvalid(
+          `hardlink の指す先が通常ファイルではない（展開できない）: ${name} -> ${target}（type ${targetType}）`,
+          { name, linkname: target, targetType, entryIndex: entries },
         )
       }
     }
