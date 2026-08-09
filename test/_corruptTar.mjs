@@ -181,6 +181,47 @@ export const paxCases = () => {
       { name: `${TOP}/a.txt`, data: 'A' },
     ]) },
     /**
+     * **通す鍵でも、値が読めなければ止める（v0.6.6・外部監査 P0-2）。**
+     *
+     * v0.6.5 は**鍵の名前だけ**を見ていた。実測（監査）:
+     * **GNU tar は `Malformed extended header` で exit 2**、
+     * bsdtar・BusyBox・python は通す——**実装間で割れる。**
+     * 「view を変えない鍵だから通す」という理屈は、値が読める前提に乗っている。
+     */
+    { id: 'pax-uid-not-a-number', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('uid', 'abc') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-mtime-not-a-number', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('mtime', 'abc') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-atime-nan', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('atime', 'nan') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-ctime-exponent', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('ctime', '1e999') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /**
+     * **`linkpath` は通す（v0.6.6・外部監査 P1）。**
+     * v0.6.5 は allowlist に無い鍵として拒んでいたが、**4 実装すべてが展開できる**。
+     * リンクの指す先は `files` に入らないので view は変わらない。
+     * ただし **hardlink の指す先の検査には使う**ので、解釈して覚える。
+     */
+    { id: 'pax-linkpath-long', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/l`, type: 'x', data: rec('linkpath', `${TOP}/${'ll/'.repeat(45)}target.txt`) },
+      { name: `${TOP}/link`, type: '2', linkname: 'short' },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /** `linkpath` で hardlink の指す先を存在しない場所へ上書きする形は止める */
+    { id: 'pax-linkpath-dangling-hardlink', tar: buildTar([
+      { name: `${TOP}/a.txt`, data: 'A' },
+      { name: `${TOP}/PaxHeaders/0/h`, type: 'x', data: rec('linkpath', `${TOP}/nope.txt`) },
+      { name: `${TOP}/hard`, type: '1', linkname: `${TOP}/a.txt` },
+    ]) },
+    /**
      * **独立した 2 つの member が、それぞれ 1 回ずつ上書きを使う（v0.6.5・外部監査 P1）。**
      * **これは正当な archive で、止めてはいけない。**v0.6.4 は上書きの出所を
      * member 消費時に戻し忘れており、2 件目を「二重の上書き」として拒んでいた。
@@ -393,6 +434,69 @@ export const linkCases = () => [
     { name: `${TOP}/hard.txt`, type: '1', linkname: `${TOP}/later.txt` },
     { name: `${TOP}/later.txt`, data: 'L' },
   ]) },
+
+  /**
+   * **自分自身を指す hardlink（v0.6.6・外部監査 P0-1）。**
+   *
+   * v0.6.5 は**この entry の名前を先に `seenPaths` へ入れていた**ので、
+   * 自分を指すリンクが「指す先が在る」と判定されていた。実測:
+   * 検算 v10 は status OK ／ bsdtar は `Skipping hardlink pointing to itself` で exit 1 ／
+   * python は KeyError ／ 監査側の GNU tar は exit 2。
+   */
+  { id: 'link-hardlink-self-reference', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/self`, type: '1', linkname: `${TOP}/self` },
+  ]) },
+  /**
+   * **ディレクトリを指す hardlink（v0.6.6・外部監査 P0-1）。**
+   * v0.6.5 は「名前が在るか」しか見ていなかった。hardlink は通常ファイルにしか張れない。
+   * 実測: 検算 v10 は status OK ／ bsdtar は `Operation not permitted` で exit 1。
+   */
+  { id: 'link-hardlink-to-directory', tar: buildTar([
+    { name: `${TOP}/`, type: '5', mode: 0o755 },
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/hdir`, type: '1', linkname: TOP },
+  ]) },
+  /**
+   * **GNU の長い linkname（`K`）は通す（v0.6.6・外部監査 P1）。**
+   *
+   * v0.6.5 は `K` の分岐が無く、**`K` ヘッダ自身の名前 `././@LongLink` が
+   * 正規化検査に当たって `ARCHIVE_INVALID`** になっていた。
+   * **4 実装すべてが展開できる**正当な形なので、こちらの過剰拒否だった。
+   */
+  { id: 'link-gnu-longlink', ok: true, tar: buildTar([
+    { name: `${TOP}/target.txt`, data: 'T' },
+    { name: '././@LongLink', type: 'K', data: `${TOP}/${'ll/'.repeat(45)}target.txt\0` },
+    { name: `${TOP}/link`, type: '2', linkname: 'short' },
+  ]) },
+]
+
+/**
+ * **中身を持てない型に本体がある（v0.6.6・外部監査 P0-3）。**
+ *
+ * ディレクトリ・リンク・デバイスは中身を持たない。`size` が 0 でないと、
+ * **読み手がその本体を読み飛ばすかどうかで、その先の解釈が丸ごとずれる。**
+ * 実測（監査）: GNU tar は exit 2、BusyBox は exit 1。
+ * こちらの手元（bsdtar 3.5.3 / python 3.14）は読み飛ばして通す——**実装間で割れる。**
+ */
+export const structuralCases = () => [
+  { id: 'dir-entry-with-body', tar: buildTar([
+    { name: `${TOP}/d/`, type: '5', mode: 0o755, data: 'DATA' },
+    { name: `${TOP}/a.txt`, data: 'A' },
+  ]) },
+  { id: 'symlink-with-body', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/link`, type: '2', linkname: 'a.txt', data: 'DATA' },
+  ]) },
+  { id: 'hardlink-with-body', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/hard`, type: '1', linkname: `${TOP}/a.txt`, data: 'DATA' },
+  ]) },
+  /** **正当な形は通す。**ディレクトリ entry は size 0 */
+  { id: 'dir-entry-without-body', ok: true, tar: buildTar([
+    { name: `${TOP}/d/`, type: '5', mode: 0o755 },
+    { name: `${TOP}/d/a.txt`, data: 'A' },
+  ]) },
 ]
 
 /**
@@ -464,4 +568,5 @@ export const allCases = () => ({
   entryType: entryTypeCases(),
   encoding: encodingCases(),
   rootStrip: rootStripCases(),
+  structural: structuralCases(),
 })
