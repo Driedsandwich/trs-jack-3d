@@ -202,16 +202,25 @@ describe('P1-3-4 status の契約 — 道具と schema のずれを隠さない'
     return found
   }
 
-  it('道具は 6 種類の status を出す（読み取りが空振りしていない）', () => {
+  it('道具は 7 種類の status を出す（読み取りが空振りしていない）', () => {
     const got = emittedByTool()
     expect([...got].sort()).toEqual([
-      'ARCHIVE_INVALID', 'MANIFEST_UNAVAILABLE', 'MISMATCH', 'NOTHING_TO_VERIFY', 'OK', 'SOURCE_UNAVAILABLE',
+      'ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED', 'MANIFEST_UNAVAILABLE', 'MISMATCH',
+      'NOTHING_TO_VERIFY', 'OK', 'SOURCE_UNAVAILABLE',
     ])
   })
 
-  it('**ずれは ARCHIVE_INVALID 1 個だけ**（7 個目が増えたらここで落ちる）', () => {
-    const gap = [...emittedByTool()].filter((s) => !enumOf().includes(s))
-    expect(gap).toEqual(['ARCHIVE_INVALID'])
+  /**
+   * **ずれは 2 個（v0.6.7 で 1 個増えた）。**
+   *
+   * この schema は**こちらが回した記録（自己申告）**の契約で、
+   * その経路では作業ツリーを読むので `ARCHIVE_INVALID` も `ARCHIVE_UNSUPPORTED` も出ない。
+   * **出ない status を enum へ足すと、schema が「出うる」と嘘をつく。**
+   * 受け手向けの CLI 結果の契約は別に要る（監査 §12・まだ作っていない）。
+   */
+  it('**ずれは archive 系の 2 個だけ**（8 個目が増えたらここで落ちる）', () => {
+    const gap = [...emittedByTool()].filter((s) => !enumOf().includes(s)).sort()
+    expect(gap).toEqual(['ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED'])
     // 逆向き: schema にあって道具が出さない status が無いこと
     expect(enumOf().filter((s) => !emittedByTool().has(s))).toEqual([])
   })

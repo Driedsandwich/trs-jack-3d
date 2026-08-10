@@ -1,7 +1,7 @@
 /**
  * **信頼できない archive に対して parser が止まることを、実物の壊れた tar で試す。**
  *
- * 材料は `test/_corruptTar.mjs`（26 個・6 種類）。
+ * 材料は `test/_corruptTar.mjs`（99 個・11 種類）。
  * **変異は parser の外側から入れる。**parser の中の定数をいじると、
  * 「その定数を読んでいること」しか確かめられない。
  *
@@ -23,18 +23,29 @@ const VERIFIER = 'scripts/verifyReleaseSourceInputs.mjs'
 const cases = allCases()
 const read = (buf: Buffer, gzip = false) => readArchiveBuffer(buf, { gzip })
 
-/** 期待する結末。`invalid` = 止まる ／ `safe` = 読めるが危険な entry を含まない */
-const EXPECTED: Record<string, 'invalid' | 'safe'> = {
+/**
+ * 期待する結末。
+ *   `invalid`     … 壊れている／曖昧／誰も展開できないので止まる
+ *   `unsupported` … **ふつうの tar は展開できる**が、この道具の範囲の外なので止まる（v0.6.7）
+ *   `safe`        … 読めて、危険な entry を含まない
+ *
+ * **`unsupported` を足したのは、`ARCHIVE_INVALID` が 2 つの別のことを言っていたから。**
+ * 実測（2026-08-10）: typeflag 7・base-256 の size 欄・長すぎるパスは
+ * bsdtar も python も exit 0 で展開する。**展開できる archive を「壊れている」と言っていた。**
+ */
+type Outcome = 'invalid' | 'unsupported' | 'safe'
+const EXPECTED: Record<string, Outcome> = {
   pax: 'safe',        // **中身を拾わないだけでは足りない。**意味を変える鍵があれば止める（下の個別指定）
   longName: 'safe',   // 正常な GNU long name は通る。危険なものだけ止まる
   checksum: 'invalid',
   traversal: 'invalid',
   link: 'safe',       // リンクは読み飛ばす。止める必要は無い
-  resource: 'invalid',
-  entryType: 'invalid',  // 中身を持つのに扱いを決めていない型。リンクだけ safe（下の個別指定）
+  resource: 'unsupported',  // 上限は**方針**であって archive の欠陥ではない（v0.6.7）
+  entryType: 'unsupported',  // 扱いを決めていない型。**決めていないのは archive の欠陥ではない**（下の個別指定）
   encoding: 'invalid',   // パスが UTF-8 として読めない
   rootStrip: 'invalid',  // 先頭 1 階層が directory でないのに剥がす形。正当な形だけ safe（下の個別指定）
   structural: 'invalid', // 中身を持てない型に本体がある形。正当な形だけ safe（下の個別指定）
+  ancestor: 'invalid',   // 祖先が directory でない木。正当な木だけ safe（下の個別指定・v0.6.7）
 }
 
 /**
@@ -57,10 +68,9 @@ const EXPECTED: Record<string, 'invalid' | 'safe'> = {
  * だから `test/tarExtractionOracle.test.ts` で、
  * **期待値を手で書かずにふつうの tar 展開から作る**検査を別に置いた。
  */
-const EXPECTED_BY_ID: Record<string, 'invalid' | 'safe'> = {
+const EXPECTED_BY_ID: Record<string, Outcome> = {
   // 'pax-x-path' は **safe**。v0.6.3 で `path=` を解釈するようにしたので、展開結果と一致する
   'pax-x-size-override': 'invalid',  // size 上書き → 読む長さが食い違う
-  'gnu-L-very-long': 'invalid',
   'gnu-L-traversal': 'invalid',
   'gnu-L-size-lie': 'invalid',
   // v0.6.4（外部監査 P0-A/B/C）。**同じ member に上書きが 2 つ効く形は、実装ごとに結末が割れる**
@@ -70,8 +80,8 @@ const EXPECTED_BY_ID: Record<string, 'invalid' | 'safe'> = {
   'pax-path-then-second-pax': 'invalid',
   'pax-g-path-override': 'invalid',
   // 中身を持つのに扱いを決めていない型は止める（inventory に載るだけでは、中身を検算できない）
-  'typeflag-7-contiguous': 'invalid',
-  'typeflag-S-gnu-sparse': 'invalid',
+  'typeflag-7-contiguous': 'unsupported',
+  'typeflag-S-gnu-sparse': 'unsupported',
   // **リンクは止めない。**inventory に載せて、範囲の完全性検査がそれを見る
   'symlink-under-scope': 'safe',
   'hardlink-under-scope': 'safe',
@@ -79,7 +89,6 @@ const EXPECTED_BY_ID: Record<string, 'invalid' | 'safe'> = {
   // v0.6.5（外部監査 P0-2/3/4 と P1）
   'pax-path-with-nul': 'invalid',        // PAX は長さ区切りなので NUL は値の一部
   'pax-sun-holesdata': 'invalid',        // bsdtar は archive ごと拒否・python は通す＝割れる
-  'pax-unknown-vendor-key': 'invalid',   // 未知の vendor 鍵は既定で拒む（allowlist へ変更）
   'link-hardlink-missing-target': 'invalid',      // 受理しても誰も展開できない
   'link-hardlink-forward-reference': 'invalid',   // 前方参照も両実装で展開できない
   'root-is-regular-file': 'invalid',
@@ -111,9 +120,62 @@ const EXPECTED_BY_ID: Record<string, 'invalid' | 'safe'> = {
   'link-gnu-longlink': 'safe',
   'pax-linkpath-long': 'safe',
   'dir-entry-without-body': 'safe',
+
+  // -------------------------------------------------------------------------
+  // v0.6.7（外部監査 2026-08-10）
+  // -------------------------------------------------------------------------
+  /** **P0-B: 指す先の上書きに状態が無かった。**名前の上書きと同じ規則を当てる */
+  'pax-g-linkpath-override': 'invalid',          // 実測: bsdtar は header・python は global を採る
+  'pax-linkpath-twice': 'invalid',               // 実測: bsdtar exit 1 ／ python は 1 つ目
+  'pax-linkpath-then-gnu-K': 'invalid',          // **手元の 2 実装は一致して通す**（監査の 4 実装は割れる）
+  'pax-gnu-K-then-linkpath': 'invalid',          // 同上
+  'pax-linkpath-no-following-entry': 'invalid',  // 実測: 2 実装とも Damaged / ReadError
+  'link-gnu-K-no-following-entry': 'invalid',    // 同上
+  /** **P0-C: 値の契約。**uname/gname は libarchive が locale 変換で落ちる（実測） */
+  'pax-uname-invalid-utf8': 'invalid',
+  'pax-gname-invalid-utf8': 'invalid',
+  'pax-mtime-above-int64': 'invalid',            // 実測: python は OverflowError
+  'pax-mtime-plus-sign': 'invalid',              // POSIX の書式に無い。**実測では 2 実装とも通す**
+  'pax-uid-above-32bit': 'invalid',              // **手元では再現していない**（監査の GNU tar 1.35）
+  'pax-gid-above-32bit': 'invalid',              // 同上
+  /** **これはこちらの実測で見つけた false-OK**（末尾スラッシュを剥がして受理していた） */
+  'link-hardlink-target-trailing-slash': 'invalid',
+  'link-hardlink-target-dotdot': 'invalid',      // 実測: bsdtar は Path contains '..' で exit 1
+  'link-hardlink-cycle': 'invalid',
+  /** **P0-A: 祖先の型。**正当な木だけ通す */
+  'ancestor-explicit-dir-tree': 'safe',
+  'ancestor-implicit-dir-tree': 'safe',
+  'ancestor-symlink-leaf-only': 'safe',
+  /**
+   * **止めてはいけないもの（v0.6.7）。**
+   * すべて「bsdtar と python が一致して展開する」ことを実測してから置いている。
+   * **過剰拒否は 3 版続けて出しているので、通す材料のほうを厚くする。**
+   */
+  'pax-mtime-negative': 'safe',                  // GNU tar がふつうに書く。v0.6.6 は拒んでいた
+  'pax-mtime-negative-fraction': 'safe',
+  'pax-mtime-large-within-range': 'safe',        // 上限のすぐ内側（塞ぎすぎの対照）
+  'pax-uid-32bit-max': 'safe',
+  'pax-uname-nul-inside': 'safe',                // 監査は NUL も拒めと言うが、実測では割れない
+  'pax-comment-invalid-utf8': 'safe',            // 同上（comment は locale 変換に乗らない）
+  'link-hardlink-chain': 'safe',                 // v0.6.6 は拒んでいた（実測: nlink=3 ができる）
+  'link-hardlink-pax-chain': 'safe',
+  'link-hardlink-dot-alias': 'safe',
+  'link-hardlink-leading-dot-alias': 'safe',
+  'link-hardlink-double-slash-alias': 'safe',
+  'link-gnu-K-and-L-together': 'safe',           // 名前と指す先は別の機構。まとめて拒まない
+  /**
+   * **切れている archive は、上限の話より先に「壊れている」（v0.6.7）。**
+   * 宣言した size のぶんの本体が入っていない。実測: bsdtar は
+   * `Truncated tar archive` で exit 1、python も落ちる。**上限とは無関係に壊れている。**
+   */
+  'res-size-overflow': 'invalid',
+  /** **P1-C: 展開できるが範囲の外。**「壊れている」とは言わない */
+  'base256-size-field': 'unsupported',
+  'pax-unknown-vendor-key': 'unsupported',       // 実測: 2 実装とも通す（SUN.holesdata とは違う）
+  'gnu-L-very-long': 'unsupported',              // 上限は方針。実測: 1,100 文字も 2 実装は展開する
 }
 
-describe('tar 強化 ① 26 個すべてについて、どうなるかを実測する', () => {
+describe('tar 強化 ① 99 個すべてについて、どうなるかを実測する', () => {
   const table: { id: string, kind: string, outcome: string, files: number }[] = []
 
   it.each(Object.entries(cases).flatMap(([k, list]) => list.map((c) => [k, c.id] as const)))(
@@ -121,13 +183,18 @@ describe('tar 強化 ① 26 個すべてについて、どうなるかを実測�
     (kind, id) => {
       const c = cases[kind].find((x) => x.id === id)!
       const r = read(c.tar)
-      const outcome = r.error ? 'ARCHIVE_INVALID' : 'READ'
+      const outcome = r.error ? String(r.kind) : 'READ'
       table.push({ id: c.id, kind, outcome, files: r.files ? r.files.size : 0 })
 
       const want = EXPECTED_BY_ID[c.id] ?? EXPECTED[kind]
-      if (want === 'invalid') {
+      if (want === 'invalid' || want === 'unsupported') {
         expect(r.error, `${c.id}: 止まっていない`).toBeTruthy()
-        expect(r.kind).toBe('ARCHIVE_INVALID')
+        /**
+         * **どちらで止めたかまで固定する。**まとめて「止まった」だけを見ると、
+         * 「壊れている」と「対応していない」が入れ替わっても通ってしまう。
+         */
+        expect(r.kind, `${c.id}: 止めた区分が違う`)
+          .toBe(want === 'invalid' ? 'ARCHIVE_INVALID' : 'ARCHIVE_UNSUPPORTED')
       } else {
         // 止まらない場合でも、**危険な名前が Map に入っていないこと**が要件
         expect(r.error, `${c.id}: 止まってしまった（塞ぎすぎ）`).toBeFalsy()
@@ -140,9 +207,9 @@ describe('tar 強化 ① 26 個すべてについて、どうなるかを実測�
   )
 
   it('一覧を出す（何がどう止まったかを記録に残す）', () => {
-    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(26)
+    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(99)
     const lines = table.map((t) => `  ${t.kind.padEnd(10)} ${t.id.padEnd(26)} ${t.outcome.padEnd(16)} files=${t.files}`)
-    console.log(`\n26 個の実測\n${lines.join('\n')}`)
+    console.log(`\n99 個の実測\n${lines.join('\n')}`)
   })
 })
 
@@ -184,7 +251,7 @@ describe('tar 強化 ② 種類ごとに「なぜ止まったか」まで見る'
    */
   it('symlink と hardlink をファイルとして拾わない', () => {
     const safeLinks = cases.link.filter((c) => (EXPECTED_BY_ID[c.id] ?? EXPECTED.link) === 'safe')
-    expect(safeLinks.length, 'safe なリンク材料が無い（母集団が空）').toBeGreaterThanOrEqual(4)
+    expect(safeLinks.length, 'safe なリンク材料が無い（母集団が空）').toBeGreaterThanOrEqual(10)
     for (const c of safeLinks) {
       const r = read(c.tar)
       expect(r.error, `${c.id}: 止まってしまった`).toBeFalsy()
@@ -205,10 +272,15 @@ describe('tar 強化 ② 種類ごとに「なぜ止まったか」まで見る'
     'link-hardlink-forward-reference': /hardlink の指す先が、ここまでの entry に無い/,
     'link-hardlink-self-reference': /hardlink が自分自身を指している/,
     'link-hardlink-to-directory': /hardlink の指す先が通常ファイルではない/,
+    // v0.6.7。**指す先の綴りと、上書きの終端**
+    'link-hardlink-target-trailing-slash': /リンクの指す先が \/ で終わっている/,
+    'link-hardlink-target-dotdot': /リンクの指す先の綴りを受け取れない/,
+    'link-hardlink-cycle': /hardlink の指す先が、ここまでの entry に無い/,
+    'link-gnu-K-no-following-entry': /linkname の上書き（GNU long linkname）のあとに entry が無い/,
   }
   it('展開できない hardlink は、理由まで一致して止まる', () => {
     const bad = cases.link.filter((c) => (EXPECTED_BY_ID[c.id] ?? EXPECTED.link) === 'invalid')
-    expect(bad.length, '止まるべきリンク材料が無い（母集団が空）').toBeGreaterThanOrEqual(4)
+    expect(bad.length, '止まるべきリンク材料が無い（母集団が空）').toBeGreaterThanOrEqual(8)
     for (const c of bad) {
       const want = HARDLINK_REASONS[c.id]
       expect(want, `${c.id}: 期待する理由が書かれていない（材料を足したら理由も書く）`).toBeTruthy()
