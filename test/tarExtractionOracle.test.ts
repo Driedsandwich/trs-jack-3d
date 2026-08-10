@@ -399,56 +399,99 @@ describe('tar 展開 oracle ② 既存の 26 個も、この基準で見る', ()
  * 黙って増やせない——増やせば下の 2 つ目の試験が落ちる。
  */
 /**
- * **手元では割れないのに止めているもの。理由つきでここに書く。**
+ * **その run の 2 実装では割れないのに止めているもの。どこで根拠が取れるかを書く。**
  *
- * 分類:
- *   `measured-elsewhere` … 監査（GNU tar 1.35 / BusyBox 1.37）は拒むと報告している。
- *                          **こちらの環境には GNU tar も BusyBox も無いので再現していない**
- *   `portability`        … 手元の OS では無害だが、別の OS では別の意味になる綴り
- *   `spec`               … POSIX の書式に無い。実測ではなく書式にもとづく判断
+ * ## この表は 2026-08-10 の CI で作り直した
  *
- * **この表があると、「実測で裏の取れていない拒否」がコードから数えられる。**
- * 黙って増やせない——増やせば下の完全性の試験が落ちる。
+ * 最初は macOS（bsdtar 3.5.3 / python 3.14）だけで作った。
+ * **CI を GNU tar（ubuntu）と bsdtar（macOS）の matrix にした最初の run で、
+ * 根拠が platform ごとに別だと分かった。**
+ *
+ * ```
+ * bsdtar だけで取れる根拠   PAX の g 上書き（bsdtar と python が別の木を作る）
+ *                          uname / gname の不正 UTF-8（libarchive が locale 変換で拒む）
+ *                          パスの不正 UTF-8（macOS は 2 実装とも作れない・Linux は両方作れる）
+ * GNU tar だけで取れる根拠  PAX の値が数値でない／範囲外（Malformed extended header）
+ *                          名前・指す先の上書きが 2 つ効く形（片方の順序だけ木が割れる）
+ * ```
+ *
+ * **どちらか片方の実装だけでは、止める理由の半分が見えない。**
+ * これが matrix を入れた理由そのものであり、入れて初めて測れた。
+ *
+ * `on` は「**その実装で根拠が取れる**」ことを表す。
+ *   `'bsdtar'`  … macOS 側で取れる（ubuntu 側では取れない）
+ *   `'gnu-tar'` … ubuntu 側で取れる（macOS 側では取れない）
+ *   `'none'`    … **どちらでも取れていない。**止める理由は実測の外にある
+ *
+ * 下の試験が、`on` が自分の実装を指している行について
+ * **本当に根拠が取れることを毎 run 確かめる**（書きっぱなしにできない）。
  */
-type NoEvidenceReason = 'measured-elsewhere' | 'portability' | 'spec'
-const INVALID_WITHOUT_LOCAL_EVIDENCE: Record<string, { why: NoEvidenceReason, note: string }> = {
-  // ---- 名前の上書きが 2 つ効く形（v0.6.4 で止めた）------------------------
-  'pax-path-then-gnu-longname': {
-    why: 'measured-elsewhere',
-    note: '手元の bsdtar と python は一致して from-pax.txt を作る。'
-      + 'v0.6.3 の検算器だけが from-gnu.txt を見ていた。監査は 4 実装で結末が分かれると報告',
-  },
-  'gnu-longname-then-pax-path': { why: 'measured-elsewhere', note: '同上（順序が逆・2 実装は from-gnu.txt で一致）' },
-  // ---- 指す先の上書きが 2 つ効く形（v0.6.7 で止めた）----------------------
-  'pax-linkpath-then-gnu-K': {
-    why: 'measured-elsewhere',
-    note: '監査は GNU tar と BusyBox で指す先が分かれると報告。手元の 2 実装は一致して'
-      + '「先に来たほう」を採る。名前の上書きと同じ規則を当てている',
-  },
-  'pax-gnu-K-then-linkpath': { why: 'measured-elsewhere', note: '同上（順序が逆）' },
-  // ---- PAX の値の文法（v0.6.6 で止めた）----------------------------------
+type EvidencePlatform = 'bsdtar' | 'gnu-tar' | 'none'
+const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }> = {
+  // ---- GNU tar 側で取れる（2026-08-10 の ubuntu run で実測）--------------
   'pax-uid-not-a-number': {
-    why: 'measured-elsewhere',
-    note: '監査の GNU tar は Malformed extended header で exit 2。手元の 2 実装は通す',
+    on: 'gnu-tar',
+    note: 'GNU tar 1.35: Malformed extended header: invalid uid=abc（bsdtar と python は通す）',
   },
-  'pax-mtime-not-a-number': { why: 'measured-elsewhere', note: '同上' },
-  'pax-atime-nan': { why: 'measured-elsewhere', note: '同上' },
-  'pax-ctime-exponent': { why: 'measured-elsewhere', note: '同上' },
-  // ---- PAX の値の範囲（v0.6.7 で止めた）----------------------------------
+  'pax-mtime-not-a-number': { on: 'gnu-tar', note: 'GNU tar 1.35: Malformed extended header: invalid mtime=abc' },
+  'pax-atime-nan': { on: 'gnu-tar', note: 'GNU tar 1.35: Malformed extended header: invalid atime=nan' },
+  'pax-ctime-exponent': { on: 'gnu-tar', note: 'GNU tar 1.35: Malformed extended header: invalid ctime=1e999' },
   'pax-uid-above-32bit': {
-    why: 'measured-elsewhere',
-    note: '監査の GNU tar 1.35 は is out of range 0..4294967295 で exit 2。'
-      + '手元の 2 実装は 2^64 でも通す。Unix の uid_t が 32bit なので正当な archive は超えない',
+    on: 'gnu-tar',
+    note: 'GNU tar 1.35: Extended header uid=999… is out of range 0..4294967295（監査の報告どおり）',
   },
-  'pax-gid-above-32bit': { why: 'measured-elsewhere', note: '同上（gid 側）' },
-  // ---- 書式・移植性 ------------------------------------------------------
+  'pax-gid-above-32bit': {
+    on: 'gnu-tar',
+    note: 'GNU tar 1.35: Extended header gid=4294967296 is out of range 0..4294967295（監査の報告どおり）',
+  },
   'pax-mtime-plus-sign': {
-    why: 'spec',
-    note: '先頭の + は POSIX pax の書式に無い。**手元の 2 実装はどちらも通す**',
+    on: 'gnu-tar',
+    note: 'GNU tar 1.35: Malformed extended header: invalid mtime=+1。'
+      + '**POSIX の書式から出した判断だったが、実測でも裏が取れた**',
+  },
+  'gnu-longname-then-pax-path': {
+    on: 'gnu-tar',
+    note: 'ubuntu では GNU tar と python が違う木を作る。**macOS では bsdtar と python が一致する**',
+  },
+  'pax-gnu-K-then-linkpath': { on: 'gnu-tar', note: '同上（指す先の側）' },
+
+  // ---- bsdtar 側で取れる（macOS で実測）----------------------------------
+  'pax-g-path-override': {
+    on: 'bsdtar',
+    note: 'bsdtar は a.txt、python は from-global.txt を作る（別の木）。ubuntu では GNU tar が python と一致する',
+  },
+  'pax-g-linkpath-override': {
+    on: 'bsdtar',
+    note: 'bsdtar は link -> t1.txt、python は link -> t2.txt（別の木）',
+  },
+  'pax-uname-invalid-utf8': {
+    on: 'bsdtar',
+    note: "libarchive: Uname can't be converted from UTF-8 to current locale. で exit 1。GNU tar は通す",
+  },
+  'pax-gname-invalid-utf8': { on: 'bsdtar', note: '同上（Gname 側）' },
+  'invalid-utf8-ustar-name': {
+    on: 'bsdtar',
+    note: '**受け手の環境で結果が変わる。**macOS では bsdtar も python も Illegal byte sequence で作れず、'
+      + 'Linux では GNU tar も python も作れる。**同じ archive の展開結果が OS で変わる**',
+  },
+  'invalid-utf8-gnu-longname': { on: 'bsdtar', note: '同上（GNU long name 経由）' },
+  'invalid-utf8-ustar-prefix': { on: 'bsdtar', note: '同上（prefix 欄経由）' },
+  'invalid-utf8-pax-path': { on: 'bsdtar', note: '同上（PAX path 経由。libarchive は Pathname が変換できないと言う）' },
+
+  // ---- どちらでも取れていない（**実測の外にある判断**）--------------------
+  'pax-path-then-gnu-longname': {
+    on: 'none',
+    note: '**2 実装が一致する順序。**逆順（gnu-longname-then-pax-path）は GNU tar 側で割れる。'
+      + '監査は 4 実装で結末が分かれると報告しているが、こちらでは両 platform とも割れない。'
+      + '名前の上書きが 2 つ効く形として、逆順と同じ規則で止めている',
+  },
+  'pax-linkpath-then-gnu-K': {
+    on: 'none',
+    note: '同上（指す先の側）。逆順（pax-gnu-K-then-linkpath）は GNU tar 側で割れる',
   },
   'trav-backslash': {
-    why: 'portability',
-    note: 'Unix では `..\\evil.txt` という名前のふつうのファイルになる（実測: 2 実装とも同じ木）。'
+    on: 'none',
+    note: '`..\\evil.txt` は Unix ではふつうの名前になる（両 platform で 2 実装とも同じ木）。'
       + 'Windows では 1 階層上を指す。**手元で無害なことは、受け手のところで無害であることを意味しない**',
   },
 }
@@ -480,6 +523,16 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
     return treeDigest(bsd.entries) === treeDigest(walkTree(out)) ? null : '2 実装が違う木を作る'
   }
 
+  /** この run が使っている実装。**根拠がどちらで取れるかは実装で変わる** */
+  const IMPL = (() => {
+    const v = (() => {
+      try { return execFileSync('tar', ['--version'], { encoding: 'utf8' }).split('\n')[0] } catch { return 'unknown' }
+    })()
+    const kind: EvidencePlatform | 'other'
+      = /bsdtar|libarchive/i.test(v) ? 'bsdtar' : /GNU tar/i.test(v) ? 'gnu-tar' : 'other'
+    return { version: v, kind }
+  })()
+
   /** **止める材料が十分にあること**（母集団が空だと、この試験は何も言っていない） */
   const invalidCases = all.filter(([, , tar]) => readArchiveBuffer(tar as Buffer, { gzip: false }).kind === 'ARCHIVE_INVALID')
   it('ARCHIVE_INVALID の材料が 30 個以上ある（母集団が空でない）', () => {
@@ -488,67 +541,64 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
 
   it.each(invalidCases.map(([kind, id]) => [`${kind}/${id}`, id] as const))(
     '%s', (_label, id) => {
-      if (INVALID_WITHOUT_LOCAL_EVIDENCE[id]) return
+      const listed = EVIDENCE_ELSEWHERE[id]
+      /**
+       * **「別の実装で取れる」と書いてある行は、その実装で回っているときだけ免除しない。**
+       * 自分の実装が `on` と一致するなら、根拠は**ここで**取れなければならない
+       * （下の腐り検査がそれを見る）。一致しないなら、ここでは判定しない。
+       */
+      if (listed && listed.on !== IMPL.kind) return
       const found = invalidCases.find(([, i]) => i === id)!
       expect(
         localEvidence(found[2] as Buffer),
-        `${id}: 手元の 2 実装がそろって通すのに ARCHIVE_INVALID と言っている`
+        `${id}: この run の 2 実装がそろって通すのに ARCHIVE_INVALID と言っている`
         + '（本当に壊れているなら根拠を出す。範囲の話なら ARCHIVE_UNSUPPORTED にする。'
-        + 'どちらでもないなら INVALID_WITHOUT_LOCAL_EVIDENCE へ理由つきで書く）',
+        + 'どちらでもないなら EVIDENCE_ELSEWHERE へ、どこで根拠が取れるか書く）',
       ).not.toBeNull()
     },
   )
 
   /**
-   * **例外表が腐らないようにする。**
-   * ここに書いた id が、あとから手元でも割れるようになったら（oracle を増やしたときなど）、
-   * **その行はもう例外ではない。**残しておくと「再現していない拒否」の数を過大に見せる。
-   */
-  /**
-   * **例外表が腐らないようにする。ただし bsdtar のときだけ厳密に見る。**
+   * **表の主張を毎 run 確かめる。**
    *
-   * この表は **bsdtar 3.5.3 と python 3.14 で測って**作った。
-   * CI の ubuntu job では `tar` が GNU tar になるので、
-   * `measured-elsewhere` の行は**そこで根拠が取れるようになるのが正しい**——
-   * その環境で「例外が残っている」と言って落とすのは意味が逆である。
-   *
-   * だから **GNU tar のときは落とさず、どれが根拠を得たかを出す。**
-   * これが監査の報告（GNU tar は拒む）に対するこちら側の実測になる。
+   * `on` が自分の実装を指している行は、**ここで根拠が取れなければ嘘**である。
+   * `on` が別の実装を指している行は、ここで取れないのが正しい——
+   * **取れてしまったら `on` の書き方が古い。**
+   * どちらも落とす。書きっぱなしにできないようにするため。
    */
-  it('例外表に、もう例外でない行が残っていない（bsdtar のときだけ厳密に見る）', () => {
-    const version = (() => {
-      try { return execFileSync('tar', ['--version'], { encoding: 'utf8' }).split('\n')[0] } catch { return 'unknown' }
-    })()
-    const isBsdtar = /bsdtar|libarchive/i.test(version)
+  it('表の「どこで根拠が取れるか」が、この実装で実際にそうなっている', () => {
+    const wrong: string[] = []
     const gained: string[] = []
-    for (const id of Object.keys(INVALID_WITHOUT_LOCAL_EVIDENCE)) {
+    for (const [id, row] of Object.entries(EVIDENCE_ELSEWHERE)) {
       const found = all.find(([, i]) => i === id)
-      expect(found, `例外表に、存在しない材料 ${id} が書いてある`).toBeTruthy()
+      expect(found, `表に、存在しない材料 ${id} が書いてある`).toBeTruthy()
       const ev = localEvidence(found![2] as Buffer)
       if (ev !== null) gained.push(`${id}: ${ev}`)
+      if (IMPL.kind === 'other') continue
+      if (row.on === IMPL.kind && ev === null) wrong.push(`${id}: ${IMPL.kind} で取れると書いてあるのに取れない`)
+      if (row.on !== IMPL.kind && ev !== null) wrong.push(`${id}: ${row.on} で取れると書いてあるが、${IMPL.kind} でも取れる（表が古い）`)
     }
-    console.log(`\noracle = ${version}\n`
+    console.log(`\noracle = ${IMPL.version}（${IMPL.kind}）\n`
       + (gained.length
-        ? `この実装では根拠が取れた: ${gained.length} 件\n${gained.map((g) => `  ${g}`).join('\n')}`
-        : 'この実装では、例外表のどの行も根拠が取れない'))
-    if (isBsdtar) {
-      expect(gained, '手元（bsdtar）で根拠が取れるようになった。例外表から外すこと').toEqual([])
-    }
+        ? `この実装で根拠が取れた行: ${gained.length} 件\n${gained.map((g) => `  ${g}`).join('\n')}`
+        : 'この実装では、表のどの行も根拠が取れない'))
+    expect(wrong, '表の記述と実測が合っていない').toEqual([])
   })
 
   /**
-   * **数を固定する。**「実測で裏が取れていない拒否」が何件あるかは、
+   * **数を固定する。**「どちらの必須 oracle でも裏が取れていない拒否」が何件あるかは、
    * 受け手にとっては道具の限界そのものなので、**増えたら気づく形**にしておく。
    * 増やしてよいが、そのときはここと notes の両方を直すことになる。
    */
-  it('実測で裏の取れていない拒否は 12 件（内訳を出す）', () => {
-    const rows = Object.entries(INVALID_WITHOUT_LOCAL_EVIDENCE)
-    const byWhy: Record<string, string[]> = {}
-    for (const [id, v] of rows) (byWhy[v.why] ??= []).push(id)
-    console.log(`\n手元の 2 実装では割れないのに止めているもの: ${rows.length} 件\n`
-      + Object.entries(byWhy).map(([w, ids]) => `  ${w.padEnd(20)} ${ids.length} 件  ${ids.join(', ')}`).join('\n'))
-    expect(rows.length, '件数が変わった。notes の記述も直すこと').toBe(12)
-    expect(byWhy['measured-elsewhere']?.length, 'GNU tar / BusyBox 由来の件数').toBe(10)
+  it('どちらの必須 oracle でも裏の取れていない拒否は 3 件（内訳を出す）', () => {
+    const rows = Object.entries(EVIDENCE_ELSEWHERE)
+    const byOn: Record<string, string[]> = {}
+    for (const [id, v] of rows) (byOn[v.on] ??= []).push(id)
+    console.log(`\nこの run の 2 実装では割れないのに止めているもの: ${rows.length} 件\n`
+      + Object.entries(byOn).map(([w, ids]) => `  ${w.padEnd(10)} ${ids.length} 件  ${ids.join(', ')}`).join('\n'))
+    expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(3)
+    expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(8)
+    expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(9)
   })
 
   it('**この試験が空振りしていない**（根拠の無い拒否を作れば落ちる）', () => {

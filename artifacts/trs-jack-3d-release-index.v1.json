@@ -4,7 +4,7 @@
  "generatedAt": "2026-08-10",
  "releaseTag": null,
  "releaseCommit": null,
- "evidenceBuiltAtCommit": "5ea5e8330a0833943241d476e9ddb5ae47c609f8",
+ "evidenceBuiltAtCommit": "a045db69d10ed55901bd6924ebe3d84eb86a3380",
  "artifactGenerationCommit": "4bf02034ad7e7b441096c794a8f68a0218f47e24",
  "artifactGenerationCommits": [
   {
@@ -15,7 +15,7 @@
    ]
   },
   {
-   "commit": "5ea5e8330a0833943241d476e9ddb5ae47c609f8",
+   "commit": "a045db69d10ed55901bd6924ebe3d84eb86a3380",
    "assets": [
     "source-input-manifest.json",
     "source-snapshot.v1.json",
@@ -126,9 +126,9 @@
   },
   {
    "filename": "source-input-manifest.json",
-   "sha256": "fdba35adb937903e7d5ebcb6bab68a9c9f00af5d641f4c006de10b654fa0f9fb",
+   "sha256": "0a02705f91cff646cca2e598b08e39a8fd192b0a013af88e4897f74d7e85a8b2",
    "role": "evidence",
-   "generatedFromCommit": "5ea5e8330a0833943241d476e9ddb5ae47c609f8"
+   "generatedFromCommit": "a045db69d10ed55901bd6924ebe3d84eb86a3380"
   },
   {
    "filename": "source-input-manifest.v2.schema.json",
@@ -147,9 +147,9 @@
   },
   {
    "filename": "source-snapshot.v1.json",
-   "sha256": "c3ac8b60fb2387f81fdb61ffb829e893d1865aa0cfe9647c7c0b23cb86a901cf",
+   "sha256": "8d522b1637f84166530e207af61d2f69224bb6c56294a72f83a6290e71a8c504",
    "role": "evidence",
-   "generatedFromCommit": "5ea5e8330a0833943241d476e9ddb5ae47c609f8"
+   "generatedFromCommit": "a045db69d10ed55901bd6924ebe3d84eb86a3380"
   },
   {
    "filename": "source-snapshot.v1.schema.json",
@@ -158,9 +158,9 @@
   },
   {
    "filename": "source-verification-result.json",
-   "sha256": "f99d76db0d46e59fb3e8ed0af83d18ff8262ff41f3596dde74e79470b491edf6",
+   "sha256": "0467691ee31ec7fdc8873b666ff1847cd4216b6f8f89d0d587392b538c10224e",
    "role": "evidence",
-   "generatedFromCommit": "5ea5e8330a0833943241d476e9ddb5ae47c609f8"
+   "generatedFromCommit": "a045db69d10ed55901bd6924ebe3d84eb86a3380"
   },
   {
    "filename": "source-verification-result.v1.schema.json",
@@ -202,9 +202,9 @@
   },
   {
    "filename": "validation-results.json",
-   "sha256": "193c76fe93b8a3300867e0d2d27a9da9a21822ab797f49e11eaa23d2159c530a",
+   "sha256": "cf0d95b265e788ebd0e0f9dc506d13e81532512488ebe6c49571c3748840669d",
    "role": "evidence",
-   "generatedFromCommit": "5ea5e8330a0833943241d476e9ddb5ae47c609f8"
+   "generatedFromCommit": "a045db69d10ed55901bd6924ebe3d84eb86a3380"
   },
   {
    "filename": "validation-results.v2.schema.json",

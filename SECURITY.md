@@ -119,16 +119,19 @@ modelLimitations.verifiedPhysical   false
   **展開できる archive を「壊れている」と呼んでいました。**
   どちらも exit code は 2 で、`OK` にはなりません。
 - **手元で確かめられないことは、確かめられないと書きます。**
-  この環境には GNU tar も BusyBox もありません（bsdtar 3.5.3 と python 3.14 の 2 実装で測っています）。
-  **手元の 2 実装がそろって通すのに止めているものが、現時点で 12 件あります**——
-  10 件は監査の GNU tar / BusyBox の報告にもとづく判断で、**こちらでは再現していません**。
-  一覧は `test/tarExtractionOracle.test.ts` の `INVALID_WITHOUT_LOCAL_EVIDENCE` にあり、
-  **理由の書かれていない拒否を足すと試験が落ちます**
+  **止める理由の半分は、片方の実装だけでは見えません。**
+  その run の 2 実装がそろって通すのに止めているものが 20 件あり、内訳は
+  **GNU tar 側でだけ根拠が取れる 9 件 ／ bsdtar 側でだけ取れる 8 件 ／
+  どちらでも取れていない 3 件**です（2026-08-10 実測）。
+  一覧は `test/tarExtractionOracle.test.ts` の `EVIDENCE_ELSEWHERE` にあり、
+  **どこで根拠が取れるかを毎 run 両方向で照合します**
   （[verify-tool-v12-notes.md](docs/release/verify-tool-v12-notes.md) §7）。
 - **CI を GNU tar（ubuntu）と bsdtar（macOS）の matrix にしました（v12）。**
   v11 まで CI は ubuntu 1 本、開発は macOS だったので、
   **2 実装が同じ変更に対して同時に効いたことが一度もありませんでした。**
-  ただし**この matrix はまだ一度も回っていません。**
+  最初の run で **ubuntu 側が 8 件落ち**、
+  **止める理由の半分が片方の platform でしか測れていなかった**ことが分かりました
+  （archive の扱いではなく、試験の書き方の欠陥でした）。
 
 ### そのほか
 
