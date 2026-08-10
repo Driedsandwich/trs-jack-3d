@@ -109,8 +109,22 @@ import { join, resolve } from 'node:path'
  *       **P1 はこちらの過剰拒否**: GNU の `K`（長い linkname）と PAX `linkpath` を
  *       拒んでいたが、**4 実装すべてが展開できる**正当な形だった。どちらも解釈する。
  *       **判定が変わる**ので版を上げる
+ *  12 … **外部監査 2026-08-10（v0.6.6 に対する回）の P0 3 件 + P1 3 件。**
+ *       祖先が通常ファイル・symlink・hardlink でも、その下の entry を受理していた
+ *       （**どの展開器でもこの木は作れない**のに `status OK`）→ 祖先型の不変条件を持つ。
+ *       linkname の上書き（GNU `K` / PAX `linkpath`）に状態機械が無く、global・二重・
+ *       宙に浮いた上書きを受理していた（実測で bsdtar と python の結末が割れる）
+ *       → 名前の上書きと同じ規則にし、inventory へは**効いたあとの**指す先を入れる。
+ *       PAX の `uname`/`gname` が不正 UTF-8 でも通していた（libarchive は拒む）。
+ *       時刻の整数部に上限が無かった（python は int64 上限で OverflowError）。
+ *       **P1 はこちらの過剰拒否が 2 件**: 負の時刻（GNU tar がふつうに書く）を拒み、
+ *       hardlink の連鎖と `./` 綴りの指す先を拒んでいた（2 実装とも展開できる）。
+ *       **hardlink の指す先の末尾スラッシュを剥がして受理していた**のは、
+ *       監査ではなくこちらの実測で見つけた false-OK（bsdtar は展開できない）。
+ *       `ARCHIVE_UNSUPPORTED` を新設し、**壊れている**と**対応していない**を分けた。
+ *       **判定が変わる**ので版を上げる
  */
-export const TOOL_VERSION = 11
+export const TOOL_VERSION = 12
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -193,6 +207,35 @@ export class ArchiveInvalid extends Error {
   }
 }
 
+/**
+ * **壊れてはいないが、この道具が扱う範囲の外（v0.6.7・外部監査 P1-C）。**
+ *
+ * v0.6.6 までは、`ARCHIVE_INVALID` が 2 つの別々のことを言っていた。
+ *
+ * ```
+ * ふつうの tar が展開できない（矛盾・破損・実装間で結末が割れる）
+ * ふつうの tar は展開できるが、こちらが対応範囲に入れていない
+ * ```
+ *
+ * **後者を「壊れている」と言うのは嘘である。**実測（2026-08-10）:
+ *
+ * ```
+ * base-256 の size 欄     検算 v11 ARCHIVE_INVALID ／ bsdtar exit 0 ／ python exit 0
+ * typeflag 7（contiguous） 検算 v11 ARCHIVE_INVALID ／ bsdtar exit 0 ／ python exit 0
+ * ```
+ *
+ * **exit code も status の重みも変えない**（どちらも 2 で、`OK` にはならない）。
+ * 変わるのは受け手が読む理由だけ——「この archive を直せ」なのか
+ * 「この道具では読めないので別の経路で確かめてくれ」なのかが分かれる。
+ */
+export class ArchiveUnsupported extends Error {
+  constructor(reason, detail = {}) {
+    super(reason)
+    this.name = 'ArchiveUnsupported'
+    this.detail = detail
+  }
+}
+
 /** ヘッダの checksum を検算する。checksum 欄を空白 8 個で埋めた状態の総和 */
 function headerChecksumOk(header) {
   const stored = /^[0-7]+/.exec(header.subarray(148, 156).toString('ascii'))
@@ -211,8 +254,13 @@ function headerChecksumOk(header) {
  * 「source の中にあった」という主張が嘘になる。
  */
 function assertSafePath(name) {
+  /**
+   * **長さの上限は方針であって、archive の欠陥ではない（v0.6.7・外部監査 P1-C）。**
+   * 実測（2026-08-10）: 1,100 文字のパスを bsdtar も python も exit 0 で展開する
+   * （tar は階層を 1 つずつ作るので PATH_MAX に当たらない）。
+   */
   if (name.length > TAR_LIMITS.maxPathLength) {
-    throw new ArchiveInvalid(`entry のパスが長すぎる (${name.length} > ${TAR_LIMITS.maxPathLength})`, { name: name.slice(0, 80) })
+    throw new ArchiveUnsupported(`entry のパスが長すぎる (${name.length} > ${TAR_LIMITS.maxPathLength})`, { name: name.slice(0, 80) })
   }
   if (name.startsWith('/')) throw new ArchiveInvalid('絶対パスの entry がある', { name })
   if (/^[A-Za-z]:/.test(name)) throw new ArchiveInvalid('ドライブレターつきの entry がある', { name })
@@ -345,12 +393,56 @@ const PAX_KEYS_ALLOWED = new Set([
  * 小数部を許す）。`uname`/`gname`/`comment` は自由文字列なので形は見ない。
  */
 const PAX_VALUE_GRAMMAR = {
-  uid: /^[0-9]+$/,
-  gid: /^[0-9]+$/,
-  mtime: /^[0-9]+(\.[0-9]+)?$/,
-  atime: /^[0-9]+(\.[0-9]+)?$/,
-  ctime: /^[0-9]+(\.[0-9]+)?$/,
+  uid: /^(0|[1-9][0-9]*)$/,
+  gid: /^(0|[1-9][0-9]*)$/,
+  mtime: /^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/,
+  atime: /^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/,
+  ctime: /^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/,
 }
+
+/**
+ * **文法を通っても、範囲の外なら止める（v0.6.7・外部監査 P0-C）。**
+ *
+ * 「読める形をしている」と「読み手が扱える」は別である。実測（2026-08-10）:
+ *
+ * ```
+ * mtime=9223372036854775807   bsdtar exit 0 ／ python exit 2（OverflowError）  ← 割れる
+ * mtime=9007199254740992      bsdtar exit 0 ／ python exit 0                    ← 通る
+ * mtime=-1 / -9223372036854775808   両方 exit 0                                  ← 通る
+ * ```
+ *
+ * 時刻の上限は **2^53−1（この道具が誤差なく持てる整数の上限）**に置く。
+ * 「自分が正確に表せない数を受け取らない」という言い方ができ、
+ * 実測でも両実装が通す範囲の内側にある。実物の mtime は 1.8×10^9 なので約 500 万倍の余裕。
+ *
+ * `uid`/`gid` の上限 2^32−1 は **手元では再現していない。**
+ * 手元の 2 実装は 2^64 でも通す（実測）。監査の GNU tar 1.35 が
+ * `is out of range 0..4294967295` で拒む、という報告にもとづく。
+ * Unix の `uid_t` が 32bit なので、正当な archive がこれを超えることは無い。
+ */
+const PAX_VALUE_RANGE = {
+  uid: [0n, 4294967295n],
+  gid: [0n, 4294967295n],
+  mtime: [-9007199254740991n, 9007199254740991n],
+  atime: [-9007199254740991n, 9007199254740991n],
+  ctime: [-9007199254740991n, 9007199254740991n],
+}
+
+/**
+ * **名前として表示される鍵は、厳密 UTF-8 で読めることまで見る（v0.6.7・外部監査 P0-C）。**
+ *
+ * 実測（2026-08-10）: `uname` / `gname` に不正な UTF-8 を入れると
+ * **bsdtar 3.5.3 は exit 1**（`Uname can't be converted from UTF-8 to current locale.`）、
+ * python は通す。**割れるものは受理しない。**
+ *
+ * **`comment` は入れない。**同じ不正 UTF-8 を `comment` に入れて測ると
+ * **bsdtar も python も exit 0** だった（実測）。監査は `comment` も
+ * strict text にすることを勧めているが、**こちらの実測では割れないので従っていない。**
+ * 塞ぎすぎは 3 版続けて出しているので、根拠のない厳格化はしない。
+ *
+ * **NUL も入れない。**`uname` に NUL を混ぜて測ると両実装とも exit 0 だった（実測）。
+ */
+const PAX_KEYS_STRICT_TEXT = new Set(['uname', 'gname'])
 /** 値を読まない不透明な metadata。**中身のバイト列の外側**であることを明記して通す */
 const PAX_PREFIXES_ALLOWED = ['LIBARCHIVE.xattr.', 'SCHILY.xattr.']
 /** 既定拒否のうち、特に何が起きるかを言えるもの（メッセージ用） */
@@ -383,6 +475,58 @@ const PAX_KEYS_KNOWN_DANGEROUS = ['size', 'linkpath', 'hdrcharset', 'charset', '
  * 形式は `"<全長> <鍵>=<値>\n"` で `<全長>` は自身を含む。
  * **読めない形式も拒む**（読めないものを黙って飛ばすと、そこに何が書いてあっても通る）。
  */
+/**
+ * **リンクの指す先の綴りを揃える（v0.6.7・外部監査 P1-B）。**
+ *
+ * v0.6.6 は指す先を**そのまま文字列比較**し、末尾スラッシュだけ剥がしていた。
+ * そのため、正当な綴りを拒み、展開できない綴りを受理していた。実測（2026-08-10）:
+ *
+ * ```
+ * root/./A       検算 v11 ARCHIVE_INVALID ／ bsdtar exit 0 ／ python exit 0  ← 過剰拒否
+ * ./root/A       検算 v11 ARCHIVE_INVALID ／ bsdtar exit 0 ／ python exit 0  ← 過剰拒否
+ * root//A        検算 v11 ARCHIVE_INVALID ／ bsdtar exit 0 ／ python exit 0  ← 過剰拒否
+ * root/A/        検算 v11 READ            ／ bsdtar exit 1 ／ python exit 0  ← **false-OK**
+ * root/sub/../A  検算 v11 ARCHIVE_INVALID ／ bsdtar exit 1 ／ python exit 0  ← 割れる
+ * ```
+ *
+ * **末尾スラッシュの行（false-OK）は監査の指摘ではなく、こちらの実測で見つけた。**
+ * v0.6.6 は `.replace(/\/+$/, '')` で剥がしていたので、
+ * bsdtar が `Can't create ...: Not a directory` で展開できない archive を `READ` と言っていた。
+ *
+ * したがって **`.` と空要素だけ畳み、`..` と末尾スラッシュは畳まずに拒む。**
+ * 「どこまで揃えるか」を気分ではなく**実測に合わせる**ということである。
+ */
+function canonicalLinkTarget(raw, name, entryIndex) {
+  if (raw === '') {
+    throw new ArchiveInvalid(`リンクの指す先が空である: ${name}`, { name, entryIndex })
+  }
+  if (raw.endsWith('/')) {
+    throw new ArchiveInvalid(
+      `リンクの指す先が / で終わっている（展開できない）: ${name} -> ${raw.slice(0, 80)}`,
+      { name, linkname: raw.slice(0, 200), entryIndex },
+    )
+  }
+  const joined = raw.split('/').filter((p) => p !== '' && p !== '.').join('/')
+  if (!joined) {
+    throw new ArchiveInvalid(`リンクの指す先がパスになっていない: ${name} -> ${raw.slice(0, 80)}`, { name, entryIndex })
+  }
+  /**
+   * **entry の名前と同じ規則を当てる。**別々に書くと、片方だけ直したときに規則がずれる。
+   * 理由文だけリンク向けに言い換える。
+   */
+  try {
+    assertSafePath(joined)
+  } catch (e) {
+    // 上限超過は「対応していない」のままにする（壊れているとは言わない）
+    if (e instanceof ArchiveUnsupported) throw e
+    throw new ArchiveInvalid(
+      `リンクの指す先の綴りを受け取れない: ${name} -> ${raw.slice(0, 80)}（${e.message}）`,
+      { name, linkname: raw.slice(0, 200), entryIndex },
+    )
+  }
+  return joined
+}
+
 function readPaxRecords(data, kind) {
   const out = new Map()
   let i = 0
@@ -428,7 +572,22 @@ function readPaxRecords(data, kind) {
           { kind, key },
         )
       }
+      /**
+       * **整数部を BigInt で読んで範囲を見る（v0.6.7）。**
+       * `Number` で読むと 2^53 を超えたところで丸まり、
+       * **範囲の外にある値が範囲の内側の値に化ける。**
+       */
+      const [lo, hi] = PAX_VALUE_RANGE[key]
+      const intPart = BigInt(v.split('.')[0])
+      if (intPart < lo || intPart > hi) {
+        throw new ArchiveInvalid(
+          `PAX (${kind}) の ${key} が扱える範囲の外にある: ${v.slice(0, 32)}（${lo}..${hi}）`,
+          { kind, key },
+        )
+      }
       out.set(key, v)
+    } else if (PAX_KEYS_STRICT_TEXT.has(key)) {
+      out.set(key, utf8OrStop(raw, `PAX (${kind}) の ${key}`, null))
     } else {
       out.set(key, raw)
     }
@@ -439,18 +598,50 @@ function readPaxRecords(data, kind) {
   )
   if (bad.length) {
     const known = bad.filter((k) => PAX_KEYS_KNOWN_DANGEROUS.includes(k))
-    throw new ArchiveInvalid(
-      `PAX (${kind}) に受け入れていない鍵がある: ${bad.join(', ')}`
-      + (known.length ? `（${known.join(', ')} は entry の見え方を変える）` : '（未知の鍵は既定で拒む）'),
+    /**
+     * **見え方を変えると分かっている鍵と、知らない鍵を分ける（v0.6.7・外部監査 P1-C）。**
+     *
+     * 実測（2026-08-10）:
+     * ```
+     * SUN.holesdata   bsdtar exit 1（Parse error）／ python exit 0   ← 割れる = 壊れている扱い
+     * ACME.weird      bsdtar exit 0 ／ python exit 0                 ← 展開できる = 対応していない
+     * ```
+     * どちらも受理しないが、**受け手に言うべきことが違う。**
+     */
+    if (known.length) {
+      throw new ArchiveInvalid(
+        `PAX (${kind}) に受け入れていない鍵がある: ${bad.join(', ')}`
+        + `（${known.join(', ')} は entry の見え方を変える）`,
+        { kind, keys: bad },
+      )
+    }
+    throw new ArchiveUnsupported(
+      `PAX (${kind}) に、この道具が意味を決めていない鍵がある: ${bad.join(', ')}`
+      + '（未知の鍵は既定で受け取らない）',
       { kind, keys: bad },
     )
   }
   /**
-   * **global（`g`）の `path` は止める。**後続すべての名前を差し替えることになり、
-   * 「どの entry の話か」が消える。実物の GitHub tarball の `g` は `comment` だけ（実測）。
+   * **global（`g`）の `path` / `linkpath` は止める。**後続すべての名前・指す先を
+   * 差し替えることになり、「どの entry の話か」が消える。
+   * 実物の GitHub tarball の `g` は `comment` だけ（実測）。
+   *
+   * **`linkpath` は v0.6.7 で足した（外部監査 P0-B）。**v0.6.6 は `g` の `linkpath` を
+   * 受け取って**黙って無視**していたが、実装は無視しない。実測（2026-08-10）:
+   *
+   * ```
+   * g linkpath=root/t2 ／ ヘッダの linkname=root/t1 ／ symlink root/ln
+   *   検算 v11  READ（無視して header の値を inventory へ）
+   *   bsdtar    root/ln -> root/t1     ← header を採る
+   *   python    root/ln -> root/t2     ← global を採る
+   * ```
+   *
+   * **同じ archive から別の木ができる。**どちらが正しいかを決める立場にない。
    */
-  if (kind === 'g' && out.has('path')) {
-    throw new ArchiveInvalid('PAX (g) が全 entry の path を差し替えようとしている', { kind })
+  for (const k of ['path', 'linkpath']) {
+    if (kind === 'g' && out.has(k)) {
+      throw new ArchiveInvalid(`PAX (g) が全 entry の ${k} を差し替えようとしている`, { kind, key: k })
+    }
   }
   return out
 }
@@ -556,12 +747,27 @@ function readTar(buf) {
    * 完全性の検査は「ファイルとして読めたもの」ではなく **archive に在るもの全部**を見る必要がある。
    */
   const inventory = []
+  /**
+   * **祖先として使われた名前（v0.6.7・外部監査 P0-A）。**
+   *
+   * `root/src/model/a.ts` を入れたら `root`・`root/src`・`root/src/model` が入る。
+   * あとから `root/src` が通常ファイルや symlink として出てきたら、その木は作れない。
+   */
+  const usedAsDirectory = new Set()
+  /** hardlink の名前 -> 最終的に指している通常ファイルの名前（連鎖を辿るため・v0.6.7） */
+  const hardlinkResolved = new Map()
   let off = 0
   let longName = null
   /** `longName` を**どの機構が**置いたか。二重に置かれたら止めるため（v0.6.4・P0-A） */
   let longNameFrom = null
   /** GNU `K` / PAX `linkpath` で上書きされた linkname（v0.6.6） */
   let longLink = null
+  /**
+   * `longLink` を**どの機構が**置いたか（v0.6.7・外部監査 P0-B）。
+   * v0.6.6 は linkname の上書きだけ状態を持っていなかったので、
+   * 二重の上書きも、宙に浮いた上書きも素通りしていた。**名前と同じ規則にする。**
+   */
+  let longLinkFrom = null
   let entries = 0
   let total = 0
 
@@ -570,7 +776,7 @@ function readTar(buf) {
     if (header.every((b) => b === 0)) break
 
     if (++entries > TAR_LIMITS.maxEntries) {
-      throw new ArchiveInvalid(`entry が多すぎる (> ${TAR_LIMITS.maxEntries})`, { entries })
+      throw new ArchiveUnsupported(`entry が多すぎる (> ${TAR_LIMITS.maxEntries})`, { entries })
     }
     if (!headerChecksumOk(header)) {
       throw new ArchiveInvalid('ヘッダの checksum が合わない', { entryIndex: entries, offset: off })
@@ -586,6 +792,20 @@ function readTar(buf) {
     const numField = (a, l) => header.subarray(a, a + l).toString('utf8').replace(/\0.*$/, '').trim()
     const pathField = (a, l) => decodeStrict(header.subarray(a, a + l), 'パス欄', entries).replace(/\0.*$/, '')
     const str = numField
+    /**
+     * **base-256 の数値欄は「壊れている」ではなく「対応していない」（v0.6.7・外部監査 P1-C）。**
+     *
+     * 先頭 byte の最上位 bit が立っていたら base-256 表記である（GNU 拡張）。
+     * 実測（2026-08-10）: bsdtar も python も exit 0 で展開する。
+     * **展開できる archive を「8 進数ではない」と言うのは誤りである。**
+     * この道具は 8 進数しか読まないので、そう言って止める。
+     */
+    if ((header[124] & 0x80) !== 0) {
+      throw new ArchiveUnsupported(
+        'size 欄が base-256 表記である（この道具は 8 進数の欄しか読まない）',
+        { entryIndex: entries },
+      )
+    }
     const sizeField = numField(124, 12)
     if (sizeField && !/^[0-7]+$/.test(sizeField)) {
       throw new ArchiveInvalid('size 欄が 8 進数ではない', { entryIndex: entries, sizeField })
@@ -594,12 +814,28 @@ function readTar(buf) {
     if (size < 0 || !Number.isSafeInteger(size)) {
       throw new ArchiveInvalid('size 欄が扱える範囲を超えている', { entryIndex: entries, sizeField })
     }
+    /**
+     * **切れている archive は、上限より先に見る（v0.6.7）。**
+     *
+     * 宣言した size のぶんの本体が入っていない archive は**壊れている。**
+     * 上限の判定を先に置くと、壊れた archive まで「対応範囲の外」と言ってしまう
+     * （`declaredSize` を巨大にした材料が実際にそうなった）。
+     * **壊れているかどうかは、上限の話より前に決まる。**
+     */
+    if (off + 512 + size > buf.length) {
+      throw new ArchiveInvalid('entry のデータが archive の末尾を超えている', { entryIndex: entries, size })
+    }
+    /**
+     * **資源上限は「対応範囲の外」であって、archive の欠陥ではない（v0.6.7）。**
+     * 上限そのものは変えていない（監査も「上限維持でよい」と書いている）。
+     * 変えたのは言い方だけで、exit code は 2 のまま。
+     */
     if (size > TAR_LIMITS.maxEntryBytes) {
-      throw new ArchiveInvalid(`entry が大きすぎる (${size} > ${TAR_LIMITS.maxEntryBytes})`, { entryIndex: entries, name: str(0, 100) })
+      throw new ArchiveUnsupported(`entry が大きすぎる (${size} > ${TAR_LIMITS.maxEntryBytes})`, { entryIndex: entries, name: str(0, 100) })
     }
     total += size
     if (total > TAR_LIMITS.maxTotalBytes) {
-      throw new ArchiveInvalid(`展開後の総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total })
+      throw new ArchiveUnsupported(`展開後の総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total })
     }
 
     const type = header[156] === 0 ? '0' : String.fromCharCode(header[156])
@@ -669,8 +905,27 @@ function readTar(buf) {
        * **hardlink の指す先の検査には使う**ので、解釈して覚える。
        */
       if (type === 'x' && recs.has('linkpath')) {
+        /**
+         * **linkname の上書きも、名前と同じ状態機械にする（v0.6.7・外部監査 P0-B）。**
+         *
+         * v0.6.6 は `longLink` を後勝ちで置くだけだった。実測（2026-08-10）:
+         *
+         * ```
+         * PAX linkpath を 2 回   検算 v11 READ ／ bsdtar exit 1（malformed pax）
+         *                                    ／ python は 1 つ目を採る
+         * ```
+         *
+         * **同じ archive で片方が拒み、片方は通す。**どちらが正しいかを決める立場にない。
+         */
+        if (longLinkFrom) {
+          throw new ArchiveInvalid(
+            `同じ entry に linkname の上書きが 2 つ効いている（${longLinkFrom} のあとに PAX）`,
+            { entryIndex: entries },
+          )
+        }
         // readPaxRecords が既に文字列へ decode 済み（NUL と不正 UTF-8 はそこで止まる）
         longLink = recs.get('linkpath')
+        longLinkFrom = 'PAX'
       }
       continue
     }
@@ -685,8 +940,23 @@ function readTar(buf) {
          * v0.6.5 は `K` の分岐が無く、**`K` ヘッダ自身の名前 `././@LongLink` が
          * 正規化検査に当たって `ARCHIVE_INVALID` になっていた**（実測）。
          * 4 実装すべてが展開できる archive を拒んでいたので、こちらの過剰拒否である。
+         *
+         * **二重の上書きは止める（v0.6.7・外部監査 P0-B）。**
+         * PAX `linkpath` と `K` が同じ member に効く形は、
+         * **順序によって実装ごとに指す先が分かれる**（監査の 4 実装測定）。
+         * 手元の bsdtar と python は 2 つとも「先に来たほうが勝つ」で一致したので、
+         * **この割れ方そのものは手元では再現できていない。**
+         * ただし `linkpath` を 2 回置く形は手元でも割れており（上）、
+         * 名前の上書きでは同じ形を v0.6.4 から止めている。**同じ規則を当てる。**
          */
+        if (longLinkFrom) {
+          throw new ArchiveInvalid(
+            `同じ entry に linkname の上書きが 2 つ効いている（${longLinkFrom} のあとに GNU long linkname）`,
+            { entryIndex: entries },
+          )
+        }
         longLink = decoded
+        longLinkFrom = 'GNU long linkname'
         continue
       }
       if (longNameFrom) {
@@ -718,6 +988,7 @@ function readTar(buf) {
     /** この member 用に控えてから戻す（下の hardlink 検査で使う） */
     const memberLink = longLink
     longLink = null
+    longLinkFrom = null
 
     if (!rawName) continue
 
@@ -757,6 +1028,54 @@ function readTar(buf) {
         { name, entryIndex: entries, type },
       )
     }
+
+    /**
+     * **祖先はすべてディレクトリでなければならない（v0.6.7・外部監査 P0-A）。**
+     *
+     * v0.6.6 は 1 つの entry だけを見ていて、**entry どうしの関係**を見ていなかった。
+     * そのため「どの展開器でもこの木は作れない」archive を `status OK` と言っていた。
+     * 実測（2026-08-10・こちらの 2 実装で再現）:
+     *
+     * ```
+     * regular root/src ／ regular root/src/model/a.ts
+     *   検算 v11  READ（files に src と src/model/a.ts の両方）
+     *   bsdtar    exit 1 — Could not stat root/src/model/a.ts: Not a directory
+     *   python    exit 2 — NotADirectoryError
+     *
+     * symlink root/src -> elsewhere ／ regular root/src/model/a.ts
+     *   検算 v11  READ
+     *   bsdtar    exit 1 — Cannot extract through symlink
+     *   python    exit 2 — FileNotFoundError
+     * ```
+     *
+     * これは v0.6.5 で塞いだ「先頭 1 階層が directory か」の**一般形**である。
+     * 先頭だけ見ていたので、途中の階層で同じことが起きていた。
+     *
+     * 向きは 2 つある。**両方見ないと片方から入られる。**
+     *   ① あとから来た子の祖先が、すでに非ディレクトリとして出ている
+     *   ② あとから来た非ディレクトリが、すでに誰かの祖先として使われている
+     */
+    const parts = name.split('/')
+    for (let i = 1; i < parts.length; i++) {
+      const ancestor = parts.slice(0, i).join('/')
+      const ancestorType = seenPaths.get(ancestor)
+      if (ancestorType !== undefined && ancestorType !== '5') {
+        throw new ArchiveInvalid(
+          `祖先が ${ancestorType === '0' ? '通常ファイル' : `type ${ancestorType}`} なのに、その下に entry がある`
+          + `（どの展開器でもこの木は作れない）: ${ancestor} / ${name}`,
+          { name, ancestor, ancestorType, entryIndex: entries },
+        )
+      }
+      usedAsDirectory.add(ancestor)
+    }
+    if (type !== '5' && usedAsDirectory.has(name)) {
+      throw new ArchiveInvalid(
+        `すでに他の entry の祖先として使われているパスが、${type === '0' ? '通常ファイル' : `type ${type}`} として出てきた`
+        + `（どの展開器でもこの木は作れない）: ${name}`,
+        { name, type, entryIndex: entries },
+      )
+    }
+
     seenPaths.set(name, type)
 
     /**
@@ -779,15 +1098,30 @@ function readTar(buf) {
       )
     }
 
-    inventory.push({ name, type, isDirEntry, linkname: type === '1' || type === '2' ? pathField(157, 100) : null })
+    /**
+     * **inventory へは「効いたあとの」指す先を入れる（v0.6.7・外部監査 P0-B）。**
+     *
+     * v0.6.6 はヘッダの 100 byte 欄をそのまま入れていたので、
+     * `K` や PAX `linkpath` で上書きされた archive では、
+     * **記録に残る指す先が、展開してできるリンクの指す先と別物**になっていた
+     * （実測: PAX linkpath=root/A ／ ヘッダ SHORT のとき、記録は `SHORT`）。
+     */
+    const effectiveLink = type === '1' || type === '2' ? (memberLink ?? pathField(157, 100)) : null
+    inventory.push({ name, type, isDirEntry, linkname: effectiveLink })
 
     /**
      * **扱いを決めていない「中身を持つ型」は止める（v0.6.4・外部監査 P0-B）。**
      * 通常ファイルとして展開されるのに、こちらは中身を見ない——
      * その差がそのまま「検算が見ていないファイルが source に混じる」経路になる。
      */
+    /**
+     * **「決めていない」は「壊れている」ではない（v0.6.7・外部監査 P1-C）。**
+     * 実測（2026-08-10）: typeflag 7 / S / D / M / N のどれも
+     * bsdtar・python とも exit 0 で展開する。**展開できる archive である。**
+     * こちらが中身の扱いを決めていないだけなので、そう言って止める。
+     */
     if (CONTENT_BEARING_NOT_HANDLED.has(type)) {
-      throw new ArchiveInvalid(
+      throw new ArchiveUnsupported(
         `扱いを決めていない entry 型がある（typeflag ${type}）。展開すると中身のあるファイルになりうる`,
         { name, type, entryIndex: entries },
       )
@@ -810,7 +1144,7 @@ function readTar(buf) {
      * `seenPaths` はここまでに出た名前だけを持つので、前方参照も同じ検査で落ちる。
      */
     if (type === '1') {
-      const target = (memberLink ?? pathField(157, 100)).replace(/\/+$/, '')
+      const target = canonicalLinkTarget(effectiveLink, name, entries)
       /**
        * **自分自身を指す hardlink を拒む（v0.6.6・外部監査 P0-1）。**
        *
@@ -840,12 +1174,36 @@ function readTar(buf) {
        * bsdtar は `Can't create ... Operation not permitted` で exit 1。
        * hardlink は通常ファイルにしか張れない。
        */
-      if (targetType !== '0') {
+      /**
+       * **連鎖は辿る（v0.6.7・外部監査 P1-B）。**
+       *
+       * v0.6.6 は「指す先が通常ファイルか」だけを見ていたので、
+       * `A`（通常）→ `B -> A` → `C -> B` という**正当な連鎖**を拒んでいた。
+       * 実測（2026-08-10）: bsdtar・python とも exit 0 で `nlink=3` の 3 本ができる。
+       * **こちらの過剰拒否が、これで 3 版続けてである。**
+       *
+       * 指す先は必ず**先行 member**なので、そこまでの解決結果を引けば 1 段で終わる。
+       * 循環は「先行 member にしか張れない」ことから作れず、
+       * 作ろうとすると「指す先が無い」で先に止まる（実測: bsdtar exit 1 / python KeyError）。
+       */
+      let finalTarget
+      if (targetType === '0') {
+        finalTarget = target
+      } else if (targetType === '1') {
+        finalTarget = hardlinkResolved.get(target)
+        if (finalTarget === undefined) {
+          throw new ArchiveInvalid(
+            `hardlink の連鎖を辿れない（先行 member の解決結果が無い）: ${name} -> ${target}`,
+            { name, linkname: target, entryIndex: entries },
+          )
+        }
+      } else {
         throw new ArchiveInvalid(
           `hardlink の指す先が通常ファイルではない（展開できない）: ${name} -> ${target}（type ${targetType}）`,
           { name, linkname: target, targetType, entryIndex: entries },
         )
       }
+      hardlinkResolved.set(name, finalTarget)
     }
 
     // **リンクはファイルとして扱わない。**中身が無いのに「source にあった」ことになる
@@ -869,6 +1227,25 @@ function readTar(buf) {
     throw new ArchiveInvalid(
       `名前の上書き（${longNameFrom}）のあとに entry が無いまま archive が終わっている`,
       { pending: longName },
+    )
+  }
+  /**
+   * **linkname の上書きも同じ（v0.6.7・外部監査 P0-B）。**
+   *
+   * v0.6.6 は名前の側にしか終端検査が無かった。実測（2026-08-10）:
+   *
+   * ```
+   * K のあとに entry が無い        検算 v11 READ ／ bsdtar exit 1（Damaged tar archive）
+   *                                          ／ python exit 2（ReadError: end of file header）
+   * PAX linkpath のあとに entry 無し 同じ
+   * ```
+   *
+   * **どちらの実装も「壊れている」と言う archive を受理していた。**
+   */
+  if (longLinkFrom) {
+    throw new ArchiveInvalid(
+      `linkname の上書き（${longLinkFrom}）のあとに entry が無いまま archive が終わっている`,
+      { pending: longLink },
     )
   }
   return { files, inventory }
@@ -955,7 +1332,8 @@ export async function readBodyLimited(res, limit) {
       total += value.byteLength
       if (total > limit) {
         await reader.cancel()
-        throw new ArchiveInvalid(
+        // 資源上限は方針であって、相手が送ってきたものの欠陥ではない（v0.6.7）
+        throw new ArchiveUnsupported(
           `受け取った本文が大きすぎる (> ${limit} バイト)`,
           { receivedBytes: total, limit },
         )
@@ -977,6 +1355,8 @@ export function readArchiveBuffer(buf, { gzip }) {
     const { files, inventory } = readTar(gzip ? gunzipLimited(buf) : buf)
     return stripTopLevel(files, inventory)
   } catch (e) {
+    /** **対応していない（v0.6.7）と壊れている（v0.6.0）を分ける。**扱いはどちらも「中身を見ない」 */
+    if (e instanceof ArchiveUnsupported) return { error: e.message, kind: 'ARCHIVE_UNSUPPORTED', detail: e.detail }
     if (e instanceof ArchiveInvalid) return { error: e.message, kind: 'ARCHIVE_INVALID', detail: e.detail }
     return { error: `archive を読めない: ${String(e.message).split('\n')[0]}`, kind: 'ARCHIVE_INVALID' }
   }
@@ -1007,7 +1387,8 @@ function loadFromArchive(path) {
     if (size > TAR_LIMITS.maxCompressedBytes) {
       return {
         error: `source archive が大きすぎる (${size} > ${TAR_LIMITS.maxCompressedBytes} バイト)`,
-        kind: 'ARCHIVE_INVALID',
+        // 資源上限は方針であって、archive の欠陥ではない（v0.6.7）
+        kind: 'ARCHIVE_UNSUPPORTED',
         detail: { path, size, limit: TAR_LIMITS.maxCompressedBytes },
       }
     }
@@ -1092,6 +1473,9 @@ function loadFromDir(dir) {
      * どちらも生の例外で落とさない——出力が JSON でなくなると、
      * 受け手は「合わなかった」と「道具が落ちた」を区別できない。
      */
+    if (e instanceof ArchiveUnsupported) {
+      return { error: `source ディレクトリ (${dir}): ${e.message}`, kind: 'ARCHIVE_UNSUPPORTED', detail: e.detail }
+    }
     if (e instanceof ArchiveInvalid) {
       return { error: `source ディレクトリ (${dir}): ${e.message}`, kind: 'ARCHIVE_INVALID', detail: e.detail }
     }
@@ -1183,7 +1567,7 @@ async function loadFromGithub(tag) {
   if (Number.isFinite(declared) && declared > TAR_LIMITS.maxCompressedBytes) {
     return {
       error: `GitHub が申告した本文が大きすぎる (${declared} > ${TAR_LIMITS.maxCompressedBytes} バイト)`,
-      kind: 'ARCHIVE_INVALID',
+      kind: 'ARCHIVE_UNSUPPORTED',
       detail: { declaredBytes: declared, limit: TAR_LIMITS.maxCompressedBytes },
     }
   }
@@ -1196,6 +1580,7 @@ async function loadFromGithub(tag) {
      */
     gz = await readBodyLimited(res, TAR_LIMITS.maxCompressedBytes)
   } catch (e) {
+    if (e instanceof ArchiveUnsupported) return { error: e.message, kind: 'ARCHIVE_UNSUPPORTED', detail: e.detail }
     if (e instanceof ArchiveInvalid) return { error: e.message, kind: 'ARCHIVE_INVALID', detail: e.detail }
     return { error: `本文を受け取れなかった: ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE' }
   }
@@ -1234,14 +1619,29 @@ if (RUN_AS_CLI) {
 
   if (loaded.error) {
     /**
-     * **3 つを潰さない（v0.6.0 P1）。**
-     *   SOURCE_UNAVAILABLE … 取れなかった（無い・繋がらない・timeout）。検証していない
-     *   ARCHIVE_INVALID    … 取れたが archive が壊れているか敵対的。**中身を信用しない**
-     *   MISMATCH           … 読めたが記録と合わない（下の突き合わせで出る）
+     * **4 つを潰さない（v0.6.0 P1 / v0.6.7 で 1 つ増えた）。**
+     *   SOURCE_UNAVAILABLE  … 取れなかった（無い・繋がらない・timeout）。検証していない
+     *   ARCHIVE_INVALID     … 取れたが archive が壊れているか敵対的。**中身を信用しない**
+     *   ARCHIVE_UNSUPPORTED … 取れて、ふつうの tar なら展開できるが、**この道具の範囲の外**
+     *   MISMATCH            … 読めたが記録と合わない（下の突き合わせで出る）
      * v0.5.2 までは前 2 つが同じ SOURCE_UNAVAILABLE だった。
      * **受け手が記録を保存しても、通信の問題なのか改竄なのか読み分けられない。**
+     * v0.6.6 までは 3 つ目が 2 つ目に混ざっており、**展開できる archive を「壊れている」と言っていた。**
      */
-    const kind = loaded.kind === 'ARCHIVE_INVALID' ? 'ARCHIVE_INVALID' : 'SOURCE_UNAVAILABLE'
+    const KNOWN_LOAD_KINDS = ['ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED']
+    const kind = KNOWN_LOAD_KINDS.includes(loaded.kind) ? loaded.kind : 'SOURCE_UNAVAILABLE'
+    const NOTE = {
+      ARCHIVE_INVALID:
+        '**これは不一致ではない。**archive そのものが壊れているか、安全に読めない形だったので、'
+        + '中身を見ていない。渡した source を疑うこと。',
+      ARCHIVE_UNSUPPORTED:
+        '**これは不一致ではない。archive が壊れているとも言っていない。**'
+        + 'ふつうの tar なら展開できるが、この道具が扱うと決めた範囲の外だったので中身を見ていない。'
+        + '別の経路（展開してから --source <ディレクトリ>）で確かめられることがある。',
+      SOURCE_UNAVAILABLE:
+        '**これは不一致ではない。**source を取れなかったので、検証していない。'
+        + 'network を使わずに確かめるなら --source <展開済みディレクトリ> を渡すこと。',
+    }
     done({
       status: kind,
       reason: loaded.error,
@@ -1249,11 +1649,7 @@ if (RUN_AS_CLI) {
       manifest: MANIFEST,
       tag: TAG,
       fetch: FETCH,
-      note: kind === 'ARCHIVE_INVALID'
-        ? '**これは不一致ではない。**archive そのものが壊れているか、安全に読めない形だったので、'
-          + '中身を見ていない。渡した source を疑うこと。'
-        : '**これは不一致ではない。**source を取れなかったので、検証していない。'
-          + 'network を使わずに確かめるなら --source <展開済みディレクトリ> を渡すこと。',
+      note: NOTE[kind],
     }, 2)
   }
 

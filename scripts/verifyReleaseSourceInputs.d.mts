@@ -20,6 +20,14 @@ export declare class ArchiveInvalid extends Error {
   detail: Record<string, unknown>
 }
 
+/**
+ * 壊れてはいないが、この道具が扱うと決めた範囲の外（v0.6.7）。
+ * ふつうの tar なら展開できる——`ARCHIVE_INVALID` と混ぜない
+ */
+export declare class ArchiveUnsupported extends Error {
+  detail: Record<string, unknown>
+}
+
 export interface ArchiveReadResult {
   files?: Map<string, Buffer>
   /** 全 entry の型つき一覧（v0.6.4）。完全性の検査はこちらを母集団にする */
@@ -30,7 +38,8 @@ export interface ArchiveReadResult {
    */
   rootStripped?: string | null
   error?: string
-  kind?: 'ARCHIVE_INVALID'
+  /** **`ARCHIVE_UNSUPPORTED` は v0.6.7 で増えた。**壊れているのではなく、範囲の外 */
+  kind?: 'ARCHIVE_INVALID' | 'ARCHIVE_UNSUPPORTED'
   detail?: Record<string, unknown>
 }
 
