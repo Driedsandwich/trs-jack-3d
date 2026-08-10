@@ -79,6 +79,21 @@ export function buildTar(entries, opts = {}) {
   return Buffer.concat(parts)
 }
 
+/**
+ * PAX レコード 1 本を作る。形式は `"<全長> <鍵>=<値>\n"` で **`<全長>` は自身を含む。**
+ * 長さが自分自身に依存するので、収束するまで回す（手計算で書くと 10 進の桁上がりで間違える）。
+ */
+export function paxRec(key, value) {
+  const tail = Buffer.concat([
+    Buffer.from(` ${key}=`, 'utf8'),
+    Buffer.isBuffer(value) ? value : Buffer.from(String(value), 'utf8'),
+    Buffer.from('\n'),
+  ])
+  let len = tail.length + 1
+  while (String(len).length + tail.length !== len) len = String(len).length + tail.length
+  return Buffer.concat([Buffer.from(String(len)), tail])
+}
+
 /** 中身のある正常な tar（`<top>/` を頭に付ける。GitHub の tarball と同じ形） */
 export function normalTar(top = 'trs-jack-3d-abc1234', files = { 'a.txt': 'A', 'src/b.txt': 'B' }) {
   return buildTar(Object.entries(files).map(([name, data]) => ({ name: `${top}/${name}`, data })))
@@ -236,6 +251,129 @@ export const paxCases = () => {
     /** global header が名前を上書きする形。実物の `pax_global_header` は `comment` だけ */
     { id: 'pax-g-path-override', tar: buildTar([
       { name: 'pax_global_header', type: 'g', data: rec('path', `${TOP}/from-global.txt`) },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+
+    // -----------------------------------------------------------------------
+    // v0.6.7（外部監査 2026-08-10・P0-B / P0-C / P1-A）
+    // -----------------------------------------------------------------------
+    /**
+     * **global の `linkpath`（P0-B）。**v0.6.6 は受け取って**黙って無視**していた。
+     * 実測（2026-08-10）: bsdtar は header の指す先、python は global の指す先を採る
+     * ——**同じ archive から別の木ができる。**
+     */
+    { id: 'pax-g-linkpath-override', tar: buildTar([
+      { name: 'pax_global_header', type: 'g', data: rec('linkpath', `${TOP}/t2.txt`) },
+      { name: `${TOP}/t1.txt`, data: '1' },
+      { name: `${TOP}/t2.txt`, data: '2' },
+      { name: `${TOP}/link`, type: '2', linkname: `${TOP}/t1.txt` },
+    ]) },
+    /** `linkpath` を 2 回。実測: bsdtar は exit 1（malformed pax）・python は 1 つ目を採る */
+    { id: 'pax-linkpath-twice', tar: buildTar([
+      { name: `${TOP}/a.txt`, data: 'A' },
+      { name: `${TOP}/PaxHeaders/0/l`, type: 'x', data: rec('linkpath', `${TOP}/one`) },
+      { name: `${TOP}/PaxHeaders/0/l`, type: 'x', data: rec('linkpath', `${TOP}/two`) },
+      { name: `${TOP}/link`, type: '2', linkname: 'short' },
+    ]) },
+    /**
+     * **PAX `linkpath` と GNU `K` が同じ member に効く形（P0-B）。**
+     * **手元の 2 実装（bsdtar / python）は一致して通す**（どちらも先に来たほうを採る）。
+     * 監査は GNU tar 1.35 と BusyBox で結末が分かれると報告している——
+     * **その割れ方はこちらでは再現していない。**名前の上書きと同じ規則を当てて止める。
+     */
+    { id: 'pax-linkpath-then-gnu-K', tar: buildTar([
+      { name: `${TOP}/a.txt`, data: 'A' },
+      { name: `${TOP}/PaxHeaders/0/l`, type: 'x', data: rec('linkpath', `${TOP}/pax-target`) },
+      { name: '././@LongLink', type: 'K', data: `${TOP}/gnu-target\0` },
+      { name: `${TOP}/link`, type: '2', linkname: 'short' },
+    ]) },
+    { id: 'pax-gnu-K-then-linkpath', tar: buildTar([
+      { name: `${TOP}/a.txt`, data: 'A' },
+      { name: '././@LongLink', type: 'K', data: `${TOP}/gnu-target\0` },
+      { name: `${TOP}/PaxHeaders/0/l`, type: 'x', data: rec('linkpath', `${TOP}/pax-target`) },
+      { name: `${TOP}/link`, type: '2', linkname: 'short' },
+    ]) },
+    /**
+     * **上書きのあとに entry が無いまま終わる（P0-B）。**名前の側は v0.6.5 で塞いだが、
+     * 指す先の側には終端検査が無かった。実測: bsdtar `Damaged tar archive` / python `ReadError`
+     */
+    { id: 'pax-linkpath-no-following-entry', tar: buildTar([
+      { name: `${TOP}/a.txt`, data: 'A' },
+      { name: `${TOP}/PaxHeaders/0/l`, type: 'x', data: rec('linkpath', `${TOP}/nowhere`) },
+    ]) },
+    /**
+     * **`uname` / `gname` が不正 UTF-8（P0-C）。**実測（2026-08-10）:
+     * **bsdtar 3.5.3 は exit 1**（`Uname can't be converted from UTF-8 to current locale.`）、
+     * python は通す——割れる。
+     */
+    { id: 'pax-uname-invalid-utf8', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: recBuf('uname', Buffer.from([0xff, 0xfe, 0x41])) },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-gname-invalid-utf8', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: recBuf('gname', Buffer.from([0xff, 0xfe, 0x41])) },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /**
+     * **止めてはいけないもの（実測で割れなかった）。**
+     * `uname` の NUL と `comment` の不正 UTF-8 は、**bsdtar も python も exit 0**（実測）。
+     * 監査はどちらも strict text にすることを勧めているが、**割れないので従っていない。**
+     * ここに材料を置いて、あとから理由なく厳しくしたら落ちるようにする。
+     */
+    { id: 'pax-uname-nul-inside', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: recBuf('uname', Buffer.from('ab\0cd', 'binary')) },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-comment-invalid-utf8', ok: true, tar: buildTar([
+      { name: 'pax_global_header', type: 'g', data: recBuf('comment', Buffer.from([0xff, 0xfe, 0x41])) },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /**
+     * **負の時刻（P1-A・こちらの過剰拒否）。**GNU tar は 1970 年より前の mtime を
+     * `mtime=-1` として**ふつうに書く。**v0.6.6 は「数値として読めない」と拒んでいた。
+     * 実測（2026-08-10）: bsdtar・python とも exit 0。
+     */
+    { id: 'pax-mtime-negative', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '-1') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-mtime-negative-fraction', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '-1.5') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /** 上限のすぐ内側。**塞ぎすぎていないことの対照**（実測: 両実装 exit 0） */
+    { id: 'pax-mtime-large-within-range', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '281474976710655') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-uid-32bit-max', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('uid', '4294967295') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /**
+     * **先頭の `+` は POSIX の書式に無い。**実測では bsdtar も python も通すので、
+     * **これは実測ではなく書式にもとづく判断である。**
+     */
+    { id: 'pax-mtime-plus-sign', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '+1') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /** int64 の上限。実測: bsdtar exit 0 ／ **python は OverflowError で exit 2** */
+    { id: 'pax-mtime-above-int64', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '9223372036854775807') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /**
+     * **uid / gid が 32bit を超える。**実測では**手元の 2 実装とも通す**（2^64 でも通す）。
+     * 監査の GNU tar 1.35 が `is out of range 0..4294967295` で拒む、という報告にもとづく。
+     * **こちらでは再現していない。**
+     */
+    { id: 'pax-uid-above-32bit', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('uid', '9'.repeat(100)) },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-gid-above-32bit', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('gid', '4294967296') },
       { name: `${TOP}/a.txt`, data: 'A' },
     ]) },
   ]
@@ -469,6 +607,141 @@ export const linkCases = () => [
     { name: '././@LongLink', type: 'K', data: `${TOP}/${'ll/'.repeat(45)}target.txt\0` },
     { name: `${TOP}/link`, type: '2', linkname: 'short' },
   ]) },
+
+  // -------------------------------------------------------------------------
+  // v0.6.7（外部監査 2026-08-10・P0-B / P1-B）
+  // -------------------------------------------------------------------------
+  /**
+   * **hardlink の連鎖（P1-B・こちらの過剰拒否）。**
+   * `A`（通常）→ `B -> A` → `C -> B`。実測（2026-08-10）:
+   * bsdtar・python とも exit 0 で `nlink=3` の 3 本ができる。v0.6.6 は拒んでいた。
+   */
+  { id: 'link-hardlink-chain', ok: true, tar: buildTar([
+    { name: `${TOP}/A.txt`, data: 'AAA' },
+    { name: `${TOP}/B.txt`, type: '1', linkname: `${TOP}/A.txt` },
+    { name: `${TOP}/C.txt`, type: '1', linkname: `${TOP}/B.txt` },
+  ]) },
+  /** 連鎖を PAX `linkpath` で書いた版 */
+  { id: 'link-hardlink-pax-chain', ok: true, tar: buildTar([
+    { name: `${TOP}/A.txt`, data: 'AAA' },
+    { name: `${TOP}/B.txt`, type: '1', linkname: `${TOP}/A.txt` },
+    { name: `${TOP}/PaxHeaders/0/C`, type: 'x', data: paxRec('linkpath', `${TOP}/B.txt`) },
+    { name: `${TOP}/C.txt`, type: '1', linkname: 'short' },
+  ]) },
+  /**
+   * **同じ場所の別の綴り（P1-B）。**`.` と空要素は両実装が畳んで展開する（実測）ので通す。
+   * **`..` と末尾スラッシュは畳まない**——下の 2 件がその実測にあたる。
+   */
+  { id: 'link-hardlink-dot-alias', ok: true, tar: buildTar([
+    { name: `${TOP}/A.txt`, data: 'AAA' },
+    { name: `${TOP}/B.txt`, type: '1', linkname: `${TOP}/./A.txt` },
+  ]) },
+  { id: 'link-hardlink-leading-dot-alias', ok: true, tar: buildTar([
+    { name: `${TOP}/A.txt`, data: 'AAA' },
+    { name: `${TOP}/B.txt`, type: '1', linkname: `./${TOP}/A.txt` },
+  ]) },
+  { id: 'link-hardlink-double-slash-alias', ok: true, tar: buildTar([
+    { name: `${TOP}/A.txt`, data: 'AAA' },
+    { name: `${TOP}/B.txt`, type: '1', linkname: `${TOP}//A.txt` },
+  ]) },
+  /**
+   * **これは監査の指摘ではなく、こちらの実測で見つけた false-OK。**
+   *
+   * v0.6.6 は指す先の末尾スラッシュを `.replace(/\/+$/, '')` で剥がしてから照合していた。
+   * 実測（2026-08-10）: **検算 v11 は READ ／ bsdtar は exit 1**
+   * （`Can't create '...': Not a directory`）。**受理したのに展開できない。**
+   */
+  { id: 'link-hardlink-target-trailing-slash', tar: buildTar([
+    { name: `${TOP}/A.txt`, data: 'AAA' },
+    { name: `${TOP}/B.txt`, type: '1', linkname: `${TOP}/A.txt/` },
+  ]) },
+  /** `..` は畳まない。実測: bsdtar は `Path contains '..'` で exit 1 ／ python は通す＝割れる */
+  { id: 'link-hardlink-target-dotdot', tar: buildTar([
+    { name: `${TOP}/sub/`, type: '5', mode: 0o755 },
+    { name: `${TOP}/A.txt`, data: 'AAA' },
+    { name: `${TOP}/B.txt`, type: '1', linkname: `${TOP}/sub/../A.txt` },
+  ]) },
+  /** 互いに指し合う形。**先行 member にしか張れない**ので「指す先が無い」で止まる */
+  { id: 'link-hardlink-cycle', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/B.txt`, type: '1', linkname: `${TOP}/C.txt` },
+    { name: `${TOP}/C.txt`, type: '1', linkname: `${TOP}/B.txt` },
+  ]) },
+  /**
+   * **`K` と `L` が同じ member に効くのは正当（GNU 形式で長い名前と長い指す先を持つ entry）。**
+   * 名前の上書きと指す先の上書きは**別の機構**なので、二重の上書きにはならない。
+   * ここに置いて、状態機械を足したときに**まとめて拒まないこと**を固定する。
+   */
+  { id: 'link-gnu-K-and-L-together', ok: true, tar: buildTar([
+    { name: `${TOP}/target.txt`, data: 'T' },
+    { name: '././@LongLink', type: 'K', data: `${TOP}/${'ll/'.repeat(45)}target.txt\0` },
+    { name: '././@LongLink', type: 'L', data: `${TOP}/${'nn/'.repeat(45)}link\0` },
+    { name: `${TOP}/truncated`, type: '2', linkname: 'short' },
+  ]) },
+  /** `K` のあとに entry が無いまま終わる。実測: bsdtar `Damaged tar archive` / python `ReadError` */
+  { id: 'link-gnu-K-no-following-entry', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: '././@LongLink', type: 'K', data: `${TOP}/nowhere\0` },
+  ]) },
+]
+
+/**
+ * **祖先の型（v0.6.7・外部監査 P0-A）。**
+ *
+ * v0.6.6 は entry を 1 つずつしか見ておらず、**entry どうしの関係**を見ていなかった。
+ * 通常ファイルや symlink の下に entry があっても `status OK` を返していた。
+ * 実測（2026-08-10・こちらの 2 実装で再現）:
+ *
+ * ```
+ * regular root/src ／ regular root/src/model/a.ts
+ *   検算 v11  READ（files に src と src/model/a.ts の両方）
+ *   bsdtar    exit 1 — Not a directory ／ python exit 2 — NotADirectoryError
+ * ```
+ *
+ * **v0.6.5 で塞いだ「先頭 1 階層が directory か」の一般形である。**
+ * 先頭だけ見ていたので、途中の階層で同じことが起きていた。
+ */
+export const ancestorCases = () => [
+  { id: 'ancestor-regular-then-child', tar: buildTar([
+    { name: `${TOP}/source-input-scope.v1.json`, data: '{}' },
+    { name: `${TOP}/src`, data: 'I AM A FILE' },
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+  ]) },
+  { id: 'ancestor-symlink-then-child', tar: buildTar([
+    { name: `${TOP}/source-input-scope.v1.json`, data: '{}' },
+    { name: `${TOP}/src`, type: '2', linkname: 'elsewhere' },
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+  ]) },
+  { id: 'ancestor-hardlink-then-child', tar: buildTar([
+    { name: `${TOP}/f.txt`, data: 'F' },
+    { name: `${TOP}/src`, type: '1', linkname: `${TOP}/f.txt` },
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+  ]) },
+  /** 逆順。**片方だけ見ると、もう片方から入られる** */
+  { id: 'ancestor-child-then-regular', tar: buildTar([
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+    { name: `${TOP}/src`, data: 'I AM A FILE' },
+  ]) },
+  { id: 'ancestor-child-then-symlink', tar: buildTar([
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+    { name: `${TOP}/src`, type: '2', linkname: 'elsewhere' },
+  ]) },
+  /** **正当な木は通す。**explicit（GitHub の tarball）と implicit（親 entry が無い）の両方 */
+  { id: 'ancestor-explicit-dir-tree', ok: true, tar: buildTar([
+    { name: `${TOP}/`, type: '5', mode: 0o755 },
+    { name: `${TOP}/src/`, type: '5', mode: 0o755 },
+    { name: `${TOP}/src/model/`, type: '5', mode: 0o755 },
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+  ]) },
+  { id: 'ancestor-implicit-dir-tree', ok: true, tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+  ]) },
+  /** **リンクが葉なら正当。**下に entry が無ければ木は作れる（実測: 両実装 exit 0） */
+  { id: 'ancestor-symlink-leaf-only', ok: true, tar: buildTar([
+    { name: `${TOP}/src/real.ts`, data: 'R' },
+    { name: `${TOP}/src/link.ts`, type: '2', linkname: 'real.ts' },
+  ]) },
 ]
 
 /**
@@ -497,6 +770,24 @@ export const structuralCases = () => [
     { name: `${TOP}/d/`, type: '5', mode: 0o755 },
     { name: `${TOP}/d/a.txt`, data: 'A' },
   ]) },
+  /**
+   * **base-256 の数値欄（v0.6.7・外部監査 P1-C）。**
+   * 先頭 byte の最上位 bit が立つ GNU 拡張。実測（2026-08-10）:
+   * **bsdtar・python とも exit 0 で展開する。**
+   * v0.6.6 はこれを「8 進数ではない」＝壊れている扱いにしていた。
+   * **展開できる archive を壊れていると言うのは誤り**なので、`ARCHIVE_UNSUPPORTED` にする。
+   */
+  { id: 'base256-size-field', tar: (() => {
+    const h = header({ name: `${TOP}/big.bin`, size: 4 })
+    const sz = Buffer.alloc(12)
+    sz[0] = 0x80
+    sz.writeUInt32BE(4, 8)
+    sz.copy(h, 124)
+    return Buffer.concat([
+      buildTar([{ name: `${TOP}/a.txt`, data: 'A' }], { endBlocks: 0 }),
+      recheck(h), body4('DATA'), Buffer.alloc(BLOCK * 2),
+    ])
+  })() },
 ]
 
 /**
@@ -569,4 +860,5 @@ export const allCases = () => ({
   encoding: encodingCases(),
   rootStrip: rootStripCases(),
   structural: structuralCases(),
+  ancestor: ancestorCases(),
 })
