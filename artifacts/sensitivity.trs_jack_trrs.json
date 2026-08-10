@@ -103,15 +103,15 @@
   "trrs.jack.contact.sleeve.axialCenter",
   "trrs.jack.contact.narrowPadWidth"
  ],
- "generatedFromCommit": "b51d63cfc929fd87646e0597c76ee1a653acb00e",
+ "generatedFromCommit": "fb255c4fc6a21b0d8d7bfd281997b62351b4c61f",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "b51d63cfc929fd87646e0597c76ee1a653acb00e",
+  "generatedFromCommit": "fb255c4fc6a21b0d8d7bfd281997b62351b4c61f",
   "workingTreeDirty": false,
   "revisionOverride": false,
   "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "214909566b3bb8afd2adb3e2e106b9c33a5a36bd80e50057ca4d53a60d915d85",
+  "inputDigest": "dc028ab888a9c4412e1d87b6c3f9f590de02ff31fdaa95be123fbfde39d5269a",
   "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 6 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
   "inputSettings": {
    "variantId": "TRS|JACK-TRRS",
@@ -129,7 +129,7 @@
    },
    {
     "path": "package-lock.json",
-    "sha256": "67a547dbcfe489e311f11191952d1793e303a86f5fd6f0bc3663a9d2cf007064",
+    "sha256": "c325f1715ec0622d0302a71524cc69a77e0465322aad49358dc1dd98c18c68d7",
     "role": "lockfile"
    },
    {
@@ -249,9 +249,9 @@
    }
   ],
   "command": "npm run sensitivity:events -- --variant \"TRS|JACK-TRRS\" --release",
-  "artifactDate": "2026-08-09"
+  "artifactDate": "2026-08-10"
  },
- "generatedAt": "2026-08-09",
+ "generatedAt": "2026-08-10",
  "basis": "MODEL_PARAMETER_SWEEP",
  "note": "モデル内部の感度であって、実物のばらつきでも製造公差でもない。帰線接点の軸位置とパッド幅を同時に振り、完全挿入が成立する構成にわたって主要イベントの深さの最小・最大を集めたもの。",
  "sweep": {
