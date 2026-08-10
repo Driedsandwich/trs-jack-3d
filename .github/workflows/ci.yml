@@ -30,8 +30,24 @@ concurrency:
 
 jobs:
   verify:
-    name: 型検査・テスト・成果物の検証
-    runs-on: ubuntu-latest
+    # **必須 oracle を 1 回の変更に対してそろって効かせる（v0.6.7・外部監査 P0-C）。**
+    #
+    # v0.6.6 まで CI は ubuntu 1 本で、開発は macOS だった。
+    # そのため **GNU tar と bsdtar が、同じ変更に対して同時に効いたことが一度も無い。**
+    # 実測（2026-08-10）で、片方だけが拒む archive が実在することが分かっている:
+    #
+    #   不正 UTF-8 の uname   libarchive だけ拒む
+    #   gid=4294967296        GNU tar だけ拒む（監査の報告・こちらでは未再現）
+    #
+    # `tar` は ubuntu では GNU tar、macOS では bsdtar になる。
+    # **差分試験は PATH の `tar` を使う**ので、この matrix がそのまま 2 実装の強制になる。
+    name: 型検査・テスト・成果物の検証 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # **片方が落ちても、もう片方の結果を見たい。**どちらの実装で割れたのかが要る
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     timeout-minutes: 20
     permissions:
       contents: read
@@ -52,6 +68,14 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      # **どの実装で測ったかを残す。**「oracle が動いた」と言うには版が要る。
+      # 落ちてもここでは止めない——版が読めないこと自体は判定材料
+      - name: oracle の実装と版を記録する
+        run: |
+          echo "runner: ${{ matrix.os }}"
+          tar --version | head -2
+          python3 --version
 
       - name: 型検査
         run: npm run typecheck

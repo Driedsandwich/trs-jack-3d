@@ -126,3 +126,36 @@ describe('CI ③ 回すものと回さないもの', () => {
     expect(SRC).toContain('fetch-depth: 0')
   })
 })
+
+/**
+ * **必須 oracle が 1 回の変更に対してそろって効くこと（v0.6.7・外部監査 P0-C）。**
+ *
+ * v0.6.6 まで CI は ubuntu 1 本だった。開発は macOS なので、
+ * **GNU tar と bsdtar が同じ変更に対して同時に効いたことが一度も無い。**
+ * 片方だけが拒む archive は実在する（不正 UTF-8 の uname は libarchive だけが拒む・実測）。
+ */
+describe('CI ④ 必須 oracle の matrix', () => {
+  it('ubuntu（GNU tar）と macOS（bsdtar）の両方で回している', () => {
+    expect(SRC, 'matrix になっていない').toContain('matrix:')
+    expect(SRC).toContain('ubuntu-latest')
+    expect(SRC, 'macOS が入っていない＝bsdtar が CI で効かない').toContain('macos-latest')
+    expect(SRC).toContain('runs-on: ${{ matrix.os }}')
+  })
+
+  it('**片方が落ちても、もう片方まで止めない**（どちらで割れたのかが要る）', () => {
+    expect(SRC).toContain('fail-fast: false')
+  })
+
+  it('どの実装で測ったかを残している（版が読めない oracle は根拠にならない）', () => {
+    expect(SRC).toContain('tar --version')
+    expect(SRC).toContain('python3 --version')
+  })
+
+  it('**この検査が空振りしていない**（片方を消せば落ちる）', () => {
+    for (const os of ['macos-latest', 'ubuntu-latest']) {
+      const mutated = SRC.replace(os, 'nonexistent-runner')
+      expect(mutated, `変異が入っていない: ${os}`).not.toBe(SRC)
+      expect(mutated.includes(os), `${os} が残っている`).toBe(false)
+    }
+  })
+})
