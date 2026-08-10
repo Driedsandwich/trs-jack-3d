@@ -118,22 +118,44 @@ function extractWithTar(buf: Buffer): { entries: Extracted[], failed: boolean, s
   return { entries: walkTree(out), failed: r.status !== 0, stderr, warned: stderr !== '' }
 }
 
+/**
+ * **名前もバイト列のまま扱う（v0.6.7・CI の ubuntu run で判明）。**
+ *
+ * Linux の file system は**不正な UTF-8 のファイル名を作れる。**
+ * `readdirSync` を既定（utf8）で読むと、そのバイト列が U+FFFD へ置換された文字列で返り、
+ * **その名前で `lstat` すると存在しない**（実測: ENOENT で試験が落ちた）。
+ * macOS の APFS はそういう名前を作れないので、**この欠陥は macOS では出ない。**
+ *
+ * 置換したまま進めるのはもっと悪い。**違うバイト列が同じ名前に見える**ようになり、
+ * それは v0.6.4 で検算器の側を直したのと同じ誤りである（[verify-tool-v9-notes.md]）。
+ * 復元できないバイト列は、**潰さずにそのまま鍵にする。**
+ */
+const decodePathBytes = (b: Buffer) => {
+  const s = b.toString('utf8')
+  return Buffer.from(s, 'utf8').equals(b) ? s : `<raw:${b.toString('hex')}>`
+}
+
 /** 展開してできた木を列挙する。**oracle が違っても同じ物差しで見る**ために切り出してある */
 function walkTree(out: string): Extracted[] {
   const found: Extracted[] = []
-  const walk = (rel: string) => {
-    for (const n of readdirSync(join(out, rel) || out).sort()) {
-      const r = rel ? `${rel}/${n}` : n
-      const st = lstatSync(join(out, r))
-      if (st.isSymbolicLink()) found.push({ path: r, type: 'symlink', content: readlinkSync(join(out, r)) })
-      else if (st.isDirectory()) { found.push({ path: r, type: 'dir' }); walk(r) }
+  const root = Buffer.from(out)
+  const at = (rel: Buffer | null) => (rel ? Buffer.concat([root, Buffer.from('/'), rel]) : root)
+  const walk = (rel: Buffer | null) => {
+    for (const n of readdirSync(at(rel), { encoding: 'buffer' }).sort(Buffer.compare)) {
+      const r = rel ? Buffer.concat([rel, Buffer.from('/'), n]) : n
+      const full = at(r)
+      const st = lstatSync(full)
+      const path = decodePathBytes(r)
+      if (st.isSymbolicLink()) {
+        found.push({ path, type: 'symlink', content: decodePathBytes(readlinkSync(full, { encoding: 'buffer' })) })
+      } else if (st.isDirectory()) { found.push({ path, type: 'dir' }); walk(r) }
       // **中身は生バイトで持つ（v0.6.5・外部監査 P1）。**UTF-8 文字列にすると
       // 不正バイトが U+FFFD へ潰れ、**違うバイト列が「同じ」に見える。**
-      else if (st.size > ORACLE_READ_LIMIT) found.push({ path: r, type: 'file', oversize: st.size })
-      else found.push({ path: r, type: 'file', bytes: readFileSync(join(out, r)) })
+      else if (st.size > ORACLE_READ_LIMIT) found.push({ path, type: 'file', oversize: st.size })
+      else found.push({ path, type: 'file', bytes: readFileSync(full) })
     }
   }
-  walk('')
+  walk(null)
   return found
 }
 
@@ -605,5 +627,36 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
     // 誰でも展開できる正常な tar を「壊れている」と呼ぶ状況を模す
     const normal = tarOf(entry({ name: 'root/a.txt', data: 'A' }))
     expect(localEvidence(normal), '正常な tar で根拠が出てしまっている').toBeNull()
+  })
+})
+
+/**
+ * **木を歩く道具が、名前をバイト列で扱っていること（v0.6.7）。**
+ *
+ * CI の ubuntu run で、`readdirSync` を既定（utf8）で読んでいたために
+ * **不正 UTF-8 の名前で `lstat` が ENOENT になり、試験が落ちた。**
+ * Linux はそういう名前を作れて、macOS の APFS は作れない——
+ * **同じ試験が、OS によって見えるものを変えていた。**
+ *
+ * 不正 UTF-8 の名前は macOS では作れないので、ここでは**非 ASCII の正しい UTF-8** で
+ * バイト列経路を通す。ここが文字列に戻ると、この試験が落ちる。
+ */
+describe('tar 展開 oracle ④ 名前をバイト列で扱っている', () => {
+  it('非 ASCII の名前でも、検算した view と展開した木が一致する', () => {
+    const buf = tarOf(entry({ name: 'root/日本語のファイル.txt', data: 'NIHONGO' }))
+    // 対照: この材料が実際に読めている（空振りしていない）
+    const r = readArchiveBuffer(buf, { gzip: false })
+    expect(r.error, '材料が読めていない＝この試験は何も言っていない').toBeFalsy()
+    expect([...r.files!.keys()]).toEqual(['日本語のファイル.txt'])
+    expect(mismatchesOf(buf)).toEqual([])
+  })
+
+  it('**復元できないバイト列は潰さない**（違うバイト列が同じ鍵にならない）', () => {
+    // 直接 file system へは書けないので、decode の規則そのものを見る
+    const a = Buffer.from([0xff, 0xfe])
+    const b = Buffer.from([0xfe, 0xff])
+    expect(decodePathBytes(a)).not.toBe(decodePathBytes(b))
+    // 対照: 正しい UTF-8 はそのままの文字列になる
+    expect(decodePathBytes(Buffer.from('日本語', 'utf8'))).toBe('日本語')
   })
 })
