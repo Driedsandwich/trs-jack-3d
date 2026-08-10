@@ -31,7 +31,7 @@
 **対象**
 
 - `main` の最新
-- 直近の release 1 本（現時点では v0.6.5）
+- 直近の release 1 本（現時点では v0.6.6）
 
 **対象外**
 
@@ -89,8 +89,12 @@ modelLimitations.verifiedPhysical   false
   v9 → v10 で 4 つ（ディレクトリか確かめずに先頭階層を剥がす・受理するのに展開できない
   archive・PAX の NUL 切り捨て・閉じていない denylist）、
   v10 → v11 で 3 つ（自分自身を指す hardlink・ディレクトリを指す hardlink・
-  値が読めない PAX と中身を持てない型の本体）。
+  値が読めない PAX と中身を持てない型の本体）、
+  v11 → v12 で 3 つ（**祖先が通常ファイルや symlink でも、その下の entry を受理していた**・
+  linkname の上書きに状態機械が無かった・PAX の値の範囲と `uname`/`gname` の文字符号）。
   **どれも外部監査の指摘で、こちらで反例を再現してから直しています。**
+  **v12 の 1 件は、その再現の途中でこちらが見つけたものです**
+  （hardlink の指す先の末尾スラッシュを剥がして受理していた。監査の指摘にはありません）。
   v8 からは**ふつうの tar 展開を oracle にした差分試験**を置き、
   「検算が見た中身」と「展開してできる中身」が食い違ったら落ちるようにしました
   （[verify-tool-v8-notes.md](docs/release/verify-tool-v8-notes.md)）。
@@ -99,17 +103,32 @@ modelLimitations.verifiedPhysical   false
   v9 は **oracle が 1 実装だけ**だったので、**oracle と同じ癖の欠陥を見つけられません**でした
   （v10 で python tarfile を必須 oracle に追加。
   [verify-tool-v10-notes.md](docs/release/verify-tool-v10-notes.md)）。
-- **正当な archive を拒む欠陥が、2 版続けて見つかりました。**
+- **正当な archive を拒む欠陥が、3 版続けて見つかりました。**
   v9 は独立した 2 つの member がそれぞれ長い名前を使うだけで `ARCHIVE_INVALID` になり、
-  v10 は **GNU の長い linkname（`K`）と PAX `linkpath` を拒んで**いました
-  （どちらも 4 実装すべてが展開できる形です。v10 / v11 でそれぞれ修正）。
+  v10 は **GNU の長い linkname（`K`）と PAX `linkpath` を拒み**、
+  v11 は **GNU tar がふつうに書く負の時刻（`mtime=-1`）と、hardlink の連鎖と、
+  指す先の別の綴り（`./root/A` など）を拒んで**いました
+  （いずれも実装が展開できる形です。v10 / v11 / v12 でそれぞれ修正）。
   **塞ぎすぎは「実物が通る」確認では見つかりません**——この repo の実物は
   最長パス 95 文字で、これらの機構を使わないためです。
+  v12 では corpus の「通す」材料を 9 個から 24 個へ増やしました。
+- **止める理由を 2 つに分けました（v12）。**
+  `ARCHIVE_INVALID` は「矛盾・破損・曖昧、または展開できない」、
+  `ARCHIVE_UNSUPPORTED` は「**ふつうの tar なら展開できるが、この道具の範囲の外**」です。
+  v11 までは後者も `ARCHIVE_INVALID` と言っており、
+  **展開できる archive を「壊れている」と呼んでいました。**
+  どちらも exit code は 2 で、`OK` にはなりません。
 - **手元で確かめられないことは、確かめられないと書きます。**
-  v11 の 2 件（値が読めない PAX・中身を持てない型の本体）は、
-  **こちらの 2 実装（bsdtar / python）では再現していません。**
-  監査の GNU tar・BusyBox の結果と、構造の理屈にもとづいて直しました
-  （[verify-tool-v11-notes.md](docs/release/verify-tool-v11-notes.md) §4）。
+  この環境には GNU tar も BusyBox もありません（bsdtar 3.5.3 と python 3.14 の 2 実装で測っています）。
+  **手元の 2 実装がそろって通すのに止めているものが、現時点で 12 件あります**——
+  10 件は監査の GNU tar / BusyBox の報告にもとづく判断で、**こちらでは再現していません**。
+  一覧は `test/tarExtractionOracle.test.ts` の `INVALID_WITHOUT_LOCAL_EVIDENCE` にあり、
+  **理由の書かれていない拒否を足すと試験が落ちます**
+  （[verify-tool-v12-notes.md](docs/release/verify-tool-v12-notes.md) §7）。
+- **CI を GNU tar（ubuntu）と bsdtar（macOS）の matrix にしました（v12）。**
+  v11 まで CI は ubuntu 1 本、開発は macOS だったので、
+  **2 実装が同じ変更に対して同時に効いたことが一度もありませんでした。**
+  ただし**この matrix はまだ一度も回っていません。**
 
 ### そのほか
 
