@@ -636,6 +636,23 @@ const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }>
       + '**v0.6.1 からの方針**（どちらを検算したのか言えなくなる）で止めており、実装の割れが根拠ではない',
   },
   'dup-regular-different-content': { on: 'none', note: '同上（中身が違う版）' },
+  // ---------------------------------------------------------------- v0.6.11
+  /**
+   * **切れ方の見え方は platform で割れる（CI の ubuntu run が落として判明）。**
+   * どちらも macOS では bsdtar が exit 1 で拒むので根拠が取れるが、
+   * **GNU tar は黙って通す**ため ubuntu では取れない。
+   */
+  'empty-name-unknown-type': {
+    on: 'bsdtar',
+    note: '名前が空で typeflag 5 の entry。bsdtar は '
+      + '`Archive entry has empty or unreadable filename ... skipping` で exit 1（2026-08-11 実測）。'
+      + 'python と GNU tar は通す',
+  },
+  'trunc-no-terminator': {
+    on: 'bsdtar',
+    note: '終端の印を見ないまま尽きる archive。bsdtar は `Truncated tar archive` で exit 1。'
+      + 'python と GNU tar は通す——**切れていることに気づくのは 3 実装のうち 1 つだけ。**',
+  },
   /**
    * **`pax-symlink-trailing-slash` はこの表から外した（v0.6.9・外部監査 P1-B）。**
    * 「手元の 2 実装が同じ木を作るのに止めている」と書いていた行そのものが、
@@ -750,7 +767,7 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
      * 根拠が無いと書いた行は、次に直す候補の一覧でもある。
      */
     expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(5)
-    expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(9)
+    expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(11)
     expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(15)
   })
 
