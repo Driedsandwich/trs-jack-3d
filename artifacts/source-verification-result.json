@@ -10,19 +10,19 @@
   "sha256": "f4d4d350acbf2d1d1587ed017291751734de5f453408d5fd567fac2b27c18dd6"
  },
  "sourceOrigin": "directory:.",
- "generatedFromCommit": "69fce2149a5b67c898cf418d91918f97d1fc7745",
+ "generatedFromCommit": "d01878b1adfe0f8fe2492f90d8c634b4d5af01ad",
  "releaseCommit": null,
  "generatedAt": "2026-08-11",
- "status": "OK",
- "exitCode": 0,
+ "status": "MISMATCH",
+ "exitCode": 1,
  "unrecordedInputDetection": {
   "performed": true,
   "scopeSource": "override:source-input-scope.v1.json"
  },
  "counts": {
   "checked": 32,
-  "matched": 32,
-  "mismatched": 0,
+  "matched": 31,
+  "mismatched": 1,
   "missingInSource": 0,
   "unrecordedInputCandidates": 0,
   "selfReferencingInputs": 0
