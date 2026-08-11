@@ -1,7 +1,7 @@
 /**
  * **信頼できない archive に対して parser が止まることを、実物の壊れた tar で試す。**
  *
- * 材料は `test/_corruptTar.mjs`（99 個・11 種類）。
+ * 材料は `test/_corruptTar.mjs`（119 個・12 種類）。
  * **変異は parser の外側から入れる。**parser の中の定数をいじると、
  * 「その定数を読んでいること」しか確かめられない。
  *
@@ -46,6 +46,7 @@ const EXPECTED: Record<string, Outcome> = {
   rootStrip: 'invalid',  // 先頭 1 階層が directory でないのに剥がす形。正当な形だけ safe（下の個別指定）
   structural: 'invalid', // 中身を持てない型に本体がある形。正当な形だけ safe（下の個別指定）
   ancestor: 'invalid',   // 祖先が directory でない木。正当な木だけ safe（下の個別指定・v0.6.7）
+  rawField: 'invalid',   // 生の USTAR 数値欄が壊れている形。正しい書き方だけ safe（v0.6.8）
 }
 
 /**
@@ -173,9 +174,36 @@ const EXPECTED_BY_ID: Record<string, Outcome> = {
   'base256-size-field': 'unsupported',
   'pax-unknown-vendor-key': 'unsupported',       // 実測: 2 実装とも通す（SUN.holesdata とは違う）
   'gnu-L-very-long': 'unsupported',              // 上限は方針。実測: 1,100 文字も 2 実装は展開する
+
+  // -------------------------------------------------------------------------
+  // v0.6.8（外部監査 2026-08-11）
+  // -------------------------------------------------------------------------
+  /** **P0-B: 鍵に関係なく、`x` のあとに member が無いまま終わる形** */
+  'pax-dangling-metadata-only': 'invalid',       // 実測: bsdtar exit 1 ／ python exit 2
+  'pax-two-local-x': 'invalid',                  // 実測: bsdtar exit 1（malformed pax）／ python は通す
+  /** **P1-A: 末尾スラッシュは directory のときだけ** */
+  'pax-regular-trailing-slash': 'invalid',       // 実測: bsdtar は directory・python は通常ファイル
+  'pax-symlink-trailing-slash': 'invalid',       // **手元の 2 実装は同じ木を作る**（実測の外にある判断）
+  /** **止めてはいけないもの（v0.6.8）。**すべて 2 実装が一致して展開することを実測してから置いた */
+  'pax-metadata-then-member': 'safe',
+  'pax-dir-trailing-slash': 'safe',              // v0.6.7 は「空のパス要素」で落としていた
+  'gnu-L-dir-trailing-slash': 'safe',
+  'pax-uid-leading-zero': 'safe',                // **前回の勧告どおりの正規表現が過剰拒否になった**
+  'pax-gid-leading-zero': 'safe',
+  'pax-mtime-leading-zero': 'safe',
+  'pax-mtime-neg-leading-zero': 'safe',
+  'raw-fields-ok': 'safe',
+  'raw-fields-space-padded': 'safe',             // macOS の tar が書く形（6 桁 + 空白 + NUL）
+  'raw-cksum-signed': 'safe',                    // 歴史的な signed checksum（2 実装とも展開する）
+  /**
+   * **§7 の分類にしたがって「壊れている」から「範囲の外」へ移した（v0.6.8）。**
+   * `..\evil.txt` は Unix では 3 実装とも同じふつうの名前を作り、Windows では 1 階層上を指す。
+   * **受け手の OS で意味が変わるのであって、archive が壊れているわけではない。**
+   */
+  'trav-backslash': 'unsupported',
 }
 
-describe('tar 強化 ① 99 個すべてについて、どうなるかを実測する', () => {
+describe('tar 強化 ① 119 個すべてについて、どうなるかを実測する', () => {
   const table: { id: string, kind: string, outcome: string, files: number }[] = []
 
   it.each(Object.entries(cases).flatMap(([k, list]) => list.map((c) => [k, c.id] as const)))(
@@ -207,9 +235,9 @@ describe('tar 強化 ① 99 個すべてについて、どうなるかを実測�
   )
 
   it('一覧を出す（何がどう止まったかを記録に残す）', () => {
-    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(99)
+    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(119)
     const lines = table.map((t) => `  ${t.kind.padEnd(10)} ${t.id.padEnd(26)} ${t.outcome.padEnd(16)} files=${t.files}`)
-    console.log(`\n99 個の実測\n${lines.join('\n')}`)
+    console.log(`\n119 個の実測\n${lines.join('\n')}`)
   })
 })
 
