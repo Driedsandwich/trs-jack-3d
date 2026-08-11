@@ -154,20 +154,24 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-11",
- "generatedFromCommit": "fd4e553f2c14c1fde3bdc2927037661132dac27a",
+ "generatedFromCommit": "dcac27ac9b7d05b5b8315ad39c178721f5f58c61",
  "command": "npm run validate:profiles",
  "targetsTotal": 14,
  "targetsPassed": 14,
  "allPassed": true,
  "artifactValidationStatus": "PASS",
- "releaseReadinessStatus": "READY",
- "releaseReadinessReasons": [],
+ "releaseReadinessStatus": "NOT_READY",
+ "releaseReadinessReasons": [
+  "artifacts/test_counts.json の allPassed が false",
+  "artifacts/test_counts.json の failed が 1",
+  "artifacts/test_counts.json の exitCode が 1"
+ ],
  "testEvidence": {
-  "total": 1169,
-  "failed": 0,
+  "total": 1215,
+  "failed": 1,
   "skipped": 0,
-  "exitCode": 0,
-  "allPassed": true
+  "exitCode": 1,
+  "allPassed": false
  },
  "distributedTargets": 10,
  "sourceOnlyTargets": 4,
