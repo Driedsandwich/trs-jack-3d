@@ -546,12 +546,16 @@ const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }>
    * Unix では 3 実装とも同じ木を作り、Windows では 1 階層上を指す。
    * **壊れているのではなく、受け手の OS で意味が変わる**（外部監査 §7）。
    */
-  'raw-mode-not-octal': {
+  /**
+   * **`raw-mode-not-octal` はこの表に要らなかった。**
+   * bsdtar は権限 0 の読めないファイルを作り python は mode を丸める＝macOS で割れ、
+   * GNU tar 1.35 は `Archive contains 'abc\0    ' where numeric mode_t value expected` で拒む
+   * ＝ubuntu でも根拠が取れる（2026-08-11 の CI で実測）。**両方で取れる行は表に載せない。**
+   */
+  'pax-two-local-x': {
     on: 'bsdtar',
-    note: 'bsdtar は権限 0 の読めないファイルを作り、python は filter=tar で mode を丸める'
-      + '——**同じ archive から違う木ができる。**'
-      + '（この行は最初 gnu-tar と書いていた。試験の道具が読めないファイルで落ちていて'
-      + '根拠が見えていなかっただけで、直したら手元で取れた）',
+    note: 'local PAX が 2 つ続く形。bsdtar は `Ignoring malformed pax extended attribute` で exit 1。'
+      + '**ubuntu では GNU tar と python が一致して通す**ので、そちらでは根拠が取れない',
   },
   'pax-symlink-trailing-slash': {
     on: 'none',
