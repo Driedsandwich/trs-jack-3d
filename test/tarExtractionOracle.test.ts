@@ -82,7 +82,7 @@ function paxRecord(key: string, value: string): Buffer {
 
 // --------------------------------------------------------------------------- oracle
 
-type Extracted = { path: string, type: 'file' | 'dir' | 'symlink', content?: string, bytes?: Buffer, oversize?: number, unreadable?: string }
+type Extracted = { path: string, type: 'file' | 'dir' | 'symlink' | 'special', content?: string, bytes?: Buffer, oversize?: number, unreadable?: string, special?: string }
 
 /**
  * **中身を読み込む上限（v0.6.7）。**展開すると 8.5 GB の疎ファイルができる材料があり、
@@ -149,6 +149,22 @@ function walkTree(out: string): Extracted[] {
       if (st.isSymbolicLink()) {
         found.push({ path, type: 'symlink', content: decodePathBytes(readlinkSync(full, { encoding: 'buffer' })) })
       } else if (st.isDirectory()) { found.push({ path, type: 'dir' }); walk(r) }
+      /**
+       * **通常ファイル以外を `readFileSync` に掛けない（v0.6.9・こちらで見つけた）。**
+       *
+       * FIFO を開くと**書き手が現れるまで戻らない。**例外ではなく停止なので、
+       * 下の `try` では捕まえられず、**試験が永久に止まる**（CI ごと止まる）。
+       * 実測（2026-08-11）: typeflag 6 の archive は bsdtar・python とも
+       * **実際に FIFO を作る**。typeflag の材料を corpus へ入れる前に直した。
+       *
+       * device は権限が無くて作れないことが多いが、作れた環境で同じ罠を踏まないよう
+       * まとめて「中身を読まない種別」として木に残す。
+       */
+      else if (!st.isFile()) {
+        const kind = st.isFIFO() ? 'fifo' : st.isSocket() ? 'socket'
+          : st.isCharacterDevice() ? `chardev:${st.rdev}` : st.isBlockDevice() ? `blockdev:${st.rdev}` : 'unknown'
+        found.push({ path, type: 'special', special: kind })
+      }
       // **中身は生バイトで持つ（v0.6.5・外部監査 P1）。**UTF-8 文字列にすると
       // 不正バイトが U+FFFD へ潰れ、**違うバイト列が「同じ」に見える。**
       else if (st.size > ORACLE_READ_LIMIT) found.push({ path, type: 'file', oversize: st.size })
@@ -172,6 +188,7 @@ function walkTree(out: string): Extracted[] {
 /** 木を 1 本の文字列にする（**リンクの指す先まで含める**——そこで割れる archive がある） */
 const treeDigest = (es: Extracted[]) => es
   .map((e) => `${e.type} ${e.path}${e.type === 'symlink' ? ` -> ${e.content}` : ''}`
+    + (e.type === 'special' ? ` #${e.special}` : '')
     + (e.type === 'file'
       ? ` #${e.bytes ? e.bytes.toString('hex') : (e.unreadable ? `unreadable:${e.unreadable}` : `oversize:${e.oversize}`)}`
       : ''))
