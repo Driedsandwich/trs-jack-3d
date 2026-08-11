@@ -738,15 +738,28 @@ function readPaxRecords(data, kind) {
      */
     const raw = rec.subarray(eq + 1, rec.length - 1)
     /**
-     * **長さ 0 の値は「上書きの削除」であって、壊れた数値ではない（v0.6.9・外部監査 P0-C）。**
+     * **長さ 0 の値は、解釈する鍵では受けない（v0.6.9・外部監査 P0-C）。**
      *
-     * v0.6.8 は値の綴りを一律に検査していたので、`mtime=` や `uid=` を
-     * **`ARCHIVE_INVALID` として拒んでいた。**実測（2026-08-11）: どちらも
-     * bsdtar・python が同じ木を作る＝**監査が挙げていない過剰拒否が 2 件あった。**
-     * POSIX は「長さ 0 の値はその上書きを消す」と定めているので、そのとおり何も覚えない。
+     * POSIX は「長さ 0 の値はその上書きを消す」と定めているが、**実装が従っていない。**
+     * CI（ubuntu・2026-08-11）で、こちらの材料を測った結果:
      *
-     * **`path` と `linkpath` だけは別扱い**（下の呼び出し側で止める）。
-     * 名前そのものが消えるので、実装ごとに結末が割れるため。
+     * ```
+     * x: mtime=（長さ 0）／ uid=（長さ 0）
+     *   GNU tar 1.35  Malformed extended header: invalid mtime= — **archive ごと拒む**
+     *   bsdtar        exit 0 — 削除として無視して展開する
+     *   python        同じ
+     * ```
+     *
+     * **GNU tar の受け手は、何も手に入らない。**受理すると
+     * 「検算器だけがそのファイルはあると言う」状態になる。
+     *
+     * > **こちらは一度これを「監査が挙げていない過剰拒否」と書いて、間違えた。**
+     * > 開発機に GNU tar が無く、手元の 2 実装がそろって通したのを
+     * > 「割れていない」と読んだためである。**割れていたのは 3 つ目の実装だった。**
+     * > **2 実装で足りるかどうかは、2 実装では決められない。**
+     *
+     * 解釈しない鍵（xattr・comment 等）は長さ 0 でも見え方を変えないので、何もしない。
+     * **`path` と `linkpath` は下の呼び出し側**で止める（名前が消えるとさらに広く割れる）。
      */
     /**
      * **解釈する値だけ読む（v0.6.5）。**`path` は名前になるので NUL も不正 UTF-8 も止める。
@@ -755,7 +768,13 @@ function readPaxRecords(data, kind) {
      */
     if (raw.length === 0) {
       // ここで `continue` すると末尾の `i += len` を飛ばして**無限に回る**（分岐で書く）
-      out.set(key, ZERO_LENGTH_PAX_VALUE)
+      if (key === 'path' || key === 'linkpath') out.set(key, ZERO_LENGTH_PAX_VALUE)
+      else if (PAX_VALUE_GRAMMAR[key]) {
+        throw new ArchiveInvalid(
+          `PAX (${kind}) の ${key} が長さ 0 である。GNU tar はこの archive を展開しない`,
+          { kind, key, stableReasonCode: 'PAX_ZERO_LENGTH_VALUE_UNSUPPORTED' },
+        )
+      }
     } else if (key === 'path' || key === 'linkpath') {
       out.set(key, decodePaxText(raw, `PAX (${kind}) の ${key}`))
     } else if (PAX_VALUE_GRAMMAR[key]) {

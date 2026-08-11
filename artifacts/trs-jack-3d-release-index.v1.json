@@ -4,17 +4,13 @@
  "generatedAt": "2026-08-11",
  "releaseTag": null,
  "releaseCommit": null,
- "evidenceBuiltAtCommit": "65dbb4f9301a68dcf62ecc6acb15627c07c9298d",
+ "evidenceBuiltAtCommit": "b494c42e300c69a61763cf27722e9d72a6478f77",
  "artifactGenerationCommit": "82e3840265b9ea606469cb61cd8ccf1b845357a9",
  "artifactGenerationCommits": [
   {
    "commit": "65dbb4f9301a68dcf62ecc6acb15627c07c9298d",
    "assets": [
-    "source-input-manifest.json",
-    "source-snapshot.v1.json",
-    "source-verification-result.json",
-    "test_counts.json",
-    "validation-results.json"
+    "test_counts.json"
    ]
   },
   {
@@ -30,6 +26,15 @@
     "sensitivity.trs_jack_trrs.json",
     "sensitivity.trs_jack_trs.json",
     "topology-robustness.trs_jack_trrs.json"
+   ]
+  },
+  {
+   "commit": "b494c42e300c69a61763cf27722e9d72a6478f77",
+   "assets": [
+    "source-input-manifest.json",
+    "source-snapshot.v1.json",
+    "source-verification-result.json",
+    "validation-results.json"
    ]
   }
  ],
@@ -121,9 +126,9 @@
   },
   {
    "filename": "source-input-manifest.json",
-   "sha256": "47327b1b37670fb117ce86671eb13213b9f054c95a8c32c91682df0cfb01570b",
+   "sha256": "8c2fc71d37af5577cc15a112127964e3887d6ca8e77e72430120bbea9b29d216",
    "role": "evidence",
-   "generatedFromCommit": "65dbb4f9301a68dcf62ecc6acb15627c07c9298d"
+   "generatedFromCommit": "b494c42e300c69a61763cf27722e9d72a6478f77"
   },
   {
    "filename": "source-input-manifest.v2.schema.json",
@@ -142,9 +147,9 @@
   },
   {
    "filename": "source-snapshot.v1.json",
-   "sha256": "8e14c06fbb6d14387dadca86e4233ab4d547ad7ff5684ad1b6d0374b6509f330",
+   "sha256": "2d3258e5520c4aafa133013b7665f179d6461670cbf5b67834cdc36919590e16",
    "role": "evidence",
-   "generatedFromCommit": "65dbb4f9301a68dcf62ecc6acb15627c07c9298d"
+   "generatedFromCommit": "b494c42e300c69a61763cf27722e9d72a6478f77"
   },
   {
    "filename": "source-snapshot.v1.schema.json",
@@ -153,9 +158,9 @@
   },
   {
    "filename": "source-verification-result.json",
-   "sha256": "c82b688b67674184d8de469ca0a0a74b42a20126840ca9e7d2d92d189c108085",
+   "sha256": "aa81946d0b634eb52edfad8a4485d1382052bb960ff83791e026084c0d27cd4d",
    "role": "evidence",
-   "generatedFromCommit": "65dbb4f9301a68dcf62ecc6acb15627c07c9298d"
+   "generatedFromCommit": "b494c42e300c69a61763cf27722e9d72a6478f77"
   },
   {
    "filename": "source-verification-result.v1.schema.json",
@@ -197,9 +202,9 @@
   },
   {
    "filename": "validation-results.json",
-   "sha256": "334bf2ec0d0787a298320187029aaf624cc484b83f381043a528a7cab707bdf0",
+   "sha256": "dbb0dda57fd58c19b9e92caa44cecdc4c11713d322d9be77affaafa9d03f52f8",
    "role": "evidence",
-   "generatedFromCommit": "65dbb4f9301a68dcf62ecc6acb15627c07c9298d"
+   "generatedFromCommit": "b494c42e300c69a61763cf27722e9d72a6478f77"
   },
   {
    "filename": "validation-results.v2.schema.json",
@@ -208,7 +213,7 @@
   },
   {
    "filename": "verifyReleaseSourceInputs.mjs",
-   "sha256": "7a3787a1281a81c9fd626f656cd427ebddb7be8c01c135501ebc9a31b5c70e27",
+   "sha256": "21a101cd036ae7eb4b5337f4bc184695c737df033ddb278929911a617ddfc8ff",
    "role": "tool"
   }
  ],

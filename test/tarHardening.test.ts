@@ -217,8 +217,14 @@ const EXPECTED_BY_ID: Record<string, Outcome> = {
    * **止めてはいけないもの（v0.6.9）。**ここも全部、2 実装が一致することを実測してから置いた。
    * `mtime=` と `uid=` は**監査が挙げていない過剰拒否**で、こちらの再現の途中で見つけた。
    */
-  'pax-zero-length-mtime': 'safe',
-  'pax-zero-length-uid': 'safe',
+  /**
+   * **`safe` と書いて間違えた（CI の ubuntu run が落として判明）。**
+   * 手元の 2 実装がそろって通したので「過剰拒否だった」と読んだが、
+   * **GNU tar は `Malformed extended header: invalid mtime=` で archive ごと拒む。**
+   * 割れていたのは**開発機に無い 3 つ目の実装**だった。
+   */
+  'pax-zero-length-mtime': 'invalid',
+  'pax-zero-length-uid': 'invalid',
   'pax-duplicate-path-same-header': 'safe',
   'pax-duplicate-mtime-same-header': 'safe',
   'pax-duplicate-linkpath-same-header': 'safe',

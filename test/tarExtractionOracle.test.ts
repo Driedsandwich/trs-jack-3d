@@ -575,6 +575,20 @@ const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }>
       + '**ubuntu では GNU tar と python が一致して通す**ので、そちらでは根拠が取れない',
   },
   /**
+   * **長さ 0 の値（v0.6.9）。**手元の 2 実装はそろって通すが、
+   * **GNU tar は archive ごと拒む**ので、ubuntu 側でだけ根拠が取れる。
+   * こちらは一度これを「過剰拒否」と誤って直し、**CI の ubuntu run に落とされた。**
+   */
+  'pax-zero-length-mtime': {
+    on: 'gnu-tar',
+    note: 'PAX の mtime が長さ 0。GNU tar 1.35 は `Malformed extended header: invalid mtime=` で拒む'
+      + '（2026-08-11 の CI で実測）。bsdtar と python は削除として無視して展開する',
+  },
+  'pax-zero-length-uid': {
+    on: 'gnu-tar',
+    note: 'PAX の uid が長さ 0。同上（`invalid uid=`）',
+  },
+  /**
    * **`pax-symlink-trailing-slash` はこの表から外した（v0.6.9・外部監査 P1-B）。**
    * 「手元の 2 実装が同じ木を作るのに止めている」と書いていた行そのものが、
    * **過剰拒否の白状だった。**v0.6.9 で受理する側へ直したので、拒否ではなくなった。
@@ -689,7 +703,7 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
      */
     expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(2)
     expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(9)
-    expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(9)
+    expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(11)
   })
 
   it('**この試験が空振りしていない**（根拠の無い拒否を作れば落ちる）', () => {
