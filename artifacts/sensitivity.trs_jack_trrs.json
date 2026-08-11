@@ -103,15 +103,15 @@
   "trrs.jack.contact.sleeve.axialCenter",
   "trrs.jack.contact.narrowPadWidth"
  ],
- "generatedFromCommit": "4ada3c54f1c02c33136684caf8c4d20a5d89f7ab",
+ "generatedFromCommit": "808ea5d17dc93af097b39ba1a0553f6270685f50",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "4ada3c54f1c02c33136684caf8c4d20a5d89f7ab",
+  "generatedFromCommit": "808ea5d17dc93af097b39ba1a0553f6270685f50",
   "workingTreeDirty": false,
   "revisionOverride": false,
   "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "13161648343d8e29da098cf09a50d7f89a827fd5d33827440d028915f8a55407",
+  "inputDigest": "192c0aa8e2f3e19e5f81a97e6d6f1e67c4519c2763c699b26da873f082e76501",
   "inputDigestScope": "先頭に \"setting  <key>=<value>\" を key 昇順で 6 行置き、続けて inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。setting 行は**ファイルに現れない variant 固有の設定**で、これが無いと variant 間で digest が同一になる。**生成される artifact 自身は含まない。**",
   "inputSettings": {
    "variantId": "TRS|JACK-TRRS",
@@ -129,7 +129,7 @@
    },
    {
     "path": "package-lock.json",
-    "sha256": "1c881b6eb1b82917ed27b1aa6984385b15676c31d6e39c1f666ba8fce7c5f982",
+    "sha256": "fed579a3df12e39b33bd536bf067034e1db2f16becb19664a74575b1b3354577",
     "role": "lockfile"
    },
    {
