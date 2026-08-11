@@ -149,8 +149,21 @@ import { join, resolve } from 'node:path'
  *       6 鍵とも 2 実装が一致）、hardlink と symlink の名前の末尾スラッシュ、
  *       そして**監査が挙げていない `mtime=` と `uid=`**（長さ 0 を壊れた数値と読んでいた）。
  *       **判定が変わる**ので版を上げる
+ *  15 … **長さ 0 の PAX 値が、鍵の分類を丸ごと迂回していた (v0.6.10 P0-A)。**
+ *       v14 で「長さ 0 を早く返す」ようにしたとき、`path`/`linkpath` と数値鍵しか
+ *       `out` へ入れなくなり、**allowlist と known-dangerous 検査が `out.keys()` しか
+ *       見ない**ので `size=` / `SUN.holesdata=` / `ACME.weird=` が素通りした。
+ *       **こちらが v14 で開けた穴。**分類を先にして、値の長さは後から見る。
+ *       **終端 zero block のあとを一度も見ていなかった (P0-B)。**
+ *       zero block を 1 個置いた後ろに member を隠せた（手元の 2 実装も読まないので
+ *       割れは再現できていない。BusyBox が読むと監査が報告）。
+ *       **P1 は過剰拒否 3 件**: 正当な old GNU sparse を「壊れている」と言っていた
+ *       （型より先に形式を見ていた）・`mtime=1.` を拒んでいた・
+ *       冪等な directory の重複を拒んでいた。
+ *       止めた理由すべてに `stableReasonCode` を付けた。
+ *       **判定が変わる**ので版を上げる
  */
-export const TOOL_VERSION = 14
+export const TOOL_VERSION = 15
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -527,9 +540,14 @@ const PAX_KEYS_ALLOWED = new Set([
 const PAX_VALUE_GRAMMAR = {
   uid: /^[0-9]+$/,
   gid: /^[0-9]+$/,
-  mtime: /^-?[0-9]+(\.[0-9]+)?$/,
-  atime: /^-?[0-9]+(\.[0-9]+)?$/,
-  ctime: /^-?[0-9]+(\.[0-9]+)?$/,
+  /**
+   * **小数部は省略できる（v0.6.10・外部監査 P1）。**実測（2026-08-11）:
+   * `mtime=1.` を bsdtar も python も受理して同じ木を作るのに、こちらは拒んでいた。
+   * POSIX は「小数点のあとに数字が無い」形を禁じていない。**範囲検査は読んだあとの値に掛ける。**
+   */
+  mtime: /^-?[0-9]+(\.[0-9]*)?$/,
+  atime: /^-?[0-9]+(\.[0-9]*)?$/,
+  ctime: /^-?[0-9]+(\.[0-9]*)?$/,
 }
 
 /**
@@ -767,14 +785,28 @@ function readPaxRecords(data, kind) {
      * 読めなくても view は変わらない（v8 と v9 で 2 回、ここで塞ぎすぎた）。
      */
     if (raw.length === 0) {
+      /**
+       * **鍵は、値が空でも必ず `out` へ入れる（v0.6.10・外部監査 P0-A）。**
+       *
+       * v0.6.9 はここで `path`/`linkpath` と数値鍵しか `out.set` しなかった。
+       * ところが**下の allowlist と known-dangerous 検査は `out.keys()` しか見ない**ので、
+       * **値を空にするだけで、その 2 つを丸ごと迂回できた。**実測（2026-08-11）:
+       *
+       * ```
+       * 同じ鍵で、値の長さだけを変える
+       *   size=12           ARCHIVE_INVALID（見え方を変える鍵）
+       *   size=（長さ 0）     READ               ← 素通り
+       *   SUN.holesdata=X   ARCHIVE_INVALID     ／ bsdtar も exit 1 で拒む
+       *   SUN.holesdata=    READ               ← 素通り（bsdtar は拒むのに）
+       *   ACME.weird=X      ARCHIVE_UNSUPPORTED（未知の鍵）
+       *   ACME.weird=       READ               ← 素通り
+       * ```
+       *
+       * **v0.6.9 で「長さ 0 を早く返す」ようにしたときに、こちらが開けた穴。**
+       * 分類は値の長さで変わらない——**先に鍵で分類し、そのあとで値の長さを見る。**
+       */
       // ここで `continue` すると末尾の `i += len` を飛ばして**無限に回る**（分岐で書く）
-      if (key === 'path' || key === 'linkpath') out.set(key, ZERO_LENGTH_PAX_VALUE)
-      else if (PAX_VALUE_GRAMMAR[key]) {
-        throw new ArchiveInvalid(
-          `PAX (${kind}) の ${key} が長さ 0 である。GNU tar はこの archive を展開しない`,
-          { kind, key, stableReasonCode: 'PAX_ZERO_LENGTH_VALUE_UNSUPPORTED' },
-        )
-      }
+      out.set(key, ZERO_LENGTH_PAX_VALUE)
     } else if (key === 'path' || key === 'linkpath') {
       out.set(key, decodePaxText(raw, `PAX (${kind}) の ${key}`))
     } else if (PAX_VALUE_GRAMMAR[key]) {
@@ -853,8 +885,40 @@ function readPaxRecords(data, kind) {
    */
   for (const k of ['path', 'linkpath']) {
     if (kind === 'g' && out.has(k)) {
-      throw new ArchiveInvalid(`PAX (g) が全 entry の ${k} を差し替えようとしている`, { kind, key: k })
+      throw new ArchiveInvalid(`PAX (g) が全 entry の ${k} を差し替えようとしている`, { kind, key: k, stableReasonCode: 'PAX_GLOBAL_NAME_OVERRIDE' })
     }
+  }
+  /**
+   * **鍵ごとの「長さ 0」方針は、allowlist を通ったあとで当てる（v0.6.10・外部監査 P0-A）。**
+   *
+   * ここへ来る鍵は `PAX_KEYS_ALLOWED` か xattr の接頭辞だけ。分け方は 3 つ:
+   *
+   * ```
+   * path / linkpath              名前が消える。読み手ごとに結末が割れる（呼び出し側で止める）
+   * mtime / atime / ctime        GNU tar が `Malformed extended header` で archive ごと拒む
+   * uid / gid
+   * uname / gname / comment      見え方を変えない。長さ 0 でも通す
+   * LIBARCHIVE./SCHILY.xattr.*   同上（実物が生バイナリを入れる領域）
+   * ```
+   *
+   * 数値鍵の根拠は 2026-08-11 の CI（ubuntu / GNU tar 1.35）で取った実測である。
+   * **こちらは一度これを「過剰拒否」と読んで通してしまい、その CI に落とされた。**
+   */
+  for (const [k, v] of out) {
+    if (v !== ZERO_LENGTH_PAX_VALUE) continue
+    if (k === 'path' || k === 'linkpath') continue    // 呼び出し側（assertPaxNameValue）で止める
+    if (PAX_VALUE_GRAMMAR[k]) {
+      throw new ArchiveInvalid(
+        `PAX (${kind}) の ${k} が長さ 0 である。GNU tar はこの archive を展開しない`,
+        { kind, key: k, stableReasonCode: 'PAX_ZERO_LENGTH_VALUE_INVALID' },
+      )
+    }
+    /**
+     * 残るのは `uname` / `gname` / `comment` / xattr。
+     * **見え方を変えないので通す**（実測: 2 実装とも同じ木）。
+     * 値としては空文字と同じに畳んでおく——sentinel が下流へ漏れないようにする。
+     */
+    out.set(k, k === 'uname' || k === 'gname' || k === 'comment' ? '' : Buffer.alloc(0))
   }
   return out
 }
@@ -1057,13 +1121,45 @@ function readTar(buf) {
 
   while (off + 512 <= buf.length) {
     const header = buf.subarray(off, off + 512)
-    if (header.every((b) => b === 0)) break
+    /**
+     * **終端のあとに中身が続いていないか見る（v0.6.10・外部監査 P0-B）。**
+     *
+     * v0.6.9 は最初の zero block で `break` して、**そのあとを一度も見なかった。**
+     * だから zero block を 1 個置いて、その後ろに member を隠せた。実測（2026-08-11）:
+     *
+     * ```
+     * 32 入力の source + zero block 1 個 + root/src/model/sneaky.ts
+     *   検算 v14  status OK ／ 32 of 32 ／ 未記録候補 0 件（sneaky.ts は一覧に出ない）
+     *   実ファイル 中に sneaky.ts は入っている（offset を数えて確認）
+     * ```
+     *
+     * **手元の 2 実装（bsdtar / python）も sneaky.ts を作らない**ので、
+     * 「割れる」ことはこちらでは再現できていない（監査は BusyBox が読むと報告）。
+     * それでも塞ぐのは、**この道具の約束が「ここに挙げた物が中身の全部」だから**で、
+     * 「読み手の一つが読めるものが一覧に無い」時点でその約束は果たせない。
+     *
+     * 終端の印は zero block **2 個**である。1 個で切って中身が続く形は archive の側の欠陥。
+     * 過剰拒否になっていないことは実物で確かめた（2026-08-11 実測）:
+     * **npm の実 tarball 600 本すべてが「終端 zero 2 個・その後ろの非 zero 0 件」**、
+     * `git archive` と macOS の `tar` も同じ。
+     */
+    if (header.every((b) => b === 0)) {
+      for (let p = off; p + 512 <= buf.length; p += 512) {
+        if (!buf.subarray(p, p + 512).every((b) => b === 0)) {
+          throw new ArchiveInvalid(
+            '終端の zero block のあとに、まだ中身が続いている（この道具も多くの読み手もそこで読むのをやめる）',
+            { offset: p, terminatorAt: off, stableReasonCode: 'END_OF_ARCHIVE_LONE_ZERO_BLOCK' },
+          )
+        }
+      }
+      break
+    }
 
     if (++entries > TAR_LIMITS.maxEntries) {
-      throw new ArchiveUnsupported(`entry が多すぎる (> ${TAR_LIMITS.maxEntries})`, { entries })
+      throw new ArchiveUnsupported(`entry が多すぎる (> ${TAR_LIMITS.maxEntries})`, { entries, stableReasonCode: 'LIMIT_ENTRY_COUNT_UNSUPPORTED' })
     }
     if (!headerChecksumOk(header, entries)) {
-      throw new ArchiveInvalid('ヘッダの checksum が合わない', { entryIndex: entries, offset: off })
+      throw new ArchiveInvalid('ヘッダの checksum が合わない', { entryIndex: entries, offset: off, stableReasonCode: 'HEADER_CHECKSUM_MISMATCH' })
     }
 
     /**
@@ -1082,7 +1178,21 @@ function readTar(buf) {
     const headerFormat = classifyHeaderFormat(header)
     headerFormats.add(headerFormat)
     const prefixRegionEmpty = header.subarray(345, 500).every((b) => b === 0)
-    if (headerFormat !== 'posix-ustar' && !prefixRegionEmpty) {
+    /**
+     * **型を先に分類する（v0.6.10・外部監査 P1）。**
+     *
+     * v0.6.9 は形式と 345..499 の食い違いを、**型を見る前に**落としていた。
+     * そのため**正当な old GNU sparse**（typeflag `S`・345..499 は sparse map）が
+     * `ARCHIVE_INVALID`（＝壊れている）になっていた。実測（2026-08-11）:
+     * bsdtar も python も exit 0 で読む——**壊れてはいない。**
+     * こちらが sparse を扱わないだけなので、下の許可表が
+     * `ARCHIVE_UNSUPPORTED` と言うべきである。
+     *
+     * **許可表を 2 つ持たない**ために、ここでは型の判定をせず
+     * 「支援する型のときだけ形式の食い違いを見る」形にして、型の話は下の 1 か所へ任せる。
+     */
+    const typeflagHere = header[156] === 0 ? '0' : String.fromCharCode(header[156])
+    if (headerFormat !== 'posix-ustar' && !prefixRegionEmpty && SUPPORTED_TYPEFLAGS.has(typeflagHere)) {
       throw new ArchiveInvalid(
         `ヘッダ形式が ${headerFormat} なのに 345..499 が空でない。`
         + 'この領域を prefix として読むかどうかで読み手ごとに名前が変わる',
@@ -1385,10 +1495,23 @@ function readTar(buf) {
      * 「同一なら許す」にすると比較のぶんだけ判断が増える。
      */
     if (seenPaths.has(name)) {
-      throw new ArchiveInvalid(
-        '同じパスの entry が 2 回ある（どちらが本物か決められない）',
-        { name, entryIndex: entries, type },
-      )
+      /**
+       * **directory どうしの重複だけは通す（v0.6.10・外部監査 P1）。**
+       *
+       * v0.6.9 は型を問わず落としていた。だが **directory entry は中身を持たないので、
+       * 2 回出てきても「どちらが本物か」という問いが立たない。**実測（2026-08-11）:
+       * 同じ `root/dir/`（typeflag 5）を 2 回置いた archive を、
+       * bsdtar も python も exit 0 で**同じ木**にする。
+       *
+       * **通常ファイルの重複は今までどおり落とす**——そちらは中身が違いうるので、
+       * 「checksum を通った最初の中身」と「展開してできる中身」が食い違う。
+       */
+      if (!(type === '5' && seenPaths.get(name) === '5')) {
+        throw new ArchiveInvalid(
+          '同じパスの entry が 2 回ある（どちらが本物か決められない）',
+          { name, entryIndex: entries, type, stableReasonCode: 'DUPLICATE_PATH_CONFLICT' },
+        )
+      }
     }
 
     /**
