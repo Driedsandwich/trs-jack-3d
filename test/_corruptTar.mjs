@@ -470,6 +470,23 @@ export const paxCases = () => {
       { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '1') + rec('mtime', '2') },
       { name: `${TOP}/a.txt`, data: 'A' },
     ]) },
+    /**
+     * **`mtime=1.` は通す（v0.6.10・外部監査 P1）。**実測: 2 実装とも受理して同じ木。
+     * POSIX は小数点のあとに数字が無い形を禁じていない。
+     */
+    { id: 'pax-mtime-trailing-dot', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '1.') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-mtime-negative-trailing-dot', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '-1.') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /** 小数点だけ・数字が先に無い形は今までどおり止める（塞ぎすぎの対照） */
+    { id: 'pax-mtime-leading-dot', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '.5') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
     { id: 'pax-duplicate-linkpath-same-header', ok: true, tar: buildTar([
       { name: `${TOP}/a.txt`, data: 'A' },
       { name: `${TOP}/b.txt`, data: 'B' },
@@ -976,6 +993,31 @@ export const structuralCases = () => [
  *   python   NotADirectoryError
  * ```
  */
+/**
+ * **同じ directory entry が 2 回出る形（v0.6.10・外部監査 P1）。**
+ * directory は中身を持たないので「どちらが本物か」という問いが立たない。
+ * 実測: 2 実装とも exit 0 で同じ木。**通常ファイルの重複は今までどおり止める。**
+ */
+export const duplicateCases = () => [
+  { id: 'dup-directory-idempotent', ok: true, tar: buildTar([
+    { name: `${TOP}/dir/`, type: '5', mode: 0o755 },
+    { name: `${TOP}/dir/`, type: '5', mode: 0o755 },
+    { name: `${TOP}/dir/a.txt`, data: 'A' },
+  ]) },
+  { id: 'dup-directory-then-regular', tar: buildTar([
+    { name: `${TOP}/x/`, type: '5', mode: 0o755 },
+    { name: `${TOP}/x`, data: 'A' },
+  ]) },
+  { id: 'dup-regular-same-content', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/a.txt`, data: 'A' },
+  ]) },
+  { id: 'dup-regular-different-content', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'FIRST' },
+    { name: `${TOP}/a.txt`, data: 'SECOND' },
+  ]) },
+]
+
 export const rootStripCases = () => [
   { id: 'root-is-regular-file', tar: buildTar([
     { name: TOP, data: 'ROOTFILE' },
@@ -1174,6 +1216,16 @@ export const headerFormatCases = () => [
     { name: `${TOP}/a.txt`, data: 'A' },
     { name: `${TOP}/src/model/types.ts`, data: 'TYPES', magic8: UNKNOWN_MAGIC8 },
   ]) },
+  /**
+   * **正当な old GNU sparse（v0.6.10・外部監査 P1）。**
+   * typeflag `S` で 345..499 は sparse metadata。**壊れてはいない**（2 実装とも exit 0）。
+   * こちらが sparse を扱わないだけなので `ARCHIVE_UNSUPPORTED` になるべきで、
+   * v0.6.9 は形式の食い違いを型より先に見て `ARCHIVE_INVALID` と言っていた。
+   */
+  { id: 'format-oldgnu-sparse-valid', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/sparse.bin`, type: 'S', prefix: '\x00\x00\x01', magic8: OLDGNU_MAGIC8 },
+  ]) },
   /** POSIX ustar は prefix を使ってよい（対照・実物の GitHub tarball と同じ形） */
   { id: 'format-posix-prefix', ok: true, tar: buildTar([
     { name: `${TOP}/a.txt`, data: 'A' },
@@ -1194,6 +1246,74 @@ export const headerFormatCases = () => [
   ]) },
 ]
 
+/**
+ * **長さ 0 の PAX 値が、鍵の分類を迂回する形（v0.6.10・外部監査 P0-A）。**
+ *
+ * v0.6.9 は `path`/`linkpath` と数値鍵しか `out` へ入れなかったので、
+ * **値を空にするだけで allowlist と known-dangerous 検査を丸ごと飛ばせた。**
+ * 実測（2026-08-11）: 同じ鍵で値の長さだけを変えると、
+ * `size=12` は `ARCHIVE_INVALID` なのに `size=` は `READ` だった。
+ * **こちらが v0.6.9 で開けた穴。**
+ */
+export const zeroLengthCases = () => {
+  const rec = (k, v) => paxRec(k, v)
+  const one = (id, key, value, ok) => ({
+    id, ...(ok ? { ok: true } : {}),
+    tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec(key, value) },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]),
+  })
+  return [
+    // --- 止める側: 分類が値の長さで変わってはいけない ---
+    one('zero-size', 'size', ''),                       // 見え方を変える鍵
+    one('zero-sun-holesdata', 'SUN.holesdata', ''),     // 実測: bsdtar は exit 1 で拒む
+    one('zero-hdrcharset', 'hdrcharset', ''),           // 名前の読み方が変わる
+    one('zero-schily-realsize', 'SCHILY.realsize', ''),
+    one('zero-unknown-key', 'ACME.weird', ''),          // 未知の鍵（UNSUPPORTED）
+    // --- 対照: 同じ鍵を非空にしても、同じ区分で止まること ---
+    one('nonzero-size', 'size', '12'),
+    one('nonzero-unknown-key', 'ACME.weird', 'X'),
+    // --- 通す側: 見え方を変えない鍵は長さ 0 でも通す ---
+    one('zero-uname', 'uname', '', true),
+    one('zero-gname', 'gname', '', true),
+    one('zero-comment', 'comment', '', true),
+    one('zero-xattr', 'SCHILY.xattr.user.x', '', true),
+  ]
+}
+
+/**
+ * **終端 zero block のあとに中身が続く形（v0.6.10・外部監査 P0-B）。**
+ *
+ * v0.6.9 は最初の zero block で読むのをやめ、**その後ろを一度も見なかった。**
+ * 実測（2026-08-11）: 32 入力の source に zero block 1 個と `sneaky.ts` を足すと
+ * `status OK / 32 of 32 / 未記録候補 0` になり、**ファイルの中には sneaky.ts が入っている。**
+ * 手元の 2 実装は sneaky を作らないので**割れ自体は再現できていない**（監査は BusyBox で確認と報告）。
+ *
+ * 過剰拒否になっていないことは実物で確かめた: npm の実 tarball 600 本すべてが
+ * 「終端 zero 2 個・その後ろの非 zero 0 件」。
+ */
+export const endOfArchiveCases = () => {
+  const hidden = Buffer.concat([
+    buildTar([{ name: `${TOP}/a.txt`, data: 'A' }], { endBlocks: 1 }),
+    buildTar([{ name: `${TOP}/src/model/sneaky.ts`, data: 'SNEAK' }], { endBlocks: 2 }),
+  ])
+  return [
+    { id: 'eoa-lone-zero-then-member', tar: hidden },
+    { id: 'eoa-lone-zero-then-junk', tar: Buffer.concat([
+      buildTar([{ name: `${TOP}/a.txt`, data: 'A' }], { endBlocks: 1 }),
+      Buffer.from('X'.repeat(BLOCK), 'ascii'), Buffer.alloc(BLOCK * 2),
+    ]) },
+    /** **通す側。**終端 2 個・そのあとの詰め物はすべて zero（実物と同じ形） */
+    { id: 'eoa-two-zero-blocks', ok: true, tar: buildTar([{ name: `${TOP}/a.txt`, data: 'A' }]) },
+    { id: 'eoa-two-zero-then-padding', ok: true, tar: Buffer.concat([
+      buildTar([{ name: `${TOP}/a.txt`, data: 'A' }]), Buffer.alloc(BLOCK * 18),
+    ]) },
+    /** 終端の印が無いまま物理 EOF。互換性のため通す（監査 §2 の但し書き） */
+    { id: 'eoa-no-terminator', ok: true, tar: buildTar([{ name: `${TOP}/a.txt`, data: 'A' }], { endBlocks: 0 }) },
+  ]
+}
+
 /** 全部まとめて。**種類ごとに 4 個以上あることを test 側で確かめる** */
 export const allCases = () => ({
   pax: paxCases(),
@@ -1209,4 +1329,7 @@ export const allCases = () => ({
   ancestor: ancestorCases(),
   rawField: rawFieldCases(),
   headerFormat: headerFormatCases(),
+  zeroLength: zeroLengthCases(),
+  endOfArchive: endOfArchiveCases(),
+  duplicate: duplicateCases(),
 })
