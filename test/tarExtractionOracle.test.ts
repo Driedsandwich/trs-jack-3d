@@ -608,22 +608,28 @@ const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }>
    * 「割れているから止めた」と書くより正確である。**
    */
   'zero-hdrcharset': {
-    on: 'none',
-    note: '`hdrcharset=`（長さ 0）。名前の読み方を変える鍵なので、値の長さに関係なく解釈しない方針。'
-      + '手元の 2 実装は無視して同じ木を作る',
+    on: 'gnu-tar',
+    note: '`hdrcharset=`（長さ 0）。GNU tar は '
+      + "`Ignoring unknown extended header keyword 'hdrcharset'` と警告する（2026-08-11 の CI で実測）。"
+      + '手元の 2 実装は黙って無視するので、macOS 側では根拠が取れない',
   },
   'nonzero-size': {
     on: 'none',
     note: '`size=12`。size は entry の見え方を変えるので解釈しない方針（v0.6.3 から）。'
       + '手元の 2 実装はこの上書きを無視する（読む長さが本当に変わる材料は pax-x-size-override 側にある）',
   },
+  /**
+   * **`none` と書いたが、間違いだった（CI の ubuntu run が落として判明）。**
+   * **GNU tar はこの形をちょうど名指しで警告する。**
+   * 手元の 2 実装（bsdtar / python）は黙って読むのをやめるので、macOS では見えなかった。
+   */
   'eoa-lone-zero-then-member': {
-    on: 'none',
-    note: '終端 zero block 1 個のあとに member。**手元の 2 実装もそこで読むのをやめる**ので割れない。'
-      + '監査は BusyBox が読むと報告しているが、**BusyBox は開発機にも CI にも無い。**'
-      + 'それでも止めるのは「一覧に無いものを読む読み手がいる」時点で約束を果たせないため',
+    on: 'gnu-tar',
+    note: '終端 zero block 1 個のあとに member。GNU tar は `A lone zero block at 3` と警告する'
+      + '（2026-08-11 の CI で実測。block 2＝0 起点がその zero block で、材料の並びと一致する）。'
+      + '手元の 2 実装はそこで読むのをやめるだけで何も言わない',
   },
-  'eoa-lone-zero-then-junk': { on: 'none', note: '同上（member ではなく非 zero の詰め物）' },
+  'eoa-lone-zero-then-junk': { on: 'gnu-tar', note: '同上（member ではなく非 zero の詰め物）' },
   'dup-regular-same-content': {
     on: 'none',
     note: '同じパスの通常ファイルが 2 回。手元の 2 実装は後勝ちで同じ木を作る。'
@@ -732,7 +738,7 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
    * 受け手にとっては道具の限界そのものなので、**増えたら気づく形**にしておく。
    * 増やしてよいが、そのときはここと notes の両方を直すことになる。
    */
-  it('どちらの必須 oracle でも裏の取れていない拒否は 8 件（内訳を出す）', () => {
+  it('どちらの必須 oracle でも裏の取れていない拒否は 5 件（内訳を出す）', () => {
     const rows = Object.entries(EVIDENCE_ELSEWHERE)
     const byOn: Record<string, string[]> = {}
     for (const [id, v] of rows) (byOn[v.on] ??= []).push(id)
@@ -743,9 +749,9 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
      * 「2 実装が同じ木を作るのに止めている」と書いてあった行**そのものが過剰拒否だった。**
      * 根拠が無いと書いた行は、次に直す候補の一覧でもある。
      */
-    expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(8)
+    expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(5)
     expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(9)
-    expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(12)
+    expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(15)
   })
 
   it('**この試験が空振りしていない**（根拠の無い拒否を作れば落ちる）', () => {
