@@ -154,7 +154,7 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-11",
- "generatedFromCommit": "66b6831ab1aa43340bbfda155fd783a285b08c9b",
+ "generatedFromCommit": "2195dee182d4f9b7dd8267d50f5790f5c5d50932",
  "command": "npm run validate:profiles",
  "targetsTotal": 14,
  "targetsPassed": 14,
@@ -163,7 +163,7 @@
  "releaseReadinessStatus": "READY",
  "releaseReadinessReasons": [],
  "testEvidence": {
-  "total": 1105,
+  "total": 1169,
   "failed": 0,
   "skipped": 0,
   "exitCode": 0,

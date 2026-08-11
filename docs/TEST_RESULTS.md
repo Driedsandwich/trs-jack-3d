@@ -27,7 +27,7 @@
 | 種別 | コマンド | 結果 |
 |---|---|---|
 | 型検査 | `npm run typecheck` | **エラー 0**（`src` / `scripts` / `test`） |
-| 単体テスト | `npm run test` | **1105 件**（内訳は `artifacts/test_counts.json`。`npm run test:count` で更新） |
+| 単体テスト | `npm run test` | **1169 件**（内訳は `artifacts/test_counts.json`。`npm run test:count` で更新） |
 | 空振り検査 | `npm run check:vacuity` | skip 0 件・件数の減少なし（→ [CONTRIBUTING §7](CONTRIBUTING.html)） |
 | 成果物の検証 | `npm run validate:profiles` | **11 件すべて適合**（schema = ajv draft-07。うち 1 件は schema を持たず意味規則だけ） |
 | 入力の独立検算 | `npm run verify:release-source-inputs` | **入力 29 件すべて一致**・記録漏れ 0 件（**自己申告**。受け手は同梱の script で自分で回すこと） |
