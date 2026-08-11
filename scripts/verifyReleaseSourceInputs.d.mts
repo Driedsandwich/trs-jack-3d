@@ -60,3 +60,6 @@ export declare function readArchiveBuffer(buf: Buffer, o: { gzip: boolean }): Ar
  * `arrayBuffer()` は全部読み終えてから返すので、上限に届いた時点で止められない。
  */
 export declare function readBodyLimited(res: Response, limit: number): Promise<Buffer>
+
+/** この道具が出しうる status の全部（v0.6.11・外部監査 §7） */
+export declare const CLI_STATUSES: readonly string[]

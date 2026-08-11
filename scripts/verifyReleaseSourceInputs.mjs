@@ -162,8 +162,45 @@ import { join, resolve } from 'node:path'
  *       冪等な directory の重複を拒んでいた。
  *       止めた理由すべてに `stableReasonCode` を付けた。
  *       **判定が変わる**ので版を上げる
+ *  16 … **範囲定義を manifest へ縛った (v0.6.11 P0-A)。**`--scope` を中身も確かめずに
+ *       受けていたので、**範囲を狭めるだけで「漏れ 0 件」を作れた**（存在しない scope でも
+ *       `status OK / exit 0`）。`inputScope.sha256` と完全一致したときだけ信じる。
+ *       あわせて **`OK` を「必須の工程が全部終わったとき」だけ**にし、
+ *       できていない工程があれば `VERIFICATION_INCOMPLETE`（exit 1）と言う。
+ *       古い tag 用に `--allow-unpinned-scope` を足したが、**それでも `OK` にはならない。**
+ *       **名前が空の member を黙って捨てていた (P0-B)。**`PATH_EMPTY_NAME` /
+ *       `EXTENSION_NAME_EMPTY` で止める（実測: bsdtar は skip・python は落ちる）。
+ *       **directory source の FIFO・socket・device が一覧から消えていた (P0-C)。**
+ *       **切れている archive を 2 形受理していた**（本体の詰め物が欠けている・
+ *       終端の印を見ないまま尽きる。**こちらで見つけた**）。
+ *       **P1**: metadata だけの PAX が GNU `L`/`K` と共存できるようにした
+ *       （`path` を持つときだけ競合とする）。ディレクトリ側の上限を
+ *       `ARCHIVE_UNSUPPORTED` へそろえ、gzip 失敗を `GZIP_DECODE_FAILED` にした。
+ *       **判定が変わる**ので版を上げる
  */
-export const TOOL_VERSION = 15
+export const TOOL_VERSION = 16
+
+/**
+ * **この道具が出しうる status の全部（v0.6.11・外部監査 §7）。**
+ *
+ * v0.6.10 まで、試験はこの一覧を**ソースの正規表現から拾って**いた。
+ * `status` の書き方を三項演算子へ変えただけで拾えなくなり、
+ * **「増えたら気づく」はずの検査が黙って空振りした。**一覧は道具が名乗る。
+ *
+ *   OK                    … 必須の工程が全部終わり、全件一致した     (exit 0)
+ *   MISMATCH              … 不一致・記録漏れ・自己参照がある          (exit 1)
+ *   VERIFICATION_INCOMPLETE … 必須の工程を実行できていない            (exit 1)
+ *   ARCHIVE_INVALID       … source が壊れている／曖昧                (exit 2)
+ *   ARCHIVE_UNSUPPORTED   … 展開はできるが、この道具の範囲の外        (exit 2)
+ *   SOURCE_UNAVAILABLE    … source を取れなかった                    (exit 2)
+ *   MANIFEST_UNAVAILABLE  … manifest を読めなかった                  (exit 2)
+ *   NOTHING_TO_VERIFY     … 入力 0 件で何も見ていない                (exit 2)
+ */
+export const CLI_STATUSES = [
+  'OK', 'MISMATCH', 'VERIFICATION_INCOMPLETE',
+  'ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED',
+  'SOURCE_UNAVAILABLE', 'MANIFEST_UNAVAILABLE', 'NOTHING_TO_VERIFY',
+]
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -182,6 +219,12 @@ const REPO = argOf('repo', 'Driedsandwich/trs-jack-3d')
  */
 const SCOPE_FILE = 'source-input-scope.v1.json'
 const SCOPE_OVERRIDE = argOf('scope')
+/**
+ * **manifest に縛られていない範囲定義を、明示的に許す（v0.6.11・外部監査 §1）。**
+ * v0.3.0 より前の tag は manifest に `inputScope` を持たないので、ここを通さないと検算できない。
+ * **許しても `OK` にはならない**——縛られていない範囲では「範囲の中に漏れが無い」と言えないため。
+ */
+const ALLOW_UNPINNED_SCOPE = argv.includes('--allow-unpinned-scope')
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
@@ -195,8 +238,35 @@ const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
  *
  * 各出口へ手で足すと、出口が増えたときにまた忘れる。**通り道で入れる。**
  */
+/**
+ * **受け手向けの結果は、それ自身が何であるかを名乗る（v0.6.11・外部監査 §7）。**
+ *
+ * v0.6.10 まで、この出力に契約は無かった。受け手は**こちらが回した記録**
+ * （`source-verification-result.v1`）の説明を CLI の status 一覧として読むしかなく、
+ * その 2 つは**出る status が違う**（作業ツリーを読む経路では archive 系が出ない）。
+ * 別の schema にして、**出力そのものに `schemaId` を入れる。**
+ *
+ * `exitCode` も入れる——**JSON を保存したあとで終了コードを復元できない**ため。
+ */
 const done = (payload, code) => {
-  console.log(JSON.stringify({ toolVersion: TOOL_VERSION, ...payload }, null, 1))
+  console.log(JSON.stringify({
+    schemaVersion: 1,
+    schemaId: 'trs-jack-3d-source-verifier-cli-result.v1',
+    kind: 'source-verifier-cli-result',
+    toolVersion: TOOL_VERSION,
+    exitCode: code,
+    /** 止めた理由の変わらない名前。`OK` / `MISMATCH` では null */
+    stableReasonCode: payload.stableReasonCode ?? null,
+    /** **この道具が受け入れる archive の範囲。**受け手が「何を通す道具か」を機械で読める */
+    archivePolicy: {
+      acceptedHeaderFormats: ['posix-ustar', 'old-gnu', 'v7', 'unknown'],
+      prefixUsedOnlyFor: 'posix-ustar',
+      acceptedTypeflags: [...SUPPORTED_TYPEFLAGS].sort(),
+      endOfArchiveConvention: 'two-zero-blocks; trailing partial block after the terminator is ignored',
+      limits: TAR_LIMITS,
+    },
+    ...payload,
+  }, null, 1))
   process.exit(code)
 }
 
@@ -1120,6 +1190,8 @@ function readTar(buf) {
   let total = 0
   /** この archive に出たヘッダ形式（受け手が「何を読んだか」を後から見るため・v0.6.9） */
   const headerFormats = new Set()
+  /** 終端の zero block を見たか。**見ずに尽きたら切れている**（v0.6.11） */
+  let sawTerminator = false
 
   while (off + 512 <= buf.length) {
     const header = buf.subarray(off, off + 512)
@@ -1154,6 +1226,7 @@ function readTar(buf) {
           )
         }
       }
+      sawTerminator = true
       break
     }
 
@@ -1242,8 +1315,23 @@ function readTar(buf) {
     if (dataStart + size > buf.length) {
       throw new ArchiveInvalid('entry のデータが archive の末尾を超えている', { entryIndex: entries, size, stableReasonCode: 'ENTRY_BODY_TRUNCATED' })
     }
+    /**
+     * **本体は詰め物まで揃っていること（v0.6.11・こちらで見つけた）。**
+     *
+     * v0.6.10 は生のサイズ分だけを見ていたので、**最後の block が途中で切れている
+     * archive を受理**していた。実測（2026-08-11）: 32 入力の source の末尾を 511 バイト
+     * 削ると、検算 v15 は `status OK / 32 of 32`（files 86）と言うのに、
+     * **bsdtar は `Truncated input file`・python は `ReadError` で 2 実装とも拒む。**
+     */
+    const padded = dataStart + Math.ceil(size / 512) * 512
+    if (padded > buf.length) {
+      throw new ArchiveInvalid(
+        'entry の本体が詰め物まで揃っていない（archive が途中で切れている）',
+        { entryIndex: entries, size, need: padded - buf.length, stableReasonCode: 'ENTRY_BODY_TRUNCATED' },
+      )
+    }
     const data = buf.subarray(dataStart, dataStart + size)
-    off = dataStart + Math.ceil(size / 512) * 512
+    off = padded
 
     /**
      * **PAX は中身を拾わないうえに、意味を変える鍵があれば止める（v0.6.3・外部監査 P0-1）。**
@@ -1290,10 +1378,19 @@ function readTar(buf) {
        * **どれが正しいかを決める立場にない。**正しい source archive にこの形は出てこないので、
        * 「実装間で結末が割れるもの」は読まずに止める。
        */
-      if (type === 'x' && longNameFrom) {
+      /**
+       * **競合と言えるのは、その PAX が実際に名前を上書きするときだけ（v0.6.11・外部監査 P1-A）。**
+       *
+       * v0.6.10 は `x` が来ただけで落としていたので、
+       * **`mtime` しか持たない PAX が GNU `L` のあとに来る正当な形**まで拒んでいた。
+       * 実測（2026-08-11）: GNU L の長い名前 → `x: mtime=1`（path なし）→ 実体 で、
+       * **bsdtar も python も同じ長い名前を作る。**
+       * **`path` を持たない PAX は名前に触らない**ので、待っている `L` と共存できる。
+       */
+      if (type === 'x' && longNameFrom && recs.has('path')) {
         throw new ArchiveInvalid(
-          `同じ entry に名前の上書きが 2 つ効いている（${longNameFrom} のあとに PAX）`,
-          { entryIndex: entries , stableReasonCode: 'EXTENSION_OVERRIDE_CONFLICT' },
+          `同じ entry に名前の上書きが 2 つ効いている（${longNameFrom} のあとに PAX path）`,
+          { entryIndex: entries, stableReasonCode: 'EXTENSION_OVERRIDE_CONFLICT' },
         )
       }
       /**
@@ -1413,6 +1510,8 @@ function readTar(buf) {
      * **この repo の実物では踏まなかった**（最長パス 95 文字で long name 機構を使わない）。
      * 「実物が通る」だけでは、過剰拒否は見つけられない。
      */
+    /** 空になった原因を言えるように、**戻す前に**控える（v0.6.11） */
+    const nameCameFrom = longNameFrom
     longName = null
     longNameFrom = null
     /** この member 用に控えてから戻す（下の hardlink 検査で使う） */
@@ -1422,7 +1521,36 @@ function readTar(buf) {
     /** **`x` が待っていた member はこれ。**`L` / `K` は member ではないのでここへ来ない */
     pendingPax = null
 
-    if (!rawName) continue
+    /**
+     * **名前が空の member は捨てずに止める（v0.6.11・外部監査 P0-B）。**
+     *
+     * v0.6.10 まで `continue` で**黙って飛ばして**いた。32 入力の source へ混ぜると
+     * `status OK / 32 of 32`。実測（2026-08-11）:
+     *
+     * ```
+     * 生ヘッダの名前が空 ／ GNU L の中身が長さ 0
+     *   検算 v15  READ — files 85（その member は一覧に出ない）
+     *   bsdtar    tar: Archive entry has empty or unreadable filename ... skipping
+     *   python    IsADirectoryError（空の名前を展開先そのものとして開く）
+     * ```
+     *
+     * **飛ばした member は「無かったもの」になる。**上書き機構で空にできる以上、
+     * これは「一覧に出ないものを混ぜる」経路そのものである。
+     * **どこで空になったか**で名前を分ける——受け手が原因を追えるように。
+     */
+    if (!rawName) {
+      throw new ArchiveInvalid(
+        nameCameFrom
+          ? `名前の上書き（${nameCameFrom}）の結果が空になっている`
+          : '名前が空の entry がある',
+        {
+          entryIndex: entries,
+          type,
+          from: nameCameFrom ?? 'raw header',
+          stableReasonCode: nameCameFrom ? 'EXTENSION_NAME_EMPTY' : 'PATH_EMPTY_NAME',
+        },
+      )
+    }
 
     /**
      * **すべての entry 型に、同じパス検査を先にかける（v0.6.3・外部監査 P0-2）。**
@@ -1744,6 +1872,22 @@ function readTar(buf) {
     )
   }
   /**
+   * **終端の印を見ないまま尽きたなら、切れている（v0.6.11・こちらで見つけた）。**
+   *
+   * 上のループは `off + 512 <= buf.length` で回るので、**512 に満たない端数が残ると黙って抜ける。**
+   * 実測（2026-08-11）: 終端 zero block を持たない source の末尾に 100 バイトを足すと、
+   * 検算 v15 は `OK 32/32`、**bsdtar は `Truncated tar archive`**（python は通す）＝割れる。
+   *
+   * 終端の zero block を見て抜けた場合は `sawTerminator` が立つので、ここへは来ない。
+   * **終端のあとの端数は別の話**——2 実装とも読み飛ばすので、そちらは受理したままにする。
+   */
+  if (!sawTerminator && off < buf.length) {
+    throw new ArchiveInvalid(
+      '終端の印を見ないまま archive が尽きている（切れている）',
+      { leftoverBytes: buf.length - off, stableReasonCode: 'END_OF_ARCHIVE_MISSING' },
+    )
+  }
+  /**
    * **鍵に関係なく、`x` のあとに member が無いまま終わるのを拒む（v0.6.8・外部監査 P0-B）。**
    * 上の 2 つは `path` / `linkpath` を持つ `x` しか捕まえない。
    * `mtime` だけの `x` を末尾に置く形が素通りしていた（実測: 2 実装とも拒む archive）。
@@ -1978,20 +2122,38 @@ function loadFromDir(dir) {
       const st = lstatSync(join(abs, r))
       if (st.isSymbolicLink()) { skippedLinks.push(r); continue }
       if (st.isDirectory()) { walk(r); continue }
-      if (!st.isFile()) continue
+      /**
+       * **通常ファイル以外を黙って飛ばさない（v0.6.11・外部監査 P0-C）。**
+       *
+       * v0.6.10 は `if (!st.isFile()) continue` で**FIFO・socket・device を落として**いた。
+       * 実測（2026-08-11）: 範囲の中に `src/model/sneaky.fifo` を置くと、
+       * 検算 v15 は `status OK / 未記録探索 performed:true / 候補 0 件`——
+       * **探したと言いながら、その名前は出力に一度も出てこない。**
+       *
+       * symlink は archive 側（typeflag 2）と同じく「読み飛ばしたと記録する」。
+       * それ以外は**この道具が中身を決められない型**なので、archive 側の許可表と同じく止める。
+       */
+      if (!st.isFile()) {
+        const kind = st.isFIFO() ? 'fifo' : st.isSocket() ? 'socket'
+          : st.isCharacterDevice() ? 'chardev' : st.isBlockDevice() ? 'blockdev' : 'unknown'
+        throw new ArchiveUnsupported(
+          `扱いを決めていない種別のノードがある（${kind}）: ${r}`,
+          { name: r, nodeKind: kind, stableReasonCode: 'ENTRY_TYPE_UNSUPPORTED' },
+        )
+      }
 
       if (++count > TAR_LIMITS.maxEntries) {
-        throw new ArchiveInvalid(`ファイルが多すぎる (> ${TAR_LIMITS.maxEntries})`, { count, stableReasonCode: 'LIMIT_ENTRY_COUNT_UNSUPPORTED' })
+        throw new ArchiveUnsupported(`ファイルが多すぎる (> ${TAR_LIMITS.maxEntries})`, { count, stableReasonCode: 'LIMIT_ENTRY_COUNT_UNSUPPORTED' })
       }
       if (r.length > TAR_LIMITS.maxPathLength) {
-        throw new ArchiveInvalid(`パスが長すぎる (${r.length} > ${TAR_LIMITS.maxPathLength})`, { name: r.slice(0, 80), stableReasonCode: 'PATH_TOO_LONG_UNSUPPORTED' })
+        throw new ArchiveUnsupported(`パスが長すぎる (${r.length} > ${TAR_LIMITS.maxPathLength})`, { name: r.slice(0, 80), stableReasonCode: 'PATH_TOO_LONG_UNSUPPORTED' })
       }
       if (st.size > TAR_LIMITS.maxEntryBytes) {
-        throw new ArchiveInvalid(`ファイルが大きすぎる (${st.size} > ${TAR_LIMITS.maxEntryBytes})`, { name: r, size: st.size, stableReasonCode: 'LIMIT_ENTRY_BYTES_UNSUPPORTED' })
+        throw new ArchiveUnsupported(`ファイルが大きすぎる (${st.size} > ${TAR_LIMITS.maxEntryBytes})`, { name: r, size: st.size, stableReasonCode: 'LIMIT_ENTRY_BYTES_UNSUPPORTED' })
       }
       total += st.size
       if (total > TAR_LIMITS.maxTotalBytes) {
-        throw new ArchiveInvalid(`総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total, stableReasonCode: 'LIMIT_TOTAL_BYTES_UNSUPPORTED' })
+        throw new ArchiveUnsupported(`総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total, stableReasonCode: 'LIMIT_TOTAL_BYTES_UNSUPPORTED' })
       }
       // **読むのは上限を全部通ったあと。**判定より先に載せない
       files.set(r, readFileSync(join(abs, r)))
@@ -2177,6 +2339,14 @@ if (RUN_AS_CLI) {
     }
     done({
       status: kind,
+      /**
+       * **止めた理由の名前を、いちばん外まで通す（v0.6.11・外部監査 §7）。**
+       * `readArchiveBuffer` は付けていたのに、CLI の出力へ渡していなかった——
+       * **受け手が機械で分岐できるのは、ここに出たものだけ。**
+       */
+      stableReasonCode: loaded.stableReasonCode
+        ?? loaded.detail?.stableReasonCode
+        ?? `${kind}_OTHER`,
       reason: loaded.error,
       detail: loaded.detail ?? null,
       manifest: MANIFEST,
@@ -2227,25 +2397,70 @@ if (RUN_AS_CLI) {
    *
    * **見つからなければ既定値へ戻さない。**戻すと範囲が狭いまま黙って動く——塞いだはずの穴に戻る。
    */
+  /**
+   * **範囲定義は manifest に縛る（v0.6.11・外部監査 P0-A）。**
+   *
+   * v0.6.10 まで、`--scope` は**中身を一切確かめずに**受け取っていた。
+   * manifest は `inputScope.sha256` を持っているのに、**照合していなかった。**実測（2026-08-11）:
+   *
+   * ```
+   * --scope /nonexistent/s.json     status OK / exit 0（performed:false なのに OK）
+   * src/model を除いた scope        status OK / 未記録候補 0（範囲を狭めれば何でも隠せる）
+   * ```
+   *
+   * **範囲を差し替えられるなら、「範囲の中に記録漏れは無い」は何も言っていない。**
+   * 記録された sha256 と**完全一致**したときだけ、その範囲を信じる。
+   */
   function loadScope() {
-    if (SCOPE_OVERRIDE) {
-      try {
-        return { scope: JSON.parse(readFileSync(resolve(ROOT, SCOPE_OVERRIDE), 'utf8')), origin: `override:${SCOPE_OVERRIDE}` }
-      } catch (e) {
-        return { error: `--scope ${SCOPE_OVERRIDE} を読めない: ${e.message}` }
+    const pinned = manifest.inputScope?.sha256 ?? null
+    const bind = (text, origin) => {
+      const actual = createHash('sha256').update(text).digest('hex')
+      if (pinned && actual !== pinned) {
+        return {
+          error: `範囲定義が manifest の記録と違う（${origin}）`,
+          detail: { expectedSha256: pinned, actualSha256: actual, origin },
+          code: 'SCOPE_SHA256_MISMATCH',
+        }
       }
+      let scope
+      try { scope = JSON.parse(text) } catch (e) {
+        return { error: `範囲定義を parse できない（${origin}）: ${e.message}`, code: 'SCOPE_UNPARSEABLE' }
+      }
+      /** **形も見る。**JSON として読めても、別物なら範囲を名乗れない */
+      if (!scope || typeof scope !== 'object' || !Array.isArray(scope.recursiveDirectories)) {
+        return { error: `範囲定義の形が違う（${origin}）: recursiveDirectories が無い`, code: 'SCOPE_SCHEMA_INVALID' }
+      }
+      /**
+       * **manifest が範囲を記録していないなら、その範囲は誰にも縛られていない（v0.6.11・監査 §1）。**
+       * v0.3.0 より前の tag はここに当たる。**黙って受けると、範囲を差し替え放題になる。**
+       * 明示的に `--allow-unpinned-scope` を渡したときだけ先へ進み、
+       * それでも `OK` にはしない（下の `incomplete` へ入る）。
+       */
+      if (!pinned && !ALLOW_UNPINNED_SCOPE) {
+        return {
+          error: `manifest が範囲定義を記録していない（${origin}）。`
+            + '古い tag を検算するなら --allow-unpinned-scope を明示すること（結果は OK にならない）',
+          code: 'SCOPE_NOT_PINNED',
+        }
+      }
+      return { scope, origin, boundTo: pinned ? 'manifest.inputScope.sha256' : null, sha256: actual, unpinned: !pinned }
+    }
+    if (SCOPE_OVERRIDE) {
+      let text
+      try { text = readFileSync(resolve(ROOT, SCOPE_OVERRIDE), 'utf8') } catch (e) {
+        return { error: `--scope ${SCOPE_OVERRIDE} を読めない: ${e.message}`, code: 'SCOPE_UNREADABLE' }
+      }
+      return bind(text, `override:${SCOPE_OVERRIDE}`)
     }
     const buf = src.get(SCOPE_FILE)
-    if (buf === undefined)
+    if (buf === undefined) {
       return {
         error: `検証対象の source に ${SCOPE_FILE} が無い`
           + '（v0.3.0 以前の tag には入っていない）。--scope <file> で明示すれば検出できる。',
+        code: 'SCOPE_ABSENT',
       }
-    try {
-      return { scope: JSON.parse(buf.toString('utf8')), origin: `source:${SCOPE_FILE}` }
-    } catch (e) {
-      return { error: `${SCOPE_FILE} を parse できない: ${e.message}` }
     }
+    return bind(buf.toString('utf8'), `source:${SCOPE_FILE}`)
   }
 
   const recordedPaths = new Set((manifest.inputFiles ?? []).map((f) => f.path))
@@ -2300,7 +2515,22 @@ if (RUN_AS_CLI) {
 
   const counts = results.reduce((m, r) => ({ ...m, [r.outcome]: (m[r.outcome] ?? 0) + 1 }), {})
   const bad = results.filter((r) => r.outcome !== 'MATCH')
-  const status = bad.length || extra.length || selfReferencing.length ? 'MISMATCH' : 'OK'
+  /**
+   * **`OK` は「必須の工程が全部終わった」ときだけ（v0.6.11・外部監査 P0-A / §7）。**
+   *
+   * v0.6.10 まで、`status` は**不一致が無いこと**しか見ていなかった。
+   * だから**記録漏れの探索をしていなくても `OK`** になった——
+   * 受け手には「探して見つからなかった」と読める。実測: 存在しない `--scope` で `OK / exit 0`。
+   *
+   * **やらなかったことは、合格ではない。**やれなかった工程があるなら
+   * `VERIFICATION_INCOMPLETE` と言う（exit も 0 にしない）。
+   */
+  const incomplete = scope
+    ? (loadedScope.unpinned ? ['scope-not-pinned-to-manifest'] : [])
+    : ['unrecorded-input-detection']
+  const status = bad.length || extra.length || selfReferencing.length
+    ? 'MISMATCH'
+    : incomplete.length ? 'VERIFICATION_INCOMPLETE' : 'OK'
 
   /**
    * **記録漏れの検出をやったのか、やらなかったのか。**
@@ -2317,10 +2547,15 @@ if (RUN_AS_CLI) {
         requiredExactFiles: (scope.requiredExactFiles ?? []).length,
         allowedGeneratedInputs: (scope.allowedGeneratedInputs ?? []).length,
         excludedOutputs: scope.excludedOutputs ?? [],
+        /** **どの記録に縛られているか。**null なら manifest が範囲を記録していない古い版 */
+        boundTo: loadedScope.boundTo,
+        scopeSha256: loadedScope.sha256,
       }
     : {
         performed: false,
         scopeSource: null,
+        stableReasonCode: loadedScope.code ?? 'SCOPE_UNAVAILABLE',
+        detail: loadedScope.detail ?? null,
         reason: loadedScope.error,
         note: '**記録漏れの検出はしていない。**既定の範囲へ戻すことは意図的にしていない——'
           + '狭い範囲のまま黙って通すのが、この範囲定義で塞いだ穴そのものだから。'
@@ -2351,6 +2586,14 @@ if (RUN_AS_CLI) {
       selfReferencingInputs: selfReferencing.length,
     },
     unrecordedInputDetection: detection,
+    /** **終わっていない必須工程。**空でなければ `OK` にはならない（v0.6.11） */
+    incompletePhases: incomplete,
+    /**
+     * **先頭 1 階層を剥がしたかどうか（v0.6.11・外部監査 §7）。**
+     * GitHub の tarball は `trs-jack-3d-<sha>/` を頭に持つ。剥がした事実を出さないと、
+     * 受け手は「manifest のパスと source のパスが一致した」の意味を確かめられない。
+     */
+    rootTransform: { stripped: loaded.rootStripped ?? null },
     mismatches: bad,
     unrecordedInputCandidates: extra,
     /** 出力を入力として記録している＝artifact を作り直すたびに digest が変わる */
