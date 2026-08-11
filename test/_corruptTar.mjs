@@ -38,8 +38,15 @@ export function header(o) {
   octal(o.mtime ?? 0, 12).copy(h, 136)
   h.write(o.type ?? '0', 156, 1, 'ascii')
   pad(o.linkname ?? '', 100).copy(h, 157)
-  pad('ustar', 6).copy(h, 257)
-  pad('00', 2).copy(h, 263)
+  /**
+   * **magic + version を丸ごと差し替えられるようにする（v0.6.9・外部監査 P0-A）。**
+   * 既定は POSIX ustar（`ustar\0` + `00`）。old GNU は `ustar␠␠\0`、V7 は全 NUL。
+   * ここを固定していたので、**形式ごとの読み分けを一度も試験していなかった。**
+   */
+  if (o.magic8) pad(o.magic8, 8).copy(h, 257)
+  else { pad('ustar', 6).copy(h, 257); pad('00', 2).copy(h, 263) }
+  pad(o.uname ?? '', 32).copy(h, 265)
+  pad(o.gname ?? '', 32).copy(h, 297)
   pad(o.prefix ?? '', 155).copy(h, 345)
 
   // checksum は「checksum 欄を空白 8 個で埋めた状態」の総和
@@ -407,11 +414,67 @@ export const paxCases = () => {
       { name: `${TOP}/PaxHeaders/0/f`, type: 'x', data: rec('path', `${TOP}/${'v'.repeat(120)}/`) },
       { name: `${TOP}/truncated`, data: 'A' },
     ]) },
-    /** symlink が / で終わる形。**手元の 2 実装は同じ木を作る**（実測の外にある判断） */
-    { id: 'pax-symlink-trailing-slash', tar: buildTar([
+    /**
+     * symlink が / で終わる形。**2 実装とも同じ symlink を作る**ので通す（v0.6.9 で `safe` へ）。
+     * v0.6.8 は「directory 以外は全部拒む」で、**実測を追い越した過剰拒否**だった。
+     */
+    { id: 'pax-symlink-trailing-slash', ok: true, tar: buildTar([
       { name: `${TOP}/t.txt`, data: 'T' },
       { name: `${TOP}/PaxHeaders/0/l`, type: 'x', data: rec('path', `${TOP}/${'v'.repeat(120)}/`) },
       { name: `${TOP}/truncated`, type: '2', linkname: 't.txt' },
+    ]) },
+    { id: 'pax-hardlink-trailing-slash', ok: true, tar: buildTar([
+      { name: `${TOP}/t.txt`, data: 'T' },
+      { name: `${TOP}/PaxHeaders/0/h`, type: 'x', data: rec('path', `${TOP}/${'v'.repeat(120)}/`) },
+      { name: `${TOP}/truncated`, type: '1', linkname: `${TOP}/t.txt` },
+    ]) },
+    /**
+     * **長さ 0 の PAX 値（v0.6.9・外部監査 P0-C）。**
+     *
+     * `path=` は POSIX では「上書きを消す」だが、実測（2026-08-11）で**実装が割れる**:
+     * bsdtar は生ヘッダの名前へ戻して展開し、python は空の名前として `IsADirectoryError`。
+     * v0.6.8 は空文字を名前として採り、**member を丸ごと落として `status OK` と言っていた。**
+     */
+    { id: 'pax-zero-length-path', tar: buildTar([
+      { name: `${TOP}/a.txt`, data: 'A' },
+      { name: `${TOP}/PaxHeaders/0/r`, type: 'x', data: rec('path', '') },
+      { name: `${TOP}/raw.txt`, data: 'R' },
+    ]) },
+    { id: 'pax-zero-length-linkpath', tar: buildTar([
+      { name: `${TOP}/a.txt`, data: 'A' },
+      { name: `${TOP}/PaxHeaders/0/l`, type: 'x', data: rec('linkpath', '') },
+      { name: `${TOP}/l`, type: '2', linkname: `${TOP}/a.txt` },
+    ]) },
+    /**
+     * **それ以外の鍵の長さ 0 は通す。**実測: 2 実装とも同じ木を作るのに v0.6.8 は拒んでいた
+     * ——**監査が挙げていない過剰拒否 2 件**（値の綴り検査を長さ 0 にも掛けていた）。
+     */
+    { id: 'pax-zero-length-mtime', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-zero-length-uid', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('uid', '') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /**
+     * **同一ヘッダ内の重複鍵は後勝ち（v0.6.9・外部監査 P1-A）。**
+     * POSIX の定めどおりで、実測でも 6 鍵すべて 2 実装が一致して後の値を採る。
+     * v0.6.8 はここを拒んでいた（過剰拒否）。**別のヘッダをまたぐ競合は今までどおり止める。**
+     */
+    { id: 'pax-duplicate-path-same-header', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('path', `${TOP}/one.txt`) + rec('path', `${TOP}/two.txt`) },
+      { name: `${TOP}/ignored.txt`, data: 'D' },
+    ]) },
+    { id: 'pax-duplicate-mtime-same-header', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '1') + rec('mtime', '2') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-duplicate-linkpath-same-header', ok: true, tar: buildTar([
+      { name: `${TOP}/a.txt`, data: 'A' },
+      { name: `${TOP}/b.txt`, data: 'B' },
+      { name: `${TOP}/PaxHeaders/0/l`, type: 'x', data: rec('linkpath', `${TOP}/a.txt`) + rec('linkpath', `${TOP}/b.txt`) },
+      { name: `${TOP}/l`, type: '2', linkname: `${TOP}/a.txt` },
     ]) },
     /**
      * **先頭ゼロは通す（P1-B・こちらの過剰拒否）。**
@@ -469,6 +532,47 @@ export const entryTypeCases = () => [
   { id: 'hardlink-under-scope', ok: true, tar: buildTar([
     { name: `${TOP}/a.txt`, data: 'A' },
     { name: `${TOP}/src/model/hl.ts`, type: '1', linkname: `${TOP}/a.txt` },
+  ]) },
+  /**
+   * **知らない型は素通りしていた（v0.6.9・外部監査 P0-B）。**
+   *
+   * v0.6.8 までの検査は `7`/`S`/`D`/`M`/`N` を並べた**除外表**だったので、
+   * 表に無い型は `files` に入らないまま `inventory` にだけ載って通っていた。実測（2026-08-11）:
+   *
+   * ```
+   * typeflag Z / 空白（本体 5 バイト）を 32 入力の source へ足す
+   *   検算 v13  status OK ／ 32 of 32 ／ files 85・inventory 86
+   *   bsdtar    exit 0 — 5 バイトの通常ファイルを作る
+   *   python    同じ
+   * ```
+   *
+   * **範囲の外（`docs/` の下）に置くと、未記録入力の探索にも掛からない。**
+   */
+  { id: 'typeflag-Z-unknown', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/docs/unknown-Z.bin`, type: 'Z', data: 'ZDATA' },
+  ]) },
+  { id: 'typeflag-space-unknown', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/docs/unknown-space.bin`, type: ' ', data: 'SDATA' },
+  ]) },
+  { id: 'typeflag-lowercase-vendor', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/docs/vendor.bin`, type: 'z', data: 'VDATA' },
+  ]) },
+  /**
+   * device と FIFO。**中身を持つファイルではない**ので許可表に載せない。
+   * 実測（2026-08-11）: device は 2 実装とも作れず（権限）、FIFO は 2 実装とも作る。
+   * **FIFO を作る**ことが分かったので、木を歩く試験の側も直した
+   * （`readFileSync` が書き手を待って**永久に止まる**——例外ではないので try では捕まらない）。
+   */
+  { id: 'typeflag-3-chardev', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/docs/dev0`, type: '3' },
+  ]) },
+  { id: 'typeflag-6-fifo', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/docs/fifo0`, type: '6' },
   ]) },
 ]
 
@@ -887,6 +991,28 @@ export const rootStripCases = () => [
     { name: TOP, type: '1', linkname: `${TOP}/src/model/a.ts` },
   ]) },
   /**
+   * **末尾スラッシュつきの symlink を root に置く（v0.6.9・こちらで見つけた）。**
+   *
+   * v0.6.9 でリンクの末尾スラッシュを許したとき、
+   * 「末尾に / がある」と「directory である」を**同じ変数で持っていた**ので、
+   * `TOP/` という名前の symlink が
+   * `stripTopLevel` の「頭は directory か」の検査を**directory として通り抜けた。**
+   * 変数を 2 つに分けて塞いだ。**監査の指摘には無い**（過剰拒否を直した副作用で開いた穴）。
+   */
+  { id: 'root-is-symlink-trailing-slash', tar: buildTar([
+    { name: `${TOP}/`, type: '2', linkname: 'elsewhere' },
+    { name: `${TOP}/src/model/a.ts`, data: 'A' },
+  ]) },
+  /**
+   * **子を持たない形（上と分けてある理由）。**
+   * 子があると**祖先の型の検査**が先に落とすので、
+   * `stripTopLevel` の「頭は directory か」だけを通る材料が別に要る。
+   * 変異試験でそれが分かった——上の材料だけでは、この行を外しても落ちない。
+   */
+  { id: 'root-is-symlink-trailing-slash-only', tar: buildTar([
+    { name: `${TOP}/`, type: '2', linkname: 'elsewhere' },
+  ]) },
+  /**
    * **正当な形は通す。**GitHub の tarball は root をディレクトリ entry として持つ。
    * mode に実行 bit を入れる——**644 のままだと展開した木へ入れず、
    * 「oracle が読めない」を「欠陥」と読み違える**（実際に一度そうなった）。
@@ -942,9 +1068,23 @@ export const rawFieldCases = () => {
     id: `raw-${name}-not-octal`,
     tar: wrap(at({ name: `${TOP}/a.txt`, size: 1 }, pos, len, `abc\0${' '.repeat(len - 4)}`), 'A'),
   })
+  /**
+   * **生ヘッダの `uname` / `gname` に不正な UTF-8（v0.6.9・外部監査 P1-C）。**
+   *
+   * PAX 側（`pax-uname-invalid-utf8`）は v0.6.7 から見ているが、
+   * **固定長ヘッダの 265..296 / 297..328 は一度も試していなかった。**
+   * v0.6.7 の実測で **libarchive は locale 変換で落ち、GNU tar は通す**ことが分かっているので、
+   * ここは **platform で結末が変わりうる**。両 matrix で回して表と突き合わせる。
+   */
+  const badText = (name, pos, len) => ({
+    id: `raw-${name}-invalid-utf8`,
+    ok: true,
+    tar: wrap(at({ name: `${TOP}/a.txt`, size: 1 }, pos, len, '\xff\xfe user'), 'A'),
+  })
   return [
     junk('mode', 100, 8), junk('uid', 108, 8), junk('gid', 116, 8), junk('mtime', 136, 12),
     junk('devmajor', 329, 8),
+    badText('uname', 265, 32), badText('gname', 297, 32),
     /** checksum 欄: 8 進の頭だけ合っていて、そのあとが junk（前方一致だと通ってしまう） */
     { id: 'raw-cksum-octal-then-junk', tar: (() => {
       const h = header({ name: `${TOP}/a.txt`, size: 1 })
@@ -982,6 +1122,78 @@ export const rawFieldCases = () => {
   ]
 }
 
+/**
+ * **ヘッダ形式（magic + version）で 345..499 の意味が変わる（v0.6.9・外部監査 P0-A）。**
+ *
+ * v0.6.8 までは形式を確かめずに 345..499 を prefix として読んでいた。
+ * old GNU ではそこは atime/ctime/offset/sparse の領域で、実測（2026-08-11）:
+ *
+ * ```
+ * old GNU / V7 / 未知 magic ＋ 345..499 が非空
+ *   検算 v13  src/model/types.ts が「ある」（32 入力の source に混ぜると status OK / 32 of 32）
+ *   bsdtar    types.ts を root に作る（prefix を使わない）
+ *   python    src/model/types.ts を作る（prefix を使う）
+ * ```
+ *
+ * **形式そのものは拒まない**ので、`ok: true` の対照を同じ数だけ置く——
+ * 345..499 が空なら old GNU も V7 も未知 magic も 2 実装が同じ木を作る。
+ */
+const OLDGNU_MAGIC8 = Buffer.from('ustar  \0', 'latin1')
+const V7_MAGIC8 = Buffer.alloc(8)
+const UNKNOWN_MAGIC8 = Buffer.from('zzzzz\x0000', 'latin1')
+
+export const headerFormatCases = () => [
+  // --- 止める側: 形式が POSIX ustar でないのに 345..499 が非空 ---
+  { id: 'format-oldgnu-prefix', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: 'types.ts', prefix: `${TOP}/src/model`, data: 'TYPES', magic8: OLDGNU_MAGIC8 },
+  ]) },
+  { id: 'format-v7-prefix', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: 'types.ts', prefix: `${TOP}/src/model`, data: 'TYPES', magic8: V7_MAGIC8 },
+  ]) },
+  { id: 'format-unknown-magic-prefix', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: 'types.ts', prefix: `${TOP}/src/model`, data: 'TYPES', magic8: UNKNOWN_MAGIC8 },
+  ]) },
+  /** prefix ではなく sparse metadata が入っているだけの old GNU（345..499 が非空なら同じく止める） */
+  { id: 'format-oldgnu-sparse-region', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/b.txt`, prefix: '\x01\x02\x03', data: 'B', magic8: OLDGNU_MAGIC8 },
+  ]) },
+  // --- 通す側: 形式が何であれ 345..499 が空なら 2 実装とも同じ木 ---
+  { id: 'format-oldgnu-no-prefix', ok: true, tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/src/model/types.ts`, data: 'TYPES', magic8: OLDGNU_MAGIC8 },
+  ]) },
+  { id: 'format-v7-no-prefix', ok: true, tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/src/model/types.ts`, data: 'TYPES', magic8: V7_MAGIC8 },
+  ]) },
+  { id: 'format-unknown-magic-no-prefix', ok: true, tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/src/model/types.ts`, data: 'TYPES', magic8: UNKNOWN_MAGIC8 },
+  ]) },
+  /** POSIX ustar は prefix を使ってよい（対照・実物の GitHub tarball と同じ形） */
+  { id: 'format-posix-prefix', ok: true, tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: 'types.ts', prefix: `${TOP}/src/model`, data: 'TYPES' },
+  ]) },
+  /**
+   * **version 欄で prefix の可否を変えない（実測）。**
+   * `ustar\0` なら version が `00` / NUL NUL / 空白 2 個のどれでも 2 実装とも prefix を使う。
+   * **指示書の「`ustar\0` + `00` でのみ prefix」は、この 2 つを落とす。**
+   */
+  { id: 'format-ustar-nul-version-prefix', ok: true, tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: 'types.ts', prefix: `${TOP}/src/model`, data: 'TYPES', magic8: Buffer.from('ustar\x00\x00\x00', 'latin1') },
+  ]) },
+  { id: 'format-ustar-space-version-prefix', ok: true, tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: 'types.ts', prefix: `${TOP}/src/model`, data: 'TYPES', magic8: Buffer.from('ustar\x00  ', 'latin1') },
+  ]) },
+]
+
 /** 全部まとめて。**種類ごとに 4 個以上あることを test 側で確かめる** */
 export const allCases = () => ({
   pax: paxCases(),
@@ -996,4 +1208,5 @@ export const allCases = () => ({
   structural: structuralCases(),
   ancestor: ancestorCases(),
   rawField: rawFieldCases(),
+  headerFormat: headerFormatCases(),
 })
