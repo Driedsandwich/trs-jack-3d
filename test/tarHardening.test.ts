@@ -1,7 +1,7 @@
 /**
  * **信頼できない archive に対して parser が止まることを、実物の壊れた tar で試す。**
  *
- * 材料は `test/_corruptTar.mjs`（119 個・12 種類）。
+ * 材料は `test/_corruptTar.mjs`（146 個・13 種類）。
  * **変異は parser の外側から入れる。**parser の中の定数をいじると、
  * 「その定数を読んでいること」しか確かめられない。
  *
@@ -47,6 +47,11 @@ const EXPECTED: Record<string, Outcome> = {
   structural: 'invalid', // 中身を持てない型に本体がある形。正当な形だけ safe（下の個別指定）
   ancestor: 'invalid',   // 祖先が directory でない木。正当な木だけ safe（下の個別指定・v0.6.7）
   rawField: 'invalid',   // 生の USTAR 数値欄が壊れている形。正しい書き方だけ safe（v0.6.8）
+  /**
+   * ヘッダ形式と 345..499 の食い違い（v0.6.9）。**形式そのものは拒まない**ので、
+   * 「345..499 が空なら通す」側の材料を同じ数だけ置いてある（下の個別指定）。
+   */
+  headerFormat: 'invalid',
 }
 
 /**
@@ -183,7 +188,63 @@ const EXPECTED_BY_ID: Record<string, Outcome> = {
   'pax-two-local-x': 'invalid',                  // 実測: bsdtar exit 1（malformed pax）／ python は通す
   /** **P1-A: 末尾スラッシュは directory のときだけ** */
   'pax-regular-trailing-slash': 'invalid',       // 実測: bsdtar は directory・python は通常ファイル
-  'pax-symlink-trailing-slash': 'invalid',       // **手元の 2 実装は同じ木を作る**（実測の外にある判断）
+  /**
+   * **v0.6.9 で `invalid` から `safe` へ（外部監査 P1-B）。**
+   * v0.6.8 は「directory 以外は全部拒む」だったが、**実測を追い越していた。**
+   * symlink・hardlink の末尾スラッシュは 2 実装とも同じ木を作る（2026-08-11 実測）ので、
+   * 末尾スラッシュを 1 回だけ剥がして、剥がした名前で衝突と祖先の検査をやり直す。
+   */
+  'pax-symlink-trailing-slash': 'safe',
+
+  // -------------------------------------------------------------------------
+  // v0.6.9（外部監査 2026-08-11）
+  // -------------------------------------------------------------------------
+  /** **P0-B: 許可表に無い型。**実測: 2 実装とも中身つきの通常ファイルを作るのに数えていなかった */
+  'typeflag-Z-unknown': 'unsupported',
+  'typeflag-space-unknown': 'unsupported',
+  'typeflag-lowercase-vendor': 'unsupported',
+  'typeflag-3-chardev': 'unsupported',      // 実測: 2 実装とも権限が無くて作れない
+  'typeflag-6-fifo': 'unsupported',         // 実測: 2 実装とも FIFO を作る（中身を持つファイルではない）
+  /** **P0-C: 名前を消す長さ 0 の上書きは実装が割れる**（bsdtar は生ヘッダへ戻し python は空名） */
+  'pax-zero-length-path': 'invalid',
+  'pax-zero-length-linkpath': 'invalid',
+  /** **P0-A: 形式が POSIX ustar でないのに 345..499 が非空**（bsdtar は使わず python は使う） */
+  'format-oldgnu-prefix': 'invalid',
+  'format-v7-prefix': 'invalid',
+  'format-unknown-magic-prefix': 'invalid',
+  'format-oldgnu-sparse-region': 'invalid',
+  /**
+   * **止めてはいけないもの（v0.6.9）。**ここも全部、2 実装が一致することを実測してから置いた。
+   * `mtime=` と `uid=` は**監査が挙げていない過剰拒否**で、こちらの再現の途中で見つけた。
+   */
+  'pax-zero-length-mtime': 'safe',
+  'pax-zero-length-uid': 'safe',
+  'pax-duplicate-path-same-header': 'safe',
+  'pax-duplicate-mtime-same-header': 'safe',
+  'pax-duplicate-linkpath-same-header': 'safe',
+  'pax-hardlink-trailing-slash': 'safe',
+  'format-oldgnu-no-prefix': 'safe',        // **old GNU は GNU tar 自身の既定の出力形式**
+  'format-v7-no-prefix': 'safe',
+  'format-unknown-magic-no-prefix': 'safe',
+  'format-posix-prefix': 'safe',
+  'format-ustar-nul-version-prefix': 'safe',    // 指示書の「version は 00 のみ」だと落ちる
+  'format-ustar-space-version-prefix': 'safe',  // 同上
+  /**
+   * **P1-C: 生ヘッダの `uname`/`gname` が不正な UTF-8。**
+   * 検算器は名前に使わないので読まない。実測（macOS・2026-08-11）: 2 実装とも展開する。
+   * **libarchive は locale 変換で落ちうる**ので、両 matrix で回して表と突き合わせる
+   * （落ちるなら oracle 試験のほうが先に落ちる）。
+   */
+  'raw-uname-invalid-utf8': 'safe',
+  'raw-gname-invalid-utf8': 'safe',
+  /** **末尾スラッシュつきの root symlink**（過剰拒否を直した副作用で開いた穴・こちらで発見） */
+  'root-is-symlink-trailing-slash': 'invalid',
+  /**
+   * **頭 1 個しか無い archive は剥がす話にならない。**2 実装とも同じ木を作るので通す
+   * （v0.6.5 からの過剰拒否。**この材料を足したときに、この試験自身が見つけた**）。
+   */
+  'root-is-symlink-trailing-slash-only': 'safe',
+
   /** **止めてはいけないもの（v0.6.8）。**すべて 2 実装が一致して展開することを実測してから置いた */
   'pax-metadata-then-member': 'safe',
   'pax-dir-trailing-slash': 'safe',              // v0.6.7 は「空のパス要素」で落としていた
@@ -203,7 +264,7 @@ const EXPECTED_BY_ID: Record<string, Outcome> = {
   'trav-backslash': 'unsupported',
 }
 
-describe('tar 強化 ① 119 個すべてについて、どうなるかを実測する', () => {
+describe('tar 強化 ① 146 個すべてについて、どうなるかを実測する', () => {
   const table: { id: string, kind: string, outcome: string, files: number }[] = []
 
   it.each(Object.entries(cases).flatMap(([k, list]) => list.map((c) => [k, c.id] as const)))(
@@ -235,9 +296,9 @@ describe('tar 強化 ① 119 個すべてについて、どうなるかを実測
   )
 
   it('一覧を出す（何がどう止まったかを記録に残す）', () => {
-    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(119)
+    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(146)
     const lines = table.map((t) => `  ${t.kind.padEnd(10)} ${t.id.padEnd(26)} ${t.outcome.padEnd(16)} files=${t.files}`)
-    console.log(`\n119 個の実測\n${lines.join('\n')}`)
+    console.log(`\n146 個の実測\n${lines.join('\n')}`)
   })
 })
 

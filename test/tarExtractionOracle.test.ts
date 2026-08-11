@@ -574,12 +574,12 @@ const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }>
     note: 'local PAX が 2 つ続く形。bsdtar は `Ignoring malformed pax extended attribute` で exit 1。'
       + '**ubuntu では GNU tar と python が一致して通す**ので、そちらでは根拠が取れない',
   },
-  'pax-symlink-trailing-slash': {
-    on: 'none',
-    note: 'symlink の名前が / で終わる形。**手元の 2 実装はどちらも / を捨てて同じ symlink を作る。**'
-      + 'typeflag は symlink・名前は directory で、entry が自分自身と矛盾しているので止めている'
-      + '（通常ファイルの側は bsdtar が directory・python が通常ファイルを作り、実測で割れる）',
-  },
+  /**
+   * **`pax-symlink-trailing-slash` はこの表から外した（v0.6.9・外部監査 P1-B）。**
+   * 「手元の 2 実装が同じ木を作るのに止めている」と書いていた行そのものが、
+   * **過剰拒否の白状だった。**v0.6.9 で受理する側へ直したので、拒否ではなくなった。
+   * **根拠が無いと書いてある行は、直す候補の一覧でもある。**
+   */
 }
 
 describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠があるか、無い理由が書いてある', () => {
@@ -676,13 +676,18 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
    * 受け手にとっては道具の限界そのものなので、**増えたら気づく形**にしておく。
    * 増やしてよいが、そのときはここと notes の両方を直すことになる。
    */
-  it('どちらの必須 oracle でも裏の取れていない拒否は 3 件（内訳を出す）', () => {
+  it('どちらの必須 oracle でも裏の取れていない拒否は 2 件（内訳を出す）', () => {
     const rows = Object.entries(EVIDENCE_ELSEWHERE)
     const byOn: Record<string, string[]> = {}
     for (const [id, v] of rows) (byOn[v.on] ??= []).push(id)
     console.log(`\nこの run の 2 実装では割れないのに止めているもの: ${rows.length} 件\n`
       + Object.entries(byOn).map(([w, ids]) => `  ${w.padEnd(10)} ${ids.length} 件  ${ids.join(', ')}`).join('\n'))
-    expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(3)
+    /**
+     * **v0.6.9 で 3 件 → 2 件。**減ったのは `pax-symlink-trailing-slash` で、
+     * 「2 実装が同じ木を作るのに止めている」と書いてあった行**そのものが過剰拒否だった。**
+     * 根拠が無いと書いた行は、次に直す候補の一覧でもある。
+     */
+    expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(2)
     expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(9)
     expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(9)
   })
