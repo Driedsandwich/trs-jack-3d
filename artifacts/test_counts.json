@@ -206,13 +206,13 @@
   "verifyReleaseSourceInputs.test.ts": 28
  },
  "skipped": 0,
- "failed": 1,
- "failedSuites": 2,
- "exitCode": 1,
- "allPassed": false,
+ "failed": 0,
+ "failedSuites": 0,
+ "exitCode": 0,
+ "allPassed": true,
  "testCommand": "npx vitest run --reporter=json",
  "runner": "vitest",
  "runnerVersion": "4.1.10",
  "nodeVersion": "v22.22.3",
- "generatedFromCommit": "dcac27ac9b7d05b5b8315ad39c178721f5f58c61"
+ "generatedFromCommit": "68fc03ad9bd4eed955d54e8331b2273bbffdc101"
 }
