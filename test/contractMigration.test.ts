@@ -43,24 +43,56 @@ const MIGRATIONS: Record<string, any> = VALUES.migrations
 /** この release より新しい記録は working tree から読む（tag がまだ無い） */
 const UNRELEASED = 'v0.5.0'
 
+/**
+ * **同じ問い合わせで git を何度も起動しない（2026-08-11）。**
+ *
+ * `tagExists` は 1 回 10.5ms かかり、`loadSchema` の呼び出しごとに走っていた。
+ * 実測: この file の `it.each` だけで **loadSchema 34 回 → git 起動 68 回**、
+ * うち一意な `(release, path)` は 28 通り・一意な tag は 7 個しかない。
+ * 変異の試験も同じ組を読み直すので、実際にはさらに重なる。
+ *
+ * **数えている値（`readFromGit` / `readFromTree`）は呼び出し回数のまま**にする
+ * ——「この検査は tag の実物を読んだか」を見るのが目的なので、
+ * 覚えたぶんを引くと、その検査のほうが空振りになる。
+ */
+const tagExistsCache = new Map<string, boolean>()
 const tagExists = (t: string) => {
+  const hit = tagExistsCache.get(t)
+  if (hit !== undefined) return hit
+  let ok: boolean
   try {
     execFileSync('git', ['rev-parse', '--verify', `${t}^{tag}`], { cwd: ROOT, stdio: 'ignore' })
-    return true
+    ok = true
   } catch {
-    return false
+    ok = false
   }
+  tagExistsCache.set(t, ok)
+  return ok
 }
 
 let readFromGit = 0
 let readFromTree = 0
+/**
+ * `${release}:${path}` → 読んだ**生テキスト**。同じ blob を 2 度取らない。
+ *
+ * **parse 済みのオブジェクトを覚えてはいけない。**下の `mutatedLoad` は
+ * `loadSchema` が返したオブジェクトを**その場で書き換える**ので、
+ * 共有すると 1 つの変異が後続の試験へ漏れる（＝試験どうしが干渉する）。
+ * 文字列で覚えて毎回 parse すれば、**節約できるのは git の起動だけ**になる。
+ */
+const blobCache = new Map<string, string>()
 
 /** release 時点の schema を読む。**取れなければ落とす**（skip すると検査ごと消える） */
 function loadSchema(release: string, path: string): any {
   if (tagExists(release)) {
     readFromGit++
-    const raw = execFileSync('git', ['show', `${release}:${path}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 << 20 })
-    if (!raw.trim()) throw new Error(`${release}:${path} が空`)
+    const key = `${release}:${path}`
+    let raw = blobCache.get(key)
+    if (raw === undefined) {
+      raw = execFileSync('git', ['show', key], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 << 20 })
+      if (!raw.trim()) throw new Error(`${key} が空`)
+      blobCache.set(key, raw)
+    }
     return JSON.parse(raw)
   }
   if (release !== UNRELEASED) throw new Error(`tag ${release} が無い。git fetch --tags すること`)
@@ -236,25 +268,64 @@ describe('contractMigration ④ 据え置きゼロ', () => {
 describe('contractMigration ③ 網羅（全 tag 対の走査）', () => {
   const TAGS = ['v0.1.0', 'v0.1.1', 'v0.2.0', 'v0.3.0', 'v0.4.0', 'v0.4.1']
 
+  /**
+   * **git の起動回数を 188 → 7 回に減らした（2026-08-11）。**
+   *
+   * この試験は 30 秒の上限に対して、**単独で 4.5 秒・全体と並列に回すと超える**ことがあった。
+   * 遅いのは走査の量ではなく、**1 件ごとに git を起動していたこと**である。実測（待機中の機械）:
+   *
+   * ```
+   * ls-tree        6 回    64ms
+   * cat-file -e  104 回    ← 存在確認。ls-tree の結果に既に入っている
+   * git show      78 回    ← blob の取得。一意な blob は 78 通り
+   * 合計         188 回  2,037ms（1 起動あたり 10.8ms）
+   * ```
+   *
+   * 同じ時間に tar / python を起動する試験も並列で走るので、
+   * **起動あたりの待ち時間が伸びると、ここが最初に上限へ当たる。**
+   * 上限を伸ばすと、遅い原因を残したまま次の release で同じことが起きる。
+   *
+   *   存在確認 → `ls-tree` の出力を tag ごとに持つ（**起動 0 回**）
+   *   blob 取得 → `cat-file --batch` へまとめて流す（**起動 1 回**）
+   *
+   * **走査する組み合わせの数は変えていない**（変更の前後どちらも 39 組。下の `scanned` で固定）。
+   */
   it('据え置いたまま契約を変えた回が、すべて history に載っている', () => {
     const g = (a: string[]) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 << 20 })
-    // stdio を捨てる。**無いのは正常**（その tag にまだ存在しない schema）なので、
-    // git の fatal をそのままテスト出力へ流すと、本当の失敗が埋もれる
-    const exists = (t: string, p: string) => {
-      try {
-        execFileSync('git', ['cat-file', '-e', `${t}:${p}`], { cwd: ROOT, stdio: 'ignore' })
-        return true
-      } catch {
-        return false
-      }
-    }
+    /** tag ごとの「その時点で在ったファイル」。**存在確認はここを引く**（git を起動しない） */
+    const perTag = new Map<string, Set<string>>()
     const files = new Set<string>()
     for (const t of TAGS) {
+      const s = new Set<string>()
       for (const f of g(['ls-tree', '-r', '--name-only', t, '--', 'schemas/']).trim().split('\n')) {
-        if (f) files.add(f)
+        if (f) { s.add(f); files.add(f) }
       }
+      perTag.set(t, s)
     }
     expect(files.size, '走査対象の schema ファイル').toBeGreaterThan(10)
+
+    /**
+     * **要る blob をまとめて 1 回で取る。**
+     * `cat-file --batch` は `<sha> blob <size>\n<中身>\n` を続けて吐くので、
+     * **`size` を数えて切り出す**（改行で切ると中身の改行と区別できない）。
+     */
+    const want: string[] = []
+    for (const t of TAGS) for (const p of perTag.get(t)!) want.push(`${t}:${p}`)
+    const raw = execFileSync('git', ['cat-file', '--batch'], {
+      cwd: ROOT, input: `${want.join('\n')}\n`, maxBuffer: 256 << 20,
+    }) as unknown as Buffer
+    const blobs = new Map<string, any>()
+    let off = 0
+    for (const key of want) {
+      const nl = raw.indexOf(0x0a, off)
+      const head = raw.subarray(off, nl).toString('utf8')
+      const m = /^[0-9a-f]{40,64} blob (\d+)$/.exec(head)
+      expect(m, `cat-file --batch が blob を返さない: ${key} → ${head.slice(0, 60)}`).toBeTruthy()
+      const size = Number(m![1])
+      blobs.set(key, JSON.parse(raw.subarray(nl + 1, nl + 1 + size).toString('utf8')))
+      off = nl + 1 + size + 1
+    }
+    expect(blobs.size, '取り出した blob（0 なら batch が動いていない）').toBe(want.length)
 
     const recorded = new Set(
       ALL_ENTRIES.map(({ entry }) => `${entry.previousRelease}|${entry.shippedIn}|${entry.currentSchemaPath}`),
@@ -264,17 +335,17 @@ describe('contractMigration ③ 網羅（全 tag 対の走査）', () => {
     for (const p of [...files].sort()) {
       for (let i = 1; i < TAGS.length; i++) {
         const [a, b] = [TAGS[i - 1], TAGS[i]]
-        if (!exists(a, p) || !exists(b, p)) continue
+        if (!perTag.get(a)!.has(p) || !perTag.get(b)!.has(p)) continue
         scanned++
-        const A = JSON.parse(g(['show', `${a}:${p}`]))
-        const B = JSON.parse(g(['show', `${b}:${p}`]))
+        const A = blobs.get(`${a}:${p}`)
+        const B = blobs.get(`${b}:${p}`)
         if (diffSchemaObjects(A, B).verdict === 'HOLD') continue
         const held = A.properties?.schemaVersion?.const === B.properties?.schemaVersion?.const
         if (!held) continue
         if (!recorded.has(`${a}|${b}|${p}`)) missing.push(`${a}→${b} ${p}`)
       }
     }
-    expect(scanned, '実際に比較した組み合わせ（0 なら走査が動いていない）').toBeGreaterThan(20)
+    expect(scanned, '実際に比較した組み合わせ（0 なら走査が動いていない）').toBe(39)
     expect(missing, '版を据え置いたまま変えたのに history に無い').toEqual([])
   })
 })
