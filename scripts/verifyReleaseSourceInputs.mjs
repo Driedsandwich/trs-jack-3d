@@ -123,8 +123,20 @@ import { join, resolve } from 'node:path'
  *       監査ではなくこちらの実測で見つけた false-OK（bsdtar は展開できない）。
  *       `ARCHIVE_UNSUPPORTED` を新設し、**壊れている**と**対応していない**を分けた。
  *       **判定が変わる**ので版を上げる
+ *  13 … **外部監査 2026-08-11（v0.6.7 に対する回）の P0 2 件 + P1 4 件。**
+ *       生の USTAR 数値欄を `size` しか見ていなかった——`mode`/`uid`/`gid`/`mtime` に
+ *       `abc` を書いて checksum を取り直した archive を `status OK` と言っていた
+ *       （実測: bsdtar は作る・python は黙って作らない）。checksum 欄も前方一致でしか見ておらず、
+ *       8 進のあとの junk を見逃していた。全部 `parseTarNumericField` へ集約。
+ *       local PAX（`x`）の pending 状態が `path`/`linkpath` にしか無く、
+ *       **`mtime` だけの `x` を末尾に置いた archive**が素通りしていた。
+ *       **P1 はこちらの過剰拒否が 4 件**: directory の PAX path が `/` で終わる形、
+ *       PAX の値の先頭ゼロ（**前回の勧告どおりに書いた正規表現がそのまま過剰拒否になった**）、
+ *       歴史的な signed checksum、そして backslash を「壊れている」と言っていたこと
+ *       （OS で意味が変わるだけなので `ARCHIVE_UNSUPPORTED` へ）。
+ *       **判定が変わる**ので版を上げる
  */
-export const TOOL_VERSION = 12
+export const TOOL_VERSION = 13
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -237,12 +249,95 @@ export class ArchiveUnsupported extends Error {
 }
 
 /** ヘッダの checksum を検算する。checksum 欄を空白 8 個で埋めた状態の総和 */
-function headerChecksumOk(header) {
-  const stored = /^[0-7]+/.exec(header.subarray(148, 156).toString('ascii'))
-  if (!stored) return false
-  let sum = 0
-  for (let i = 0; i < 512; i++) sum += i >= 148 && i < 156 ? 0x20 : header[i]
-  return parseInt(stored[0], 8) === sum
+/**
+ * **USTAR の数値欄を、欄まるごと読む（v0.6.8・外部監査 P0-A）。**
+ *
+ * v0.6.7 までは `size` だけを `/^[0-7]+$/` で見て、
+ * **`mode` / `uid` / `gid` / `mtime` / `devmajor` / `devminor` は読んでもいなかった。**
+ * そのため、欄に `abc` を書いて checksum を取り直した archive を `status OK` と言っていた。
+ * 実測（2026-08-11）:
+ *
+ * ```
+ * mode=abc / uid=abc / gid=abc / mtime=abc （checksum は取り直し）
+ *   検算 v12  READ（a.txt が source にある、と言う）
+ *   bsdtar    exit 0 — a.txt を作る
+ *   python    exit 0 — **黙って a.txt を作らない**（OK と表示して終わる）
+ * ```
+ *
+ * **同じ archive から別の木ができる。**受け手が python 側で展開すると、
+ * 検算器が「あった」と言ったファイルが手元に無い。
+ *
+ * 受け入れる形は実物を測って決めた（2026-08-11・4 種類あった）:
+ *
+ * ```
+ * GitHub tarball / git archive   7 桁 + NUL          size と mtime は 11 桁 + NUL
+ * macOS tar (bsdtar)             6 桁 + 空白 + NUL   size と mtime は 11 桁 + 空白
+ * checksum 欄                    7 桁 + NUL ／ 6 桁 + NUL + 空白
+ * ```
+ *
+ * まとめると **「先頭の空白（任意）＋ 8 進数字 1 個以上 ＋ NUL と空白だけの詰め物」**。
+ * 空欄（全部 NUL か空白）は 0 とみなす——古い writer が device 欄を空で書くため。
+ * ただし **checksum 欄だけは空を許さない**（数字が無ければ検算しようがない）。
+ *
+ * @param required 空欄を 0 として受けないなら true（checksum 欄）
+ */
+function parseTarNumericField(bytes, name, entryIndex, required = false) {
+  /** base-256 表記（GNU 拡張）。**壊れているのではなく、この道具が読まないだけ** */
+  if ((bytes[0] & 0x80) !== 0) {
+    throw new ArchiveUnsupported(
+      `${name} 欄が base-256 表記である（この道具は 8 進数の欄しか読まない）`,
+      { field: name, entryIndex },
+    )
+  }
+  const text = bytes.toString('latin1')
+  if (/^[\0 ]*$/.test(text)) {
+    if (required) {
+      throw new ArchiveInvalid(`${name} 欄が空である`, { field: name, entryIndex })
+    }
+    return 0
+  }
+  const m = /^ *([0-7]+)[\0 ]*$/.exec(text)
+  if (!m) {
+    throw new ArchiveInvalid(
+      `${name} 欄が 8 進数の書式になっていない`,
+      { field: name, entryIndex, raw: JSON.stringify(text).slice(0, 40) },
+    )
+  }
+  const v = parseInt(m[1], 8)
+  if (!Number.isSafeInteger(v)) {
+    throw new ArchiveInvalid(`${name} 欄が扱える範囲を超えている`, { field: name, entryIndex })
+  }
+  return v
+}
+
+/**
+ * ヘッダの checksum を検算する。checksum 欄を空白 8 個で埋めた状態の総和。
+ *
+ * **歴史的な signed 版も通す（v0.6.8・外部監査 P1-C）。**
+ *
+ * 古い tar は、ヘッダのバイトを **符号つき char** として足していた。
+ * 128 以上のバイト（非 ASCII のパスなど）があると値が食い違う。実測（2026-08-11）:
+ *
+ * ```
+ * 非 ASCII の名前 + signed checksum
+ *   検算 v12  ARCHIVE_INVALID — ヘッダの checksum が合わない
+ *   bsdtar    exit 0 ／ python exit 0（どちらも展開する）
+ * ```
+ *
+ * **どちらの和でも合えば受ける。**両方を計算するだけで、緩めたことにはならない
+ * （どちらにも合わないヘッダは、これまでどおり落ちる）。
+ */
+function headerChecksumOk(header, entryIndex) {
+  // 欄の書式そのものを見る（前方一致だけだと、8 進のあとの junk を見逃す）
+  const stored = parseTarNumericField(header.subarray(148, 156), 'checksum', entryIndex, true)
+  let unsigned = 0
+  let signed = 0
+  for (let i = 0; i < 512; i++) {
+    const b = i >= 148 && i < 156 ? 0x20 : header[i]
+    unsigned += b
+    signed += b >= 128 ? b - 256 : b
+  }
+  return stored === unsigned || stored === signed
 }
 
 /**
@@ -264,7 +359,14 @@ function assertSafePath(name) {
   }
   if (name.startsWith('/')) throw new ArchiveInvalid('絶対パスの entry がある', { name })
   if (/^[A-Za-z]:/.test(name)) throw new ArchiveInvalid('ドライブレターつきの entry がある', { name })
-  if (name.includes('\\')) throw new ArchiveInvalid('バックスラッシュを含む entry がある', { name })
+  /**
+   * **バックスラッシュは「壊れている」ではなく「OS で意味が変わる」（v0.6.8・外部監査 §7）。**
+   * Unix ではふつうの名前の一部になり（GNU tar・bsdtar・python とも同じ木を作る・実測）、
+   * Windows では 1 階層上を指す。**受け手の OS で結末が変わるものは、範囲の外と言う。**
+   */
+  if (name.includes('\\')) {
+    throw new ArchiveUnsupported('バックスラッシュを含む entry がある（OS によって意味が変わる）', { name })
+  }
   if (name.split('/').includes('..')) throw new ArchiveInvalid('.. を含む entry がある（archive の外を指す）', { name })
   assertCanonicalPath(name)
 }
@@ -392,12 +494,28 @@ const PAX_KEYS_ALLOWED = new Set([
  * POSIX pax の書式に合わせる（`uid`/`gid` は 10 進整数、時刻は 10 進の秒。
  * 小数部を許す）。`uname`/`gname`/`comment` は自由文字列なので形は見ない。
  */
+/**
+ * **先頭のゼロを許す（v0.6.8・外部監査 P1-B）。**
+ *
+ * v0.6.7 は「正規の綴り」まで要求していた（`^(0|[1-9][0-9]*)$`）。
+ * だが POSIX pax の値は 10 進の数であって、綴りを 1 つに決めてはいない。実測（2026-08-11）:
+ *
+ * ```
+ * uid=0001 / gid=0001 / mtime=01 / mtime=-01
+ *   検算 v12  ARCHIVE_INVALID — 数値として読めない
+ *   bsdtar    exit 0 ／ python exit 0（どちらも同じ木を作る）
+ * ```
+ *
+ * **これは前回の監査の勧告どおりに書いた正規表現が、そのまま過剰拒否になった例である。**
+ * 範囲の検査は綴りではなく**読んだあとの値**に掛ける（`BigInt('0001')` は 1）。
+ * `+1`・指数・NaN・Infinity は引き続き拒む。
+ */
 const PAX_VALUE_GRAMMAR = {
-  uid: /^(0|[1-9][0-9]*)$/,
-  gid: /^(0|[1-9][0-9]*)$/,
-  mtime: /^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/,
-  atime: /^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/,
-  ctime: /^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/,
+  uid: /^[0-9]+$/,
+  gid: /^[0-9]+$/,
+  mtime: /^-?[0-9]+(\.[0-9]+)?$/,
+  atime: /^-?[0-9]+(\.[0-9]+)?$/,
+  ctime: /^-?[0-9]+(\.[0-9]+)?$/,
 }
 
 /**
@@ -768,6 +886,14 @@ function readTar(buf) {
    * 二重の上書きも、宙に浮いた上書きも素通りしていた。**名前と同じ規則にする。**
    */
   let longLinkFrom = null
+  /**
+   * **local PAX（`x`）は、鍵に関係なく「次の member を待っている」状態を作る（v0.6.8・外部監査 P0-B）。**
+   *
+   * v0.6.7 は `path` と `linkpath` にしか状態が無かったので、
+   * **`mtime` だけを持つ `x` を末尾に置いた archive を受理していた。**実測（2026-08-11）:
+   * 検算 v12 は READ ／ bsdtar は exit 1（Damaged tar archive）／ python は exit 2（ReadError）。
+   */
+  let pendingPax = null
   let entries = 0
   let total = 0
 
@@ -778,7 +904,7 @@ function readTar(buf) {
     if (++entries > TAR_LIMITS.maxEntries) {
       throw new ArchiveUnsupported(`entry が多すぎる (> ${TAR_LIMITS.maxEntries})`, { entries })
     }
-    if (!headerChecksumOk(header)) {
+    if (!headerChecksumOk(header, entries)) {
       throw new ArchiveInvalid('ヘッダの checksum が合わない', { entryIndex: entries, offset: off })
     }
 
@@ -789,31 +915,20 @@ function readTar(buf) {
      * trim が要るが、**パス欄で trim すると `root/file.txt␠` が `root/file.txt` に化ける。**
      * 展開すると空白つきの別ファイルができるので、検算の結果と食い違う。
      */
-    const numField = (a, l) => header.subarray(a, a + l).toString('utf8').replace(/\0.*$/, '').trim()
     const pathField = (a, l) => decodeStrict(header.subarray(a, a + l), 'パス欄', entries).replace(/\0.*$/, '')
-    const str = numField
+    const str = (a, l) => header.subarray(a, a + l).toString('utf8').replace(/\0.*$/, '').trim()
     /**
-     * **base-256 の数値欄は「壊れている」ではなく「対応していない」（v0.6.7・外部監査 P1-C）。**
+     * **数値欄は全部、欄まるごと読む（v0.6.8・外部監査 P0-A）。**
      *
-     * 先頭 byte の最上位 bit が立っていたら base-256 表記である（GNU 拡張）。
-     * 実測（2026-08-10）: bsdtar も python も exit 0 で展開する。
-     * **展開できる archive を「8 進数ではない」と言うのは誤りである。**
-     * この道具は 8 進数しか読まないので、そう言って止める。
+     * v0.6.7 は `size` しか見ておらず、他の欄は**読んでもいなかった。**
+     * base-256 の判定も `size` にしか掛かっていなかった。
+     * どの欄が壊れていても実装ごとに結末が割れるので、同じ関数で同じように見る。
      */
-    if ((header[124] & 0x80) !== 0) {
-      throw new ArchiveUnsupported(
-        'size 欄が base-256 表記である（この道具は 8 進数の欄しか読まない）',
-        { entryIndex: entries },
-      )
+    for (const [name, at, len] of [['mode', 100, 8], ['uid', 108, 8], ['gid', 116, 8],
+      ['mtime', 136, 12], ['devmajor', 329, 8], ['devminor', 337, 8]]) {
+      parseTarNumericField(header.subarray(at, at + len), name, entries)
     }
-    const sizeField = numField(124, 12)
-    if (sizeField && !/^[0-7]+$/.test(sizeField)) {
-      throw new ArchiveInvalid('size 欄が 8 進数ではない', { entryIndex: entries, sizeField })
-    }
-    const size = parseInt(sizeField || '0', 8) || 0
-    if (size < 0 || !Number.isSafeInteger(size)) {
-      throw new ArchiveInvalid('size 欄が扱える範囲を超えている', { entryIndex: entries, sizeField })
-    }
+    const size = parseTarNumericField(header.subarray(124, 12 + 124), 'size', entries)
     /**
      * **切れている archive は、上限より先に見る（v0.6.7）。**
      *
@@ -853,6 +968,20 @@ function readTar(buf) {
      */
     if (type === 'x' || type === 'g') {
       const recs = readPaxRecords(data, type)
+      if (type === 'x') {
+        /**
+         * **`x` が 2 つ続く形は止める（v0.6.8）。**実測（2026-08-11）:
+         * metadata だけの `x` を 2 回置くと **bsdtar は exit 1**
+         * （`Ignoring malformed pax extended attribute`）、python は通す——割れる。
+         */
+        if (pendingPax) {
+          throw new ArchiveInvalid(
+            'local PAX ヘッダが 2 つ続いている（どちらが効くか実装ごとに割れる）',
+            { entryIndex: entries },
+          )
+        }
+        pendingPax = { entryIndex: entries, keys: [...recs.keys()].slice(0, 8) }
+      }
       /**
        * **global header が名前を上書きするのは受けない（v0.6.4）。**
        * `x` の `path` しか解釈しないので、`g` の `path` を黙って捨てると
@@ -889,9 +1018,15 @@ function readTar(buf) {
        * `L`（GNU long name）と同じ扱いで、次の entry の名前になる。
        */
       if (type === 'x' && recs.has('path')) {
-        const p = recs.get('path')
-        assertSafePath(p)
-        longName = p
+        /**
+         * **綴りの検査は、member の型が分かってからにする（v0.6.8・外部監査 P1-A）。**
+         *
+         * v0.6.7 はここで `assertSafePath` を掛けていたので、
+         * **directory を指す `path=root/dir/` が「空のパス要素がある」で落ちていた。**
+         * 実測（2026-08-11）: bsdtar も python も同じ木を作る＝こちらの過剰拒否。
+         * 末尾スラッシュを許してよいかは **typeflag を見ないと決まらない。**
+         */
+        longName = recs.get('path')
         longNameFrom = 'PAX'
       }
       /**
@@ -965,7 +1100,7 @@ function readTar(buf) {
           { entryIndex: entries },
         )
       }
-      assertSafePath(decoded)
+      // 綴りの検査は member の型が分かってから（v0.6.8・上の PAX path と同じ理由）
       longName = decoded
       longNameFrom = 'GNU long name'
       continue
@@ -989,6 +1124,8 @@ function readTar(buf) {
     const memberLink = longLink
     longLink = null
     longLinkFrom = null
+    /** **`x` が待っていた member はこれ。**`L` / `K` は member ではないのでここへ来ない */
+    pendingPax = null
 
     if (!rawName) continue
 
@@ -1009,6 +1146,24 @@ function readTar(buf) {
      * 剥がした名前で衝突を見るので、`root/dir/` と `root/dir` も同じものとして扱う。
      */
     const isDirEntry = rawName.endsWith('/')
+    /**
+     * **末尾スラッシュは directory のときだけ許す（v0.6.8・外部監査 P1-A）。**
+     *
+     * tar で名前が `/` で終わるのは「これは directory である」という意味である。
+     * typeflag が directory でないのに `/` で終わるのは、entry が自分自身と矛盾している。
+     * 実測（2026-08-11）: 通常ファイル（typeflag 0）で `root/x/` を書くと
+     * **bsdtar は directory を作り、python は通常ファイルを作る**——割れる。
+     *
+     * v0.6.7 は typeflag 0 のときだけ落としていたので、リンクは素通りしていた。
+     * symlink については **手元の 2 実装が同じ木を作る**（どちらも `/` を捨てて symlink を作る）
+     * ので、この拒否は実測の外にある判断である（notes と EVIDENCE_ELSEWHERE に書いた）。
+     */
+    if (isDirEntry && type !== '5') {
+      throw new ArchiveInvalid(
+        `名前が / で終わっているのに entry 型が directory ではない（typeflag ${type}）`,
+        { name: rawName.slice(0, 80), type, entryIndex: entries },
+      )
+    }
     const name = isDirEntry ? rawName.replace(/\/+$/, '') : rawName
     if (!name) throw new ArchiveInvalid('パスがスラッシュだけの entry がある', { entryIndex: entries })
     assertSafePath(name)
@@ -1209,7 +1364,7 @@ function readTar(buf) {
     // **リンクはファイルとして扱わない。**中身が無いのに「source にあった」ことになる
     if (type === '1' || type === '2') continue
     if (type !== '0') continue
-    if (isDirEntry) throw new ArchiveInvalid('通常ファイルの名前が / で終わっている', { name })
+    // 末尾スラッシュは上で型ごとに見ている（v0.6.8。ここに来る通常ファイルは / で終わらない）
     // 重複は上の `seenPaths` で既に止めている（ここへ来る時点で name は初出）
     files.set(name, data)
   }
@@ -1246,6 +1401,17 @@ function readTar(buf) {
     throw new ArchiveInvalid(
       `linkname の上書き（${longLinkFrom}）のあとに entry が無いまま archive が終わっている`,
       { pending: longLink },
+    )
+  }
+  /**
+   * **鍵に関係なく、`x` のあとに member が無いまま終わるのを拒む（v0.6.8・外部監査 P0-B）。**
+   * 上の 2 つは `path` / `linkpath` を持つ `x` しか捕まえない。
+   * `mtime` だけの `x` を末尾に置く形が素通りしていた（実測: 2 実装とも拒む archive）。
+   */
+  if (pendingPax) {
+    throw new ArchiveInvalid(
+      'local PAX ヘッダのあとに entry が無いまま archive が終わっている',
+      { entryIndex: pendingPax.entryIndex, keys: pendingPax.keys },
     )
   }
   return { files, inventory }
