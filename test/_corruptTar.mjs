@@ -372,6 +372,68 @@ export const paxCases = () => {
       { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('uid', '9'.repeat(100)) },
       { name: `${TOP}/a.txt`, data: 'A' },
     ]) },
+    // ---- v0.6.8（外部監査 2026-08-11）------------------------------------
+    /**
+     * **鍵に関係なく、`x` のあとに member が無いまま終わる形（P0-B）。**
+     * v0.6.7 は `path` / `linkpath` を持つ `x` しか見ていなかった。実測（2026-08-11）:
+     * 検算 v12 は READ ／ bsdtar exit 1（Damaged tar archive）／ python exit 2（ReadError）
+     */
+    { id: 'pax-dangling-metadata-only', tar: buildTar([
+      { name: `${TOP}/a.txt`, data: 'A' },
+      { name: `${TOP}/PaxHeaders/0/x`, type: 'x', data: rec('mtime', '1') },
+    ]) },
+    /** 対照: metadata だけの `x` + 正常な member は**通す**（実測: 2 実装とも通る） */
+    { id: 'pax-metadata-then-member', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '1') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /** `x` が 2 つ続く形。実測: bsdtar は exit 1（malformed pax）／ python は通す＝割れる */
+    { id: 'pax-two-local-x', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '1') },
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('uid', '1') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    /**
+     * **directory の PAX path が / で終わる形は通す（P1-A・こちらの過剰拒否）。**
+     * 実測: bsdtar も python も同じ木を作る。v0.6.7 は「空のパス要素がある」で落としていた。
+     */
+    { id: 'pax-dir-trailing-slash', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/d`, type: 'x', data: rec('path', `${TOP}/${'v'.repeat(120)}/`) },
+      { name: `${TOP}/truncated/`, type: '5', mode: 0o755 },
+      { name: `${TOP}/${'v'.repeat(120)}/a.txt`, data: 'A' },
+    ]) },
+    /** 通常ファイルが / で終わる形は止める。実測: bsdtar は directory・python は通常ファイル＝割れる */
+    { id: 'pax-regular-trailing-slash', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/f`, type: 'x', data: rec('path', `${TOP}/${'v'.repeat(120)}/`) },
+      { name: `${TOP}/truncated`, data: 'A' },
+    ]) },
+    /** symlink が / で終わる形。**手元の 2 実装は同じ木を作る**（実測の外にある判断） */
+    { id: 'pax-symlink-trailing-slash', tar: buildTar([
+      { name: `${TOP}/t.txt`, data: 'T' },
+      { name: `${TOP}/PaxHeaders/0/l`, type: 'x', data: rec('path', `${TOP}/${'v'.repeat(120)}/`) },
+      { name: `${TOP}/truncated`, type: '2', linkname: 't.txt' },
+    ]) },
+    /**
+     * **先頭ゼロは通す（P1-B・こちらの過剰拒否）。**
+     * v0.6.7 は「正規の綴り」まで要求していた。実測: 2 実装とも通る。
+     * **前回の監査の勧告どおりに書いた正規表現が、そのまま過剰拒否になった。**
+     */
+    { id: 'pax-uid-leading-zero', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('uid', '0001') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-gid-leading-zero', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('gid', '0001') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-mtime-leading-zero', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '01') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
+    { id: 'pax-mtime-neg-leading-zero', ok: true, tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('mtime', '-01') },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
     { id: 'pax-gid-above-32bit', tar: buildTar([
       { name: `${TOP}/PaxHeaders/0/a`, type: 'x', data: rec('gid', '4294967296') },
       { name: `${TOP}/a.txt`, data: 'A' },
@@ -501,6 +563,12 @@ export const longNameCases = () => {
     { id: 'gnu-L-size-lie', tar: buildTar([
       { name: '././@LongLink', type: 'L', declaredSize: 1 << 20, data: `${long(3)}\0` },
       { name: `${TOP}/truncated`, data: 'A' },
+    ]) },
+    /** **directory の長い名前が / で終わる形は通す（v0.6.8・P1-A）。**実測: 2 実装とも同じ木 */
+    { id: 'gnu-L-dir-trailing-slash', ok: true, tar: buildTar([
+      { name: '././@LongLink', type: 'L', data: `${TOP}/${'v'.repeat(120)}/\0` },
+      { name: `${TOP}/truncated`, type: '5', mode: 0o755 },
+      { name: `${TOP}/${'v'.repeat(120)}/a.txt`, data: 'A' },
     ]) },
     { id: 'gnu-L-no-following-entry', tar: buildTar([
       { name: '././@LongLink', type: 'L', data: `${long(3)}\0` },
@@ -848,6 +916,72 @@ export const resourceCases = () => [
   { id: 'res-size-overflow', tar: buildTar([{ name: `${TOP}/a.txt`, declaredSize: 0o77777777777, data: 'A' }]) },
 ]
 
+/**
+ * **生の USTAR 数値欄（v0.6.8・外部監査 P0-A）。**
+ *
+ * v0.6.7 は `size` しか見ておらず、`mode` / `uid` / `gid` / `mtime` は**読んでもいなかった。**
+ * checksum を取り直せば、欄に `abc` を書いた archive が `status OK` になる。実測（2026-08-11）:
+ *
+ * ```
+ * mode=abc など   検算 v12 READ ／ bsdtar は a.txt を作る ／ python は**黙って作らない**
+ * checksum の junk 検算 v12 READ ／ **どちらも a.txt を作らない**（bsdtar は Damaged と警告）
+ * ```
+ */
+export const rawFieldCases = () => {
+  const at = (o, pos, len, text) => {
+    const h = header(o)
+    h.fill(0, pos, pos + len)
+    Buffer.from(text, 'latin1').copy(h, pos, 0, Math.min(len, text.length))
+    return recheck(h)
+  }
+  const wrap = (h, data) => Buffer.concat([
+    buildTar([{ name: `${TOP}/keep.txt`, data: 'K' }], { endBlocks: 0 }),
+    h, body4(data), Buffer.alloc(BLOCK * 2),
+  ])
+  const junk = (name, pos, len) => ({
+    id: `raw-${name}-not-octal`,
+    tar: wrap(at({ name: `${TOP}/a.txt`, size: 1 }, pos, len, `abc\0${' '.repeat(len - 4)}`), 'A'),
+  })
+  return [
+    junk('mode', 100, 8), junk('uid', 108, 8), junk('gid', 116, 8), junk('mtime', 136, 12),
+    junk('devmajor', 329, 8),
+    /** checksum 欄: 8 進の頭だけ合っていて、そのあとが junk（前方一致だと通ってしまう） */
+    { id: 'raw-cksum-octal-then-junk', tar: (() => {
+      const h = header({ name: `${TOP}/a.txt`, size: 1 })
+      h.fill(0x20, 148, 156)
+      let sum = 0
+      for (const x of h) sum += x
+      Buffer.from(`${sum.toString(8).padStart(6, '0')}ZZ`, 'ascii').copy(h, 148)
+      return wrap(h, 'A')
+    })() },
+    /** **対照: 正しい形は通す。**実物は 4 通りの書き方をしていた（2026-08-11 実測） */
+    { id: 'raw-fields-ok', ok: true, tar: wrap(recheck(header({ name: `${TOP}/a.txt`, size: 1 })), 'A') },
+    /** macOS の tar が書く形（6 桁 + 空白 + NUL）。**通さないと実物が読めなくなる** */
+    { id: 'raw-fields-space-padded', ok: true, tar: (() => {
+      const h = header({ name: `${TOP}/a.txt`, size: 1 })
+      for (const [pos, len] of [[100, 8], [108, 8], [116, 8]]) {
+        h.fill(0, pos, pos + len)
+        Buffer.from('000644 \0'.slice(0, len), 'latin1').copy(h, pos)
+      }
+      return wrap(recheck(h), 'A')
+    })() },
+    /**
+     * **歴史的な signed checksum（v0.6.8・外部監査 P1-C）。**
+     * 128 以上のバイト（非 ASCII の名前）があると unsigned と食い違う。
+     * 実測: 検算 v12 は ARCHIVE_INVALID ／ bsdtar も python も展開する＝過剰拒否だった。
+     */
+    { id: 'raw-cksum-signed', ok: true, tar: (() => {
+      const h = header({ name: `${TOP}/日本語ファイル.txt`, size: 1 })
+      h.fill(0x20, 148, 156)
+      let sum = 0
+      for (const x of h) sum += x >= 128 ? x - 256 : x
+      const v = sum < 0 ? 0o777777 + 1 + sum : sum
+      Buffer.from(`${v.toString(8).padStart(6, '0')}\0 `, 'ascii').copy(h, 148)
+      return wrap(h, 'A')
+    })() },
+  ]
+}
+
 /** 全部まとめて。**種類ごとに 4 個以上あることを test 側で確かめる** */
 export const allCases = () => ({
   pax: paxCases(),
@@ -861,4 +995,5 @@ export const allCases = () => ({
   rootStrip: rootStripCases(),
   structural: structuralCases(),
   ancestor: ancestorCases(),
+  rawField: rawFieldCases(),
 })
