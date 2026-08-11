@@ -135,8 +135,22 @@ import { join, resolve } from 'node:path'
  *       歴史的な signed checksum、そして backslash を「壊れている」と言っていたこと
  *       （OS で意味が変わるだけなので `ARCHIVE_UNSUPPORTED` へ）。
  *       **判定が変わる**ので版を上げる
+ *  14 … **ヘッダ形式を確かめずに 345..499 を prefix として読んでいた (v0.6.9 P0-A)。**
+ *       old GNU ではそこは atime/ctime/sparse の領域で、実測すると
+ *       **bsdtar は prefix を使わず python は使う**——同じ archive から別の木ができる。
+ *       magic を形式判別子にし、prefix を読むのは POSIX ustar のときだけにした。
+ *       **形式そのものは拒まない**（345..499 が空なら 2 実装とも同じ木で、
+ *       old GNU は GNU tar 自身の既定の出力形式である）。
+ *       typeflag を**除外表から許可表へ**（P0-B）。`Z` や空白のような知らない型が
+ *       inventory にだけ入って `files` に入らず、**中身を数えないまま `OK` と言っていた。**
+ *       長さ 0 の PAX 値を扱う（P0-C）。`path=`/`linkpath=` は**実装が割れる**ので止め、
+ *       それ以外の鍵は POSIX どおり「上書きの削除」として綴り検査を掛けない。
+ *       **P1 はこちらの過剰拒否が 4 件**: 同一 PAX ヘッダ内の重複鍵（POSIX は後勝ち・
+ *       6 鍵とも 2 実装が一致）、hardlink と symlink の名前の末尾スラッシュ、
+ *       そして**監査が挙げていない `mtime=` と `uid=`**（長さ 0 を壊れた数値と読んでいた）。
+ *       **判定が変わる**ので版を上げる
  */
-export const TOOL_VERSION = 13
+export const TOOL_VERSION = 14
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -645,6 +659,44 @@ function canonicalLinkTarget(raw, name, entryIndex) {
   return joined
 }
 
+/**
+ * **長さ 0 の PAX 値を表す印（v0.6.9）。**空文字列と区別する必要がある——
+ * 「上書きを消す」であって「空の名前へ上書きする」ではない。
+ */
+const ZERO_LENGTH_PAX_VALUE = Symbol('zero-length-pax-value')
+
+/**
+ * **名前を消す上書きは受けない（v0.6.9・外部監査 P0-C）。**
+ *
+ * 指示書は「POSIX の削除意味を実装し、生ヘッダの名前へ戻す」と勧めている。
+ * **こちらは採らなかった。**実測（2026-08-11）で**2 実装の結末が割れる**からである。
+ *
+ * ```
+ * x: path=（長さ 0）＋ 生ヘッダ root/raw.txt
+ *   検算 v13  READ — files 0 件（member が丸ごと消える＝これが穴）
+ *   bsdtar    exit 0 — root/raw.txt を作る（削除意味を実装している）
+ *   python    exit 2 — IsADirectoryError（空の名前として扱う）
+ *
+ * x: linkpath=（長さ 0）＋ 生ヘッダ linkname root/a.txt
+ *   bsdtar    root/l -> root/a.txt
+ *   python    root/l -> （空の指す先）
+ * ```
+ *
+ * 削除意味を実装すると **bsdtar とは一致するが python とは一致しない。**
+ * この道具の約束は「ここに挙げた物が、展開して出てくる物と同じ」なので、
+ * **読み手によって出てくる物が違う archive では、その約束を果たせない。**
+ * v0.6.6 以来の「割れるものは受理しない」と同じ規則を当てる。
+ */
+function assertPaxNameValue(v, key, entryIndex) {
+  if (v === ZERO_LENGTH_PAX_VALUE) {
+    throw new ArchiveInvalid(
+      `PAX の ${key} が長さ 0 である。上書きを消すのか空の名前にするのかで読み手ごとに結末が割れる`,
+      { key, entryIndex, stableReasonCode: 'PAX_ZERO_LENGTH_NAME_AMBIGUOUS' },
+    )
+  }
+  return v
+}
+
 function readPaxRecords(data, kind) {
   const out = new Map()
   let i = 0
@@ -673,14 +725,38 @@ function readPaxRecords(data, kind) {
      * 鍵が読めない時点で分類できないので止める。
      */
     const key = decodePaxText(rec.subarray(0, eq), `PAX (${kind}) の鍵`)
-    if (out.has(key)) throw new ArchiveInvalid(`PAX (${kind}) に同じ鍵が 2 回ある: ${key}`, { key })
+    /**
+     * **同じヘッダ内で同じ鍵が 2 回出たら、後の値が勝つ（v0.6.9・外部監査 P1-A）。**
+     *
+     * v0.6.8 はここで拒んでいたが、**POSIX は同一ヘッダ内の後勝ちを定めている。**
+     * 実測（2026-08-11・鍵を変えて 6 通り）: `path` / `linkpath` / `mtime` /
+     * `uid` / `size` / `comment` の**どれも bsdtar と python が同じ木を作り、後の値を採る。**
+     * つまりこの拒否は**正当な archive を落としていた**（5 版目の過剰拒否）。
+     *
+     * **別のヘッダをまたいだ上書きの競合は、これとは別**である（そちらは実装が割れる）。
+     * `x` を 2 つ続ける形と、PAX と GNU `L`/`K` の混在は、下の状態機械で今までどおり止める。
+     */
     const raw = rec.subarray(eq + 1, rec.length - 1)
+    /**
+     * **長さ 0 の値は「上書きの削除」であって、壊れた数値ではない（v0.6.9・外部監査 P0-C）。**
+     *
+     * v0.6.8 は値の綴りを一律に検査していたので、`mtime=` や `uid=` を
+     * **`ARCHIVE_INVALID` として拒んでいた。**実測（2026-08-11）: どちらも
+     * bsdtar・python が同じ木を作る＝**監査が挙げていない過剰拒否が 2 件あった。**
+     * POSIX は「長さ 0 の値はその上書きを消す」と定めているので、そのとおり何も覚えない。
+     *
+     * **`path` と `linkpath` だけは別扱い**（下の呼び出し側で止める）。
+     * 名前そのものが消えるので、実装ごとに結末が割れるため。
+     */
     /**
      * **解釈する値だけ読む（v0.6.5）。**`path` は名前になるので NUL も不正 UTF-8 も止める。
      * xattr の値は実物が**生バイナリ**を入れるので読まない——中身のバイト列の外側であり、
      * 読めなくても view は変わらない（v8 と v9 で 2 回、ここで塞ぎすぎた）。
      */
-    if (key === 'path' || key === 'linkpath') {
+    if (raw.length === 0) {
+      // ここで `continue` すると末尾の `i += len` を飛ばして**無限に回る**（分岐で書く）
+      out.set(key, ZERO_LENGTH_PAX_VALUE)
+    } else if (key === 'path' || key === 'linkpath') {
       out.set(key, decodePaxText(raw, `PAX (${kind}) の ${key}`))
     } else if (PAX_VALUE_GRAMMAR[key]) {
       const v = decodePaxText(raw, `PAX (${kind}) の ${key}`)
@@ -851,6 +927,67 @@ function decodePaxText(bytes, where) {
  */
 const CONTENT_BEARING_NOT_HANDLED = new Set(['7', 'S', 'D', 'M', 'N'])
 
+/**
+ * **扱いを決めてある entry 型（v0.6.9・外部監査 P0-B）。**
+ *
+ * v0.6.8 までは `CONTENT_BEARING_NOT_HANDLED` という**除外表**しか無かった。
+ * 表に無い型は素通りするので、**`Z` や空白のような未知の型が
+ * inventory にだけ入って `files` に入らない。**実測（2026-08-11）:
+ *
+ * ```
+ * typeflag Z / 空白（本体 5 バイト）
+ *   検算 v13  status OK ／ 32 of 32 ／ files 85・inventory 86（中身を数えない）
+ *   bsdtar    exit 0 — 通常ファイルとして 5 バイトのファイルを作る
+ *   python    同じ
+ * ```
+ *
+ * **除外表は、知らない物を通す側へ倒れる。**許可表にして、載っていない型は止める
+ * （[[feedback_exclusion_rules_never_allowlist]] と同じ形の誤り）。
+ *
+ * 過剰拒否になっていないことは実物で確かめた（2026-08-11 実測）:
+ * npm の実 tarball 600 本 51,802 entry は `0` と `5` だけ、
+ * `git archive` は `0`/`5`/`g`、macOS の `tar` は `0`/`x`。
+ * `3`/`4`/`6`（device・FIFO）はどれにも出ず、手元の 2 実装とも
+ * device は作れず FIFO は作る——**どちらも「中身を持つファイル」ではない。**
+ */
+const SUPPORTED_TYPEFLAGS = new Set(['0', '1', '2', '5', 'x', 'g', 'L', 'K'])
+
+/**
+ * **ヘッダ形式を magic + version で決める（v0.6.9・外部監査 P0-A）。**
+ *
+ * v0.6.8 までは 345..499 を**形式を確かめずに prefix として読んでいた。**
+ * だが 345..499 が prefix なのは POSIX ustar のときだけで、
+ * old GNU ではそこは atime/ctime/offset/sparse の領域である。実測（2026-08-11）:
+ *
+ * ```
+ * magic が old GNU / V7 / 未知 で、345..499 が非空
+ *   検算 v13  src/model/types.ts が「ある」と言う（status OK / 32 of 32）
+ *   bsdtar    types.ts を root に作る      ← prefix を使わない
+ *   python    src/model/types.ts を作る    ← prefix を使う
+ * ```
+ *
+ * **同じ archive から別の木ができる。**受け手が macOS の tar で展開すると、
+ * 検算器が「あった」と言ったファイルが手元に無い。
+ *
+ * **形式そのものは拒まない。**指示書は「V7・old GNU を実装しないなら
+ * `ArchiveUnsupported`」と書いているが、**それは採らなかった。**実測で、
+ * 345..499 が空なら old GNU も V7 も未知 magic も **2 実装が同じ木を作る。**
+ * しかも **old GNU は GNU tar 自身の既定の出力形式**なので、
+ * 形式で拒むと**ふつうに GNU tar で作った tar.gz が読めなくなる。**
+ * v9〜v12 で 4 版続けて過剰拒否を出しているので、**止めるのは実装が割れる形だけ**にする。
+ *
+ * version 欄は判別に使わない。実測で `ustar\0` なら version が
+ * `00` / NUL NUL / 空白 2 個のどれでも **2 実装とも prefix を使う。**
+ * 指示書の「`ustar\0` + `00` でのみ prefix」は、この 2 つを落とす。
+ */
+function classifyHeaderFormat(header) {
+  const magic8 = header.subarray(257, 265)
+  if (magic8.subarray(0, 6).equals(Buffer.from('ustar\0', 'latin1'))) return 'posix-ustar'
+  if (magic8.equals(Buffer.from('ustar  \0', 'latin1'))) return 'old-gnu'
+  if (magic8.every((b) => b === 0)) return 'v7'
+  return 'unknown'
+}
+
 function readTar(buf) {
   const files = new Map()
   /** **読み飛ばした entry の名前も覚える。**衝突の判定にはファイル以外も要る（v0.6.2） */
@@ -896,6 +1033,8 @@ function readTar(buf) {
   let pendingPax = null
   let entries = 0
   let total = 0
+  /** この archive に出たヘッダ形式（受け手が「何を読んだか」を後から見るため・v0.6.9） */
+  const headerFormats = new Set()
 
   while (off + 512 <= buf.length) {
     const header = buf.subarray(off, off + 512)
@@ -917,6 +1056,20 @@ function readTar(buf) {
      */
     const pathField = (a, l) => decodeStrict(header.subarray(a, a + l), 'パス欄', entries).replace(/\0.*$/, '')
     const str = (a, l) => header.subarray(a, a + l).toString('utf8').replace(/\0.*$/, '').trim()
+    /**
+     * **形式を決めてから 345..499 を読む（v0.6.9・外部監査 P0-A）。**
+     * POSIX ustar 以外でここが非空なら、**実装ごとに別の名前になる**ので止める。
+     */
+    const headerFormat = classifyHeaderFormat(header)
+    headerFormats.add(headerFormat)
+    const prefixRegionEmpty = header.subarray(345, 500).every((b) => b === 0)
+    if (headerFormat !== 'posix-ustar' && !prefixRegionEmpty) {
+      throw new ArchiveInvalid(
+        `ヘッダ形式が ${headerFormat} なのに 345..499 が空でない。`
+        + 'この領域を prefix として読むかどうかで読み手ごとに名前が変わる',
+        { entryIndex: entries, headerFormat, name: str(0, 100), stableReasonCode: 'HEADER_FORMAT_PREFIX_CONFLICT' },
+      )
+    }
     /**
      * **数値欄は全部、欄まるごと読む（v0.6.8・外部監査 P0-A）。**
      *
@@ -1026,7 +1179,7 @@ function readTar(buf) {
          * 実測（2026-08-11）: bsdtar も python も同じ木を作る＝こちらの過剰拒否。
          * 末尾スラッシュを許してよいかは **typeflag を見ないと決まらない。**
          */
-        longName = recs.get('path')
+        longName = assertPaxNameValue(recs.get('path'), 'path', entries)
         longNameFrom = 'PAX'
       }
       /**
@@ -1059,7 +1212,7 @@ function readTar(buf) {
           )
         }
         // readPaxRecords が既に文字列へ decode 済み（NUL と不正 UTF-8 はそこで止まる）
-        longLink = recs.get('linkpath')
+        longLink = assertPaxNameValue(recs.get('linkpath'), 'linkpath', entries)
         longLinkFrom = 'PAX'
       }
       continue
@@ -1106,7 +1259,18 @@ function readTar(buf) {
       continue
     }
 
-    const rawName = longName ?? (pathField(345, 155) ? `${pathField(345, 155)}/${pathField(0, 100)}` : pathField(0, 100))
+    /**
+     * prefix を使ってよいのは POSIX ustar のときだけ（v0.6.9）。
+     *
+     * **この三項演算子は、単体では落とせない。**上の判別が
+     * 「POSIX ustar 以外で 345..499 が非空」を既に止めているので、
+     * ここへ来る時点で非 ustar の 345..499 は必ず空である
+     * （変異試験で確認: この行を `pathField(345, 155)` に変えても試験は全部通る）。
+     * **効いている検査は上の `throw` のほう。**ここは、上の検査を後から弱めたときに
+     * 黙って prefix を使い始めないための控えとして残してある。
+     */
+    const prefixField = headerFormat === 'posix-ustar' ? pathField(345, 155) : ''
+    const rawName = longName ?? (prefixField ? `${prefixField}/${pathField(0, 100)}` : pathField(0, 100))
     /**
      * **上書きは、この member で消費し終わる（v0.6.5・外部監査 P1）。**
      *
@@ -1145,7 +1309,20 @@ function readTar(buf) {
      * ディレクトリ entry の末尾スラッシュだけは tar の表記なので剥がしてから見る。
      * 剥がした名前で衝突を見るので、`root/dir/` と `root/dir` も同じものとして扱う。
      */
-    const isDirEntry = rawName.endsWith('/')
+    const hadTrailingSlash = rawName.endsWith('/')
+    /**
+     * **「末尾に / がある」と「directory である」を分ける（v0.6.9）。**
+     * v0.6.8 までは同じ変数だった。当時は末尾スラッシュが directory にしか許されて
+     * いなかったので一致していたが、リンクにも許した今は**別物**である。
+     * ここを一緒にしたままだと、`root/` という名前の symlink が
+     * `stripTopLevel` の「頭は directory か」の検査を**directory として通ってしまう。**
+     *
+     * **ただし、この行も単体では落とせない。**変異試験で確認したところ、
+     * 子を持つ形は**祖先の型の検査**が先に止め、子を持たない形は
+     * `stripTopLevel` の早期 return に入るので、`isDirEntry` の値に関係なく同じ結末になる。
+     * **効いている検査は祖先の検査のほう。**ここは意味を取り違えないための控えである。
+     */
+    const isDirEntry = hadTrailingSlash && type === '5'
     /**
      * **末尾スラッシュは directory のときだけ許す（v0.6.8・外部監査 P1-A）。**
      *
@@ -1155,16 +1332,27 @@ function readTar(buf) {
      * **bsdtar は directory を作り、python は通常ファイルを作る**——割れる。
      *
      * v0.6.7 は typeflag 0 のときだけ落としていたので、リンクは素通りしていた。
-     * symlink については **手元の 2 実装が同じ木を作る**（どちらも `/` を捨てて symlink を作る）
-     * ので、この拒否は実測の外にある判断である（notes と EVIDENCE_ELSEWHERE に書いた）。
+     *
+     * **v0.6.9 で型ごとに分けた（外部監査 P1-B）。**v0.6.8 は「directory 以外は全部拒む」
+     * だったが、**それは実測を追い越していた。**2026-08-11 の実測:
+     *
+     * ```
+     * type 0（通常ファイル）で root/f/   bsdtar は directory を作り Damaged tar archive と警告
+     *                                   python は通常ファイルを作る       → 割れる → 止める
+     * type 1（hardlink）で root/link/    2 実装とも root/link を作る       → 通す
+     * type 2（symlink）で root/link/     2 実装とも同じ symlink を作る     → 通す
+     * ```
+     *
+     * リンクは**末尾スラッシュを 1 回だけ剥がして**、剥がした名前で
+     * canonical・衝突・祖先の検査をやり直す（監査の選択肢 A）。
      */
-    if (isDirEntry && type !== '5') {
+    if (hadTrailingSlash && !['5', '1', '2'].includes(type)) {
       throw new ArchiveInvalid(
         `名前が / で終わっているのに entry 型が directory ではない（typeflag ${type}）`,
-        { name: rawName.slice(0, 80), type, entryIndex: entries },
+        { name: rawName.slice(0, 80), type, entryIndex: entries, stableReasonCode: 'PATH_TRAILING_SLASH_TYPE_CONFLICT' },
       )
     }
-    const name = isDirEntry ? rawName.replace(/\/+$/, '') : rawName
+    const name = hadTrailingSlash ? rawName.replace(/\/+$/, '') : rawName
     if (!name) throw new ArchiveInvalid('パスがスラッシュだけの entry がある', { entryIndex: entries })
     assertSafePath(name)
 
@@ -1275,10 +1463,18 @@ function readTar(buf) {
      * bsdtar・python とも exit 0 で展開する。**展開できる archive である。**
      * こちらが中身の扱いを決めていないだけなので、そう言って止める。
      */
-    if (CONTENT_BEARING_NOT_HANDLED.has(type)) {
+    /**
+     * **許可表に載っていない型は、全部ここで止まる（v0.6.9・外部監査 P0-B）。**
+     * `CONTENT_BEARING_NOT_HANDLED` は**知っている型を並べた除外表**だったので、
+     * `Z` や空白のような**知らない型が素通りしていた**（実測: 2 実装とも中身つきの
+     * 通常ファイルを作るのに、検算器は `files` に入れない）。
+     */
+    if (!SUPPORTED_TYPEFLAGS.has(type)) {
       throw new ArchiveUnsupported(
-        `扱いを決めていない entry 型がある（typeflag ${type}）。展開すると中身のあるファイルになりうる`,
-        { name, type, entryIndex: entries },
+        CONTENT_BEARING_NOT_HANDLED.has(type)
+          ? `扱いを決めていない entry 型がある（typeflag ${JSON.stringify(type)}）。展開すると中身のあるファイルになりうる`
+          : `許可していない entry 型がある（typeflag ${JSON.stringify(type)}）。読み手によって中身のあるファイルになりうる`,
+        { name, type, entryIndex: entries, stableReasonCode: 'ENTRY_TYPE_UNSUPPORTED' },
       )
     }
 
@@ -1414,7 +1610,7 @@ function readTar(buf) {
       { entryIndex: pendingPax.entryIndex, keys: pendingPax.keys },
     )
   }
-  return { files, inventory }
+  return { files, inventory, headerFormats: [...headerFormats].sort() }
 }
 
 /**
@@ -1448,6 +1644,24 @@ function stripTopLevel(files, inventory) {
    * 明示的な root entry が無ければ implicit directory として剥がしてよい。
    * 在るならディレクトリ型（`5` か末尾スラッシュ）だけ許す。
    */
+  /**
+   * **頭の下に何も無いなら、剥がす話にならない（v0.6.9・こちらで見つけた）。**
+   *
+   * v0.6.5 からここは「頭が directory でなければ壊れている」と言っていたが、
+   * **entry がその頭 1 個しか無いとき**まで同じ扱いにしていた。実測（2026-08-11）:
+   *
+   * ```
+   * 単独の symlink / 単独の通常ファイル（名前は頭と同じ）
+   *   検算 v13  ARCHIVE_INVALID
+   *   bsdtar    exit 0 — そのとおりの symlink / ファイルを作る
+   *   python    同じ
+   * ```
+   *
+   * **2 実装が同じ木を作るものを「壊れている」と言っていた**＝過剰拒否。
+   * 剥がさずに返す（ファイルが 0 件なら、そのあと `NOTHING_TO_VERIFY` になる）。
+   * v0.6.9 で末尾スラッシュつきの root を試したときに、この試験自身が見つけた。
+   */
+  if (all.every((n) => n === first)) return { files, inventory, rootStripped: null }
   const explicitRoot = inventory.find((e) => e.name === first)
   if (explicitRoot && !(explicitRoot.type === '5' || explicitRoot.isDirEntry)) {
     throw new ArchiveInvalid(
@@ -1518,13 +1732,22 @@ export async function readBodyLimited(res, limit) {
  */
 export function readArchiveBuffer(buf, { gzip }) {
   try {
-    const { files, inventory } = readTar(gzip ? gunzipLimited(buf) : buf)
-    return stripTopLevel(files, inventory)
+    const { files, inventory, headerFormats } = readTar(gzip ? gunzipLimited(buf) : buf)
+    return { ...stripTopLevel(files, inventory), headerFormats }
   } catch (e) {
+    /**
+     * **止めた理由に、文章とは別の安定した名前を付ける（v0.6.9・外部監査 §6）。**
+     * 文章は版ごとに書き換わる。受け手が機械で分岐するなら、変わらない名前が要る。
+     * 具体値（欄名・型・パス）は `detail` に置き、**欄ごとの code は作らない**（監査 §6）。
+     */
     /** **対応していない（v0.6.7）と壊れている（v0.6.0）を分ける。**扱いはどちらも「中身を見ない」 */
-    if (e instanceof ArchiveUnsupported) return { error: e.message, kind: 'ARCHIVE_UNSUPPORTED', detail: e.detail }
-    if (e instanceof ArchiveInvalid) return { error: e.message, kind: 'ARCHIVE_INVALID', detail: e.detail }
-    return { error: `archive を読めない: ${String(e.message).split('\n')[0]}`, kind: 'ARCHIVE_INVALID' }
+    if (e instanceof ArchiveUnsupported) {
+      return { error: e.message, kind: 'ARCHIVE_UNSUPPORTED', detail: e.detail, stableReasonCode: e.detail?.stableReasonCode ?? 'ARCHIVE_UNSUPPORTED_OTHER' }
+    }
+    if (e instanceof ArchiveInvalid) {
+      return { error: e.message, kind: 'ARCHIVE_INVALID', detail: e.detail, stableReasonCode: e.detail?.stableReasonCode ?? 'ARCHIVE_INVALID_OTHER' }
+    }
+    return { error: `archive を読めない: ${String(e.message).split('\n')[0]}`, kind: 'ARCHIVE_INVALID', stableReasonCode: 'ARCHIVE_INVALID_OTHER' }
   }
 }
 
