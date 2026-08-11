@@ -144,8 +144,18 @@ function walkTree(out: string): Extracted[] {
     for (const n of readdirSync(at(rel), { encoding: 'buffer' }).sort(Buffer.compare)) {
       const r = rel ? Buffer.concat([rel, Buffer.from('/'), n]) : n
       const full = at(r)
-      const st = lstatSync(full)
       const path = decodePathBytes(r)
+      /**
+       * **`lstat` できないことも記録する（v0.6.11・CI の ubuntu run で判明）。**
+       * 権限の無いディレクトリの下は `lstat` そのものが EACCES で落ちる。
+       * 例外で落とすと**試験ごと止まり**、黙って飛ばすと
+       * **片方だけ読めない木が「同じ」に見える。**読めなかった事実を木に残す。
+       */
+      let st
+      try { st = lstatSync(full) } catch (e) {
+        found.push({ path, type: 'file', unreadable: `lstat:${(e as { code?: string }).code ?? 'ERR'}` })
+        continue
+      }
       if (st.isSymbolicLink()) {
         found.push({ path, type: 'symlink', content: decodePathBytes(readlinkSync(full, { encoding: 'buffer' })) })
       } else if (st.isDirectory()) { found.push({ path, type: 'dir' }); walk(r) }

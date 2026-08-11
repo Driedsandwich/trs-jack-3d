@@ -1334,9 +1334,14 @@ export const emptyNameCases = () => [
     { name: `${TOP}/L`, type: 'L', data: '' },
     { name: `${TOP}/target.txt`, data: 'HIDDEN' },
   ]) },
+  /**
+   * mode は 755 にする。**644 のままだと展開した木へ入れず**、
+   * 「oracle が読めない」を「欠陥」と読み違える（`root-is-directory` と同じ理由。
+   * macOS では通り **Linux の CI で EACCES になった**）。見たいのは名前が空であることだけ。
+   */
   { id: 'empty-name-unknown-type', tar: buildTar([
     { name: `${TOP}/a.txt`, data: 'A' },
-    { name: '', type: '5' },
+    { name: '', type: '5', mode: 0o755 },
   ]) },
   /** **通す側の対照。**名前が空でなければ、同じ機構は今までどおり通る */
   { id: 'gnu-L-nonempty-name', ok: true, tar: buildTar([
