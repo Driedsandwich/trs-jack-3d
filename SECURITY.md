@@ -95,7 +95,12 @@ modelLimitations.verifiedPhysical   false
   v12 → v13 で 2 つ（**生の USTAR 数値欄を `size` しか見ていなかった**——`mode`/`uid`/`gid`/`mtime` に
   `abc` を書いて checksum を取り直した archive を `OK` と言っていた・
   local PAX の pending 状態が `path`/`linkpath` にしかなく、`mtime` だけの `x` を
-  末尾に置いた archive が素通りしていた）。
+  末尾に置いた archive が素通りしていた）、
+  v13 → v14 で 3 つ（**ヘッダ形式を確かめずに 345..499 を prefix として読んでいた**——
+  old GNU ではそこは atime/ctime/sparse の領域で、**bsdtar は prefix を使わず python は使う**ので
+  同じ archive から別の木ができた・**typeflag が除外表だったので `Z` や空白のような知らない型が
+  素通りし**、中身を数えないまま `OK` と言っていた・長さ 0 の PAX `path=` で member が
+  丸ごと一覧から消えていた）。
   **どれも外部監査の指摘で、こちらで反例を再現してから直しています。**
   **v12 の 1 件は、その再現の途中でこちらが見つけたものです**
   （hardlink の指す先の末尾スラッシュを剥がして受理していた。監査の指摘にはありません）。
@@ -107,7 +112,7 @@ modelLimitations.verifiedPhysical   false
   v9 は **oracle が 1 実装だけ**だったので、**oracle と同じ癖の欠陥を見つけられません**でした
   （v10 で python tarfile を必須 oracle に追加。
   [verify-tool-v10-notes.md](docs/release/verify-tool-v10-notes.md)）。
-- **正当な archive を拒む欠陥が、4 版続けて見つかりました。**
+- **正当な archive を拒む欠陥が、5 版続けて見つかりました。**
   v9 は独立した 2 つの member がそれぞれ長い名前を使うだけで `ARCHIVE_INVALID` になり、
   v10 は **GNU の長い linkname（`K`）と PAX `linkpath` を拒み**、
   v11 は **GNU tar がふつうに書く負の時刻（`mtime=-1`）と、hardlink の連鎖と、
@@ -115,11 +120,18 @@ modelLimitations.verifiedPhysical   false
   v12 は **directory の PAX path が `/` で終わる形・PAX の値の先頭ゼロ・
   歴史的な signed checksum**を拒んでいました
   （いずれも実装が展開できる形です。v10 / v11 / v12 / v13 でそれぞれ修正）。
+  そして v13 は **同一 PAX ヘッダ内の重複鍵・リンクの名前の末尾スラッシュ・
+  長さ 0 の `mtime=` と `uid=`** を拒んでいました（v14 で修正）。
   **先頭ゼロは、前回の監査が勧めた正規表現をそのまま採ったことが原因です**
   ——勧告を機械的に採ると、その勧告自体が過剰拒否になりうる。
+  そのため v14 では、**監査の勧告のうち 3 点を採らず**、
+  採らない理由を実測で示しました（[verify-tool-v14-notes.md](docs/release/verify-tool-v14-notes.md) §6）。
+  勧告どおりに書くと、**GNU tar 自身の既定の出力形式**を拒むことになるためです。
   **塞ぎすぎは「実物が通る」確認では見つかりません**——この repo の実物は
   最長パス 95 文字で、これらの機構を使わないためです。
-  v13 では corpus の「通す」材料を 34 個へ増やしました（v0.6.6 時点は 9 個）。
+  v14 では corpus の「通す」材料を 49 個へ増やしました（v0.6.6 時点は 9 個）。
+  **過剰拒否のうち 3 件は監査の指摘ではなく、反例を再現する途中でこちらが見つけました**
+  （長さ 0 の `mtime=`/`uid=` と、頭 1 個しか無い archive を「壊れている」と言っていたもの）。
 - **止める理由を 2 つに分けました（v12）。**
   `ARCHIVE_INVALID` は「矛盾・破損・曖昧、または展開できない」、
   `ARCHIVE_UNSUPPORTED` は「**ふつうの tar なら展開できるが、この道具の範囲の外**」です。
@@ -128,9 +140,11 @@ modelLimitations.verifiedPhysical   false
   どちらも exit code は 2 で、`OK` にはなりません。
 - **手元で確かめられないことは、確かめられないと書きます。**
   **止める理由の半分は、片方の実装だけでは見えません。**
-  その run の 2 実装がそろって通すのに止めているものが 21 件あり、内訳は
+  その run の 2 実装がそろって通すのに止めているものが 20 件あり、内訳は
   **GNU tar 側でだけ根拠が取れる 9 件 ／ bsdtar 側でだけ取れる 9 件 ／
-  どちらでも取れていない 3 件**です（2026-08-11 実測）。
+  どちらでも取れていない 2 件**です（2026-08-11 実測）。
+  **「どちらでも取れていない」と書いた行は、次に直す候補の一覧でもあります**——
+  v14 で減った 1 件は、まさにその行が過剰拒否だったものです。
   一覧は `test/tarExtractionOracle.test.ts` の `EVIDENCE_ELSEWHERE` にあり、
   **どこで根拠が取れるかを毎 run 両方向で照合します**
   （[verify-tool-v12-notes.md](docs/release/verify-tool-v12-notes.md) §7）。
