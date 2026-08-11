@@ -154,14 +154,15 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-11",
- "generatedFromCommit": "b494c42e300c69a61763cf27722e9d72a6478f77",
+ "generatedFromCommit": "586cbe4141f7c7a2ddf47141b49158185a37f969",
  "command": "npm run validate:profiles",
  "targetsTotal": 14,
- "targetsPassed": 14,
- "allPassed": true,
- "artifactValidationStatus": "PASS",
+ "targetsPassed": 8,
+ "allPassed": false,
+ "artifactValidationStatus": "FAIL",
  "releaseReadinessStatus": "NOT_READY",
  "releaseReadinessReasons": [
+  "validate:profiles が 6 件不適合",
   "artifacts/test_counts.json の allPassed が false",
   "artifacts/test_counts.json の failed が 1",
   "artifacts/test_counts.json の exitCode が 1"
@@ -182,9 +183,11 @@
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
-   "semanticErrorCount": 0,
+   "semanticErrorCount": 1,
    "schemaErrors": [],
-   "semanticErrors": []
+   "semanticErrors": [
+    "inputFiles の sha256 が実ファイルと違う: package-lock.json"
+   ]
   },
   {
    "artifact": "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
@@ -192,9 +195,11 @@
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
-   "semanticErrorCount": 0,
+   "semanticErrorCount": 1,
    "schemaErrors": [],
-   "semanticErrors": []
+   "semanticErrors": [
+    "inputFiles の sha256 が実ファイルと違う: package-lock.json"
+   ]
   },
   {
    "artifact": "artifacts/topology_search_difference_signal.json",
@@ -232,9 +237,11 @@
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
-   "semanticErrorCount": 0,
+   "semanticErrorCount": 1,
    "schemaErrors": [],
-   "semanticErrors": []
+   "semanticErrors": [
+    "inputFiles の sha256 が実ファイルと違う: package-lock.json"
+   ]
   },
   {
    "artifact": "artifacts/sensitivity.trs_jack_trrs.json",
@@ -242,9 +249,11 @@
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
-   "semanticErrorCount": 0,
+   "semanticErrorCount": 1,
    "schemaErrors": [],
-   "semanticErrors": []
+   "semanticErrors": [
+    "inputFiles の sha256 が実ファイルと違う: package-lock.json"
+   ]
   },
   {
    "artifact": "artifacts/topology-robustness.trs_jack_trrs.json",
@@ -252,9 +261,11 @@
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
-   "semanticErrorCount": 0,
+   "semanticErrorCount": 1,
    "schemaErrors": [],
-   "semanticErrors": []
+   "semanticErrors": [
+    "inputFiles の sha256 が実ファイルと違う: package-lock.json"
+   ]
   },
   {
    "artifact": "artifacts/source-input-manifest.json",
@@ -282,9 +293,11 @@
    "missing": false,
    "distribution": "RELEASE_ASSET",
    "schemaErrorCount": 0,
-   "semanticErrorCount": 0,
+   "semanticErrorCount": 1,
    "schemaErrors": [],
-   "semanticErrors": []
+   "semanticErrors": [
+    "写しの sha256 が manifest の記録と違う: package-lock.json"
+   ]
   },
   {
    "artifact": "contract-migration.v1.json",
