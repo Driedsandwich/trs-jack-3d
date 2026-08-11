@@ -588,6 +588,48 @@ const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }>
     on: 'gnu-tar',
     note: 'PAX の uid が長さ 0。同上（`invalid uid=`）',
   },
+  // ---------------------------------------------------------------- v0.6.10
+  /**
+   * **数値として読めない `mtime` は GNU tar が archive ごと拒む。**
+   * `abc` / `+1` / `1e999` / 長さ 0 で実測済みで、`.5` も同じ経路のはず——
+   * **これは「そう読める」ではなく、ubuntu の run が毎回照合する主張**である
+   * （違えば「表が古い」で落ちる）。
+   */
+  'pax-mtime-leading-dot': {
+    on: 'gnu-tar',
+    note: 'PAX の mtime が `.5`（数字が先に無い）。手元の 2 実装は通す。'
+      + 'GNU tar は他の壊れた mtime と同じく `Malformed extended header` で拒むはず——CI が毎 run 照合する',
+  },
+  /**
+   * **ここから下は「実装が割れているから止めている」のではなく、方針で止めている。**
+   *
+   * v0.6.10 で材料を足したときに、**この試験自身が炙り出した。**
+   * どれも手元の 2 実装は同じ木を作る。**根拠が無いと書いておく方が、
+   * 「割れているから止めた」と書くより正確である。**
+   */
+  'zero-hdrcharset': {
+    on: 'none',
+    note: '`hdrcharset=`（長さ 0）。名前の読み方を変える鍵なので、値の長さに関係なく解釈しない方針。'
+      + '手元の 2 実装は無視して同じ木を作る',
+  },
+  'nonzero-size': {
+    on: 'none',
+    note: '`size=12`。size は entry の見え方を変えるので解釈しない方針（v0.6.3 から）。'
+      + '手元の 2 実装はこの上書きを無視する（読む長さが本当に変わる材料は pax-x-size-override 側にある）',
+  },
+  'eoa-lone-zero-then-member': {
+    on: 'none',
+    note: '終端 zero block 1 個のあとに member。**手元の 2 実装もそこで読むのをやめる**ので割れない。'
+      + '監査は BusyBox が読むと報告しているが、**BusyBox は開発機にも CI にも無い。**'
+      + 'それでも止めるのは「一覧に無いものを読む読み手がいる」時点で約束を果たせないため',
+  },
+  'eoa-lone-zero-then-junk': { on: 'none', note: '同上（member ではなく非 zero の詰め物）' },
+  'dup-regular-same-content': {
+    on: 'none',
+    note: '同じパスの通常ファイルが 2 回。手元の 2 実装は後勝ちで同じ木を作る。'
+      + '**v0.6.1 からの方針**（どちらを検算したのか言えなくなる）で止めており、実装の割れが根拠ではない',
+  },
+  'dup-regular-different-content': { on: 'none', note: '同上（中身が違う版）' },
   /**
    * **`pax-symlink-trailing-slash` はこの表から外した（v0.6.9・外部監査 P1-B）。**
    * 「手元の 2 実装が同じ木を作るのに止めている」と書いていた行そのものが、
@@ -690,7 +732,7 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
    * 受け手にとっては道具の限界そのものなので、**増えたら気づく形**にしておく。
    * 増やしてよいが、そのときはここと notes の両方を直すことになる。
    */
-  it('どちらの必須 oracle でも裏の取れていない拒否は 2 件（内訳を出す）', () => {
+  it('どちらの必須 oracle でも裏の取れていない拒否は 8 件（内訳を出す）', () => {
     const rows = Object.entries(EVIDENCE_ELSEWHERE)
     const byOn: Record<string, string[]> = {}
     for (const [id, v] of rows) (byOn[v.on] ??= []).push(id)
@@ -701,9 +743,9 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
      * 「2 実装が同じ木を作るのに止めている」と書いてあった行**そのものが過剰拒否だった。**
      * 根拠が無いと書いた行は、次に直す候補の一覧でもある。
      */
-    expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(2)
+    expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(8)
     expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(9)
-    expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(11)
+    expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(12)
   })
 
   it('**この試験が空振りしていない**（根拠の無い拒否を作れば落ちる）', () => {

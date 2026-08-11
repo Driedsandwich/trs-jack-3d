@@ -1,7 +1,7 @@
 /**
  * **信頼できない archive に対して parser が止まることを、実物の壊れた tar で試す。**
  *
- * 材料は `test/_corruptTar.mjs`（146 個・13 種類）。
+ * 材料は `test/_corruptTar.mjs`（170 個・16 種類）。
  * **変異は parser の外側から入れる。**parser の中の定数をいじると、
  * 「その定数を読んでいること」しか確かめられない。
  *
@@ -52,6 +52,12 @@ const EXPECTED: Record<string, Outcome> = {
    * 「345..499 が空なら通す」側の材料を同じ数だけ置いてある（下の個別指定）。
    */
   headerFormat: 'invalid',
+  /** 長さ 0 の PAX 値。**分類は値の長さで変わらない**ので、既定は非空と同じ（v0.6.10） */
+  zeroLength: 'invalid',
+  /** 終端 zero block のあとに中身が続く形（v0.6.10） */
+  endOfArchive: 'invalid',
+  /** 同じパスが 2 回。**directory どうしだけ通す**（v0.6.10・下の個別指定） */
+  duplicate: 'invalid',
 }
 
 /**
@@ -241,6 +247,33 @@ const EXPECTED_BY_ID: Record<string, Outcome> = {
    * **libarchive は locale 変換で落ちうる**ので、両 matrix で回して表と突き合わせる
    * （落ちるなら oracle 試験のほうが先に落ちる）。
    */
+  // -------------------------------------------------------------------------
+  // v0.6.10（外部監査 2026-08-11）
+  // -------------------------------------------------------------------------
+  /** **P0-A: 分類は値の長さで変わらない。**未知の鍵だけ `unsupported` */
+  'zero-unknown-key': 'unsupported',
+  'nonzero-unknown-key': 'unsupported',
+  /** **見え方を変えない鍵は、長さ 0 でも通す**（実測: 2 実装とも同じ木） */
+  'zero-uname': 'safe',
+  'zero-gname': 'safe',
+  'zero-comment': 'safe',
+  'zero-xattr': 'safe',
+  /** **P0-B: 終端のあとに中身が続かない形は通す** */
+  'eoa-two-zero-blocks': 'safe',
+  'eoa-two-zero-then-padding': 'safe',
+  'eoa-no-terminator': 'safe',
+  /**
+   * **P1: 正当な old GNU sparse は「壊れている」ではなく「範囲の外」。**
+   * `-region` は typeflag 0（支援する型）なので形式の食い違いで `invalid` のまま。
+   * **型が S のときだけ**「扱わない型」として `unsupported` になる。
+   */
+  'format-oldgnu-sparse-valid': 'unsupported',
+  /** **P1: mtime の小数部は省略できる**（`.5` のように数字が先に無い形は止める） */
+  'pax-mtime-trailing-dot': 'safe',
+  'pax-mtime-negative-trailing-dot': 'safe',
+  'pax-mtime-leading-dot': 'invalid',
+  /** **P1: 冪等な directory の重複だけ通す** */
+  'dup-directory-idempotent': 'safe',
   'raw-uname-invalid-utf8': 'safe',
   'raw-gname-invalid-utf8': 'safe',
   /** **末尾スラッシュつきの root symlink**（過剰拒否を直した副作用で開いた穴・こちらで発見） */
@@ -270,7 +303,7 @@ const EXPECTED_BY_ID: Record<string, Outcome> = {
   'trav-backslash': 'unsupported',
 }
 
-describe('tar 強化 ① 146 個すべてについて、どうなるかを実測する', () => {
+describe('tar 強化 ① 170 個すべてについて、どうなるかを実測する', () => {
   const table: { id: string, kind: string, outcome: string, files: number }[] = []
 
   it.each(Object.entries(cases).flatMap(([k, list]) => list.map((c) => [k, c.id] as const)))(
@@ -301,10 +334,38 @@ describe('tar 強化 ① 146 個すべてについて、どうなるかを実測
     },
   )
 
+  /**
+   * **止めた理由には、文章とは別の変わらない名前が必ず付く（v0.6.10・外部監査 §4）。**
+   *
+   * `*_OTHER` は「まだ名前を付けていない」という意味なので、
+   * **corpus に在る材料がそれを返したら、受け手は機械で分岐できない。**
+   * 新しい throw を足したときに名前を付け忘れると、ここで落ちる。
+   */
+  it('**止まった材料はすべて stableReasonCode を持つ**（*_OTHER が無い）', () => {
+    const missing: string[] = []
+    for (const [kind, list] of Object.entries(cases)) {
+      for (const c of list) {
+        const r = read(c.tar)
+        if (!r.error) continue
+        if (!r.stableReasonCode || r.stableReasonCode.endsWith('_OTHER')) {
+          missing.push(`${kind}/${c.id}: ${r.stableReasonCode ?? '(無し)'}`)
+        }
+      }
+    }
+    expect(missing, '名前の付いていない止め方がある').toEqual([])
+  })
+
+  it('**この検査が空振りしていない**（code を消せば落ちる）', () => {
+    // 実在する材料で、code が実際に載っていることを確かめる（母集団が空でない証拠）
+    const withCode = Object.values(cases).flat()
+      .map((c) => read(c.tar)).filter((r) => r.error && r.stableReasonCode && !r.stableReasonCode.endsWith('_OTHER'))
+    expect(withCode.length, 'code つきで止まる材料が 1 つも無い').toBeGreaterThanOrEqual(80)
+  })
+
   it('一覧を出す（何がどう止まったかを記録に残す）', () => {
-    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(146)
+    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(170)
     const lines = table.map((t) => `  ${t.kind.padEnd(10)} ${t.id.padEnd(26)} ${t.outcome.padEnd(16)} files=${t.files}`)
-    console.log(`\n146 個の実測\n${lines.join('\n')}`)
+    console.log(`\n170 個の実測\n${lines.join('\n')}`)
   })
 })
 
