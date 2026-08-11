@@ -652,12 +652,13 @@ const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }>
    * どちらも macOS では bsdtar が exit 1 で拒むので根拠が取れるが、
    * **GNU tar は黙って通す**ため ubuntu では取れない。
    */
-  'empty-name-unknown-type': {
-    on: 'bsdtar',
-    note: '名前が空で typeflag 5 の entry。bsdtar は '
-      + '`Archive entry has empty or unreadable filename ... skipping` で exit 1（2026-08-11 実測）。'
-      + 'python と GNU tar は通す',
-  },
+  /**
+   * **`empty-name-unknown-type` はこの表に要らなかった。**
+   * 一度 `on: 'bsdtar'` と書いたが、**そのときの ubuntu run は
+   * `walkTree` が EACCES で落ちていて、そもそも測れていなかった。**
+   * 木を歩けるように直したら GNU tar 側でも根拠が取れた——**両方で取れる行は載せない。**
+   * **測れていない状態を「取れない」と読んではいけない。**
+   */
   'trunc-no-terminator': {
     on: 'bsdtar',
     note: '終端の印を見ないまま尽きる archive。bsdtar は `Truncated tar archive` で exit 1。'
@@ -777,7 +778,7 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
      * 根拠が無いと書いた行は、次に直す候補の一覧でもある。
      */
     expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(5)
-    expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(11)
+    expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(10)
     expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(15)
   })
 
