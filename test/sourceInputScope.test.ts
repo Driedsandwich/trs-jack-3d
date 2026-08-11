@@ -287,9 +287,39 @@ describe('P1-2-3 回帰 — 2026-08-03 に素通りした 4 件', () => {
     const p = join(dir, 'narrow-scope.json')
     writeFileSync(p, JSON.stringify(narrow))
 
-    const wide = dropAndVerify((x) => x.startsWith('src/model/'))
-    const cut = dropAndVerify((x) => x.startsWith('src/model/'), p)
-    expect({ wide: wide.json.status, cut: cut.json.status }).toEqual({ wide: 'MISMATCH', cut: 'OK' })
+    /**
+     * **狭めた範囲は、まず manifest との照合で弾かれる（v0.6.11・外部監査 P0-A）。**
+     *
+     * v0.6.10 まで `--scope` は中身を確かめずに受け取っていたので、
+     * **範囲を狭めるだけで「漏れ 0 件」を作れた。**いまは manifest の
+     * `inputScope.sha256` と完全一致しなければ、探索そのものを実行しない。
+     */
+    const pinnedCut = dropAndVerify((x) => x.startsWith('src/model/'), p)
+    expect(pinnedCut.json.status).toBe('VERIFICATION_INCOMPLETE')
+    expect((pinnedCut.json.unrecordedInputDetection as { stableReasonCode: string }).stableReasonCode)
+      .toBe('SCOPE_SHA256_MISMATCH')
+
+    /**
+     * **それでも「範囲定義が判定を動かしている」ことは示す。**
+     * 範囲を記録していない manifest（古い tag と同じ形）へ明示のフラグで渡すと、
+     * 狭めたぶんだけ候補が消える——**判定は範囲を読んで出ている。**
+     */
+    const unpinned = (scope: string) => {
+      const m = tagManifest((d) => {
+        const o = d as { inputFiles: { path: string }[], inputFilesTotal: number, inputScope?: unknown }
+        o.inputFiles = o.inputFiles.filter((f) => !f.path.startsWith('src/model/'))
+        o.inputFilesTotal = o.inputFiles.length
+        delete o.inputScope
+      })
+      return verify(['--manifest', m, '--source', ROOT, '--scope', scope, '--allow-unpinned-scope'])
+    }
+    const wide = unpinned(INPUT_SCOPE_FILE)
+    const cut = unpinned(p)
+    const n = (r: { json: Record<string, unknown> }) => (r.json.unrecordedInputCandidates as string[]).length
+    expect(n(wide), '広い範囲では src/model の落としを検出する').toBeGreaterThan(0)
+    expect(n(cut), '範囲から外せば検出されなくなる').toBe(0)
+    expect({ wide: wide.json.status, cut: cut.json.status })
+      .toEqual({ wide: 'MISMATCH', cut: 'VERIFICATION_INCOMPLETE' })
   })
 })
 

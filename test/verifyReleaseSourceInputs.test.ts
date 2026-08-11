@@ -103,8 +103,21 @@ describe('§5-1 read-only であること', () => {
 describe('§5-2 v0.2.0 tag の source と一致する', () => {
   const r = run(['--manifest', tagManifest(), '--tag', 'v0.2.0'])
 
-  it('全件一致して終了コード 0', () => {
-    expect({ status: r.json.status, code: r.code }).toEqual({ status: 'OK', code: 0 })
+  /**
+   * **古い tag は、もう plain `OK` にはならない（v0.6.11・外部監査 §1）。**
+   *
+   * v0.2.0 の source には `source-input-scope.v1.json` が無く、
+   * その manifest も `inputScope` を持たない。つまり**記録漏れの探索ができない。**
+   * v0.6.10 まではそれでも `OK / exit 0` と言っていたが、
+   * 受け手には「探して見つからなかった」と読める。**やらなかったことは合格ではない。**
+   *
+   * sha256 の突き合わせ（28 件）は今までどおり実施していて、**そちらの結果は有効**である
+   * ——下の 3 つの検査がそれを見ている。
+   */
+  it('sha256 は全件一致するが、範囲の探索ができないので OK にはならない', () => {
+    expect({ status: r.json.status, code: r.code })
+      .toEqual({ status: 'VERIFICATION_INCOMPLETE', code: 1 })
+    expect(r.json.incompletePhases).toEqual(['unrecorded-input-detection'])
   })
 
   it('**28 件を実際に検算している**（0 件で OK ではない）', () => {
@@ -152,10 +165,30 @@ describe('§5-2 v0.2.0 tag の source と一致する', () => {
    * だから `performed` を先に見て、そのうえで 0 件を見る。
    */
   it('記録漏れの入力候補が 0 件（**検出を実行したうえで** 0 件）', () => {
-    const out = run(['--manifest', tagManifest(), '--tag', 'v0.2.0', '--scope', 'source-input-scope.v1.json'])
+    /**
+     * **古い manifest は範囲定義を記録していないので、明示のフラグが要る（v0.6.11・監査 §1）。**
+     *
+     * v0.2.0 の manifest には `inputScope` が無い。範囲を外から渡せてしまうと
+     * **範囲を狭めるだけで「漏れ 0 件」を作れる**ので、既定では止める。
+     * `--allow-unpinned-scope` を明示したときだけ探索まで進むが、
+     * **縛られていない範囲での 0 件は `OK` を名乗れない**（下の status を見る）。
+     */
+    const out = run([
+      '--manifest', tagManifest(), '--tag', 'v0.2.0',
+      '--scope', 'source-input-scope.v1.json', '--allow-unpinned-scope',
+    ])
     expect((out.json.unrecordedInputDetection as { performed: boolean }).performed).toBe(true)
     expect(out.json.unrecordedInputCandidates).toEqual([])
-    expect(out.json.status).toBe('OK')
+    expect(out.json.status).toBe('VERIFICATION_INCOMPLETE')
+    expect(out.json.incompletePhases).toEqual(['scope-not-pinned-to-manifest'])
+  })
+
+  it('**フラグ無しでは探索そのものを実行しない**（範囲を差し替えられないようにする）', () => {
+    const out = run(['--manifest', tagManifest(), '--tag', 'v0.2.0', '--scope', 'source-input-scope.v1.json'])
+    const d = out.json.unrecordedInputDetection as { performed: boolean, stableReasonCode: string }
+    expect(d.performed).toBe(false)
+    expect(d.stableReasonCode).toBe('SCOPE_NOT_PINNED')
+    expect(out.json.status).toBe('VERIFICATION_INCOMPLETE')
   })
 })
 
@@ -211,7 +244,9 @@ describe('§5-3 取れなかったのと合わなかったのを混ぜない', (
       o.inputFiles = o.inputFiles.filter((f) => !f.path.startsWith('src/model/'))
       o.inputFilesTotal = o.inputFiles.length
     })
-    const r = run(['--manifest', p, '--tag', 'v0.2.0', '--scope', 'source-input-scope.v1.json'])
+    // 古い manifest は範囲を記録していないので、明示のフラグが要る（v0.6.11）
+    const r = run(['--manifest', p, '--tag', 'v0.2.0', '--scope', 'source-input-scope.v1.json', '--allow-unpinned-scope'])
+    // **記録漏れが見つかったなら、範囲が縛られていないことより不一致のほうが強い**
     expect(r.json.status).toBe('MISMATCH')
     const extra = mustBeNonEmpty(r.json.unrecordedInputCandidates as string[], '記録漏れの入力候補')
     expect(extra.every((x) => x.startsWith('src/model/'))).toBe(true)

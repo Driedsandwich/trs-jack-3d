@@ -20,6 +20,7 @@ import { join, resolve } from 'node:path'
 import Ajv from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
 import { RELEASE_ASSETS } from '../scripts/releaseAssets.mjs'
+import { CLI_STATUSES } from '../scripts/verifyReleaseSourceInputs.mjs'
 import { mustBeNonEmpty, mustFind } from './_must'
 
 const ROOT = resolve(__dirname, '..')
@@ -192,35 +193,41 @@ describe('P1-3-3 配布一覧の整合', () => {
 describe('P1-3-4 status の契約 — 道具と schema のずれを隠さない', () => {
   const SCHEMA = 'schemas/source-verification-result.v1.schema.json'
   const enumOf = () => R(SCHEMA).properties.status.enum as string[]
-  /** 道具が出しうる status。**コードから読む**（手で並べると増えたときに気づけない） */
-  const emittedByTool = () => {
-    const src = readFileSync(resolve(ROOT, VERIFIER), 'utf8')
-    const found = new Set<string>()
-    for (const m of src.matchAll(/status: '([A-Z_]+)'/g)) found.add(m[1])
-    for (const m of src.matchAll(/kind: '([A-Z_]+)'/g)) found.add(m[1])
-    for (const m of src.matchAll(/'(MISMATCH)' : '(OK)'/g)) { found.add(m[1]); found.add(m[2]) }
-    return found
-  }
+  /**
+   * 道具が出しうる status。**道具が名乗る一覧を読む（v0.6.11）。**
+   *
+   * v0.6.10 まではソースを正規表現で拾っていた。`status` の書き方を
+   * 三項演算子へ変えただけで拾えなくなり、**「増えたら気づく」検査が空振りした。**
+   * 一覧を道具側の定数にして、ここはそれを読むだけにする。
+   */
+  const emittedByTool = () => new Set<string>(CLI_STATUSES)
 
-  it('道具は 7 種類の status を出す（読み取りが空振りしていない）', () => {
+  it('**一覧が実際に出る status を覆っている**（飾りの定数になっていない）', () => {
+    // 実際に走らせて出た status が、名乗っている一覧に必ず入っていること
+    expect(CLI_STATUSES).toContain(String(result.status))
+    expect(CLI_STATUSES.length, '一覧が空でない').toBeGreaterThanOrEqual(8)
+  })
+
+  it('道具は 8 種類の status を出す（読み取りが空振りしていない）', () => {
     const got = emittedByTool()
     expect([...got].sort()).toEqual([
       'ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED', 'MANIFEST_UNAVAILABLE', 'MISMATCH',
-      'NOTHING_TO_VERIFY', 'OK', 'SOURCE_UNAVAILABLE',
+      'NOTHING_TO_VERIFY', 'OK', 'SOURCE_UNAVAILABLE', 'VERIFICATION_INCOMPLETE',
     ])
   })
 
   /**
-   * **ずれは 2 個（v0.6.7 で 1 個増えた）。**
+   * **ずれは 3 個（v0.6.7 で 1 個・v0.6.11 でもう 1 個増えた）。**
    *
    * この schema は**こちらが回した記録（自己申告）**の契約で、
    * その経路では作業ツリーを読むので `ARCHIVE_INVALID` も `ARCHIVE_UNSUPPORTED` も出ない。
+   * `VERIFICATION_INCOMPLETE` も同じで、**こちらは範囲定義を必ず持っている**ので出ない。
    * **出ない status を enum へ足すと、schema が「出うる」と嘘をつく。**
-   * 受け手向けの CLI 結果の契約は別に要る（監査 §12・まだ作っていない）。
+   * 受け手向けの CLI 結果の契約は別に要る（監査 §7・まだ作っていない）。
    */
-  it('**ずれは archive 系の 2 個だけ**（8 個目が増えたらここで落ちる）', () => {
+  it('**ずれは archive 系 2 個と VERIFICATION_INCOMPLETE の 3 個だけ**（4 個目が増えたらここで落ちる）', () => {
     const gap = [...emittedByTool()].filter((s) => !enumOf().includes(s)).sort()
-    expect(gap).toEqual(['ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED'])
+    expect(gap).toEqual(['ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED', 'VERIFICATION_INCOMPLETE'])
     // 逆向き: schema にあって道具が出さない status が無いこと
     expect(enumOf().filter((s) => !emittedByTool().has(s))).toEqual([])
   })
