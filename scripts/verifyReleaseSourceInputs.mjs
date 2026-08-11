@@ -313,13 +313,13 @@ function parseTarNumericField(bytes, name, entryIndex, required = false) {
   if ((bytes[0] & 0x80) !== 0) {
     throw new ArchiveUnsupported(
       `${name} 欄が base-256 表記である（この道具は 8 進数の欄しか読まない）`,
-      { field: name, entryIndex },
+      { field: name, entryIndex , stableReasonCode: 'HEADER_NUMERIC_FIELD_BASE256_UNSUPPORTED' },
     )
   }
   const text = bytes.toString('latin1')
   if (/^[\0 ]*$/.test(text)) {
     if (required) {
-      throw new ArchiveInvalid(`${name} 欄が空である`, { field: name, entryIndex })
+      throw new ArchiveInvalid(`${name} 欄が空である`, { field: name, entryIndex, stableReasonCode: 'HEADER_NUMERIC_FIELD_SYNTAX' })
     }
     return 0
   }
@@ -327,12 +327,12 @@ function parseTarNumericField(bytes, name, entryIndex, required = false) {
   if (!m) {
     throw new ArchiveInvalid(
       `${name} 欄が 8 進数の書式になっていない`,
-      { field: name, entryIndex, raw: JSON.stringify(text).slice(0, 40) },
+      { field: name, entryIndex, raw: JSON.stringify(text).slice(0, 40) , stableReasonCode: 'HEADER_NUMERIC_FIELD_SYNTAX' },
     )
   }
   const v = parseInt(m[1], 8)
   if (!Number.isSafeInteger(v)) {
-    throw new ArchiveInvalid(`${name} 欄が扱える範囲を超えている`, { field: name, entryIndex })
+    throw new ArchiveInvalid(`${name} 欄が扱える範囲を超えている`, { field: name, entryIndex, stableReasonCode: 'HEADER_NUMERIC_FIELD_RANGE' })
   }
   return v
 }
@@ -382,19 +382,19 @@ function assertSafePath(name) {
    * （tar は階層を 1 つずつ作るので PATH_MAX に当たらない）。
    */
   if (name.length > TAR_LIMITS.maxPathLength) {
-    throw new ArchiveUnsupported(`entry のパスが長すぎる (${name.length} > ${TAR_LIMITS.maxPathLength})`, { name: name.slice(0, 80) })
+    throw new ArchiveUnsupported(`entry のパスが長すぎる (${name.length} > ${TAR_LIMITS.maxPathLength})`, { name: name.slice(0, 80), stableReasonCode: 'PATH_TOO_LONG_UNSUPPORTED' })
   }
-  if (name.startsWith('/')) throw new ArchiveInvalid('絶対パスの entry がある', { name })
-  if (/^[A-Za-z]:/.test(name)) throw new ArchiveInvalid('ドライブレターつきの entry がある', { name })
+  if (name.startsWith('/')) throw new ArchiveInvalid('絶対パスの entry がある', { name, stableReasonCode: 'PATH_ABSOLUTE' })
+  if (/^[A-Za-z]:/.test(name)) throw new ArchiveInvalid('ドライブレターつきの entry がある', { name, stableReasonCode: 'PATH_DRIVE_LETTER' })
   /**
    * **バックスラッシュは「壊れている」ではなく「OS で意味が変わる」（v0.6.8・外部監査 §7）。**
    * Unix ではふつうの名前の一部になり（GNU tar・bsdtar・python とも同じ木を作る・実測）、
    * Windows では 1 階層上を指す。**受け手の OS で結末が変わるものは、範囲の外と言う。**
    */
   if (name.includes('\\')) {
-    throw new ArchiveUnsupported('バックスラッシュを含む entry がある（OS によって意味が変わる）', { name })
+    throw new ArchiveUnsupported('バックスラッシュを含む entry がある（OS によって意味が変わる）', { name, stableReasonCode: 'PATH_BACKSLASH_UNSUPPORTED' })
   }
-  if (name.split('/').includes('..')) throw new ArchiveInvalid('.. を含む entry がある（archive の外を指す）', { name })
+  if (name.split('/').includes('..')) throw new ArchiveInvalid('.. を含む entry がある（archive の外を指す）', { name, stableReasonCode: 'PATH_TRAVERSAL' })
   assertCanonicalPath(name)
 }
 
@@ -420,13 +420,13 @@ function assertSafePath(name) {
 function assertCanonicalPath(name) {
   const parts = name.split('/')
   if (parts.includes('.')) {
-    throw new ArchiveInvalid('. を含む entry がある（同じ場所を別の綴りで指せてしまう）', { name })
+    throw new ArchiveInvalid('. を含む entry がある（同じ場所を別の綴りで指せてしまう）', { name, stableReasonCode: 'PATH_NOT_CANONICAL' })
   }
   if (parts.some((p) => p === '')) {
-    throw new ArchiveInvalid('空のパス要素がある（// や末尾の / を含む）', { name })
+    throw new ArchiveInvalid('空のパス要素がある（// や末尾の / を含む）', { name, stableReasonCode: 'PATH_EMPTY_COMPONENT' })
   }
   if (Array.from(name).some((c) => c.codePointAt(0) < 0x20 || c.codePointAt(0) === 0x7f)) {
-    throw new ArchiveInvalid('制御文字を含む entry がある', { name: JSON.stringify(name).slice(0, 80) })
+    throw new ArchiveInvalid('制御文字を含む entry がある', { name: JSON.stringify(name).slice(0, 80), stableReasonCode: 'PATH_CONTROL_CHARACTER' })
   }
   /**
    * **前後の空白を許さない（v0.6.3・外部監査 P0-3）。**
@@ -439,7 +439,7 @@ function assertCanonicalPath(name) {
    */
   for (const part of name.split('/')) {
     if (part !== part.trim()) {
-      throw new ArchiveInvalid('パス要素の前後に空白がある（展開結果と食い違う）', { name: JSON.stringify(name).slice(0, 80) })
+      throw new ArchiveInvalid('パス要素の前後に空白がある（展開結果と食い違う）', { name: JSON.stringify(name).slice(0, 80), stableReasonCode: 'PATH_SURROUNDING_SPACE' })
     }
   }
 }
@@ -648,17 +648,17 @@ const PAX_KEYS_KNOWN_DANGEROUS = ['size', 'linkpath', 'hdrcharset', 'charset', '
  */
 function canonicalLinkTarget(raw, name, entryIndex) {
   if (raw === '') {
-    throw new ArchiveInvalid(`リンクの指す先が空である: ${name}`, { name, entryIndex })
+    throw new ArchiveInvalid(`リンクの指す先が空である: ${name}`, { name, entryIndex, stableReasonCode: 'LINK_TARGET_EMPTY' })
   }
   if (raw.endsWith('/')) {
     throw new ArchiveInvalid(
       `リンクの指す先が / で終わっている（展開できない）: ${name} -> ${raw.slice(0, 80)}`,
-      { name, linkname: raw.slice(0, 200), entryIndex },
+      { name, linkname: raw.slice(0, 200), entryIndex , stableReasonCode: 'LINK_TARGET_TRAILING_SLASH' },
     )
   }
   const joined = raw.split('/').filter((p) => p !== '' && p !== '.').join('/')
   if (!joined) {
-    throw new ArchiveInvalid(`リンクの指す先がパスになっていない: ${name} -> ${raw.slice(0, 80)}`, { name, entryIndex })
+    throw new ArchiveInvalid(`リンクの指す先がパスになっていない: ${name} -> ${raw.slice(0, 80)}`, { name, entryIndex, stableReasonCode: 'LINK_TARGET_NOT_A_PATH' })
   }
   /**
    * **entry の名前と同じ規則を当てる。**別々に書くと、片方だけ直したときに規則がずれる。
@@ -671,7 +671,7 @@ function canonicalLinkTarget(raw, name, entryIndex) {
     if (e instanceof ArchiveUnsupported) throw e
     throw new ArchiveInvalid(
       `リンクの指す先の綴りを受け取れない: ${name} -> ${raw.slice(0, 80)}（${e.message}）`,
-      { name, linkname: raw.slice(0, 200), entryIndex },
+      { name, linkname: raw.slice(0, 200), entryIndex , stableReasonCode: 'LINK_TARGET_NOT_CANONICAL' },
     )
   }
   return joined
@@ -720,16 +720,16 @@ function readPaxRecords(data, kind) {
   let i = 0
   while (i < data.length) {
     const sp = data.indexOf(0x20, i)   // 半角空白
-    if (sp < 0) throw new ArchiveInvalid(`PAX (${kind}) のレコードが読めない（長さの区切りが無い）`, { at: i })
+    if (sp < 0) throw new ArchiveInvalid(`PAX (${kind}) のレコードが読めない（長さの区切りが無い）`, { at: i, stableReasonCode: 'PAX_RECORD_INVALID' })
     const lenText = data.subarray(i, sp).toString('ascii')
     const len = Number(lenText)
     if (!/^[0-9]+$/.test(lenText) || !Number.isInteger(len) || len <= 0 || i + len > data.length) {
-      throw new ArchiveInvalid(`PAX (${kind}) のレコード長が壊れている`, { at: i, len: lenText.slice(0, 20) })
+      throw new ArchiveInvalid(`PAX (${kind}) のレコード長が壊れている`, { at: i, len: lenText.slice(0, 20), stableReasonCode: 'PAX_RECORD_INVALID' })
     }
     const rec = data.subarray(sp + 1, i + len)
-    if (rec[rec.length - 1] !== 0x0a) throw new ArchiveInvalid(`PAX (${kind}) のレコードが改行で終わっていない`, { at: i })
+    if (rec[rec.length - 1] !== 0x0a) throw new ArchiveInvalid(`PAX (${kind}) のレコードが改行で終わっていない`, { at: i, stableReasonCode: 'PAX_RECORD_INVALID' })
     const eq = rec.indexOf(0x3d)       // =
-    if (eq < 0) throw new ArchiveInvalid(`PAX (${kind}) のレコードに = が無い`, { at: i })
+    if (eq < 0) throw new ArchiveInvalid(`PAX (${kind}) のレコードに = が無い`, { at: i, stableReasonCode: 'PAX_RECORD_INVALID' })
     /**
      * **鍵は厳密に、値は「解釈する鍵」だけ厳密に読む（v0.6.4・外部監査 P0-C）。**
      *
@@ -814,7 +814,7 @@ function readPaxRecords(data, kind) {
       if (!PAX_VALUE_GRAMMAR[key].test(v)) {
         throw new ArchiveInvalid(
           `PAX (${kind}) の ${key} が数値として読めない: ${JSON.stringify(v.slice(0, 32))}`,
-          { kind, key },
+          { kind, key , stableReasonCode: 'PAX_VALUE_SYNTAX' },
         )
       }
       /**
@@ -827,7 +827,7 @@ function readPaxRecords(data, kind) {
       if (intPart < lo || intPart > hi) {
         throw new ArchiveInvalid(
           `PAX (${kind}) の ${key} が扱える範囲の外にある: ${v.slice(0, 32)}（${lo}..${hi}）`,
-          { kind, key },
+          { kind, key , stableReasonCode: 'PAX_VALUE_RANGE' },
         )
       }
       out.set(key, v)
@@ -857,13 +857,13 @@ function readPaxRecords(data, kind) {
       throw new ArchiveInvalid(
         `PAX (${kind}) に受け入れていない鍵がある: ${bad.join(', ')}`
         + `（${known.join(', ')} は entry の見え方を変える）`,
-        { kind, keys: bad },
+        { kind, keys: bad , stableReasonCode: 'PAX_KEY_DANGEROUS' },
       )
     }
     throw new ArchiveUnsupported(
       `PAX (${kind}) に、この道具が意味を決めていない鍵がある: ${bad.join(', ')}`
       + '（未知の鍵は既定で受け取らない）',
-      { kind, keys: bad },
+      { kind, keys: bad , stableReasonCode: 'PAX_KEY_UNSUPPORTED' },
     )
   }
   /**
@@ -964,6 +964,7 @@ function utf8OrStop(bytes, where, entryIndex) {
     throw new ArchiveInvalid(`${where}が UTF-8 として読めないバイトを含む`, {
       entryIndex,
       bytes: Buffer.from(bytes).toString('hex').slice(0, 64),
+      stableReasonCode: 'TEXT_NOT_UTF8',
     })
   }
 }
@@ -996,6 +997,7 @@ function decodePaxText(bytes, where) {
   if (bytes.indexOf(0) !== -1) {
     throw new ArchiveInvalid(`${where}に NUL が入っている（実装ごとに結末が割れる）`, {
       bytes: Buffer.from(bytes).toString('hex').slice(0, 64),
+      stableReasonCode: 'TEXT_CONTAINS_NUL',
     })
   }
   return utf8OrStop(bytes, where, null)
@@ -1220,7 +1222,7 @@ function readTar(buf) {
      * **壊れているかどうかは、上限の話より前に決まる。**
      */
     if (off + 512 + size > buf.length) {
-      throw new ArchiveInvalid('entry のデータが archive の末尾を超えている', { entryIndex: entries, size })
+      throw new ArchiveInvalid('entry のデータが archive の末尾を超えている', { entryIndex: entries, size, stableReasonCode: 'ENTRY_BODY_TRUNCATED' })
     }
     /**
      * **資源上限は「対応範囲の外」であって、archive の欠陥ではない（v0.6.7）。**
@@ -1228,17 +1230,17 @@ function readTar(buf) {
      * 変えたのは言い方だけで、exit code は 2 のまま。
      */
     if (size > TAR_LIMITS.maxEntryBytes) {
-      throw new ArchiveUnsupported(`entry が大きすぎる (${size} > ${TAR_LIMITS.maxEntryBytes})`, { entryIndex: entries, name: str(0, 100) })
+      throw new ArchiveUnsupported(`entry が大きすぎる (${size} > ${TAR_LIMITS.maxEntryBytes})`, { entryIndex: entries, name: str(0, 100), stableReasonCode: 'LIMIT_ENTRY_BYTES_UNSUPPORTED' })
     }
     total += size
     if (total > TAR_LIMITS.maxTotalBytes) {
-      throw new ArchiveUnsupported(`展開後の総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total })
+      throw new ArchiveUnsupported(`展開後の総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total, stableReasonCode: 'LIMIT_TOTAL_BYTES_UNSUPPORTED' })
     }
 
     const type = header[156] === 0 ? '0' : String.fromCharCode(header[156])
     const dataStart = off + 512
     if (dataStart + size > buf.length) {
-      throw new ArchiveInvalid('entry のデータが archive の末尾を超えている', { entryIndex: entries, size })
+      throw new ArchiveInvalid('entry のデータが archive の末尾を超えている', { entryIndex: entries, size, stableReasonCode: 'ENTRY_BODY_TRUNCATED' })
     }
     const data = buf.subarray(dataStart, dataStart + size)
     off = dataStart + Math.ceil(size / 512) * 512
@@ -1259,7 +1261,7 @@ function readTar(buf) {
         if (pendingPax) {
           throw new ArchiveInvalid(
             'local PAX ヘッダが 2 つ続いている（どちらが効くか実装ごとに割れる）',
-            { entryIndex: entries },
+            { entryIndex: entries , stableReasonCode: 'EXTENSION_HEADER_SEQUENCE_UNSUPPORTED' },
           )
         }
         pendingPax = { entryIndex: entries, keys: [...recs.keys()].slice(0, 8) }
@@ -1270,7 +1272,7 @@ function readTar(buf) {
        * 解釈する実装と view が食い違う。実物の `pax_global_header` は `comment` だけ。
        */
       if (type === 'g' && recs.has('path')) {
-        throw new ArchiveInvalid('global PAX header が path を上書きしている', { entryIndex: entries })
+        throw new ArchiveInvalid('global PAX header が path を上書きしている', { entryIndex: entries, stableReasonCode: 'PAX_GLOBAL_NAME_OVERRIDE' })
       }
       /**
        * **同じ member に上書き機構が 2 つ効いたら止める（v0.6.4・外部監査 P0-A）。**
@@ -1291,7 +1293,7 @@ function readTar(buf) {
       if (type === 'x' && longNameFrom) {
         throw new ArchiveInvalid(
           `同じ entry に名前の上書きが 2 つ効いている（${longNameFrom} のあとに PAX）`,
-          { entryIndex: entries },
+          { entryIndex: entries , stableReasonCode: 'EXTENSION_OVERRIDE_CONFLICT' },
         )
       }
       /**
@@ -1337,7 +1339,7 @@ function readTar(buf) {
         if (longLinkFrom) {
           throw new ArchiveInvalid(
             `同じ entry に linkname の上書きが 2 つ効いている（${longLinkFrom} のあとに PAX）`,
-            { entryIndex: entries },
+            { entryIndex: entries , stableReasonCode: 'EXTENSION_OVERRIDE_CONFLICT' },
           )
         }
         // readPaxRecords が既に文字列へ decode 済み（NUL と不正 UTF-8 はそこで止まる）
@@ -1369,7 +1371,7 @@ function readTar(buf) {
         if (longLinkFrom) {
           throw new ArchiveInvalid(
             `同じ entry に linkname の上書きが 2 つ効いている（${longLinkFrom} のあとに GNU long linkname）`,
-            { entryIndex: entries },
+            { entryIndex: entries , stableReasonCode: 'EXTENSION_OVERRIDE_CONFLICT' },
           )
         }
         longLink = decoded
@@ -1379,7 +1381,7 @@ function readTar(buf) {
       if (longNameFrom) {
         throw new ArchiveInvalid(
           `同じ entry に名前の上書きが 2 つ効いている（${longNameFrom} のあとに GNU long name）`,
-          { entryIndex: entries },
+          { entryIndex: entries , stableReasonCode: 'EXTENSION_OVERRIDE_CONFLICT' },
         )
       }
       // 綴りの検査は member の型が分かってから（v0.6.8・上の PAX path と同じ理由）
@@ -1482,7 +1484,7 @@ function readTar(buf) {
       )
     }
     const name = hadTrailingSlash ? rawName.replace(/\/+$/, '') : rawName
-    if (!name) throw new ArchiveInvalid('パスがスラッシュだけの entry がある', { entryIndex: entries })
+    if (!name) throw new ArchiveInvalid('パスがスラッシュだけの entry がある', { entryIndex: entries, stableReasonCode: 'PATH_EMPTY_COMPONENT' })
     assertSafePath(name)
 
     /**
@@ -1548,7 +1550,7 @@ function readTar(buf) {
         throw new ArchiveInvalid(
           `祖先が ${ancestorType === '0' ? '通常ファイル' : `type ${ancestorType}`} なのに、その下に entry がある`
           + `（どの展開器でもこの木は作れない）: ${ancestor} / ${name}`,
-          { name, ancestor, ancestorType, entryIndex: entries },
+          { name, ancestor, ancestorType, entryIndex: entries , stableReasonCode: 'ANCESTOR_TYPE_CONFLICT' },
         )
       }
       usedAsDirectory.add(ancestor)
@@ -1557,7 +1559,7 @@ function readTar(buf) {
       throw new ArchiveInvalid(
         `すでに他の entry の祖先として使われているパスが、${type === '0' ? '通常ファイル' : `type ${type}`} として出てきた`
         + `（どの展開器でもこの木は作れない）: ${name}`,
-        { name, type, entryIndex: entries },
+        { name, type, entryIndex: entries , stableReasonCode: 'ANCESTOR_TYPE_CONFLICT' },
       )
     }
 
@@ -1579,7 +1581,7 @@ function readTar(buf) {
     if (['1', '2', '3', '4', '5', '6'].includes(type) && size !== 0) {
       throw new ArchiveInvalid(
         `中身を持てない entry 型に本体がある（typeflag ${type} / size ${size}）。読み手ごとに解釈がずれる`,
-        { name, type, size, entryIndex: entries },
+        { name, type, size, entryIndex: entries , stableReasonCode: 'ENTRY_BODY_ON_BODYLESS_TYPE' },
       )
     }
 
@@ -1649,14 +1651,14 @@ function readTar(buf) {
       if (target === name) {
         throw new ArchiveInvalid(
           `hardlink が自分自身を指している（展開できない）: ${name}`,
-          { name, entryIndex: entries },
+          { name, entryIndex: entries , stableReasonCode: 'HARDLINK_SELF_REFERENCE' },
         )
       }
       const targetType = seenPaths.get(target)
       if (targetType === undefined) {
         throw new ArchiveInvalid(
           `hardlink の指す先が、ここまでの entry に無い（展開できない）: ${name} -> ${target || '(空)'}`,
-          { name, linkname: target, entryIndex: entries },
+          { name, linkname: target, entryIndex: entries , stableReasonCode: 'HARDLINK_TARGET_MISSING' },
         )
       }
       /**
@@ -1687,13 +1689,13 @@ function readTar(buf) {
         if (finalTarget === undefined) {
           throw new ArchiveInvalid(
             `hardlink の連鎖を辿れない（先行 member の解決結果が無い）: ${name} -> ${target}`,
-            { name, linkname: target, entryIndex: entries },
+            { name, linkname: target, entryIndex: entries , stableReasonCode: 'HARDLINK_CHAIN_UNRESOLVED' },
           )
         }
       } else {
         throw new ArchiveInvalid(
           `hardlink の指す先が通常ファイルではない（展開できない）: ${name} -> ${target}（type ${targetType}）`,
-          { name, linkname: target, targetType, entryIndex: entries },
+          { name, linkname: target, targetType, entryIndex: entries , stableReasonCode: 'HARDLINK_TARGET_NOT_A_FILE' },
         )
       }
       hardlinkResolved.set(name, finalTarget)
@@ -1719,7 +1721,7 @@ function readTar(buf) {
   if (longNameFrom) {
     throw new ArchiveInvalid(
       `名前の上書き（${longNameFrom}）のあとに entry が無いまま archive が終わっている`,
-      { pending: longName },
+      { pending: longName , stableReasonCode: 'EXTENSION_HEADER_DANGLING' },
     )
   }
   /**
@@ -1738,7 +1740,7 @@ function readTar(buf) {
   if (longLinkFrom) {
     throw new ArchiveInvalid(
       `linkname の上書き（${longLinkFrom}）のあとに entry が無いまま archive が終わっている`,
-      { pending: longLink },
+      { pending: longLink , stableReasonCode: 'EXTENSION_HEADER_DANGLING' },
     )
   }
   /**
@@ -1749,7 +1751,7 @@ function readTar(buf) {
   if (pendingPax) {
     throw new ArchiveInvalid(
       'local PAX ヘッダのあとに entry が無いまま archive が終わっている',
-      { entryIndex: pendingPax.entryIndex, keys: pendingPax.keys },
+      { entryIndex: pendingPax.entryIndex, keys: pendingPax.keys , stableReasonCode: 'EXTENSION_HEADER_DANGLING' },
     )
   }
   return { files, inventory, headerFormats: [...headerFormats].sort() }
@@ -1809,7 +1811,7 @@ function stripTopLevel(files, inventory) {
     throw new ArchiveInvalid(
       `先頭の 1 階層 "${first}" が ${explicitRoot.type === '0' ? '通常ファイル' : `type ${explicitRoot.type}`} なのに、`
       + 'その下に entry がある（どの展開器でもこの木は作れない）',
-      { root: first, type: explicitRoot.type },
+      { root: first, type: explicitRoot.type , stableReasonCode: 'ROOT_STRIP_NOT_A_DIRECTORY' },
     )
   }
   const cut = (n) => (n === first ? '' : n.slice(first.length + 1))
@@ -1857,7 +1859,7 @@ export async function readBodyLimited(res, limit) {
         // 資源上限は方針であって、相手が送ってきたものの欠陥ではない（v0.6.7）
         throw new ArchiveUnsupported(
           `受け取った本文が大きすぎる (> ${limit} バイト)`,
-          { receivedBytes: total, limit },
+          { receivedBytes: total, limit , stableReasonCode: 'LIMIT_BODY_BYTES_UNSUPPORTED' },
         )
       }
       chunks.push(Buffer.from(value))
@@ -1979,17 +1981,17 @@ function loadFromDir(dir) {
       if (!st.isFile()) continue
 
       if (++count > TAR_LIMITS.maxEntries) {
-        throw new ArchiveInvalid(`ファイルが多すぎる (> ${TAR_LIMITS.maxEntries})`, { count })
+        throw new ArchiveInvalid(`ファイルが多すぎる (> ${TAR_LIMITS.maxEntries})`, { count, stableReasonCode: 'LIMIT_ENTRY_COUNT_UNSUPPORTED' })
       }
       if (r.length > TAR_LIMITS.maxPathLength) {
-        throw new ArchiveInvalid(`パスが長すぎる (${r.length} > ${TAR_LIMITS.maxPathLength})`, { name: r.slice(0, 80) })
+        throw new ArchiveInvalid(`パスが長すぎる (${r.length} > ${TAR_LIMITS.maxPathLength})`, { name: r.slice(0, 80), stableReasonCode: 'PATH_TOO_LONG_UNSUPPORTED' })
       }
       if (st.size > TAR_LIMITS.maxEntryBytes) {
-        throw new ArchiveInvalid(`ファイルが大きすぎる (${st.size} > ${TAR_LIMITS.maxEntryBytes})`, { name: r, size: st.size })
+        throw new ArchiveInvalid(`ファイルが大きすぎる (${st.size} > ${TAR_LIMITS.maxEntryBytes})`, { name: r, size: st.size, stableReasonCode: 'LIMIT_ENTRY_BYTES_UNSUPPORTED' })
       }
       total += st.size
       if (total > TAR_LIMITS.maxTotalBytes) {
-        throw new ArchiveInvalid(`総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total })
+        throw new ArchiveInvalid(`総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total, stableReasonCode: 'LIMIT_TOTAL_BYTES_UNSUPPORTED' })
       }
       // **読むのは上限を全部通ったあと。**判定より先に載せない
       files.set(r, readFileSync(join(abs, r)))

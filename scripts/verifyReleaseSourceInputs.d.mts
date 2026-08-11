@@ -41,6 +41,15 @@ export interface ArchiveReadResult {
   /** **`ARCHIVE_UNSUPPORTED` は v0.6.7 で増えた。**壊れているのではなく、範囲の外 */
   kind?: 'ARCHIVE_INVALID' | 'ARCHIVE_UNSUPPORTED'
   detail?: Record<string, unknown>
+  /**
+   * **止めた理由の、文章とは別の変わらない名前（v0.6.9 で追加・v0.6.10 で全 throw へ）。**
+   * 文章は版ごとに書き換わるので、受け手が機械で分岐するならこちらを見る。
+   * 欄名・型・パスの具体値は `detail` に入る（**欄ごとの code は作らない**）。
+   * `*_OTHER` は「まだ名前を付けていない」の意味で、corpus の材料がこれを返したら試験が落ちる。
+   */
+  stableReasonCode?: string
+  /** この archive に出たヘッダ形式（v0.6.9）。受け手が「何を読んだか」を後から見るため */
+  headerFormats?: string[]
 }
 
 /** archive を読む共通の入口。例外を「壊れている」と「取れない」に分けて返す */
