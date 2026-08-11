@@ -1314,6 +1314,93 @@ export const endOfArchiveCases = () => {
   ]
 }
 
+/**
+ * **名前が空になる形と、切れている archive（v0.6.11・外部監査 P0-B ほか）。**
+ *
+ * v0.6.10 は空の名前を `continue` で**黙って飛ばして**いた（32 入力へ混ぜると `OK 32/32`）。
+ * 実測（2026-08-11）: bsdtar は `Archive entry has empty or unreadable filename ... skipping`、
+ * **python は `IsADirectoryError`**（空の名前を展開先そのものとして開く）＝割れる。
+ *
+ * 切れている 2 形は**こちらが見つけた**。本体の詰め物が欠けた archive を
+ * 2 実装とも拒むのに受理し、終端の印を見ないまま尽きた archive も受理していた。
+ */
+export const emptyNameCases = () => [
+  { id: 'empty-raw-name', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: '', data: 'HIDDEN' },
+  ]) },
+  { id: 'empty-gnu-L-name', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/L`, type: 'L', data: '' },
+    { name: `${TOP}/target.txt`, data: 'HIDDEN' },
+  ]) },
+  { id: 'empty-name-unknown-type', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: '', type: '5' },
+  ]) },
+  /** **通す側の対照。**名前が空でなければ、同じ機構は今までどおり通る */
+  { id: 'gnu-L-nonempty-name', ok: true, tar: buildTar([
+    { name: `${TOP}/L`, type: 'L', data: `${TOP}/${'v'.repeat(120)}.txt` },
+    { name: `${TOP}/placeholder.txt`, data: 'A' },
+  ]) },
+]
+
+export const truncationCases = () => {
+  const whole = buildTar([{ name: `${TOP}/a.txt`, data: 'A'.repeat(600) }])
+  return [
+    /** 本体の詰め物が欠けている（2 実装とも `Truncated` で拒む） */
+    { id: 'trunc-body-padding', tar: whole.subarray(0, whole.length - 1024 - 1) },
+    /** 終端の印を見ないまま尽きる（bsdtar は Truncated・python は通す＝割れる） */
+    { id: 'trunc-no-terminator', tar: Buffer.concat([
+      buildTar([{ name: `${TOP}/a.txt`, data: 'A' }], { endBlocks: 0 }), Buffer.alloc(100),
+    ]) },
+    /** **通す側。**終端のあとの端数は 2 実装とも読み飛ばす */
+    { id: 'trunc-partial-after-terminator', ok: true, tar: Buffer.concat([
+      buildTar([{ name: `${TOP}/a.txt`, data: 'A' }]), Buffer.alloc(100),
+    ]) },
+    { id: 'trunc-none', ok: true, tar: whole },
+  ]
+}
+
+/**
+ * **metadata だけの PAX は、GNU `L`/`K` と共存できる（v0.6.11・外部監査 P1-A）。**
+ * v0.6.10 は `x` が来ただけで「名前の上書きが 2 つ」と落としていた。
+ * 実測: 2 実装とも同じ長い名前を作る。**`path` を持つ形は今までどおり止める。**
+ */
+export const paxCoexistCases = () => {
+  const LONG = 'v'.repeat(120)
+  return [
+    { id: 'coexist-L-then-metadata-pax', ok: true, tar: buildTar([
+      { name: `${TOP}/L`, type: 'L', data: `${TOP}/${LONG}.txt` },
+      { name: `${TOP}/P`, type: 'x', data: paxRec('mtime', '1') },
+      { name: `${TOP}/placeholder.txt`, data: 'A' },
+    ]) },
+    { id: 'coexist-K-then-metadata-pax', ok: true, tar: buildTar([
+      { name: `${TOP}/t.txt`, data: 'T' },
+      { name: `${TOP}/K`, type: 'K', data: `${TOP}/${LONG}.txt` },
+      { name: `${TOP}/P`, type: 'x', data: paxRec('mtime', '1') },
+      { name: `${TOP}/ln`, type: '2', linkname: 't.txt' },
+    ]) },
+    /** `L` のあとに metadata だけの `x` が 2 つ続く形も、名前には触らない */
+    { id: 'coexist-L-then-two-metadata-pax', ok: true, tar: buildTar([
+      { name: `${TOP}/L`, type: 'L', data: `${TOP}/${LONG}.txt` },
+      { name: `${TOP}/P`, type: 'x', data: paxRec('mtime', '1') + paxRec('uid', '0') },
+      { name: `${TOP}/placeholder.txt`, data: 'A' },
+    ]) },
+    /** PAX が先で `L` があと。**順序が変わっても名前は 1 つしか効かない** */
+    { id: 'coexist-metadata-pax-then-L', ok: true, tar: buildTar([
+      { name: `${TOP}/P`, type: 'x', data: paxRec('mtime', '1') },
+      { name: `${TOP}/L`, type: 'L', data: `${TOP}/${LONG}.txt` },
+      { name: `${TOP}/placeholder.txt`, data: 'A' },
+    ]) },
+    /**
+     * **止める側の対照は、既存の `pax` 群にある**（`gnu-longname-then-pax-path` /
+     * `pax-gnu-K-then-linkpath`）。同じ機構なのでここには置かない——
+     * **重複を足すと「根拠が無い拒否」の件数だけが水増しされる。**
+     */
+  ]
+}
+
 /** 全部まとめて。**種類ごとに 4 個以上あることを test 側で確かめる** */
 export const allCases = () => ({
   pax: paxCases(),
@@ -1332,4 +1419,7 @@ export const allCases = () => ({
   zeroLength: zeroLengthCases(),
   endOfArchive: endOfArchiveCases(),
   duplicate: duplicateCases(),
+  emptyName: emptyNameCases(),
+  truncation: truncationCases(),
+  paxCoexist: paxCoexistCases(),
 })

@@ -1,7 +1,7 @@
 /**
  * **信頼できない archive に対して parser が止まることを、実物の壊れた tar で試す。**
  *
- * 材料は `test/_corruptTar.mjs`（170 個・16 種類）。
+ * 材料は `test/_corruptTar.mjs`（182 個・19 種類）。
  * **変異は parser の外側から入れる。**parser の中の定数をいじると、
  * 「その定数を読んでいること」しか確かめられない。
  *
@@ -58,6 +58,12 @@ const EXPECTED: Record<string, Outcome> = {
   endOfArchive: 'invalid',
   /** 同じパスが 2 回。**directory どうしだけ通す**（v0.6.10・下の個別指定） */
   duplicate: 'invalid',
+  /** 名前が空になる形（v0.6.11）。通す側は個別指定 */
+  emptyName: 'invalid',
+  /** 切れている archive（v0.6.11・こちらで見つけた）。通す側は個別指定 */
+  truncation: 'invalid',
+  /** GNU L/K と metadata だけの PAX の共存（v0.6.11）。既定は通す側 */
+  paxCoexist: 'safe',
 }
 
 /**
@@ -274,6 +280,13 @@ const EXPECTED_BY_ID: Record<string, Outcome> = {
   'pax-mtime-leading-dot': 'invalid',
   /** **P1: 冪等な directory の重複だけ通す** */
   'dup-directory-idempotent': 'safe',
+  // -------------------------------------------------------------------------
+  // v0.6.11（外部監査 2026-08-11）
+  // -------------------------------------------------------------------------
+  /** **通す側。**名前が空でなければ同じ機構は今までどおり通る */
+  'gnu-L-nonempty-name': 'safe',
+  'trunc-partial-after-terminator': 'safe',   // 終端のあとの端数は 2 実装とも読み飛ばす
+  'trunc-none': 'safe',
   'raw-uname-invalid-utf8': 'safe',
   'raw-gname-invalid-utf8': 'safe',
   /** **末尾スラッシュつきの root symlink**（過剰拒否を直した副作用で開いた穴・こちらで発見） */
@@ -303,7 +316,7 @@ const EXPECTED_BY_ID: Record<string, Outcome> = {
   'trav-backslash': 'unsupported',
 }
 
-describe('tar 強化 ① 170 個すべてについて、どうなるかを実測する', () => {
+describe('tar 強化 ① 182 個すべてについて、どうなるかを実測する', () => {
   const table: { id: string, kind: string, outcome: string, files: number }[] = []
 
   it.each(Object.entries(cases).flatMap(([k, list]) => list.map((c) => [k, c.id] as const)))(
@@ -363,9 +376,9 @@ describe('tar 強化 ① 170 個すべてについて、どうなるかを実測
   })
 
   it('一覧を出す（何がどう止まったかを記録に残す）', () => {
-    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(170)
+    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(182)
     const lines = table.map((t) => `  ${t.kind.padEnd(10)} ${t.id.padEnd(26)} ${t.outcome.padEnd(16)} files=${t.files}`)
-    console.log(`\n170 個の実測\n${lines.join('\n')}`)
+    console.log(`\n182 個の実測\n${lines.join('\n')}`)
   })
 })
 
