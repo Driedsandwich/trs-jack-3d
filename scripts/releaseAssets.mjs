@@ -32,6 +32,12 @@ export const RELEASE_ASSETS = [
   { path: 'schemas/source-input-manifest.v2.schema.json', role: 'schema' },
   { path: 'schemas/source-input-scope.v1.schema.json', role: 'schema' },
   { path: 'schemas/source-verification-result.v1.schema.json', role: 'schema' },
+  /**
+   * **受け手が回した結果の契約（v0.6.11・外部監査 §7）。**
+   * 上の `source-verification-result.v1` は**こちらが回した記録**で、出る status が違う。
+   * 記録側の enum を CLI の一覧として読むと取りこぼすので、別の schema にして同梱する。
+   */
+  { path: 'schemas/source-verifier-cli-result.v1.schema.json', role: 'schema' },
   { path: 'schemas/topology-search.v1.schema.json', role: 'schema' },
   { path: 'schemas/real-jack-comparison.v1.schema.json', role: 'schema' },
   { path: 'schemas/test-counts.v2.schema.json', role: 'schema' },

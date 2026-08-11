@@ -1,0 +1,136 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/source-verifier-cli-result.v1.schema.json",
+ "title": "trs-jack-3d source verifier CLI result v1",
+ "description": "同梱の verifyReleaseSourceInputs.mjs が標準出力へ書く JSON の契約。**受け手が回した結果**の形であって、こちらが回した記録（source-verification-result.v1）とは別物である。出る status が違う——作業ツリーを読む経路では archive 系が出ないため、記録側の enum を CLI の一覧として読むと取りこぼす。この schema は**実際に出るものだけ**を書く。出ない値を enum へ入れると、schema が「出うる」と嘘をつく。",
+ "type": "object",
+ "required": [
+  "schemaVersion",
+  "schemaId",
+  "kind",
+  "toolVersion",
+  "exitCode",
+  "stableReasonCode",
+  "archivePolicy",
+  "status",
+  "manifest"
+ ],
+ "properties": {
+  "schemaVersion": { "const": 1 },
+  "schemaId": { "const": "trs-jack-3d-source-verifier-cli-result.v1" },
+  "kind": { "const": "source-verifier-cli-result" },
+  "toolVersion": {
+   "type": "integer",
+   "minimum": 16,
+   "description": "この契約を名乗るのは v16 以降。**判定の意味を変えたら上げる**ので、受け手はこれで挙動を見分けられる。"
+  },
+  "exitCode": {
+   "type": "integer",
+   "enum": [0, 1, 2],
+   "description": "0=OK / 1=不一致か工程未了 / 2=source・manifest を取れない、範囲の外、壊れている。**JSON を保存したあとで終了コードを復元できない**ので出力にも入れる。"
+  },
+  "status": {
+   "type": "string",
+   "enum": [
+    "OK",
+    "MISMATCH",
+    "VERIFICATION_INCOMPLETE",
+    "ARCHIVE_INVALID",
+    "ARCHIVE_UNSUPPORTED",
+    "SOURCE_UNAVAILABLE",
+    "MANIFEST_UNAVAILABLE",
+    "NOTHING_TO_VERIFY"
+   ],
+   "description": "**`OK` は必須の工程が全部終わったときだけ。**記録漏れの探索をしていなければ VERIFICATION_INCOMPLETE になる（v0.3.0 より前の tag はこれに当たる）。**監査の草案にある INTERNAL_ERROR は入れていない**——この道具は出さないため。出さない値を enum へ書くと、受け手が来ない分岐を実装することになる。"
+  },
+  "stableReasonCode": {
+   "type": ["string", "null"],
+   "pattern": "^[A-Z][A-Z0-9_]*$",
+   "description": "止めた理由の、文章とは別の**変わらない名前**。文章は版ごとに書き換わるので、機械で分岐するならこちらを見る。`OK` / `MISMATCH` では null。欄名・型・パスの具体値は detail に入る（**欄ごとの code は作らない**）。"
+  },
+  "reason": { "type": "string", "description": "人が読む説明。**分岐に使わない**（版ごとに書き換わる）" },
+  "detail": { "type": ["object", "null"] },
+  "archivePolicy": {
+   "type": "object",
+   "description": "**この道具が受け入れる archive の範囲。**受け手が「何を通す道具か」を機械で読めるようにする。ここに無い形は status で止まる。",
+   "required": ["acceptedHeaderFormats", "prefixUsedOnlyFor", "acceptedTypeflags", "endOfArchiveConvention", "limits"],
+   "properties": {
+    "acceptedHeaderFormats": {
+     "type": "array",
+     "items": { "type": "string", "enum": ["posix-ustar", "old-gnu", "v7", "unknown"] },
+     "description": "**形式そのものは拒まない。**345..499 を prefix として読むのは POSIX ustar のときだけで、他の形式でそこが非空なら止める（読み手ごとに名前が変わるため）。"
+    },
+    "prefixUsedOnlyFor": { "const": "posix-ustar" },
+    "acceptedTypeflags": {
+     "type": "array",
+     "items": { "type": "string" },
+     "description": "**許可表**（除外表ではない）。載っていない型は ARCHIVE_UNSUPPORTED で止まる。"
+    },
+    "endOfArchiveConvention": { "type": "string" },
+    "limits": { "type": "object" }
+   }
+  },
+  "incompletePhases": {
+   "type": "array",
+   "items": { "type": "string" },
+   "description": "**終わっていない必須工程。**空でなければ status は OK にならない。`unrecorded-input-detection`（範囲定義が無い・読めない・manifest の記録と違う）と `scope-not-pinned-to-manifest`（--allow-unpinned-scope で古い tag を検算した）が出る。"
+  },
+  "rootTransform": {
+   "type": "object",
+   "required": ["stripped"],
+   "properties": {
+    "stripped": {
+     "type": ["string", "null"],
+     "description": "剥がした先頭 1 階層の名前。GitHub の tarball は `trs-jack-3d-<sha>/` を持つ。**剥がした事実を出さないと、パスが一致したことの意味を受け手が確かめられない。**"
+    }
+   }
+  },
+  "origin": { "type": "string", "description": "source をどこから取ったか（git-archive / dir / archive / github-tarball）" },
+  "networkUsed": { "type": "boolean", "description": "既定は false。--fetch github を明示したときだけ true" },
+  "manifest": { "type": "string" },
+  "tag": { "type": ["string", "null"] },
+  "fetch": { "type": "string" },
+  "selfReported": {
+   "type": "object",
+   "description": "**manifest がそう名乗っているだけの値。**下の independentVerification と混ぜない"
+  },
+  "independentVerification": {
+   "type": "object",
+   "description": "**この実行で計算し直した結果。**",
+   "required": ["checked", "matched", "mismatched"],
+   "properties": {
+    "checked": { "type": "integer", "minimum": 0 },
+    "matched": { "type": "integer", "minimum": 0 },
+    "mismatched": { "type": "integer", "minimum": 0 },
+    "missingInSource": { "type": "integer", "minimum": 0 },
+    "recordedInconsistent": { "type": "integer", "minimum": 0 },
+    "unrecordedInputCandidates": { "type": "integer", "minimum": 0 },
+    "selfReferencingInputs": { "type": "integer", "minimum": 0 }
+   }
+  },
+  "unrecordedInputDetection": {
+   "type": "object",
+   "required": ["performed"],
+   "description": "**探したのか、探さなかったのか。**探していないのに候補 0 件を合格の根拠にしないため、performed を先に見る。",
+   "properties": {
+    "performed": { "type": "boolean" },
+    "scopeSource": { "type": ["string", "null"] },
+    "boundTo": {
+     "type": ["string", "null"],
+     "description": "範囲定義がどの記録に縛られているか。null なら manifest が範囲を記録していない古い版で、その場合 status は OK にならない。"
+    },
+    "scopeSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "stableReasonCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+   }
+  },
+  "mismatches": { "type": "array" },
+  "unrecordedInputCandidates": { "type": "array", "items": { "type": "string" } },
+  "selfReferencingInputs": { "type": "array", "items": { "type": "string" } },
+  "notCoveredByDigest": {
+   "type": ["array", "null"],
+   "description": "範囲定義が「覆えない」と自己申告しているもの（Node の版・ロケール・環境変数など）。**一致は、これらが同じだったことを意味しない。**"
+  },
+  "notes": { "type": "array", "items": { "type": "string" } },
+  "note": { "type": "string" }
+ }
+}
