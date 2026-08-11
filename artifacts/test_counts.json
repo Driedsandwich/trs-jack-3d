@@ -174,7 +174,7 @@
  },
  "generatedAt": "2026-08-11",
  "note": "npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。byFile は npm run check:vacuity の下限としても使う。件数が減る変更は理由を書く。",
- "total": 1103,
+ "total": 1105,
  "byFile": {
   "ciWorkflow.test.ts": 32,
   "contact.test.ts": 41,
@@ -195,7 +195,7 @@
   "sensitivityVariant.test.ts": 9,
   "sourceInputScope.test.ts": 26,
   "sourceVerificationResult.test.ts": 23,
-  "tarExtractionOracle.test.ts": 237,
+  "tarExtractionOracle.test.ts": 239,
   "tarHardening.test.ts": 177,
   "topology.test.ts": 15,
   "topologyRobustness.test.ts": 44,
@@ -205,13 +205,13 @@
   "verifyReleaseSourceInputs.test.ts": 27
  },
  "skipped": 0,
- "failed": 1,
- "failedSuites": 2,
- "exitCode": 1,
- "allPassed": false,
+ "failed": 0,
+ "failedSuites": 0,
+ "exitCode": 0,
+ "allPassed": true,
  "testCommand": "npx vitest run --reporter=json",
  "runner": "vitest",
  "runnerVersion": "4.1.10",
  "nodeVersion": "v22.22.3",
- "generatedFromCommit": "65dbb4f9301a68dcf62ecc6acb15627c07c9298d"
+ "generatedFromCommit": "66b6831ab1aa43340bbfda155fd783a285b08c9b"
 }
