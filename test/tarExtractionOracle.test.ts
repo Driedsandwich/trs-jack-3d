@@ -82,7 +82,7 @@ function paxRecord(key: string, value: string): Buffer {
 
 // --------------------------------------------------------------------------- oracle
 
-type Extracted = { path: string, type: 'file' | 'dir' | 'symlink', content?: string, bytes?: Buffer, oversize?: number }
+type Extracted = { path: string, type: 'file' | 'dir' | 'symlink', content?: string, bytes?: Buffer, oversize?: number, unreadable?: string }
 
 /**
  * **中身を読み込む上限（v0.6.7）。**展開すると 8.5 GB の疎ファイルができる材料があり、
@@ -152,7 +152,17 @@ function walkTree(out: string): Extracted[] {
       // **中身は生バイトで持つ（v0.6.5・外部監査 P1）。**UTF-8 文字列にすると
       // 不正バイトが U+FFFD へ潰れ、**違うバイト列が「同じ」に見える。**
       else if (st.size > ORACLE_READ_LIMIT) found.push({ path, type: 'file', oversize: st.size })
-      else found.push({ path, type: 'file', bytes: readFileSync(full) })
+      else {
+        /**
+         * **読めなかったことを、読めたことにしない（v0.6.8）。**
+         * `mode` 欄が壊れた archive を展開すると、権限 0 のファイルができて読めない。
+         * 例外で落とすと試験が止まり、黙って飛ばすと**片方だけ読めない木が「同じ」に見える。**
+         * 読めなかった事実を木に残す。
+         */
+        try { found.push({ path, type: 'file', bytes: readFileSync(full) }) } catch (e) {
+          found.push({ path, type: 'file', unreadable: `${(e as { code?: string }).code ?? 'ERR'}/mode=${(st.mode & 0o7777).toString(8)}` })
+        }
+      }
     }
   }
   walk(null)
@@ -162,7 +172,9 @@ function walkTree(out: string): Extracted[] {
 /** 木を 1 本の文字列にする（**リンクの指す先まで含める**——そこで割れる archive がある） */
 const treeDigest = (es: Extracted[]) => es
   .map((e) => `${e.type} ${e.path}${e.type === 'symlink' ? ` -> ${e.content}` : ''}`
-    + (e.type === 'file' ? ` #${e.bytes ? e.bytes.toString('hex') : `oversize:${e.oversize}`}` : ''))
+    + (e.type === 'file'
+      ? ` #${e.bytes ? e.bytes.toString('hex') : (e.unreadable ? `unreadable:${e.unreadable}` : `oversize:${e.oversize}`)}`
+      : ''))
   .sort().join('\n')
 
 /**
@@ -196,7 +208,7 @@ function mismatchesOf(buf: Buffer): string[] {
     const file = cand.find((e) => e.type === 'file')
     if (!file) bad.push(`${k}: 展開結果に通常ファイルとして存在しない（実際は ${cand.map((c) => c.type).join(',') || 'なし'}）`)
     // **読まなかったものを「同じ」にしない。**上限を超えたファイルは比較していないので不合格に倒す
-    else if (!file.bytes) bad.push(`${k}: 展開結果が大きすぎて中身を比較していない（${file.oversize} バイト）`)
+    else if (!file.bytes) bad.push(`${k}: 展開結果の中身を比較していない（${file.unreadable ?? `${file.oversize} バイト`}）`)
     else if (!file.bytes.equals(v)) bad.push(`${k}: 中身が違う（生バイトで比較）`)
   }
   bad.push(...omissionsOf(r, o, full))
@@ -221,34 +233,51 @@ function mismatchesOf(buf: Buffer): string[] {
  * どちらが正しいかを決める立場にないので、狭い部分集合だけを受ける。
  */
 function oracleDisagreement(buf: Buffer, bsd: { entries: Extracted[] }): string[] {
-  const py = extractWithPython(buf)
-  if (py.unavailable) return []                  // python が無い環境では判定しない
+  /**
+   * **比べるのはパスの一覧ではなく、型つきの木（v0.6.8・外部監査 §6）。**
+   *
+   * v0.6.7 はパス名だけを並べて比べていた。だから
+   * **同じ名前で片方が symlink・片方が通常ファイル**でも、
+   * **中身のバイト列が違って**も、差が出なかった。
+   * 実測（2026-08-11）: PAX path が `/` で終わる通常ファイルで
+   * bsdtar は directory を作り python は通常ファイルを作る——**名前だけ見ると同じ。**
+   *
+   * **python が無い環境では判定しない、もやめた。**
+   * 必須 oracle が動いていないなら、それは「合格」ではなく「確かめていない」である。
+   */
+  const py = extractWithPythonTree(buf)
+  if (py.unavailable) {
+    return ['必須 oracle（python3）が無いか起動できない。**確かめていないので合格にしない**']
+  }
   if (py.failed) return [`bsdtar は展開できたのに python は展開できない（${py.stderr.slice(0, 70)}）`]
-  const a = bsd.entries.filter((e) => e.type !== 'dir').map((e) => e.path).sort()
-  const b = py.files.slice().sort()
-  if (JSON.stringify(a) !== JSON.stringify(b)) {
-    return [`必須 oracle が違う木を作る: bsdtar=${JSON.stringify(a).slice(0, 60)} python=${JSON.stringify(b).slice(0, 60)}`]
+  const a = treeDigest(bsd.entries)
+  const b = treeDigest(py.entries)
+  if (a !== b) {
+    const diff = a.split('\n').filter((l) => !b.split('\n').includes(l)).slice(0, 2).join(' / ')
+    return [`必須 oracle が違う木を作る（型・指す先・中身まで比較）: bsdtar だけにある ${diff.slice(0, 90)}`]
   }
   return []
 }
 
-function extractWithPython(buf: Buffer): { files: string[], failed: boolean, unavailable: boolean, stderr: string } {
-  const dir = mkdtempSync(join(tmpdir(), 'trs-oracle-py-'))
+/** python で展開して、**bsdtar と同じ物差し**（walkTree）で木にする */
+function extractWithPythonTree(buf: Buffer): { entries: Extracted[], failed: boolean, unavailable: boolean, stderr: string } {
+  const dir = mkdtempSync(join(tmpdir(), 'trs-oracle-pyt-'))
   tmps.push(dir)
+  const out = join(dir, 'out')
+  mkdirSync(out)
   writeFileSync(join(dir, 'a.tar'), buf)
   try {
-    const out = execFileSync('python3', ['-c', PY_EXTRACT, join(dir, 'a.tar'), join(dir, 'out')], {
+    const o = execFileSync('python3', ['-c', PY_EXTRACT, join(dir, 'a.tar'), out], {
       stdio: ['ignore', 'pipe', 'pipe'],
     }).toString().trim()
-    if (out.startsWith('FAIL ')) return { files: [], failed: true, unavailable: false, stderr: out.slice(5) }
-    return { files: JSON.parse(out.slice(3)) as string[], failed: false, unavailable: false, stderr: '' }
+    if (o.startsWith('FAIL ')) return { entries: [], failed: true, unavailable: false, stderr: o.slice(5) }
+    return { entries: walkTree(out), failed: false, unavailable: false, stderr: '' }
   } catch (e) {
-    // python3 が無い / 起動できない場合だけ「判定しない」に倒す
     const err = String((e as { stderr?: Buffer }).stderr ?? '')
     if (/ENOENT|not found/i.test(err) || (e as { code?: string }).code === 'ENOENT') {
-      return { files: [], failed: false, unavailable: true, stderr: '' }
+      return { entries: [], failed: false, unavailable: true, stderr: '' }
     }
-    return { files: [], failed: true, unavailable: false, stderr: err.split('\n').filter(Boolean).pop() ?? '' }
+    return { entries: [], failed: true, unavailable: false, stderr: err.split('\n').filter(Boolean).pop() ?? '' }
   }
 }
 
@@ -511,10 +540,24 @@ const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }>
     on: 'none',
     note: '同上（指す先の側）。逆順（pax-gnu-K-then-linkpath）は GNU tar 側で割れる',
   },
-  'trav-backslash': {
+  /**
+   * **v0.6.8 で足した行。**`trav-backslash` はここから外した——
+   * `ARCHIVE_UNSUPPORTED` にしたので、この表（`ARCHIVE_INVALID` が対象）の外になる。
+   * Unix では 3 実装とも同じ木を作り、Windows では 1 階層上を指す。
+   * **壊れているのではなく、受け手の OS で意味が変わる**（外部監査 §7）。
+   */
+  'raw-mode-not-octal': {
+    on: 'bsdtar',
+    note: 'bsdtar は権限 0 の読めないファイルを作り、python は filter=tar で mode を丸める'
+      + '——**同じ archive から違う木ができる。**'
+      + '（この行は最初 gnu-tar と書いていた。試験の道具が読めないファイルで落ちていて'
+      + '根拠が見えていなかっただけで、直したら手元で取れた）',
+  },
+  'pax-symlink-trailing-slash': {
     on: 'none',
-    note: '`..\\evil.txt` は Unix ではふつうの名前になる（両 platform で 2 実装とも同じ木）。'
-      + 'Windows では 1 階層上を指す。**手元で無害なことは、受け手のところで無害であることを意味しない**',
+    note: 'symlink の名前が / で終わる形。**手元の 2 実装はどちらも / を捨てて同じ symlink を作る。**'
+      + 'typeflag は symlink・名前は directory で、entry が自分自身と矛盾しているので止めている'
+      + '（通常ファイルの側は bsdtar が directory・python が通常ファイルを作り、実測で割れる）',
   },
 }
 
@@ -619,7 +662,7 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
     console.log(`\nこの run の 2 実装では割れないのに止めているもの: ${rows.length} 件\n`
       + Object.entries(byOn).map(([w, ids]) => `  ${w.padEnd(10)} ${ids.length} 件  ${ids.join(', ')}`).join('\n'))
     expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(3)
-    expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(8)
+    expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(9)
     expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(9)
   })
 
