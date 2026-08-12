@@ -90,7 +90,8 @@
   <h2>目次</h2>
   <ol>
     <li><a href="#s0">v0.6.11（2026-08-12 記載）</a></li>
-    <li><a href="#s1">この正誤表の運用</a></li>
+    <li><a href="#s1">v0.6.12 以前（2026-08-12 記載・v0.6.13 で直しました）</a></li>
+    <li><a href="#s2">この正誤表の運用</a></li>
   </ol>
 </nav>
 <h1>正誤表</h1>
@@ -124,7 +125,23 @@ node scripts/verifyReleaseSourceInputs.mjs \
 <p><strong>v0.6.11 の配布物を使う場合は、この行を読まないこと。</strong> <code>verifyReleaseSourceInputs.mjs</code> が返す値が正しく、<code>schemas/source-verifier-cli-result.v1.schema.json</code> の <code>status.enum</code>（8 種類・同じ配布物に入っている）がその正本である。</p>
 <p>v0.6.12 で、この行は道具の定数から生成するようにした。</p>
 <hr>
-<h2 id="s1">この正誤表の運用</h2>
+<h2 id="s1">v0.6.12 以前（2026-08-12 記載・<strong>v0.6.13 で直しました</strong>）</h2>
+<h3>4. <strong>検算ツールを別名で走らせると、何も出さずに <code>exit 0</code> で終わる</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.12 までに配布した <code>verifyReleaseSourceInputs.mjs</code> <strong>全部</strong></td></tr><tr><td>症状</td><td>コピーの名前を変える／symlink を張ると、<strong>検算せずに終了コード 0</strong> を返す</td></tr><tr><td>影響</td><td><strong>終了コードだけを見る受け手には、合格と区別が付かない</strong></td></tr><tr><td>直した版</td><td>v0.6.13</td></tr></tbody></table></div>
+<p>原因は入口の判定がファイル名の正規表現（<code>/verifyReleaseSourceInputs\.mjs$/</code>）だったこと。</p>
+<pre><code>実測（2026-08-12・v0.6.12 の道具）
+  verifyReleaseSourceInputs.mjs   exit 0 / 出力 4,318 バイト
+  renamed.mjs                     exit 0 / 出力     0 バイト
+  link.mjs（symlink）             exit 0 / 出力     0 バイト</code></pre>
+<p>再現手順:</p>
+<pre><code>cp verifyReleaseSourceInputs.mjs renamed.mjs
+node renamed.mjs --manifest source-input-manifest.json --source &lt;展開した source&gt;
+echo "exit=$?"   # → exit=0 だが、標準出力は空</code></pre>
+<p><strong>同梱の手順どおり（名前を変えずに）回していれば起きません。</strong> 黙る経路は JSON を 1 バイトも出さないので、<strong>出力を読んでいたなら気づけています。</strong></p>
+<p><strong><code>toolVersion</code> は上げていません</strong>（16 のまま）。判定は変わらず、 黙る経路は <code>toolVersion</code> を出さないので、受け手が「16 なのに挙動が違う」に出会う場面がないためです。 <strong>v0.6.12 と v0.6.13 の道具は版数では見分けられません</strong>——<code>tool.sha256</code> で見てください。</p>
+<p><strong>気づいた経緯</strong>: v0.6.12 の release 準備中に、新旧の道具の出力を比べようとして 旧版を別名でコピーしたところ、<strong>旧版が黙って何も出さず</strong>、それを一度「判定が変わった」と読みかけた。 <strong>道具が落ちているときと、根拠が無いときは出力が同じに見える。</strong></p>
+<hr>
+<h2 id="s2">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
 </div>
 </body>
