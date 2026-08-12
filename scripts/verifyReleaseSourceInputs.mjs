@@ -25,11 +25,10 @@
  * **この 2 つを同じ「失敗」に潰さない。**
  * source が手に入らないのは検証していないだけで、不一致とは意味が違う。
  *
- *   OK                    … 全件一致                     (exit 0)
- *   MISMATCH              … 不一致か欠落がある            (exit 1)
- *   SOURCE_UNAVAILABLE    … source を取れなかった         (exit 2)
- *   MANIFEST_UNAVAILABLE  … manifest を読めなかった       (exit 2)
- *   NOTHING_TO_VERIFY     … 入力が 0 件で何も見ていない   (exit 2)
+ * **status と終了コードの一覧はここに書かない（v0.6.14・外部監査 P1-B）。**
+ * v0.6.13 まで、ここに 5 種類を手で並べていた。道具が 8 種類を返すようになったあとも
+ * **5 種類のまま残り、配布ソースを読む受け手に古い一覧を見せていた。**
+ * 正本は下の `CLI_STATUS_EXIT` ひとつ。**同じ境界を 2 か所に書かない。**
  *
  * ## read-only
  *
@@ -191,7 +190,132 @@ import { fileURLToPath } from 'node:url'
  *       「16 なのに挙動が違う」に出会う場面は無い。**版で見分ける必要が生じない。**
  *       道具そのものを突き合わせたいときは、自己申告 artifact の `tool.sha256` を見る。
  */
-export const TOOL_VERSION = 16
+/**
+ * **止めた理由の名前の唯一の正本（v0.6.14・外部監査 2026-08-12 P0）。**
+ *
+ * **この道具は 1 ファイルで配る**（受け手は同梱の .mjs をそのまま走らせる）ので、
+ * catalog を別ファイルに置くと配布物が動かなくなる。実際に一度そうして試験に捕まった
+ * ——`検証ツールが単体で動く（リポジトリ内の他ファイルを import していない）`。
+ *
+ * v0.6.13 まで、`stableReasonCode` は throw / return の各所に文字列として散っていた。
+ * 中央の一覧が無いので、**付け忘れた経路は黙って `*_OTHER` へ落ちる。**
+ * 「corpus で止まる材料 110 件・`*_OTHER` は 0 件」は真だったが、
+ * **corpus が踏んだ経路についてだけ**で、公開 CLI の全経路を覆っていなかった。
+ */
+/**
+ * `code → { status, family, summary }`
+ *
+ * - `status`  … この code で止まるときの CLI status
+ * - `family`  … 受け手が粗く分岐するための束（`path` / `pax` / `header` / …）
+ * - `summary` … 人が読む 1 行。**分岐に使わない**
+ *
+ * **具体値（欄名・型・実際のパス）は `detail` へ入れる。**欄ごとの code は作らない
+ * ——作ると受け手の分岐が爆発し、こちら側も付け忘れる。
+ */
+export const REASON_CODES = {
+  // ---- パスそのもの ----
+  PATH_TRAVERSAL: { status: 'ARCHIVE_INVALID', family: 'path', summary: '.. が残るパス' },
+  PATH_ABSOLUTE: { status: 'ARCHIVE_INVALID', family: 'path', summary: '絶対パス' },
+  PATH_DRIVE_LETTER: { status: 'ARCHIVE_INVALID', family: 'path', summary: 'ドライブレター付き' },
+  PATH_NOT_CANONICAL: { status: 'ARCHIVE_INVALID', family: 'path', summary: '正規形でない綴り' },
+  PATH_EMPTY_COMPONENT: { status: 'ARCHIVE_INVALID', family: 'path', summary: '空のパス要素' },
+  PATH_EMPTY_NAME: { status: 'ARCHIVE_INVALID', family: 'path', summary: '実効名が空' },
+  PATH_SURROUNDING_SPACE: { status: 'ARCHIVE_INVALID', family: 'path', summary: '前後に空白' },
+  PATH_CONTROL_CHARACTER: { status: 'ARCHIVE_INVALID', family: 'path', summary: '制御文字' },
+  PATH_TRAILING_SLASH_TYPE_CONFLICT: { status: 'ARCHIVE_INVALID', family: 'path', summary: '末尾スラッシュと型が食い違う' },
+  PATH_BACKSLASH_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'path', summary: 'バックスラッシュ（OS で意味が変わる）' },
+  PATH_TOO_LONG_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: 'パスが長すぎる' },
+  ROOT_STRIP_NOT_A_DIRECTORY: { status: 'ARCHIVE_INVALID', family: 'path', summary: '先頭 1 階層が directory でない' },
+
+  // ---- 文字 ----
+  TEXT_NOT_UTF8: { status: 'ARCHIVE_INVALID', family: 'text', summary: 'UTF-8 として読めない' },
+  TEXT_CONTAINS_NUL: { status: 'ARCHIVE_INVALID', family: 'text', summary: 'NUL を含む' },
+
+  // ---- ヘッダ ----
+  HEADER_CHECKSUM_MISMATCH: { status: 'ARCHIVE_INVALID', family: 'header', summary: 'checksum が合わない' },
+  HEADER_FORMAT_PREFIX_CONFLICT: { status: 'ARCHIVE_INVALID', family: 'header', summary: '形式と 345..499 が食い違う' },
+  HEADER_NUMERIC_FIELD_SYNTAX: { status: 'ARCHIVE_INVALID', family: 'header', summary: '数値欄の書式' },
+  HEADER_NUMERIC_FIELD_RANGE: { status: 'ARCHIVE_INVALID', family: 'header', summary: '数値欄の範囲' },
+  HEADER_NUMERIC_FIELD_BASE256_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'header', summary: 'base-256 の数値欄' },
+
+  // ---- PAX / 拡張ヘッダ ----
+  PAX_RECORD_INVALID: { status: 'ARCHIVE_INVALID', family: 'pax', summary: 'PAX レコードの形が壊れている' },
+  PAX_VALUE_SYNTAX: { status: 'ARCHIVE_INVALID', family: 'pax', summary: 'PAX の値の書式' },
+  PAX_VALUE_RANGE: { status: 'ARCHIVE_INVALID', family: 'pax', summary: 'PAX の値の範囲' },
+  PAX_KEY_DANGEROUS: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '見え方を変える鍵' },
+  PAX_KEY_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'pax', summary: '扱いを決めていない鍵' },
+  PAX_ZERO_LENGTH_VALUE_INVALID: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '長さ 0 の値が許されない鍵' },
+  PAX_ZERO_LENGTH_NAME_AMBIGUOUS: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '長さ 0 の名前指定' },
+  PAX_GLOBAL_NAME_OVERRIDE: { status: 'ARCHIVE_INVALID', family: 'pax', summary: 'global ヘッダで名前を上書き' },
+  EXTENSION_HEADER_DANGLING: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '拡張ヘッダの相手がいない' },
+  /** ⚠️ 名前は UNSUPPORTED だが、**実測では ARCHIVE_INVALID**（名前から推測して書いたのが誤りだった・v0.6.14） */
+  EXTENSION_HEADER_SEQUENCE_UNSUPPORTED: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '扱いを決めていない並び' },
+  EXTENSION_OVERRIDE_CONFLICT: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '名前の上書きが 2 つ効く' },
+  EXTENSION_NAME_EMPTY: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '拡張ヘッダの中身が長さ 0' },
+
+  // ---- entry の型・本体 ----
+  ENTRY_TYPE_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'entry', summary: '扱いを決めていない型' },
+  ENTRY_BODY_ON_BODYLESS_TYPE: { status: 'ARCHIVE_INVALID', family: 'entry', summary: '中身を持てない型に本体がある' },
+  ENTRY_BODY_TRUNCATED: { status: 'ARCHIVE_INVALID', family: 'entry', summary: '本体の詰め物が欠けている' },
+  DUPLICATE_PATH_CONFLICT: { status: 'ARCHIVE_INVALID', family: 'entry', summary: '同じパスが 2 回' },
+  ANCESTOR_TYPE_CONFLICT: { status: 'ARCHIVE_INVALID', family: 'entry', summary: '祖先が directory でない' },
+
+  // ---- リンク ----
+  LINK_TARGET_EMPTY: { status: 'ARCHIVE_INVALID', family: 'link', summary: 'リンクの指す先が空' },
+  LINK_TARGET_NOT_A_PATH: { status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先の綴りを受け取れない' },
+  LINK_TARGET_NOT_CANONICAL: { status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先が正規形でない' },
+  LINK_TARGET_TRAILING_SLASH: { status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先が / で終わる' },
+  HARDLINK_TARGET_MISSING: { status: 'ARCHIVE_INVALID', family: 'link', summary: 'hardlink の指す先が無い' },
+  HARDLINK_TARGET_NOT_A_FILE: { status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先が通常ファイルでない' },
+  HARDLINK_SELF_REFERENCE: { status: 'ARCHIVE_INVALID', family: 'link', summary: '自分自身を指す hardlink' },
+  HARDLINK_CHAIN_UNRESOLVED: { status: 'ARCHIVE_INVALID', family: 'link', summary: 'hardlink の連鎖を解決できない' },
+
+  // ---- 終端 ----
+  END_OF_ARCHIVE_LONE_ZERO_BLOCK: { status: 'ARCHIVE_INVALID', family: 'eoa', summary: '終端の印のあとに中身が続く' },
+  END_OF_ARCHIVE_MISSING: { status: 'ARCHIVE_INVALID', family: 'eoa', summary: '終端の印を見ないまま尽きた' },
+
+  // ---- 上限（方針であって archive の欠陥ではない）----
+  LIMIT_ENTRY_COUNT_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: 'entry が多すぎる' },
+  LIMIT_ENTRY_BYTES_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: 'entry が大きすぎる' },
+  LIMIT_BODY_BYTES_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: '本体が大きすぎる' },
+  LIMIT_TOTAL_BYTES_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: '合計が大きすぎる' },
+
+  /**
+   * ---- ここから下が v0.6.14 で足した 5 つ（外部監査 P0・すべてこちらで再現済み）----
+   */
+  /** 壊れた gzip。**v16 notes は「付けた」と書いていたが、実装されていなかった** */
+  GZIP_DECODE_FAILED: { status: 'ARCHIVE_INVALID', family: 'container', summary: 'gzip を展開できない' },
+  /** 手元の archive ファイルが、展開する前の時点で大きすぎる */
+  LIMIT_COMPRESSED_BYTES_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: '圧縮された状態で大きすぎる' },
+  /** source として渡された root が symlink。**指す先ごと差し替えられる** */
+  SOURCE_ROOT_SYMLINK: { status: 'ARCHIVE_INVALID', family: 'source', summary: 'source root が symlink' },
+  /** source directory を読めない（権限・消えた・その他 OS のエラー） */
+  SOURCE_DIRECTORY_UNREADABLE: { status: 'ARCHIVE_UNSUPPORTED', family: 'source', summary: 'source ディレクトリを読めない' },
+  /** directory の中に FIFO・socket・device がある */
+  SOURCE_SPECIAL_NODE: { status: 'ARCHIVE_UNSUPPORTED', family: 'source', summary: '通常ファイルでも directory でもないノード' },
+}
+
+/**
+ * **`*_OTHER` は予期しない内部不具合の受け皿だけ。**
+ * 既知の経路がここへ落ちたら、それは catalog への登録漏れである。
+ */
+export const OTHER_CODES = ['ARCHIVE_INVALID_OTHER', 'ARCHIVE_UNSUPPORTED_OTHER']
+
+/** catalog に載っているか。載っていなければ投げる（静かに `*_OTHER` へ落とさない） */
+export function assertCatalogued(code) {
+  if (!Object.hasOwn(REASON_CODES, code)) {
+    throw new Error(`stableReasonCode "${code}" は catalog（scripts/reasonCodes.mjs）に無い。`
+      + '**新しい止め方を足したら catalog にも足すこと。**登録しないと受け手は機械で分岐できない。')
+  }
+  return code
+}
+
+/** その code で止まるときの CLI status */
+export function statusOf(code) {
+  return assertCatalogued(code) && REASON_CODES[code].status
+}
+
+export const TOOL_VERSION = 17
 
 /**
  * **この道具が出しうる status と、そのときの終了コード（v0.6.11・外部監査 §7）。**
@@ -216,19 +340,51 @@ export const TOOL_VERSION = 16
  *   MANIFEST_UNAVAILABLE    … manifest を読めなかった
  *   NOTHING_TO_VERIFY       … 入力 0 件で何も見ていない
  */
-export const CLI_STATUS_EXIT = {
-  OK: 0,
-  MISMATCH: 1,
-  VERIFICATION_INCOMPLETE: 1,
-  ARCHIVE_INVALID: 2,
-  ARCHIVE_UNSUPPORTED: 2,
-  SOURCE_UNAVAILABLE: 2,
-  MANIFEST_UNAVAILABLE: 2,
-  NOTHING_TO_VERIFY: 2,
+/**
+ * **v0.6.14: status に紐づくものを全部ここへ入れた（外部監査 P1-C）。**
+ *
+ * v0.6.13 まで、`KNOWN_LOAD_KINDS`（loader が返してよい status の 2 要素配列）と
+ * `NOTE`（受け手向けの注記の map）が**別の場所に手書き**されていた。
+ * status を足したとき `KNOWN_LOAD_KINDS` を直し忘れると、
+ * **その status は黙って `SOURCE_UNAVAILABLE` へ丸められる**——
+ * 「取れなかった」と「壊れていた」が入れ替わる、いちばん避けたい丸め方である。
+ *
+ *   exit      … その status のときの終了コード
+ *   fromLoad  … source の読み込みが返してよい status か（false なら丸める対象）
+ *   note      … 受け手向けの注記。**分岐に使わない**（無い status は注記も無い）
+ */
+export const CLI_STATUS_META = {
+  OK: { exit: 0, fromLoad: false },
+  MISMATCH: { exit: 1, fromLoad: false },
+  VERIFICATION_INCOMPLETE: { exit: 1, fromLoad: false },
+  ARCHIVE_INVALID: {
+    exit: 2,
+    fromLoad: true,
+    note: '**これは不一致ではない。**archive そのものが壊れているか、安全に読めない形だったので、'
+      + '中身を見ていない。渡した source を疑うこと。',
+  },
+  ARCHIVE_UNSUPPORTED: {
+    exit: 2,
+    fromLoad: true,
+    note: '**これは不一致ではない。archive が壊れているとも言っていない。**'
+      + 'ふつうの tar なら展開できるが、この道具が扱うと決めた範囲の外だったので中身を見ていない。'
+      + '別の経路（展開してから --source <ディレクトリ>）で確かめられることがある。',
+  },
+  SOURCE_UNAVAILABLE: {
+    exit: 2,
+    fromLoad: true,
+    note: '**これは不一致ではない。**source を取れなかったので、検証していない。'
+      + 'network を使わずに確かめるなら --source <展開済みディレクトリ> を渡すこと。',
+  },
+  MANIFEST_UNAVAILABLE: { exit: 2, fromLoad: false },
+  NOTHING_TO_VERIFY: { exit: 2, fromLoad: false },
 }
 
 /** **導出する。**別に並べると、また 2 つ目の一覧になる */
-export const CLI_STATUSES = Object.keys(CLI_STATUS_EXIT)
+export const CLI_STATUS_EXIT = Object.fromEntries(
+  Object.entries(CLI_STATUS_META).map(([s, m]) => [s, m.exit]),
+)
+export const CLI_STATUSES = Object.keys(CLI_STATUS_META)
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -292,6 +448,20 @@ const done = (payload, code) => {
       acceptedTypeflags: [...SUPPORTED_TYPEFLAGS].sort(),
       endOfArchiveConvention: 'two-zero-blocks; trailing partial block after the terminator is ignored',
       limits: TAR_LIMITS,
+      /**
+       * **ここに載っていない規則がある（v0.6.14・外部監査 P1-D）。**
+       * `archivePolicy` という名前は「この道具が受け入れる範囲の全部」と読めるが、
+       * 実際に機械で読める形にしてあるのは上の 5 つだけ。
+       * PAX の鍵の扱い・パスの綴り・リンクの指す先・checksum・重複は、
+       * **止め方の名前（`stableReasonCode`）でしか表に出ていない。**
+       * 名前を変えると schema が狭まって下流が止まるので、**覆っていない範囲を明示する欄を足した。**
+       */
+      notMachineReadableHere: [
+        'pax-key-handling', 'path-spelling', 'link-target-resolution',
+        'header-checksum', 'duplicate-path', 'root-strip',
+      ],
+      /** 上の 6 つを含む止め方の全体像は、この道具が返す stableReasonCode で見る */
+      reasonCodeFamilies: [...new Set(Object.values(REASON_CODES).map((r) => r.family))].sort(),
     },
     ...payload,
   }, null, 1))
@@ -335,11 +505,40 @@ export const TAR_LIMITS = {
   maxCompressedBytes: 64 << 20,
 }
 
+/**
+ * **止め方は catalog に登録した名前でしか作れない（v0.6.14・外部監査 P0）。**
+ *
+ * v0.6.13 まで、`stableReasonCode` を付け忘れた経路は**黙って `*_OTHER` へ落ちて**いた。
+ * 実測（2026-08-12）: 壊れた gzip も、source root が symlink の場合も
+ * `ARCHIVE_INVALID_OTHER` を返していた。**しかも v16 notes は
+ * 「gzip の失敗に `GZIP_DECODE_FAILED` を付けた」と書いていた**——その名前は
+ * source 全体でコメント 1 件にしか存在しなかった。
+ *
+ * ここで投げるようにすると、**付け忘れは実行した瞬間に分かる。**
+ * catalog の `status` と例外の種類が食い違うのも同時に止める——
+ * `ARCHIVE_UNSUPPORTED` の code を `ArchiveInvalid` で投げると、
+ * 受け手は「壊れている」と「範囲の外」を読み分けられなくなる。
+ */
+function assertCodeFor(kind, detail) {
+  const code = detail?.stableReasonCode
+  if (!code) {
+    throw new Error(`${kind} を stableReasonCode 無しで作ろうとした。`
+      + '**付け忘れた止め方は黙って *_OTHER へ落ちる。**scripts/reasonCodes.mjs に登録して名前を渡すこと。')
+  }
+  assertCatalogued(code)
+  const want = REASON_CODES[code].status
+  if (want !== kind) {
+    throw new Error(`stableReasonCode "${code}" は catalog では ${want} だが、${kind} として投げている。`
+      + '**受け手は「壊れている」と「範囲の外」を読み分けるので、ここを取り違えない。**')
+  }
+}
+
 /** archive が壊れている／敵対的であることを表す。**取れなかった（SOURCE_UNAVAILABLE）とは別物** */
 export class ArchiveInvalid extends Error {
   constructor(reason, detail = {}) {
     super(reason)
     this.name = 'ArchiveInvalid'
+    assertCodeFor('ARCHIVE_INVALID', detail)
     this.detail = detail
   }
 }
@@ -369,7 +568,24 @@ export class ArchiveUnsupported extends Error {
   constructor(reason, detail = {}) {
     super(reason)
     this.name = 'ArchiveUnsupported'
+    assertCodeFor('ARCHIVE_UNSUPPORTED', detail)
     this.detail = detail
+  }
+}
+
+/**
+ * **`{ kind: 'ARCHIVE_*' }` を直に組み立てず、ここを通す（v0.6.14・外部監査 P0）。**
+ *
+ * 直に組み立てていた 5 か所は、`stableReasonCode` を持たないまま `*_OTHER` になっていた。
+ * `kind` は catalog から引くので、**code と kind が食い違いようがない。**
+ */
+export function archiveError(code, error, detail = {}) {
+  assertCatalogued(code)
+  return {
+    error,
+    kind: REASON_CODES[code].status,
+    detail: { ...detail, stableReasonCode: code },
+    stableReasonCode: code,
   }
 }
 
@@ -2002,7 +2218,8 @@ function gunzipLimited(buf) {
   try {
     return gunzipSync(buf, { maxOutputLength: TAR_LIMITS.maxTotalBytes })
   } catch (e) {
-    throw new ArchiveInvalid(`gzip を展開できない: ${String(e.message).split('\n')[0]}`)
+    throw new ArchiveInvalid(`gzip を展開できない: ${String(e.message).split('\n')[0]}`,
+      { stableReasonCode: 'GZIP_DECODE_FAILED' })
   }
 }
 
@@ -2091,10 +2308,10 @@ function loadFromArchive(path) {
     const size = statSync(abs).size
     if (size > TAR_LIMITS.maxCompressedBytes) {
       return {
-        error: `source archive が大きすぎる (${size} > ${TAR_LIMITS.maxCompressedBytes} バイト)`,
-        // 資源上限は方針であって、archive の欠陥ではない（v0.6.7）
-        kind: 'ARCHIVE_UNSUPPORTED',
-        detail: { path, size, limit: TAR_LIMITS.maxCompressedBytes },
+        // 資源上限は方針であって、archive の欠陥ではない（v0.6.7）。kind は catalog から引く
+        ...archiveError('LIMIT_COMPRESSED_BYTES_UNSUPPORTED',
+          `source archive が大きすぎる (${size} > ${TAR_LIMITS.maxCompressedBytes} バイト)`,
+          { path, size, limit: TAR_LIMITS.maxCompressedBytes }),
       }
     }
     buf = readFileSync(abs)
@@ -2116,7 +2333,7 @@ function loadFromDir(dir) {
     return { error: `source を読めない (${dir}): ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE' }
   }
   if (rootStat.isSymbolicLink()) {
-    return { error: `source がシンボリックリンクである: ${dir}`, kind: 'ARCHIVE_INVALID', detail: { path: dir } }
+    return archiveError('SOURCE_ROOT_SYMLINK', `source がシンボリックリンクである: ${dir}`, { path: dir })
   }
   if (!rootStat.isDirectory()) return loadFromArchive(dir)
   const files = new Map()
@@ -2197,10 +2414,20 @@ function loadFromDir(dir) {
      * 受け手は「合わなかった」と「道具が落ちた」を区別できない。
      */
     if (e instanceof ArchiveUnsupported) {
-      return { error: `source ディレクトリ (${dir}): ${e.message}`, kind: 'ARCHIVE_UNSUPPORTED', detail: e.detail }
+      return {
+        error: `source ディレクトリ (${dir}): ${e.message}`,
+        kind: 'ARCHIVE_UNSUPPORTED',
+        detail: e.detail,
+        stableReasonCode: e.detail?.stableReasonCode ?? 'SOURCE_DIRECTORY_UNREADABLE',
+      }
     }
     if (e instanceof ArchiveInvalid) {
-      return { error: `source ディレクトリ (${dir}): ${e.message}`, kind: 'ARCHIVE_INVALID', detail: e.detail }
+      return {
+        error: `source ディレクトリ (${dir}): ${e.message}`,
+        kind: 'ARCHIVE_INVALID',
+        detail: e.detail,
+        stableReasonCode: e.detail?.stableReasonCode ?? 'ARCHIVE_INVALID_OTHER',
+      }
     }
     return {
       error: `source ディレクトリを走査できない (${dir}): ${String(e.message).split('\n')[0]}`,
@@ -2288,11 +2515,9 @@ async function loadFromGithub(tag) {
    */
   const declared = Number(res.headers.get('content-length'))
   if (Number.isFinite(declared) && declared > TAR_LIMITS.maxCompressedBytes) {
-    return {
-      error: `GitHub が申告した本文が大きすぎる (${declared} > ${TAR_LIMITS.maxCompressedBytes} バイト)`,
-      kind: 'ARCHIVE_UNSUPPORTED',
-      detail: { declaredBytes: declared, limit: TAR_LIMITS.maxCompressedBytes },
-    }
+    return archiveError('LIMIT_COMPRESSED_BYTES_UNSUPPORTED',
+      `GitHub が申告した本文が大きすぎる (${declared} > ${TAR_LIMITS.maxCompressedBytes} バイト)`,
+      { declaredBytes: declared, limit: TAR_LIMITS.maxCompressedBytes })
   }
   let gz
   try {
@@ -2369,20 +2594,14 @@ if (RUN_AS_CLI) {
      * **受け手が記録を保存しても、通信の問題なのか改竄なのか読み分けられない。**
      * v0.6.6 までは 3 つ目が 2 つ目に混ざっており、**展開できる archive を「壊れている」と言っていた。**
      */
-    const KNOWN_LOAD_KINDS = ['ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED']
-    const kind = KNOWN_LOAD_KINDS.includes(loaded.kind) ? loaded.kind : 'SOURCE_UNAVAILABLE'
-    const NOTE = {
-      ARCHIVE_INVALID:
-        '**これは不一致ではない。**archive そのものが壊れているか、安全に読めない形だったので、'
-        + '中身を見ていない。渡した source を疑うこと。',
-      ARCHIVE_UNSUPPORTED:
-        '**これは不一致ではない。archive が壊れているとも言っていない。**'
-        + 'ふつうの tar なら展開できるが、この道具が扱うと決めた範囲の外だったので中身を見ていない。'
-        + '別の経路（展開してから --source <ディレクトリ>）で確かめられることがある。',
-      SOURCE_UNAVAILABLE:
-        '**これは不一致ではない。**source を取れなかったので、検証していない。'
-        + 'network を使わずに確かめるなら --source <展開済みディレクトリ> を渡すこと。',
-    }
+    /**
+     * **loader が返してよい status かは `CLI_STATUS_META` が持つ（v0.6.14・外部監査 P1-C）。**
+     * 手書きの 2 要素配列だったときは、status を足すと黙って丸められる経路が残った。
+     */
+    const kind = CLI_STATUS_META[loaded.kind]?.fromLoad ? loaded.kind : 'SOURCE_UNAVAILABLE'
+    const NOTE = Object.fromEntries(
+      Object.entries(CLI_STATUS_META).filter(([, m]) => m.note).map(([s, m]) => [s, m.note]),
+    )
     done({
       status: kind,
       /**

@@ -17,6 +17,8 @@ export declare const TAR_LIMITS: {
 
 /** archive が壊れている／敵対的であることを表す。取れなかった（SOURCE_UNAVAILABLE）とは別物 */
 export declare class ArchiveInvalid extends Error {
+  /** **detail.stableReasonCode は必須**（catalog に無い名前・status 違いはその場で投げる・v0.6.14） */
+  constructor(reason: string, detail: { stableReasonCode: string, [k: string]: unknown })
   detail: Record<string, unknown>
 }
 
@@ -25,6 +27,8 @@ export declare class ArchiveInvalid extends Error {
  * ふつうの tar なら展開できる——`ARCHIVE_INVALID` と混ぜない
  */
 export declare class ArchiveUnsupported extends Error {
+  /** **detail.stableReasonCode は必須**（catalog に無い名前・status 違いはその場で投げる・v0.6.14） */
+  constructor(reason: string, detail: { stableReasonCode: string, [k: string]: unknown })
   detail: Record<string, unknown>
 }
 
@@ -63,5 +67,15 @@ export declare function readBodyLimited(res: Response, limit: number): Promise<B
 
 /** この道具が出しうる status の全部（v0.6.11・外部監査 §7） */
 /** status と、そのときの終了コード。**列挙を持つ側の正本はここ 1 か所**（v0.6.12） */
+/** status に紐づくもの（終了コード・loader が返してよいか・受け手向け注記）を 1 か所で持つ（v0.6.14） */
+/** 止め方の名前の唯一の正本（v0.6.14）。**配布物 1 ファイルに同梱する** */
+export interface ReasonCodeMeta { status: string, family: string, summary: string }
+export declare const REASON_CODES: Record<string, ReasonCodeMeta>
+export declare const OTHER_CODES: readonly string[]
+export declare function assertCatalogued(code: string): string
+export declare const CLI_STATUS_META: Record<string, { exit: number, fromLoad: boolean, note?: string }>
 export declare const CLI_STATUS_EXIT: Record<string, number>
 export declare const CLI_STATUSES: readonly string[]
+
+/** `{ kind: ARCHIVE_* }` を直に組み立てず、catalog から kind を引く（v0.6.14） */
+export declare function archiveError(code: string, error: string, detail?: Record<string, unknown>): { error: string, kind: string, detail: Record<string, unknown>, stableReasonCode: string }
