@@ -98,7 +98,7 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-12",
- "generatedFromCommit": "82113f3616d53df14c052e81792f5dfb4073742c",
+ "generatedFromCommit": "ce83756341f3ea444bfdaf27b2f761b949cf0ce9",
  "purpose": "release asset の provenance.inputFiles[].sha256 を、tag source の実ファイルと独立に検算するための一覧。**この manifest 自身は証明ではない。**GitHub の tag source archive を取得して、ここに並ぶ path の sha256 を自分で計算し、突き合わせること。",
  "inputFilesTotal": 32,
  "inconsistentAcrossArtifacts": 0,
