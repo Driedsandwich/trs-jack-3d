@@ -7,10 +7,10 @@
  "tool": {
   "script": "scripts/verifyReleaseSourceInputs.mjs",
   "toolVersion": 16,
-  "sha256": "e2925e80135962150e25259f18d74079b0f8d5d2ff28880a4bdbaa7285e3af13"
+  "sha256": "48e91238f483abe6e798c108b3adc7324d2181ab89787c02209015a30a29059b"
  },
  "sourceOrigin": "directory:.",
- "generatedFromCommit": "e1a5256d64ea8554ff28e1aaa4f49a1c1262b35f",
+ "generatedFromCommit": "30e458ebb2598d024e543be773b5e3f792c432e1",
  "releaseCommit": null,
  "generatedAt": "2026-08-12",
  "status": "OK",

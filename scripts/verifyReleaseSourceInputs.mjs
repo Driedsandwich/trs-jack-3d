@@ -43,8 +43,9 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { gunzipSync } from 'node:zlib'
-import { existsSync, lstatSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 /**
  * 道具の版。**判定の意味を変えたら上げる。**
@@ -177,6 +178,18 @@ import { join, resolve } from 'node:path'
  *       （`path` を持つときだけ競合とする）。ディレクトリ側の上限を
  *       `ARCHIVE_UNSUPPORTED` へそろえ、gzip 失敗を `GZIP_DECODE_FAILED` にした。
  *       **判定が変わる**ので版を上げる
+ *
+ *   （版を上げない変更）
+ *   v0.6.13  入口の判定をファイル名から「起動された本体か」（`realpathSync`）へ変えた。
+ *       v0.6.12 まで、**別名でコピーしたり symlink を張ったりすると、何も出さずに `exit 0`**
+ *       で終わっていた（実測: `renamed.mjs` / `link.mjs` とも出力 0 バイト）。
+ *       **版は上げない。**この道具の版上げ規則は「**判定の意味が変わったら**」で、
+ *       同梱 schema も `toolVersion` を「判定の意味を変えたら上げるので、受け手はこれで
+ *       挙動を見分けられる」と定義している。ここで変わったのは**走るかどうか**であって、
+ *       走ったときの判定ではない（正規の名前での出力は **byte 一致**）。
+ *       **黙っていた経路は JSON を 1 バイトも出さない**ので、`toolVersion` を読める受け手が
+ *       「16 なのに挙動が違う」に出会う場面は無い。**版で見分ける必要が生じない。**
+ *       道具そのものを突き合わせたいときは、自己申告 artifact の `tool.sha256` を見る。
  */
 export const TOOL_VERSION = 16
 
@@ -2304,8 +2317,26 @@ async function loadFromGithub(tag) {
  * **import されたときは実行しない（v0.6.0）。**
  * `test/tarHardening.test.ts` が parser を直接呼ぶため。
  * 以前は import した時点で main が走り、`process.exit(2)` でテストごと落ちていた。
+ *
+ * **v0.6.13: 名前ではなく「起動された本体か」で判定する。**
+ * v0.6.12 まで `/verifyReleaseSourceInputs\.mjs$/` とファイル名を見ていたので、
+ * **受け手がコピーの名前を変えたり symlink を張ったりすると、何も出さずに `exit 0`** で終わった。
+ * 実測（2026-08-12）: `renamed.mjs` も `link.mjs` も **出力 0 バイト / exit 0**。
+ * **終了コードだけを見る受け手には、合格と区別が付かない。**
+ *
+ * `realpathSync` を両側に掛けるのは symlink のため——Node は既定で実 path を解決して
+ * module を読むので、`import.meta.url` は実体を指すのに `process.argv[1]` は
+ * symlink のままになる。片側だけだと symlink 経由の起動を取りこぼす。
  */
-const RUN_AS_CLI = typeof process.argv[1] === 'string' && /verifyReleaseSourceInputs\.mjs$/.test(process.argv[1])
+const RUN_AS_CLI = (() => {
+  if (typeof process.argv[1] !== 'string') return false
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))
+  } catch {
+    // path を解決できない起動のされ方（消えた実体・権限）では CLI として走らない
+    return false
+  }
+})()
 
 if (RUN_AS_CLI) {
   const manifestAbs = resolve(ROOT, MANIFEST)
