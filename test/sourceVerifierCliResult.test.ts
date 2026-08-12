@@ -146,6 +146,25 @@ describe('source-verifier-cli-result.v1 — 受け手向けの契約', () => {
    * この道具は出さないので、書くと「出うる」と嘘をつく。
    * **草案どおりに書くほうが楽だが、受け手は来ない分岐を実装することになる。**
    */
+  /**
+   * **schema が名指す「歴史の境界」が、実測と合っている（v0.6.14・外部監査 P1-B）。**
+   *
+   * v0.6.13 まで、`status.description` は「v0.3.0 より前の tag」と書いていた。
+   * **v0.3.0 自身も対象**なので誤りで、しかも**配布する schema に載っていた**。
+   * ERRATA には正しい境界（v0.4.0 より前）を書いたのに、schema は直っていなかった
+   * ——**同じ境界を 2 か所で持ち、片方だけ直した。**
+   *
+   * 実測（2026-08-12・21 tag すべてをその tag の source に対して走らせた）:
+   *   v0.2.0 / v0.3.0 → VERIFICATION_INCOMPLETE ／ v0.4.0 / v0.4.1 → OK
+   */
+  it('**schema の歴史の境界が v0.4.0 で、v0.3.0 を古い側に含めている**', () => {
+    const d = SCHEMA.properties.status.description as string
+    expect(d, '境界の版数を名指していない').toContain('v0.4.0 より前')
+    expect(d, 'v0.3.0 自身が対象であることを書いていない').toMatch(/v0\.3\.0\s*自身も対象/)
+    // 空振り防止: 古い書き方（境界を v0.3.0 と言う）が残っていないこと
+    expect(d, '**「v0.3.0 より前」という古い境界が残っている**').not.toContain('v0.3.0 より前')
+  })
+
   it('道具が出さない status は enum に無い', () => {
     expect(SCHEMA.properties.status.enum).not.toContain('INTERNAL_ERROR')
     expect(CLI_STATUSES).not.toContain('INTERNAL_ERROR')

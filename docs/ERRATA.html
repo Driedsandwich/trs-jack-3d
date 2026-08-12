@@ -91,7 +91,8 @@
   <ol>
     <li><a href="#s0">v0.6.11（2026-08-12 記載）</a></li>
     <li><a href="#s1">v0.6.12 以前（2026-08-12 記載・v0.6.13 で直しました）</a></li>
-    <li><a href="#s2">この正誤表の運用</a></li>
+    <li><a href="#s2">v0.6.13 以前（2026-08-12 記載・v0.6.14 で直しました）</a></li>
+    <li><a href="#s3">この正誤表の運用</a></li>
   </ol>
 </nav>
 <h1>正誤表</h1>
@@ -141,7 +142,30 @@ echo "exit=$?"   # → exit=0 だが、標準出力は空</code></pre>
 <p><strong><code>toolVersion</code> は上げていません</strong>（16 のまま）。判定は変わらず、 黙る経路は <code>toolVersion</code> を出さないので、受け手が「16 なのに挙動が違う」に出会う場面がないためです。 <strong>v0.6.12 と v0.6.13 の道具は版数では見分けられません</strong>——<code>tool.sha256</code> で見てください。</p>
 <p><strong>気づいた経緯</strong>: v0.6.12 の release 準備中に、新旧の道具の出力を比べようとして 旧版を別名でコピーしたところ、<strong>旧版が黙って何も出さず</strong>、それを一度「判定が変わった」と読みかけた。 <strong>道具が落ちているときと、根拠が無いときは出力が同じに見える。</strong></p>
 <hr>
-<h2 id="s2">この正誤表の運用</h2>
+<h2 id="s2">v0.6.13 以前（2026-08-12 記載・<strong>v0.6.14 で直しました</strong>）</h2>
+<h3>5. <strong><code>stableReasonCode</code> が公開 CLI の全経路を覆っていなかった</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.13 までに配布した <code>verifyReleaseSourceInputs.mjs</code> <strong>全部</strong></td></tr><tr><td>症状</td><td>gzip の失敗・source root が symlink・圧縮サイズ上限で <code>ARCHIVE_INVALID_OTHER</code>（または code 無し）</td></tr><tr><td>影響</td><td><strong>受け手が機械で分岐できない。</strong><code>stableReasonCode</code> は公開契約として schema に載っている</td></tr><tr><td>直した版</td><td>v0.6.14</td></tr></tbody></table></div>
+<p><strong>外部監査（2026-08-12）の指摘を、こちらで再現しました。</strong></p>
+<pre><code>壊れた gzip             ARCHIVE_INVALID / ARCHIVE_INVALID_OTHER
+source root が symlink  ARCHIVE_INVALID / ARCHIVE_INVALID_OTHER
+圧縮サイズ上限           code 無し</code></pre>
+<p><strong>さらに、こちらが公開した文書が虚偽でした。</strong></p>
+<pre><code>verify-tool-v16-notes.md:「gzip の失敗に GZIP_DECODE_FAILED を付けました」
+実測: その名前は source 全体で 1 件、しかも**コメントの中だけ**（実装されていない）</code></pre>
+<p>**「corpus で止まる材料 110 件・<code>*_OTHER</code> は 0 件」は真でしたが、 それは corpus が踏んだ経路についてだけです。<strong>走らせて集めた実測では、 catalog の 55 種類のうち </strong>corpus が踏むのは 37 種類**でした。</p>
+<p>v0.6.14 で catalog（配布物 1 ファイルに同梱）を正本にし、 <strong>catalog に無い名前・status の食い違いは、その場で例外</strong>にしました。</p>
+<h3>6. <strong>配布ソースの冒頭に、5 種類だけの status 一覧が残っていた</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.13 までの <code>verifyReleaseSourceInputs.mjs</code> の冒頭コメント（28〜32 行）</td></tr><tr><td>症状</td><td>道具は 8 種類を返すのに、ソースを読む受け手には 5 種類と見える</td></tr><tr><td>直した版</td><td>v0.6.14（<strong>一覧そのものを消し、<code>CLI_STATUS_META</code> を正本にした</strong>）</td></tr></tbody></table></div>
+<p><strong>v0.6.12 で artifact の手順書を直したときに、配布ソース側の同じ一覧を見落としました。</strong></p>
+<h3>7. <strong>配布 schema が「v0.3.0 より前」と書いていた</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.13 までの <code>schemas/source-verifier-cli-result.v1.schema.json</code></td></tr><tr><td>症状</td><td><code>status.description</code> の歴史の境界が誤り（正しくは <strong>v0.4.0 より前・v0.3.0 自身も対象</strong>）</td></tr><tr><td>直した版</td><td>v0.6.14</td></tr></tbody></table></div>
+<p><strong>この正誤表の §1 で v0.6.11 の notes を訂正したのに、 同じ誤りが配布 schema に残っていました。</strong>——同じ境界を 2 か所で持ち、片方だけ直した形です。</p>
+<h3><strong><code>toolVersion</code> を 17 へ上げました</strong></h3>
+<p>v0.6.13 では 16 に据え置きました。<strong>入口の変更だけなら判定は変わらない</strong>（正規の名前での出力が byte 一致）ためで、その判断自体は今も誤りだと思っていません。</p>
+<p><strong>v0.6.14 は判定の出力そのものが変わります</strong>——<code>ARCHIVE_INVALID_OTHER</code> だったものが <code>GZIP_DECODE_FAILED</code> などになります。<strong>受け手が機械で分岐する値が変わる</strong>ので、 版上げ規則（「判定の意味を変えたら上げる」）にそのまま当たります。</p>
+<div class="note"><p>v0.6.12 と v0.6.13 の道具は、<strong>どちらも <code>toolVersion</code> 16 を名乗ります。</strong></p><p>その 2 つを見分けるには <code>tool.sha256</code> を使ってください。</p></div>
+<hr>
+<h2 id="s3">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
 </div>
 </body>
