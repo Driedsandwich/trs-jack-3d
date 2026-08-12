@@ -181,26 +181,41 @@ import { join, resolve } from 'node:path'
 export const TOOL_VERSION = 16
 
 /**
- * **この道具が出しうる status の全部（v0.6.11・外部監査 §7）。**
+ * **この道具が出しうる status と、そのときの終了コード（v0.6.11・外部監査 §7）。**
  *
  * v0.6.10 まで、試験はこの一覧を**ソースの正規表現から拾って**いた。
  * `status` の書き方を三項演算子へ変えただけで拾えなくなり、
  * **「増えたら気づく」はずの検査が黙って空振りした。**一覧は道具が名乗る。
  *
- *   OK                    … 必須の工程が全部終わり、全件一致した     (exit 0)
- *   MISMATCH              … 不一致・記録漏れ・自己参照がある          (exit 1)
- *   VERIFICATION_INCOMPLETE … 必須の工程を実行できていない            (exit 1)
- *   ARCHIVE_INVALID       … source が壊れている／曖昧                (exit 2)
- *   ARCHIVE_UNSUPPORTED   … 展開はできるが、この道具の範囲の外        (exit 2)
- *   SOURCE_UNAVAILABLE    … source を取れなかった                    (exit 2)
- *   MANIFEST_UNAVAILABLE  … manifest を読めなかった                  (exit 2)
- *   NOTHING_TO_VERIFY     … 入力 0 件で何も見ていない                (exit 2)
+ * **v0.6.12: 終了コードもここへ入れた。**それまで終了コードは
+ * ①この上のコメント ②`buildReleaseEvidence.mjs` の `EXIT_OF`
+ * ③配布物へ載る `howToVerifyYourself` の 1 行 の 3 か所に手書きされていて、
+ * **②と③は 5 種類しか知らないまま v0.6.11 として出荷された。**
+ * `VERIFICATION_INCOMPLETE` はその版の目玉なのに、受け手に伝わっていなかった。
+ * **同じ境界は 1 か所で持つ。**
+ *
+ *   OK                      … 必須の工程が全部終わり、全件一致した
+ *   MISMATCH                … 不一致・記録漏れ・自己参照がある
+ *   VERIFICATION_INCOMPLETE … 必須の工程を実行できていない
+ *   ARCHIVE_INVALID         … source が壊れている／曖昧
+ *   ARCHIVE_UNSUPPORTED     … 展開はできるが、この道具の範囲の外
+ *   SOURCE_UNAVAILABLE      … source を取れなかった
+ *   MANIFEST_UNAVAILABLE    … manifest を読めなかった
+ *   NOTHING_TO_VERIFY       … 入力 0 件で何も見ていない
  */
-export const CLI_STATUSES = [
-  'OK', 'MISMATCH', 'VERIFICATION_INCOMPLETE',
-  'ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED',
-  'SOURCE_UNAVAILABLE', 'MANIFEST_UNAVAILABLE', 'NOTHING_TO_VERIFY',
-]
+export const CLI_STATUS_EXIT = {
+  OK: 0,
+  MISMATCH: 1,
+  VERIFICATION_INCOMPLETE: 1,
+  ARCHIVE_INVALID: 2,
+  ARCHIVE_UNSUPPORTED: 2,
+  SOURCE_UNAVAILABLE: 2,
+  MANIFEST_UNAVAILABLE: 2,
+  NOTHING_TO_VERIFY: 2,
+}
+
+/** **導出する。**別に並べると、また 2 つ目の一覧になる */
+export const CLI_STATUSES = Object.keys(CLI_STATUS_EXIT)
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)

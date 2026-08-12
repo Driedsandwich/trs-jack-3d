@@ -28,6 +28,8 @@ import { validateAll } from './validateProfiles.mjs'
 import { RELEASE_ASSETS, SOURCE_ONLY_TARGETS } from './releaseAssets.mjs'
 import { migrationFor } from './contractMigration.mjs'
 import { buildSourceSnapshot } from './buildSourceSnapshot.mjs'
+import { CLI_STATUSES, CLI_STATUS_EXIT } from './verifyReleaseSourceInputs.mjs'
+import { assertExpressibleInSelfReport } from './selfReportStatus.mjs'
 
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
@@ -203,7 +205,11 @@ try {
   }
 }
 
-const EXIT_OF = { OK: 0, MISMATCH: 1, SOURCE_UNAVAILABLE: 2, MANIFEST_UNAVAILABLE: 2, NOTHING_TO_VERIFY: 2 }
+/**
+ * **終了コードは道具から引く（v0.6.12）。**
+ * ここに手書きしていた 5 件は、道具が 8 種類返すようになったあとも 5 件のままだった。
+ */
+const EXIT_OF = CLI_STATUS_EXIT
 
 /**
  * **道具が出した status を、この自己申告 artifact が表現できるか。**（外部監査 2026-08-06 P0-D）
@@ -216,16 +222,15 @@ const EXIT_OF = { OK: 0, MISMATCH: 1, SOURCE_UNAVAILABLE: 2, MANIFEST_UNAVAILABL
  * **表現できない status を、近い値へ丸めて出すことは絶対にしない。**
  * 丸めると「archive が壊れていた」が「取れなかった」に化けて、受け手が読み分けられなくなる。
  * ここで止めて、**版を上げるかどうかを人が決める。**
+ *
+ * **v0.6.12: 判定は `selfReportStatus.mjs` へ切り出し、schema の enum を正本にした。**
+ * ここに手で並べていた 5 値は、試験がソースの正規表現で拾って比べていた——
+ * **書き方を変えれば拾えなくなる検査**だった。関門は投げる関数にしたので、試験が実際に踏める。
  */
-const STATUS_EXPRESSIBLE_IN_V1 = new Set(['OK', 'MISMATCH', 'SOURCE_UNAVAILABLE', 'MANIFEST_UNAVAILABLE', 'NOTHING_TO_VERIFY'])
-if (!STATUS_EXPRESSIBLE_IN_V1.has(verifyOut.status)) {
-  console.error(
-    `\n  ✗ 検算ツールが status=${verifyOut.status} を返したが、`
-    + 'source-verification-result.v1 はこの値を表現できない。\n'
-    + '    **別の値へ丸めて出さない。**schema を v2 へ上げるか（＝下流が止まる。要判断）、\n'
-    + '    archive のほうを直してから作り直すこと。\n'
-    + `    理由: ${verifyOut.reason ?? '(なし)'}\n`,
-  )
+try {
+  assertExpressibleInSelfReport(verifyOut.status, ROOT)
+} catch (e) {
+  console.error(`\n  ✗ ${e.message}\n    理由: ${verifyOut.reason ?? '(なし)'}\n`)
   process.exit(1)
 }
 const iv = verifyOut.independentVerification ?? {}
@@ -266,7 +271,12 @@ const sourceVerification = {
     'node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --tag <tag> --scope source-input-scope.v1.json',
     '# 明示したときだけ GitHub から source を取る',
     'node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --tag <tag> --fetch github --scope source-input-scope.v1.json',
-    '# status は OK(0) / MISMATCH(1) / SOURCE_UNAVAILABLE(2) / MANIFEST_UNAVAILABLE(2) / NOTHING_TO_VERIFY(2)。',
+    /**
+     * **道具の一覧から作る（v0.6.12）。**手で並べていたときは 5 種類のまま止まり、
+     * `VERIFICATION_INCOMPLETE`（v0.6.11 の目玉）を受け手に伝えないまま出荷した。
+     * **配布物に載る列挙は、権威から生成する。**
+     */
+    `# status は ${CLI_STATUSES.map((s) => `${s}(${CLI_STATUS_EXIT[s]})`).join(' / ')}。`,
     '# **取れなかった(2) と 合わなかった(1) を同じ失敗に潰さないこと。**',
     '# **unrecordedInputDetection.performed が false なら「候補 0 件」ではなく「探していない」。**',
   ],

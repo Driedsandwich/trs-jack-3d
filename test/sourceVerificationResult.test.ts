@@ -20,7 +20,8 @@ import { join, resolve } from 'node:path'
 import Ajv from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
 import { RELEASE_ASSETS } from '../scripts/releaseAssets.mjs'
-import { CLI_STATUSES } from '../scripts/verifyReleaseSourceInputs.mjs'
+import { CLI_STATUSES, CLI_STATUS_EXIT } from '../scripts/verifyReleaseSourceInputs.mjs'
+import { assertExpressibleInSelfReport } from '../scripts/selfReportStatus.mjs'
 import { mustBeNonEmpty, mustFind } from './_must'
 
 const ROOT = resolve(__dirname, '..')
@@ -83,9 +84,30 @@ describe('P1-3-1 記録そのもの', () => {
     const joined = how.join('\n')
     expect(joined).toContain('verifyReleaseSourceInputs.mjs')
     expect(joined).toContain('--scope')
-    // 判定の境界を潰さないことを手順にも書く
-    expect(joined).toContain('SOURCE_UNAVAILABLE')
     expect(joined).toMatch(/潰さない/)
+  })
+
+  /**
+   * **手順書の status 一覧が、道具の一覧と過不足なく一致する（v0.6.12）。**
+   *
+   * v0.6.11 まで、ここは `toContain('SOURCE_UNAVAILABLE')` という**1 語のべた書き**だった。
+   * だから**その 1 語さえ残っていれば、一覧が古くても偽の値が混じっていても緑**だった。
+   * 実際に出荷された v0.6.11 の手順書は 5 種類しか書いておらず、
+   * **`VERIFICATION_INCOMPLETE`（その版の目玉）を受け手に伝えていなかった。**
+   *
+   * 検査は「含む」ではなく**集合の一致**で書く。含む検査は、足りない側を捕まえられない。
+   */
+  it('**status の一覧が道具の一覧と過不足なく一致する**（配布物に古い列挙を載せない）', () => {
+    const line = mustBeNonEmpty(
+      (result.howToVerifyYourself as string[]).filter((l) => l.includes('status は')),
+      '手順書の status 行',
+    )
+    expect(line.length, 'status を説明する行が 2 本以上ある（どちらを読むか決まらない）').toBe(1)
+    const named = [...line[0].matchAll(/([A-Z][A-Z_]+)\((\d)\)/g)].map((m) => [m[1], Number(m[2])] as const)
+    expect(named.map(([s]) => s).sort(), '手順書の status が道具の一覧と違う')
+      .toEqual([...CLI_STATUSES].sort())
+    // 終了コードまで一致していること（名前だけ合っていても、受け手は数で分岐する）
+    expect(Object.fromEntries(named), '手順書の終了コードが道具と違う').toEqual(CLI_STATUS_EXIT)
   })
 })
 
@@ -247,14 +269,30 @@ describe('P1-3-4 status の契約 — 道具と schema のずれを隠さない'
     expect(desc, 'なぜ入れていないかが書かれていない').toMatch(/v2|言語|下流/)
   })
 
+  /**
+   * **関門を実際に踏む（v0.6.12）。**
+   *
+   * v0.6.11 まで、ここは `buildReleaseEvidence.mjs` のソースを正規表現で読み、
+   * `process.exit(1)` という文字列が近くに在ることと、手書きの 5 値が enum と同じことを
+   * 見ていた。**書き方を変えれば拾えなくなる検査**で、しかも
+   * 「止まる」ことそのものは一度も確かめていなかった。
+   * いまは判定が投げる関数なので、**表現できない status を渡して実際に投げさせる。**
+   */
   it('**生成器は、表現できない status を丸めずに止まる**', () => {
-    const src = readFileSync(resolve(ROOT, 'scripts/buildReleaseEvidence.mjs'), 'utf8')
-    const guard = /STATUS_EXPRESSIBLE_IN_V1[\s\S]{0,400}?process\.exit\(1\)/.exec(src)
-    expect(guard, '表現できない status で止まる経路が無い').toBeTruthy()
-    // 許している 5 値が schema の enum と同じであること（片方だけ増えないように）
-    const listed = [...(/STATUS_EXPRESSIBLE_IN_V1 = new Set\(\[([^\]]+)\]\)/.exec(src)?.[1] ?? '')
-      .matchAll(/'([A-Z_]+)'/g)].map((m) => m[1])
-    expect(listed.sort()).toEqual([...enumOf()].sort())
+    /**
+     * ここに `expressibleStatuses(ROOT)` と `enumOf()` の一致を書きかけたが、
+     * **どちらも同じ schema を読むので絶対に落ちない**（実測: 行を消しても 25 件すべて緑）。
+     * **守っているように見えて何も守っていない行**は置かない。
+     * 一覧が 1 本になったことは、下の 2 つ（通す／投げる）の振る舞いで示す。
+     */
+    // 表現できる値は素通りする
+    for (const s of enumOf()) expect(assertExpressibleInSelfReport(s, ROOT)).toBe(s)
+    // 表現できない値は投げる——**丸めて返さない**
+    for (const s of ['ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED', 'VERIFICATION_INCOMPLETE']) {
+      expect(() => assertExpressibleInSelfReport(s, ROOT), `${s} が素通りした`).toThrow(/丸めて出さない/)
+    }
+    // 対照: 存在しない status も止まる（allowlist であって denylist でない）
+    expect(() => assertExpressibleInSelfReport('NONSENSE', ROOT)).toThrow()
   })
 
   it('現物の artifact は表現できる status を持っている', () => {

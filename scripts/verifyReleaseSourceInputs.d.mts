@@ -62,4 +62,6 @@ export declare function readArchiveBuffer(buf: Buffer, o: { gzip: boolean }): Ar
 export declare function readBodyLimited(res: Response, limit: number): Promise<Buffer>
 
 /** この道具が出しうる status の全部（v0.6.11・外部監査 §7） */
+/** status と、そのときの終了コード。**列挙を持つ側の正本はここ 1 か所**（v0.6.12） */
+export declare const CLI_STATUS_EXIT: Record<string, number>
 export declare const CLI_STATUSES: readonly string[]

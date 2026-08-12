@@ -22,7 +22,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import Ajv from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
-import { CLI_STATUSES } from '../scripts/verifyReleaseSourceInputs.mjs'
+import { CLI_STATUSES, CLI_STATUS_EXIT } from '../scripts/verifyReleaseSourceInputs.mjs'
 import { mustBeNonEmpty } from './_must'
 import { expectedOutcome } from './_tarExpectations.mjs'
 
@@ -92,6 +92,13 @@ describe('source-verifier-cli-result.v1 — 受け手向けの契約', () => {
       expect(ok, JSON.stringify(validate.errors?.slice(0, 4))).toBe(true)
       // exitCode は出力にも入っている（保存したあとに復元できないため）
       expect(r.json.exitCode).toBe(r.code)
+      /**
+       * **実際の終了コードが `CLI_STATUS_EXIT` と一致する（v0.6.12）。**
+       * この表は配布物の手順書を生成する正本なので、**表が実物とずれたら
+       * 受け手に配る説明のほうが嘘になる。**表だけ直しても落ちないようにしない。
+       */
+      expect(r.code, `${expected} の終了コードが表と違う`)
+        .toBe(CLI_STATUS_EXIT[expected as keyof typeof CLI_STATUS_EXIT])
     },
   )
 
