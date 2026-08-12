@@ -24,6 +24,7 @@ import Ajv from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
 import { CLI_STATUSES } from '../scripts/verifyReleaseSourceInputs.mjs'
 import { mustBeNonEmpty } from './_must'
+import { expectedOutcome } from './_tarExpectations.mjs'
 
 const ROOT = resolve(__dirname, '..')
 const SCHEMA_PATH = 'schemas/source-verifier-cli-result.v1.schema.json'
@@ -103,8 +104,16 @@ describe('source-verifier-cli-result.v1 — 受け手向けの契約', () => {
     ['ARCHIVE_UNSUPPORTED', 'entryType'],
   ] as const)('%s の出力が schema に適合する', async (expected, group) => {
     const { allCases } = await import('./_corruptTar.mjs')
-    const list = (allCases() as Record<string, { id: string, tar: Buffer, ok?: boolean }[]>)[group]
-    const c = mustBeNonEmpty(list.filter((x) => !x.ok), `${group} の止まる材料`)[0]
+    const list = (allCases() as Record<string, { id: string, tar: Buffer }[]>)[group]
+    /**
+     * **止まる材料かどうかは期待値表から引く（v0.6.12）。**
+     * v0.6.11 まで材料側の `ok` 旗を見ていたが、**その旗は誰も検査していなかった。**
+     * ここは旗を読む唯一の場所だったので、旗が嘘でもこの試験は緑のままだった。
+     */
+    const c = mustBeNonEmpty(
+      list.filter((x) => expectedOutcome(group, x.id) !== 'safe'),
+      `${group} の止まる材料`,
+    )[0]
     const d = mkdtempSync(join(tmpdir(), 'cli-arch-'))
     tmps.push(d)
     const p = join(d, 'src.tar')

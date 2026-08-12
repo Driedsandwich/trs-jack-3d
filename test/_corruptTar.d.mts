@@ -12,7 +12,13 @@ export interface TarEntry {
   declaredSize?: number
   checksum?: 'valid' | 'bad' | 'blank'
 }
-export interface Case { id: string, tar: Buffer, ok?: boolean }
+/**
+ * **材料は「どう終わるべきか」を持たない（v0.6.12）。**
+ * 期待値は `test/_tarExpectations.ts` が唯一の正本。
+ * v0.6.11 まで `ok?: boolean` を持っていたが、**読み手が 1 か所・`!ok` としてだけ**だったので
+ * `ok: true` が嘘でも誰も落ちなかった（実測で 10 件ずれていた）。
+ */
+export interface Case { id: string, tar: Buffer }
 
 export declare function header(o: TarEntry): Buffer
 export declare function buildTar(entries: TarEntry[], opts?: { endBlocks?: number }): Buffer
