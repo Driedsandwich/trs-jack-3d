@@ -7,12 +7,12 @@
  "tool": {
   "script": "scripts/verifyReleaseSourceInputs.mjs",
   "toolVersion": 16,
-  "sha256": "760aaade5168d0d806ac25935908f6cdd5d52a9c539af940685096b2251a5df3"
+  "sha256": "e2925e80135962150e25259f18d74079b0f8d5d2ff28880a4bdbaa7285e3af13"
  },
  "sourceOrigin": "directory:.",
- "generatedFromCommit": "68fc03ad9bd4eed955d54e8331b2273bbffdc101",
+ "generatedFromCommit": "b92101ca8e0846caecba99be44be068d6af6c1de",
  "releaseCommit": null,
- "generatedAt": "2026-08-11",
+ "generatedAt": "2026-08-12",
  "status": "OK",
  "exitCode": 0,
  "unrecordedInputDetection": {
@@ -34,7 +34,7 @@
   "node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --tag <tag> --scope source-input-scope.v1.json",
   "# 明示したときだけ GitHub から source を取る",
   "node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --tag <tag> --fetch github --scope source-input-scope.v1.json",
-  "# status は OK(0) / MISMATCH(1) / SOURCE_UNAVAILABLE(2) / MANIFEST_UNAVAILABLE(2) / NOTHING_TO_VERIFY(2)。",
+  "# status は OK(0) / MISMATCH(1) / VERIFICATION_INCOMPLETE(1) / ARCHIVE_INVALID(2) / ARCHIVE_UNSUPPORTED(2) / SOURCE_UNAVAILABLE(2) / MANIFEST_UNAVAILABLE(2) / NOTHING_TO_VERIFY(2)。",
   "# **取れなかった(2) と 合わなかった(1) を同じ失敗に潰さないこと。**",
   "# **unrecordedInputDetection.performed が false なら「候補 0 件」ではなく「探していない」。**"
  ]
