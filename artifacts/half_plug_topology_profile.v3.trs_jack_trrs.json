@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:6c0b7625526d",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:a5cf46509971",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -327,21 +327,21 @@
    ]
   }
  },
- "sourceRevision": "979ace64014e724d6d505cf6d733e7b4288cb4f3",
+ "sourceRevision": "64ea10a82c415cf334e0460989ff7be72324e5d1",
  "generatedAt": "2026-08-12",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "979ace64014e724d6d505cf6d733e7b4288cb4f3",
+  "generatedFromCommit": "64ea10a82c415cf334e0460989ff7be72324e5d1",
   "workingTreeDirty": false,
   "revisionOverride": false,
   "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "6c0b7625526dfb0e98921054c4a915260a069c91792cfe024f9680c21204cc55",
+  "inputDigest": "a5cf465099710f909ac5fd74f004247ff407f22eddd8f54676adbbfdde21cea2",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "03787dcc80cd9ef5c0b08037a09e2a0d8abc5a51544137e7fc551a27064cf383",
+    "sha256": "f100c6d24c92ec3076f70a2b52ced75818f8f314a44c5588a31d01b8c582c357",
     "role": "sensitivity-input"
    },
    {
@@ -351,7 +351,7 @@
    },
    {
     "path": "package-lock.json",
-    "sha256": "cd9f1909e7bc5422300c741cfc89e19b481b8dfe6ecaccf00fe6121ed863c179",
+    "sha256": "ecef676a5298ad37a96c84458de11380a0ca029c0b6b233eb9e564ac4fae3c74",
     "role": "lockfile"
    },
    {
@@ -5687,8 +5687,8 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "bae67aff262eb16beda180687b50f9c893852669",
-   "inputDigest": "c7637ea0211b8f295e6515260525ce4605e5b1b70d211b4b8898851b95364b0f",
+   "generatedFromCommit": "52608254f91a08aeddc6103684d1ee2a3747cfd9",
+   "inputDigest": "7b6e22ca9803de35679219f19924341d7a85bac783c27a85eea111c7ce972b5b",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
   },
