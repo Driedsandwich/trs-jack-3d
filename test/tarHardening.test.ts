@@ -89,6 +89,14 @@ describe('tar 強化 ① 182 個すべてについて、どうなるかを実測
       .flatMap(([kind, list]) => list.map((c) => expectedOutcome(kind, c.id)))
       .filter((w) => w === 'safe')
     expect(safe.length, '通る材料の数が変わった。SECURITY.md と notes も直すこと').toBe(72)
+    /**
+     * **表と実測を突き合わせる前に、実測が在ることを確かめる。**
+     * `table` は上の it.each が埋めるので、**この it だけを走らせると空**になる。
+     * 番人が無いと `expected +0 to be 72` という読みにくい失敗になり、
+     * 「通る材料が減った」のか「前の it が走っていない」のか見分けられない
+     * （下の『一覧を出す』は最初から同じ番人を持っている）。
+     */
+    expect(table.length, '前の it が走っていない').toBeGreaterThanOrEqual(182)
     // 実測（table）の READ の数と一致すること——表と実物がずれたらここで気づく
     expect(table.filter((t) => t.outcome === 'READ').length, '表の safe と実測の READ が違う').toBe(safe.length)
   })
