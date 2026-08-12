@@ -95,6 +95,12 @@ export const TARGETS = [
   { md: 'docs/HALF_PLUG_ADAPTER.md', html: 'docs/HALF_PLUG_ADAPTER.html', title: 'Half-Plug Lab へ渡すもの — adapter 仕様' },
   { md: 'docs/REAL_JACK_COMPARISON.md', html: 'docs/REAL_JACK_COMPARISON.html', title: '実在部品の図面と本モデルの仮定の突き合わせ' },
   { md: 'CONTRIBUTING.md', html: 'docs/CONTRIBUTING.html', title: '変更するときに読むもの' },
+  { md: 'docs/ERRATA.md', html: 'docs/ERRATA.html', title: '正誤表 — 公開後に見つかった誤り' },
+  {
+    md: 'docs/UNCHECKED_LISTS_AUDIT_20260812.md',
+    html: 'docs/UNCHECKED_LISTS_AUDIT_20260812.html',
+    title: '検査されていない列挙・件数の棚卸し (2026-08-12)',
+  },
   {
     md: 'docs/INTEGRATION_ORDER_20260803.md',
     html: 'docs/INTEGRATION_ORDER_20260803.html',

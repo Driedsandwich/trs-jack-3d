@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>検査されていない列挙・件数の棚卸し (2026-08-12)</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">0. 直した 3 件（変異対照の前後つき）</a></li>
+    <li><a href="#s1">1. 文書に書いた数（宣言照合の対象かどうか）</a></li>
+    <li><a href="#s2">2. まだ宣言照合に入っていない数（152 − 23 = 129 行）</a></li>
+    <li><a href="#s3">3. 配布物・schema に載る列挙</a></li>
+    <li><a href="#s4">4. 残っている構造的な弱さ</a></li>
+    <li><a href="#s5">5. この棚卸し自体の限界</a></li>
+  </ol>
+</nav>
+<h1>検査されていない列挙・件数の棚卸し（2026-08-12）</h1>
+<p>v0.6.11 で「<strong>同じ境界を、検査されない一覧がもう 1 つ持っている</strong>」欠陥が 3 件出た。 そのうち 1 件は<strong>配布物の中</strong>にあり、受け手に古い一覧を渡していた。</p>
+<p>同じ形がほかにも在るかを全面で数えた記録である。 <strong>「無い」と言うために作った文書ではない。</strong>どこを見て、何が残っているかを書く。</p>
+<hr>
+<h2 id="s0">0. 直した 3 件（変異対照の前後つき）</h2>
+<p>各件とも、<strong>直す前に「嘘の一覧でも緑のままか」を実測</strong>してから直した。</p>
+<div class="tw"><table><thead><tr><th></th><th>直す前の変異</th><th class="num">落ちた試験</th><th>直したあとの同じ変異</th></tr></thead><tbody><tr><td>corpus の <code>ok</code> 旗</td><td><code>pax-linkpath-long</code> を <code>true</code>→<code>false</code></td><td class="num"><strong>0 件</strong></td><td>期待値を 1 件嘘にする → <strong>2 件</strong> ／ 種類の既定を消す → <strong>5 件</strong></td></tr><tr><td>手順書の status 一覧</td><td>5 語 → 2 語</td><td class="num">2 件（※）</td><td>偽の <code>TOTALLY_FAKE(9)</code> を足す → <strong>2 件</strong></td></tr><tr><td>同上（実際の欠陥と同じ形）</td><td>5 語を残し偽の語を 1 つ足す</td><td class="num"><strong>0 件</strong></td><td>新しい status を 1 つ落とす → <strong>2 件</strong> ／ 終了コードだけ嘘にする → <strong>2 件</strong></td></tr></tbody></table></div>
+<p>※ この 2 件は<strong>一覧の正しさを見ていない</strong>。片方は artifact の digest が変わったことを、 もう片方は <code>SOURCE_UNAVAILABLE</code> という<strong>1 語がべた書きで残っているか</strong>を見ていただけで、 <strong>足りない側も、偽の値も捕まえられなかった。</strong></p>
+<h3>直し方</h3>
+<pre><code>corpus の ok 旗        消した。判定は test/_tarExpectations.mjs の期待値表 1 本から引く
+                       引けない材料は expectedOutcome が投げる（黙って「通る」側へ落とさない）
+status の一覧          scripts/verifyReleaseSourceInputs.mjs の CLI_STATUS_EXIT を正本にした
+                       配布物の手順書はそこから生成する。終了コードも同じ表が持つ
+自己申告 schema の範囲  scripts/selfReportStatus.mjs へ切り出し、schema の enum を正本にした
+                       関門は投げる関数なので、試験が実際に踏める（v0.6.11 までは
+                       ソースを正規表現で読み、process.exit(1) という文字列を探していた）</code></pre>
+<hr>
+<h2 id="s1">1. 文書に書いた数（宣言照合の対象かどうか）</h2>
+<p><code>npm run check:doc-numbers</code> の<strong>宣言照合</strong>が唯一の機械照合である。</p>
+<pre><code>                              数を含む行   v0.6.11 の宣言   v0.6.12 の宣言
+SECURITY.md                       23           0              3
+README.md                         18           0              2
+docs/TEST_RESULTS.md              52           0              2
+docs/VERIFICATION_PLAN.md         24           6              6
+docs/REAL_JACK_COMPARISON.md      35           1              1
+                                 ---
+合計                             152          15             23</code></pre>
+<p><strong>v0.6.11 の時点で、SECURITY.md / README.md / TEST_RESULTS.md は 1 件も入っていなかった。</strong> 実測したところ <strong>5 件が古いまま</strong>だった。</p>
+<div class="tw"><table><thead><tr><th>文書</th><th>書いてあった値</th><th>実測</th><th>いつからずれていたか</th></tr></thead><tbody><tr><td>SECURITY.md</td><td>直近の release は <code>v0.6.8</code></td><td><code>v0.6.11</code></td><td>3 版ぶん</td></tr><tr><td>SECURITY.md</td><td>corpus は <code>26 個・6 種類</code></td><td><code>182 個・19 種類</code></td><td>v0.6.6 以降</td></tr><tr><td>SECURITY.md</td><td>通す材料 <code>66 個</code></td><td><code>72 個</code></td><td><strong>旗から数えた誤り</strong>（本件そのもの）</td></tr><tr><td>docs/TEST_RESULTS.md</td><td>単体テスト <code>1215 件</code></td><td><code>1218 件</code></td><td>この修正で動いた</td></tr><tr><td>docs/TEST_RESULTS.md</td><td>入力 <code>29 件</code></td><td><code>32 件</code></td><td>v0.6.6 以降</td></tr></tbody></table></div>
+<p><strong>5 件とも直し、宣言に入れた。</strong>変異対照で 5 件とも検出されることを確認している （1 ずらす／版数を 1 つ戻す、いずれも <code>check:doc-numbers</code> が exit 1）。</p>
+<p>さらに、正しかったが未検査だった 3 件も宣言に入れた（<code>ASSUMPTION 54 件</code>・ <code>寸法 135 件のうち 54 件</code>・<code>仮定は全体で 54 件</code>）。<strong>同じ数を 3 つの文書が別々に書いている。</strong></p>
+<hr>
+<h2 id="s2">2. まだ宣言照合に入っていない数（152 − 23 = 129 行）</h2>
+<p><strong>全部を入れるべきではない。</strong>入るべきものと、入りようがないものを分ける。</p>
+<h3>2-1. artifact から引けるのに、まだ入っていないもの</h3>
+<p>数えた範囲では<strong>見つからなかった</strong>。宣言に入れた 23 件のほかに、 <code>artifacts/</code> の値と 1 対 1 で対応する主張は残っていない。</p>
+<div class="note"><p><strong>これは「探して見つからなかった」であって、「無い」ではない。</strong></p><p>判定は「その数が artifact のどれかと対応づけられるか」を人が見て決めており、</p><p>機械で網羅した結果ではない。</p></div>
+<h3>2-2. artifact に対応する値が無いもの（入りようがない）</h3>
+<div class="tw"><table><thead><tr><th>種類</th><th>例</th><th>なぜ入らないか</th></tr></thead><tbody><tr><td>実機の性能測定</td><td><code>fps 59.9</code> / <code>16.70 ms</code> / <code>フレーム落ち 0</code></td><td><code>npm run perf</code> の実行結果で、artifact に固定していない</td></tr><tr><td>仕様の節ごとの件数</td><td><code>接点検証（仕様 §17）— 41 件</code></td><td>仕様書の項目数。artifact ではなく文書構造</td></tr><tr><td>履歴の記述</td><td><code>2026-08-03 まで「DERIVED 39 件」と書いていました</code></td><td><strong>過去にそう書いた</strong>という事実。追いかけてはいけない</td></tr><tr><td>実物の入手状況</td><td><code>断面図は 1 件だけ</code></td><td>外形の事実。測り直す先が無い</td></tr><tr><td>公開済み notes</td><td><code>docs/release/v0.6.*-notes.md</code></td><td><strong>凍結値</strong>として別に管理（公開本文は編集しない方針）</td></tr></tbody></table></div>
+<p><strong>履歴の記述を宣言に入れてはいけない。</strong>入れると、artifact が動くたびに 「昔こう書いていた」という記録のほうが書き換わる。</p>
+<hr>
+<h2 id="s3">3. 配布物・schema に載る列挙</h2>
+<p>受け手が機械で読む列挙は次の 3 か所にある。</p>
+<pre><code>scripts/verifyReleaseSourceInputs.mjs  CLI_STATUS_EXIT      ← 権威（8 種類 + 終了コード）
+schemas/source-verifier-cli-result.v1  properties.status.enum  試験が CLI_STATUSES と一致を assert
+artifacts/source-verification-result   howToVerifyYourself     **v0.6.12 から権威から生成**</code></pre>
+<p><code>schemas/</code> の <code>description</code> に列挙を書いている欄は、<strong>enum と description の両方を持つ 15 欄</strong>。 機械で突き合わせると 13 欄が「ずれ」と出たが、<strong>読むと 13 件とも誤検出だった。</strong></p>
+<div class="tw"><table><thead><tr><th>見かけのずれ</th><th>実際</th></tr></thead><tbody><tr><td><code>spreadStatus</code> に enum に無い 3 語</td><td><strong>2026-08-03 まで使っていた旧名</strong>を「改めた」と説明している文</td></tr><tr><td><code>source-verifier-cli-result</code> の <code>INTERNAL_ERROR</code></td><td><strong>入れていない理由</strong>を書いた文。専用の試験がある</td></tr><tr><td><code>source-verification-result</code> の <code>ARCHIVE_INVALID</code></td><td><strong>表現できない</strong>と書いた文。専用の試験がある</td></tr><tr><td><code>topologyClass</code> を description が列挙していない</td><td>列挙する義務は無い。enum が正本</td></tr></tbody></table></div>
+<p><strong>検出器のほうが粗い。</strong>「大文字語が enum に無い」だけでは、 説明文が正当に触れている語と、古い一覧を見分けられない。 <strong>この 13 件を「欠陥 13 件」と報告するのは誤りである。</strong></p>
+<p>残る観点としては、<strong>description が「これで全部」と読める書き方をしているのに enum と食い違う</strong>場合が危ない。今回はその形は見つからなかった。</p>
+<hr>
+<h2 id="s4">4. 残っている構造的な弱さ</h2>
+<ol><li><strong>宣言照合は allowlist である。</strong>宣言していない数がいくらずれても「不一致 0 件」になる。 <code>check:doc-numbers</code> はこれを自覚していて、<strong>裏の取れなかった mm 値の件数</strong>を常に出す。 だが件数系（<code>N 件</code>・<code>N 個</code>）にはその安全網が無い。</li><li><strong>公開済み notes の凍結値は 4 件だけ。</strong>tag が 21 本あるのに、凍結しているのは v0.6.0 のみ。 ほかの notes は<strong>照合も凍結もされていない</strong>。</li><li><strong><code>README.md</code> の性能表と <code>TEST_RESULTS.md</code> の性能表が同じ数を別々に持っている。</strong> 同じ境界の 2 つ目の一覧だが、artifact が無いので今の枠組みでは縛れない。 <code>npm run perf</code> の出力を artifact にすれば縛れる。<strong>まだやっていない。</strong></li></ol>
+<hr>
+<h2 id="s5">5. この棚卸し自体の限界</h2>
+<ul><li>数を含む行の抽出は <code>(\d+\s*(件|個|本|種類|か所))|(\*\*\d+\*\*)</code> という正規表現で、 <strong>表の中の裸の数字や、日本語で書いた数（「3 つ」）は拾えていない。</strong></li><li>「artifact から引けるか」の判定は人が見て決めた。<strong>網羅の証明は無い。</strong></li><li>schema の description は 488 件あり、そのうち<strong>列挙または件数を含むと判定した 24 件</strong>しか読んでいない。</li></ul>
+</div>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>正誤表 — 公開後に見つかった誤り</title>
+<style>
+  :root{
+    --ink:#1c2430; --ink-2:#4a5768; --ink-3:#78859a;
+    --line:#e2e6ec; --line-2:#eef1f5;
+    --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 20px 96px}
+  header.doc{margin-bottom:34px; padding-bottom:26px; border-bottom:2px solid var(--line)}
+  header.doc h1{font-size:28px; line-height:1.4; margin:0 0 14px; letter-spacing:.01em}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; color:var(--ink-3); font-size:13.5px}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:700; letter-spacing:.02em}
+  .badge.ok{background:#dcfce7; color:var(--ok)}
+  .badge.warn{background:#fef3c7; color:var(--warn)}
+  .lead{margin:22px 0 0; font-size:16.5px; color:var(--ink-2)}
+  h2{font-size:20.5px; margin:52px 0 16px; padding-left:13px; border-left:4px solid var(--accent); line-height:1.5}
+  h3{font-size:16.5px; margin:30px 0 10px; color:var(--ink)}
+  p{margin:0 0 15px}
+  ul,ol{margin:0 0 16px; padding-left:1.5em}
+  li{margin-bottom:7px}
+  strong{font-weight:700}
+  code{
+    background:#eef1f5; padding:2px 6px; border-radius:4px; font-size:.88em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  pre{
+    background:#1e293b; color:#e2e8f0; padding:15px 17px; border-radius:9px;
+    overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:440px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; color:var(--ink-2); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  .note{
+    background:#f0f6ff; border-left:4px solid var(--accent);
+    padding:14px 18px; border-radius:0 9px 9px 0; margin:0 0 20px; font-size:14.5px;
+  }
+  .note.warn{background:#fffbeb; border-left-color:var(--warn)}
+  .note.bad{background:#fef2f2; border-left-color:var(--bad)}
+  .note.ok{background:#f0fdf4; border-left-color:var(--ok)}
+  .note p:last-child{margin-bottom:0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 20px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin:0 0 22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .kpi .v{font-size:23px; font-weight:750; line-height:1.25; font-variant-numeric:tabular-nums}
+  .kpi .k{font-size:12.5px; color:var(--ink-3); margin-top:3px}
+  .kpi.ok .v{color:var(--ok)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 24px; margin:0 0 34px}
+  .toc h2{margin:0 0 10px; font-size:14px; border:none; padding:0; color:var(--ink-3); letter-spacing:.08em}
+  .toc ol{margin:0; padding-left:1.35em; font-size:14.5px}
+  .toc li{margin-bottom:4px}
+  .toc a{color:var(--ink-2); text-decoration:none}
+  .toc a:hover{color:var(--accent); text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0}
+  footer{margin-top:56px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-3); font-size:13px}
+  @media (max-width:600px){
+    .wrap{padding:26px 15px 70px}
+    header.doc h1{font-size:23px}
+    h2{font-size:18.5px; margin:40px 0 13px}
+    body{font-size:15.5px}
+  }
+</style>
+<style>
+  ul.chk{list-style:none;padding-left:2px}
+  ul.chk li{margin-bottom:7px}
+  ul.chk input{margin-right:9px;transform:translateY(1px)}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--ink-2)}
+  table td{font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#s0">v0.6.11（2026-08-12 記載）</a></li>
+    <li><a href="#s1">この正誤表の運用</a></li>
+  </ol>
+</nav>
+<h1>正誤表</h1>
+<p><strong>公開した release 本文は編集しない。</strong>編集すると、受け手が読んだ文と手元の控えがずれ、 しかも本文のほうが黙って書き換わるので、「いつ何が直ったか」が誰にも分からなくなる。 代わりに、<strong>公開後に見つかった誤りをここへ積む。</strong></p>
+<p>各項目には、<strong>誤りに気づいた方法</strong>と<strong>実測の手順</strong>を書く。 読んだ人が同じ結果を再現できないなら、訂正になっていない。</p>
+<hr>
+<h2 id="s0">v0.6.11（2026-08-12 記載）</h2>
+<h3>1. <strong><code>VERIFICATION_INCOMPLETE</code> になる tag の範囲が違う</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>誤</td><td>「<strong>v0.3.0 より前の tag</strong> を検算すると、これに当たります」</td></tr><tr><td>正</td><td>「<strong>v0.4.0 より前の tag</strong> を検算すると、これに当たります」</td></tr><tr><td>場所</td><td>release notes 冒頭「⚠ 先に読むところ」の 1 番目 ／ <code>verify-tool-v16-notes.md</code> の同じ節</td></tr></tbody></table></div>
+<p><strong><code>v0.3.0</code> 自身も対象</strong>である。範囲定義（<code>manifest.inputScope</code>）が入ったのは <strong>v0.4.0</strong> から。</p>
+<pre><code>tag ごとに、その tag の source に対して同梱の検算ツール（toolVersion 16）を回した結果
+  v0.1.0 / v0.1.1   manifest 自体が無い（MANIFEST_UNAVAILABLE）
+  v0.2.0            VERIFICATION_INCOMPLETE   incompletePhases=["unrecorded-input-detection"]
+  v0.3.0            VERIFICATION_INCOMPLETE   同上
+  v0.4.0            OK                        incompletePhases=[]
+  v0.4.1            OK</code></pre>
+<p>再現手順（21 tag すべてで回せる）:</p>
+<pre><code>T=$(mktemp -d); git archive v0.3.0 | tar -x -C "$T"
+node scripts/verifyReleaseSourceInputs.mjs \
+  --manifest "$T/artifacts/source-input-manifest.json" --source "$T"
+# → status=VERIFICATION_INCOMPLETE / exit 1</code></pre>
+<p><strong>なぜ間違えたか。</strong> 境界を実際に走らせずに書いた。<code>inputScope</code> を足した版を思い違いしていた。 <strong>「より前」と書く前に、その版そのものを踏むこと。</strong></p>
+<div class="note"><p>tag ごとの <code>inputScope</code> の有無を数えるときは、<code>"$t:artifacts/..."</code> と書かないこと。</p><p>zsh は <code>$t:a</code> をパス修飾子として解釈するので、<strong>全 tag が同じように「無い」と出る。</strong></p><p><code>${t}:artifacts/...</code> と書く。これで一度、誤った結論を出しかけた。</p></div>
+<h3>2. <strong>「通す材料 66 件」は誰も検査していない旗の数だった</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>誤</td><td>「うち『通す』材料が 59 → <strong>66 件</strong>」</td></tr><tr><td>正</td><td>実際に通る材料は <strong>72 件</strong></td></tr><tr><td>場所</td><td>release notes 「塞ぎすぎていないこと」節 ／ <code>verify-tool-v16-notes.md</code> の同じ節</td></tr></tbody></table></div>
+<p>corpus が<strong>同じ境界を 2 つの一覧</strong>で持っていた。材料ごとの <code>ok</code> 旗と、期待値表である。 <strong>検査されていたのは期待値表だけ</strong>で、旗は 1 か所から <code>!ok</code> としてしか読まれておらず、 <strong><code>ok: true</code> が本当に通ることは一度も確かめられていなかった。</strong>両者は 10 件でずれていた。</p>
+<p>v0.6.12 で旗を消し、判定を <code>test/_tarExpectations.mjs</code> の期待値表へ一本化した。 数は試験が固定する（<code>通る材料は 72 件</code>）。</p>
+<h3>3. <strong>同梱 artifact が status を 5 種類と書いていた</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>誤</td><td>配布物 <code>source-verification-result.json</code> の <code>howToVerifyYourself</code>: 「status は OK(0) / MISMATCH(1) / SOURCE_UNAVAILABLE(2) / MANIFEST_UNAVAILABLE(2) / NOTHING_TO_VERIFY(2)」</td></tr><tr><td>正</td><td>同梱ツールは <strong>8 種類</strong>返す。<code>VERIFICATION_INCOMPLETE(1)</code> / <code>ARCHIVE_INVALID(2)</code> / <code>ARCHIVE_UNSUPPORTED(2)</code> が抜けていた</td></tr><tr><td>場所</td><td><strong>配布物そのもの</strong>（release notes ではない）</td></tr></tbody></table></div>
+<p><strong>これは文書の誤りではなく、配布物の誤りである。</strong> 足りない 3 つは v0.6.10 と v0.6.11 で足したもので、 とくに <code>VERIFICATION_INCOMPLETE</code> は <strong>v0.6.11 の目玉</strong>なのに受け手に伝わっていなかった。</p>
+<p><strong>v0.6.11 の配布物を使う場合は、この行を読まないこと。</strong> <code>verifyReleaseSourceInputs.mjs</code> が返す値が正しく、<code>schemas/source-verifier-cli-result.v1.schema.json</code> の <code>status.enum</code>（8 種類・同じ配布物に入っている）がその正本である。</p>
+<p>v0.6.12 で、この行は道具の定数から生成するようにした。</p>
+<hr>
+<h2 id="s1">この正誤表の運用</h2>
+<ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
+</div>
+</body>
+</html>
