@@ -25,6 +25,8 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { TARGETS, renderToString } from './mdToHtml.mjs'
+import { allCases } from '../test/_corruptTar.mjs'
+import { expectedOutcome } from '../test/_tarExpectations.mjs'
 
 const ROOT = process.cwd()
 const read = (p) => readFileSync(resolve(ROOT, p), 'utf8')
@@ -128,6 +130,25 @@ function declarations() {
   const vr = JSON.parse(read('artifacts/validation-results.json'))
   const vs = JSON.parse(read('artifacts/verification_summary.json')).gradeCounts
   const iv = trrs.intervals.find((x) => x.intervalId === 'IV028')
+  const man = JSON.parse(read('artifacts/source-input-manifest.json'))
+
+  /**
+   * corpus の数は artifact ではなく試験の材料そのものから引く（v0.6.12）。
+   * **`ok` 旗ではなく期待値表から数える**——旗は v0.6.11 で消した（誰も検査していなかった）。
+   */
+  const corpusCases = allCases()
+  const corpusTotal = Object.values(corpusCases).flat().length
+  const corpusGroups = Object.keys(corpusCases).length
+  const corpusSafe = Object.entries(corpusCases)
+    .flatMap(([kind, list]) => list.map((c) => expectedOutcome(kind, c.id)))
+    .filter((w) => w === 'safe').length
+
+  /** 手元に控えのある release のうち最大の版数（`docs/release/<tag>-SHA256SUMS.txt`） */
+  const latestRecordedTag = readdirSync(resolve(ROOT, 'docs/release'))
+    .map((f) => /^(v\d+\.\d+\.\d+)-SHA256SUMS\.txt$/.exec(f)?.[1])
+    .filter(Boolean)
+    .sort((a, b) => a.slice(1).split('.').map(Number).reduce((s, n, i) => s || n - Number(b.slice(1).split('.')[i]), 0))
+    .pop()
 
   return [
     ['docs/VERIFICATION_PLAN.md', '**L だけが 1.45 mm 離れています。**', Math.abs(gap('L')) === 1.45],
@@ -152,6 +173,29 @@ function declarations() {
     ['docs/release/v0.6.0-notes.md', `| 検証対象（\`validate:profiles\`） | 13 | **${vr.targetsTotal}** |`, true],
     ['docs/release/v0.6.0-notes.md', `| 根拠の区分 | FACT ${vs.FACT} / DERIVED ${vs.DERIVED} / ASSUMPTION ${vs.ASSUMPTION} | **変わらず** |`, true],
     ['docs/release/v0.6.0-notes.md', `**変わらず**（TRS ${trs.intervals.length}/${trs.events.length}・TRRS ${trrs.intervals.length}/${trrs.events.length}）`, true],
+
+    /**
+     * **SECURITY.md と TEST_RESULTS.md をここへ入れた（v0.6.12）。**
+     *
+     * v0.6.11 まで、この 2 つは宣言照合の対象に 1 件も入っていなかった。
+     * 実測すると **4 件が古いまま**だった——直近 release が 3 版前、corpus が 26 個（実際は 182 個）、
+     * 通す材料が 66 個（**旗から数えた誤り**。実際は 72 個）、入力が 29 件（実際は 32 件）。
+     * **どれも artifact から確かめられる数**なのに、誰も見ていなかった。
+     */
+    ['SECURITY.md', `**すべての細工に耐えることは示していません。**${corpusTotal} 個・${corpusGroups} 種類で試験した範囲までです`, true],
+    ['SECURITY.md', `v16 では corpus の「通す」材料を ${corpusSafe} 個へ増やしました`, true],
+    ['docs/TEST_RESULTS.md', `| 単体テスト | \`npm run test\` | **${tc.total} 件**`, true],
+    ['docs/TEST_RESULTS.md', `**入力 ${man.inputFilesTotal} 件すべて一致**`, true],
+    /**
+     * 直近 release だけは artifact に無いので、**手元の SHA256SUMS の控えの最大版数**で縛る。
+     * 版を出したら控えを置く運用なので、控えが増えればここも動く。
+     */
+    ['SECURITY.md', `- 直近の release 1 本（現時点では ${latestRecordedTag}）`, true],
+
+    /** 根拠の区分。**3 つの文書が同じ数を別々に書いている**ので、3 つとも縛る */
+    ['SECURITY.md', `**\`ASSUMPTION\` が ${vs.ASSUMPTION} 件あります**`, true],
+    ['README.md', `（寸法 ${vs.FACT + vs.DERIVED + vs.ASSUMPTION + vs.UNKNOWN} 件のうち ${vs.ASSUMPTION} 件が仮定）`, true],
+    ['README.md', `仮定は全体で ${vs.ASSUMPTION} 件`, true],
   ]
 }
 
