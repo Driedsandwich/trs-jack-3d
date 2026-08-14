@@ -73,7 +73,7 @@ export interface ReasonCodeMeta { status: string, family: string, summary: strin
 export declare const REASON_CODES: Record<string, ReasonCodeMeta>
 export declare const OTHER_CODES: readonly string[]
 export declare function assertCatalogued(code: string): string
-export declare const CLI_STATUS_META: Record<string, { exit: number, fromLoad: boolean, note?: string }>
+export declare const CLI_STATUS_META: Record<string, { exit: number, fromLoad: boolean, summary: string, note?: string }>
 export declare const CLI_STATUS_EXIT: Record<string, number>
 export declare const CLI_STATUSES: readonly string[]
 

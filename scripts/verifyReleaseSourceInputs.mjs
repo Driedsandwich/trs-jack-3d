@@ -295,16 +295,11 @@ export const REASON_CODES = {
   SOURCE_SPECIAL_NODE: { status: 'ARCHIVE_UNSUPPORTED', family: 'source', summary: '通常ファイルでも directory でもないノード' },
 }
 
-/**
- * **`*_OTHER` は予期しない内部不具合の受け皿だけ。**
- * 既知の経路がここへ落ちたら、それは catalog への登録漏れである。
- */
-export const OTHER_CODES = ['ARCHIVE_INVALID_OTHER', 'ARCHIVE_UNSUPPORTED_OTHER']
 
 /** catalog に載っているか。載っていなければ投げる（静かに `*_OTHER` へ落とさない） */
 export function assertCatalogued(code) {
   if (!Object.hasOwn(REASON_CODES, code)) {
-    throw new Error(`stableReasonCode "${code}" は catalog（scripts/reasonCodes.mjs）に無い。`
+    throw new Error(`stableReasonCode "${code}" は catalog（このファイル内の REASON_CODES）に無い。`
       + '**新しい止め方を足したら catalog にも足すこと。**登録しないと受け手は機械で分岐できない。')
   }
   return code
@@ -331,14 +326,11 @@ export const TOOL_VERSION = 17
  * `VERIFICATION_INCOMPLETE` はその版の目玉なのに、受け手に伝わっていなかった。
  * **同じ境界は 1 か所で持つ。**
  *
- *   OK                      … 必須の工程が全部終わり、全件一致した
- *   MISMATCH                … 不一致・記録漏れ・自己参照がある
- *   VERIFICATION_INCOMPLETE … 必須の工程を実行できていない
- *   ARCHIVE_INVALID         … source が壊れている／曖昧
- *   ARCHIVE_UNSUPPORTED     … 展開はできるが、この道具の範囲の外
- *   SOURCE_UNAVAILABLE      … source を取れなかった
- *   MANIFEST_UNAVAILABLE    … manifest を読めなかった
- *   NOTHING_TO_VERIFY       … 入力 0 件で何も見ていない
+ * **v0.6.15: ここに書いてあった 8 種類の一覧を消した（外部監査 P1-D）。**
+ * v0.6.14 でこのファイルの冒頭にあった 5 種類の一覧は消したが、
+ * **`CLI_STATUS_META` の 12 行上にある 8 種類の一覧を残していた**——
+ * しかも「同じ境界は 1 か所で持つ」と書いた同じコメント塊の中に。
+ * 一覧と説明は下の `CLI_STATUS_META` そのものを読むこと。
  */
 /**
  * **v0.6.14: status に紐づくものを全部ここへ入れた（外部監査 P1-C）。**
@@ -351,21 +343,24 @@ export const TOOL_VERSION = 17
  *
  *   exit      … その status のときの終了コード
  *   fromLoad  … source の読み込みが返してよい status か（false なら丸める対象）
+ *   summary   … その status の意味（v0.6.15。上のコメントに手書きしていた一覧をここへ畳んだ）
  *   note      … 受け手向けの注記。**分岐に使わない**（無い status は注記も無い）
  */
 export const CLI_STATUS_META = {
-  OK: { exit: 0, fromLoad: false },
-  MISMATCH: { exit: 1, fromLoad: false },
-  VERIFICATION_INCOMPLETE: { exit: 1, fromLoad: false },
+  OK: { exit: 0, fromLoad: false, summary: '必須の工程が全部終わり、全件一致した' },
+  MISMATCH: { exit: 1, fromLoad: false, summary: '不一致・記録漏れ・自己参照がある' },
+  VERIFICATION_INCOMPLETE: { exit: 1, fromLoad: false, summary: '必須の工程を実行できていない' },
   ARCHIVE_INVALID: {
     exit: 2,
     fromLoad: true,
+    summary: 'source が壊れている／曖昧',
     note: '**これは不一致ではない。**archive そのものが壊れているか、安全に読めない形だったので、'
       + '中身を見ていない。渡した source を疑うこと。',
   },
   ARCHIVE_UNSUPPORTED: {
     exit: 2,
     fromLoad: true,
+    summary: '展開はできるが、この道具の範囲の外',
     note: '**これは不一致ではない。archive が壊れているとも言っていない。**'
       + 'ふつうの tar なら展開できるが、この道具が扱うと決めた範囲の外だったので中身を見ていない。'
       + '別の経路（展開してから --source <ディレクトリ>）で確かめられることがある。',
@@ -373,11 +368,12 @@ export const CLI_STATUS_META = {
   SOURCE_UNAVAILABLE: {
     exit: 2,
     fromLoad: true,
+    summary: 'source を取れなかった',
     note: '**これは不一致ではない。**source を取れなかったので、検証していない。'
       + 'network を使わずに確かめるなら --source <展開済みディレクトリ> を渡すこと。',
   },
-  MANIFEST_UNAVAILABLE: { exit: 2, fromLoad: false },
-  NOTHING_TO_VERIFY: { exit: 2, fromLoad: false },
+  MANIFEST_UNAVAILABLE: { exit: 2, fromLoad: false, summary: 'manifest を読めなかった' },
+  NOTHING_TO_VERIFY: { exit: 2, fromLoad: false, summary: '入力 0 件で何も見ていない' },
 }
 
 /** **導出する。**別に並べると、また 2 つ目の一覧になる */
@@ -385,6 +381,18 @@ export const CLI_STATUS_EXIT = Object.fromEntries(
   Object.entries(CLI_STATUS_META).map(([s, m]) => [s, m.exit]),
 )
 export const CLI_STATUSES = Object.keys(CLI_STATUS_META)
+
+/**
+ * **`*_OTHER` は予期しない内部不具合の受け皿だけ。**
+ * 既知の経路がここへ落ちたら、それは catalog への登録漏れである。
+ *
+ * **v0.6.15: 手書きの 2 要素配列をやめた（外部監査 P1-D の同型）。**
+ * 受け皿の名前は下の `${kind}_OTHER` で組み立てているので、
+ * **status を足すと 3 つ目の受け皿が生まれるのに、この一覧は 2 つのままだった。**
+ * 実際 `SOURCE_UNAVAILABLE_OTHER` は出るのに、ここに載っていなかった
+ * ——「これは `*_OTHER` か」を尋ねる検査が、その 1 つを見落とす。
+ */
+export const OTHER_CODES = CLI_STATUSES.map((s) => `${s}_OTHER`)
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -405,7 +413,8 @@ const SCOPE_FILE = 'source-input-scope.v1.json'
 const SCOPE_OVERRIDE = argOf('scope')
 /**
  * **manifest に縛られていない範囲定義を、明示的に許す（v0.6.11・外部監査 §1）。**
- * v0.3.0 より前の tag は manifest に `inputScope` を持たないので、ここを通さないと検算できない。
+ * v0.4.0 より前の tag（v0.3.0 自身も対象）は manifest に `inputScope` を持たないので、
+ * ここを通さないと検算できない。
  * **許しても `OK` にはならない**——縛られていない範囲では「範囲の中に漏れが無い」と言えないため。
  */
 const ALLOW_UNPINNED_SCOPE = argv.includes('--allow-unpinned-scope')
@@ -523,7 +532,8 @@ function assertCodeFor(kind, detail) {
   const code = detail?.stableReasonCode
   if (!code) {
     throw new Error(`${kind} を stableReasonCode 無しで作ろうとした。`
-      + '**付け忘れた止め方は黙って *_OTHER へ落ちる。**scripts/reasonCodes.mjs に登録して名前を渡すこと。')
+      + '**付け忘れた止め方は黙って *_OTHER へ落ちる。**'
+      + 'このファイル内の REASON_CODES に登録して名前を渡すこと。')
   }
   assertCatalogued(code)
   const want = REASON_CODES[code].status
@@ -2697,7 +2707,8 @@ if (RUN_AS_CLI) {
       }
       /**
        * **manifest が範囲を記録していないなら、その範囲は誰にも縛られていない（v0.6.11・監査 §1）。**
-       * v0.3.0 より前の tag はここに当たる。**黙って受けると、範囲を差し替え放題になる。**
+       * v0.4.0 より前の tag（v0.3.0 自身も対象）がここに当たる。
+       * **黙って受けると、範囲を差し替え放題になる。**
        * 明示的に `--allow-unpinned-scope` を渡したときだけ先へ進み、
        * それでも `OK` にはしない（下の `incomplete` へ入る）。
        */
