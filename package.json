@@ -41,7 +41,8 @@
     "search:topology": "vite-node scripts/searchTopology.ts",
     "search:robustness": "vite-node scripts/searchTopologyRobustness.ts",
     "compare:real-jack": "vite-node scripts/compareRealJack.ts",
-    "export:half-plug:all": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" && npm run export:half-plug -- --variant \"TRS|JACK-TRRS\""
+    "export:half-plug:all": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" && npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
+    "check:test-evidence-current": "node scripts/checkTestEvidenceCurrent.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

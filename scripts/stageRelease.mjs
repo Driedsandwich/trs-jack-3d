@@ -101,6 +101,34 @@ if (existsSync(resolve(ROOT, TEST_COUNTS))) {
 }
 
 /**
+ * **その証拠が「いまのもの」か（v0.6.16・外部監査 2026-08-14 P0-1）。**
+ *
+ * v0.6.15 は **v0.6.14 のテスト証拠（1236 件・commit 1c79e059）で `READY` を名乗って
+ * 公開された。**上の検査は `allPassed` しか見ておらず、
+ * `check:vacuity` は下限としてしか見ず、`check:doc-numbers` は
+ * **古い文書と古い artifact が一致するので通した。**
+ *
+ * **一致は現在性の証拠にならない。**ここで実際に測り直して突き合わせる。
+ */
+{
+  const { checkTestEvidenceCurrent } = await import('./checkTestEvidenceCurrent.mjs')
+  console.log('\n  テスト証拠がいまのものか、実際に測り直して確かめる…')
+  const { problems, live, recorded } = checkTestEvidenceCurrent(ROOT)
+  if (problems.length) {
+    console.log(`**${TEST_COUNTS} が実測と違う（配ろうとしている証拠が古い）。**`)
+    console.log(`  実測 ${live?.total ?? '-'} 件 / 記録 ${recorded?.total ?? '-'} 件`
+      + `（記録は ${recorded?.generatedAt ?? '-'} ／ ${String(recorded?.generatedFromCommit ?? '-').slice(0, 12)}）`)
+    for (const p of problems.slice(0, 10)) console.log(`  ${p}`)
+    if (problems.length > 10) console.log(`  … ほか ${problems.length - 10} 件`)
+    console.log('  npm run test:count を回し直してから、もう一度 release:evidence を回すこと。')
+    if (!ALLOW_NOT_READY) process.exit(1)
+    console.log('  --allow-not-ready が付いているので続行する。')
+  } else {
+    console.log(`  実測 ${live.total} 件 / ${Object.keys(live.byFile).length} ファイル — 記録と全欄一致\n`)
+  }
+}
+
+/**
  * release evidence 側の判定とも突き合わせる。
  * **evidence が「配布可」と言っていないものを配らない。**
  */

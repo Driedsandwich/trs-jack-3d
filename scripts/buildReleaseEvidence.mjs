@@ -308,6 +308,66 @@ else {
   if (tc.allPassed !== true) readinessReasons.push(`${tcPath} の allPassed が ${JSON.stringify(tc.allPassed)}`)
   if (tc.failed !== undefined && tc.failed !== 0) readinessReasons.push(`${tcPath} の failed が ${tc.failed}`)
   if (tc.exitCode !== undefined && tc.exitCode !== 0) readinessReasons.push(`${tcPath} の exitCode が ${tc.exitCode}`)
+  readinessReasons.push(...staleTestEvidenceReasons(tc))
+}
+
+/**
+ * **テスト証拠が古くなっていないか（v0.6.16・外部監査 2026-08-14 P0-1）。**
+ *
+ * v0.6.15 は **v0.6.14 の証拠（1236 件・commit `1c79e059`）で `READY` を名乗って
+ * 公開された。**この関数が無かったので、`allPassed: true` だけを見て通していた。
+ *
+ * **ここでテストを回し直さない。**この工程は `test_counts.json` が指す成果物を
+ * これから書くところなので、いま測ると「まだ書いていない索引と食い違う」失敗を
+ * 数えてしまい、二度と `READY` にできなくなる。
+ * **実測での突き合わせは配布の門（`release:stage`）が行う。**
+ *
+ * ここが見るのは**由来**だけである——「その証拠を取ってから、テストの結果を
+ * 変えうるファイルが動いていないか」。v0.6.15 では `test/` が 4 コミットぶん
+ * 動いていたので、これだけで止められた。
+ */
+function staleTestEvidenceReasons(tc) {
+  const at = tc.generatedFromCommit
+  if (!at || at === 'UNKNOWN') return [`${tcPath} が生成時の commit を記録していない`]
+  /** その commit が履歴にあるか。無ければ比べようがない */
+  try {
+    execFileSync('git', ['cat-file', '-e', `${at}^{commit}`], { cwd: ROOT, stdio: 'ignore' })
+  } catch {
+    return [`${tcPath} の generatedFromCommit (${at.slice(0, 12)}) が履歴に無い`]
+  }
+  /** **テストの結果を変えうる範囲**。artifact と文書はここに入れない（循環するため） */
+  const WATCHED = ['test/', 'src/', 'scripts/', 'schemas/', 'package.json', 'package-lock.json', 'vitest.config.ts']
+  let changed
+  try {
+    changed = execFileSync('git', ['diff', '--name-only', `${at}..HEAD`, '--', ...WATCHED], { cwd: ROOT, encoding: 'utf8' })
+      .split('\n').filter(Boolean)
+  } catch {
+    return [`${tcPath} の generatedFromCommit (${at.slice(0, 12)}) と HEAD を比べられない`]
+  }
+  /** **コミットしていない変更も同じ穴。**証拠を取ったあとに手元で触っていれば、証拠は古い */
+  let dirty = []
+  try {
+    dirty = execFileSync('git', ['status', '--porcelain', '--', ...WATCHED], { cwd: ROOT, encoding: 'utf8' })
+      .split('\n').filter(Boolean).map((l) => l.slice(3))
+  } catch { /* git が無い環境では諦める（上の cat-file で既に落ちている） */ }
+
+  const reasons = []
+  if (changed.length) {
+    const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim()
+    reasons.push(
+      `${tcPath} を取ってから、テストに効くファイルが ${changed.length} 件動いている`
+      + `（${at.slice(0, 12)}..${head.slice(0, 12)}: ${changed.slice(0, 3).join(', ')}`
+      + `${changed.length > 3 ? ` ほか ${changed.length - 3} 件` : ''}）。npm run test:count を取り直すこと`,
+    )
+  }
+  if (dirty.length) {
+    reasons.push(
+      `テストに効くファイルに未コミットの変更が ${dirty.length} 件ある`
+      + `（${dirty.slice(0, 3).join(', ')}${dirty.length > 3 ? ` ほか ${dirty.length - 3} 件` : ''}）。`
+      + `${tcPath} はその前の実行なので取り直すこと`,
+    )
+  }
+  return reasons
 }
 
 const validation = {
@@ -328,8 +388,22 @@ const validation = {
    */
   releaseReadinessStatus: readinessReasons.length === 0 ? 'READY' : 'NOT_READY',
   releaseReadinessReasons: readinessReasons,
+  /**
+   * **どの証拠を根拠にしたかを、値ごと名指しする（v0.6.16・外部監査 P0-1）。**
+   * v0.6.15 まで件数しか写しておらず、**その件数がどの版のものかは記録に無かった。**
+   * 受け手は「1236 件」を見ても、それが配布物と同じ版の実行かを確かめられなかった。
+   */
   testEvidence: tc
-    ? { total: tc.total, failed: tc.failed ?? null, skipped: tc.skipped, exitCode: tc.exitCode ?? null, allPassed: tc.allPassed }
+    ? {
+        total: tc.total,
+        failed: tc.failed ?? null,
+        skipped: tc.skipped,
+        exitCode: tc.exitCode ?? null,
+        allPassed: tc.allPassed,
+        testCountsSha256: sha256File(tcPath),
+        testCountsGeneratedFromCommit: tc.generatedFromCommit ?? null,
+        testCountsGeneratedAt: tc.generatedAt ?? null,
+      }
     : null,
   /** **配布する対象と、しない対象を分けて数える（v0.2.0 フォローアップ §3）。** */
   distributedTargets: results.filter((r) => shippedPaths.has(r.artifact)).length,
