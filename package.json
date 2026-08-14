@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --reporter=default --reporter=json --outputFile=.vitest-report.json",
     "test:watch": "vitest",
     "artifacts": "vite-node scripts/generateArtifacts.ts",
     "sensitivity": "vite-node scripts/sensitivity.ts",

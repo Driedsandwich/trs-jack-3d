@@ -94,3 +94,21 @@ jobs:
 
       - name: lint
         run: npm run lint
+
+      # **ビューアが build できるかは、別の話（v0.6.16・外部監査 P1）。**
+      # v0.6.15 までの CI は型検査とテストだけで、**Vite の production build を一度も回していなかった。**
+      # model の再生成（search / sensitivity / robustness）はここへ足さない——重く、
+      # 配布可能性の確認とは別物である。
+      - name: ビューアの build
+        run: npm run build
+
+      # **配ろうとしている証拠が、いまのものか（v0.6.16・外部監査 P0-1）。**
+      # v0.6.15 は v0.6.14 の証拠（1236 件）で READY を名乗って公開された。
+      # 上の空振り検査は下限としてしか見ないので、件数が増えても通る。
+      # 直前の単体テストが書いた JSON を使う（**同じ工程で 2 回テストを回さない**）
+      - name: テスト証拠の鮮度
+        run: npm run check:test-evidence-current -- --report .vitest-report.json
+
+      # **配布 schema のうち道具から決まる部分が、道具とずれていないか（v0.6.16）。**
+      - name: 配布 schema の同期
+        run: npm run check:cli-schema-sync

@@ -100,7 +100,14 @@ describe('CI ② action が full commit SHA で固定されている', () => {
 
 describe('CI ③ 回すものと回さないもの', () => {
   const RUN = ['npm run typecheck', 'npm run test', 'npm run validate:profiles',
-    'npm run check:vacuity', 'npm run check:doc-numbers', 'npm run lint']
+    'npm run check:vacuity', 'npm run check:doc-numbers', 'npm run lint',
+    /**
+     * **v0.6.16（外部監査 P0-1 / P1）。**
+     * build は「ビューアが配れる形か」で、model の再生成とは別物である。
+     * 鮮度は「配ろうとしている証拠がいまのものか」——v0.6.15 はここが無く、
+     * **v0.6.14 の証拠で READY を名乗って公開された。**
+     */
+    'npm run build', 'npm run check:test-evidence-current', 'npm run check:cli-schema-sync']
   /** **重い成果物は CI で回さない。**通らないから通るまで回す運用になり、artifact が CI の都合で動く */
   const NEVER = ['npm run search:topology', 'npm run sensitivity', 'npm run search:robustness',
     'npm run export:half-plug', 'npm run release:evidence', 'npm run release:stage']
@@ -113,7 +120,7 @@ describe('CI ③ 回すものと回さないもの', () => {
     expect(SRC, `${cmd} を回している`).not.toContain(cmd)
   })
 
-  it('回している 6 つが package.json に実在する（存在しない script を並べていない）', () => {
+  it('回している script が package.json に実在する（存在しない script を並べていない）', () => {
     const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as { scripts: Record<string, string> }
     for (const cmd of RUN) {
       const name = cmd.replace('npm run ', '')

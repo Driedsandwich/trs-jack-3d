@@ -1,5 +1,5 @@
 /**
- * **言い切った文言と、指したパスが、いまも本当か（v0.6.15・外部監査 2026-08-12 P1-D）。**
+ * **言い切った文言と、指したパスが、いまも本当か（v0.6.15 新設・v0.6.16 で探索型へ）。**
  *
  * ## なぜ要るか
  *
@@ -7,28 +7,26 @@
  * 境界や一覧を 2 か所に持ち、片方だけ直す。直さなかった側は誰も検査していないので、
  * **ずれても何も落ちない。**外部監査が毎回それを拾って返してきた。
  *
- * v0.6.14 でも 3 つ残していた。実測（2026-08-14）:
+ * **変異対照（2026-08-14）**: SECURITY.md の版数を `v0.9.9 より前` に書き換えて
+ * 全試験を回すと **1236 件すべて緑**だった。文言は 1 か所も検査されていなかった。
  *
- * ```
- * scripts/verifyReleaseSourceInputs.mjs  CLI_STATUS_META の 12 行上に 8 status の手書き一覧
- *                                        （「同じ境界は 1 か所で持つ」と書いた同じコメント塊の中）
- * scripts/verifyReleaseSourceInputs.mjs  受け手向けのエラー文が scripts/reasonCodes.mjs を指す
- *                                        （そのファイルは v0.6.14 で消した。**実在しない**）
- * SECURITY.md                            「v0.3.0 より前の tag」（正しくは v0.4.0 より前）
- * ```
+ * ## v0.6.16 で作り直した理由
  *
- * **変異対照（2026-08-14）**: SECURITY.md の版数を `v0.9.9 より前` に書き換えて全試験を回すと
- * **1236 件すべて緑**だった。文言は 1 か所も検査されていなかった。
+ * v0.6.15 のこの試験は「全面へ当てる」と説明しながら、
+ * **`LIVE_FILES` という手書きの allowlist を使っていた。**
+ * 外部監査（2026-08-14）がそこを指した——**それ自体が同じ形の欠陥**である。
  *
- * ## この試験の考え方
+ * 実測（2026-08-14）: `docs/` へ新しい文書を作り、古い言い方と実在しないパスを
+ * 両方書いて全試験を回すと **14 件すべて緑**だった。**足し忘れれば検査されない。**
  *
- * 直す場所を列挙するのをやめ、**主張のほうを列挙して全面へ当てる。**
- * 除外は語句で推測せず、**パスを名指しで宣言する**——そして
- * **宣言した除外が本当にまだその語句を含むかも確かめる。**
- * 含まなくなった除外を残すと、次に同じ語句が live 側へ戻ってきたとき静かに見逃す。
+ * だから**追跡されているファイルを列挙して**当てる。
+ * 免除は「もう直せない記録」だけで、**パターンではなくパスの前方一致で宣言し、
+ * 宣言した免除が実際に効いているかも確かめる**（効かなくなった免除を残すと、
+ * 次に同じ語句が live へ戻っても静かに通る）。
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { mustBeNonEmpty } from './_must'
@@ -37,38 +35,64 @@ const ROOT = resolve(__dirname, '..')
 const read = (p: string) => readFileSync(resolve(ROOT, p), 'utf8')
 
 /**
- * **いま有効だと主張しているファイル。**
- * ここに無いものは検査しない——なので「足し忘れ」は下の非空振り検査で見る。
+ * **もう直せない記録。**公開済み release 本文と正誤表は、当時の誤りごと残すのが仕様である
+ * （`docs/ERRATA.md` の運用節）。**書き換えたら「いつ何が直ったか」が消える。**
+ *
+ * この試験自身も入る——反例として古い言い方を引用しているため。
  */
-const LIVE_FILES = [
-  'scripts/verifyReleaseSourceInputs.mjs',
-  'scripts/buildReleaseEvidence.mjs',
-  'scripts/checkDocNumbers.mjs',
-  'scripts/selfReportStatus.mjs',
-  'SECURITY.md',
-  'README.md',
-  'CONTRIBUTING.md',
-  'docs/TEST_RESULTS.md',
-  'docs/VERIFICATION_PLAN.md',
-  'schemas/source-verifier-cli-result.v1.schema.json',
+const FROZEN_PREFIXES = [
+  'docs/release/',
+  'docs/ERRATA.md',
+  'CHANGELOG.md',
+  /** 日付入りの受入・監査記録。**当時の状態を書いたもので、いま直すものではない** */
+  'docs/INTEGRATION_ORDER_20260803.md',
+  'docs/NONBLOCKING_FOLLOWUP_ORDER_20260803.md',
+  'docs/NONBLOCKING_FOLLOWUP_ORDER_V020_20260803.md',
+  'docs/NONBLOCKING_FOLLOWUP_ORDER_V030_20260803.md',
+  'docs/NONBLOCKING_FOLLOWUP_ORDER_V040_20260804.md',
+  'docs/NONBLOCKING_FOLLOWUP_ORDER_V041_20260804.md',
+  'docs/PUBLISH_AUDIT_20260731.md',
+  'docs/UNCHECKED_LISTS_AUDIT_20260812.md',
+  'test/sourceVerifierCliResult.test.ts',
+  'test/staleWordingAndPaths.test.ts',
+  /** 生成物。中身は他のファイルの写しなので、二重に数えない */
+  'artifacts/',
 ] as const
 
 /**
- * **もう直せない記録。**公開済み release 本文と正誤表は、当時の誤りごと残すのが仕様である
- * （`docs/ERRATA.md` の運用節）。**書き換えたら「いつ何が直ったか」が消える。**
+ * **わざと存在しないパス。**「無いファイルを渡したら」を試すための材料で、
+ * 実在させてはいけない。**語句で推測せず、1 つずつ名指しで宣言する。**
+ * 宣言が要らなくなっていないかも下で確かめる。
  */
-const FROZEN_RECORDS = [
-  'docs/ERRATA.md',
-  'docs/release/v0.6.11-notes.md',
-  'docs/release/v0.6.12-notes.md',
-  'docs/release/v0.6.14-notes.md',
-  'docs/release/verify-tool-v16-notes.md',
-  'docs/release/v0.6.11-chatgpt-prompt.md',
-  'docs/release/v0.6.13-chatgpt-prompt.md',
-  'docs/release/v0.6.14-chatgpt-prompt.md',
-  'test/sourceVerifierCliResult.test.ts',
-  'test/staleWordingAndPaths.test.ts',
+const INTENTIONALLY_ABSENT = [
+  'artifacts/not_tracked_at_all.json',
+  'artifacts/does-not-exist.json',
 ] as const
+
+/** 本文を持たない（検査しても意味が無い）拡張子 */
+const BINARY_EXT = /\.(png|jpg|jpeg|gif|webp|ico|pdf|zip|gz|woff2?|ttf)$/i
+
+/** 生成物。正本の md を直せば追随するので、二重に数えない */
+const GENERATED = /\.html$/
+
+const isFrozen = (p: string) => FROZEN_PREFIXES.some((f) => p === f || p.startsWith(f))
+
+/** **git が追跡しているファイルを列挙する。**手書きの一覧を持たない */
+function trackedFiles(): string[] {
+  return execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 })
+    .split('\n').filter(Boolean)
+}
+
+/** 検査する live なファイル（追跡されていて、凍結記録でも生成物でもないテキスト） */
+function liveFiles(): string[] {
+  return trackedFiles().filter((p) => {
+    if (isFrozen(p) || BINARY_EXT.test(p) || GENERATED.test(p)) return false
+    const abs = resolve(ROOT, p)
+    if (!existsSync(abs)) return false
+    /** 巨大ファイルは読まない（実測: いちばん大きい追跡ファイルでも 2 MB 未満） */
+    return statSync(abs).size < 4 << 20
+  })
+}
 
 /** live 側に在ってはいけない言い方と、なぜ誤りか */
 const FORBIDDEN_PHRASES = [
@@ -79,8 +103,22 @@ const FORBIDDEN_PHRASES = [
 ] as const
 
 describe('言い切った文言が、いまも本当か', () => {
+  const LIVE = liveFiles()
+
+  it('**追跡ファイルを実際に列挙できている**（allowlist を持たない）', () => {
+    expect(mustBeNonEmpty(LIVE, '検査対象の live ファイル').length,
+      '**検査対象が痩せている。**追跡 349 件から凍結記録・生成物・artifact を除いて 183 件が実測（2026-08-14）',
+    ).toBeGreaterThanOrEqual(150)
+    /** 凍結記録が漏れなく外れていること（外れていないと、当時の誤りで毎回落ちる） */
+    expect(LIVE.filter((p) => p.startsWith('docs/release/'))).toEqual([])
+    /** 逆に、live 側の代表が入っていること */
+    for (const must of ['SECURITY.md', 'README.md', 'scripts/verifyReleaseSourceInputs.mjs']) {
+      expect(LIVE, `${must} が検査対象から漏れている`).toContain(must)
+    }
+  })
+
   it.each(FORBIDDEN_PHRASES)('live なファイルに「$phrase」が無い（$why）', ({ phrase }) => {
-    const hits = LIVE_FILES.filter((f) => read(f).includes(phrase))
+    const hits = LIVE.filter((f) => read(f).includes(phrase))
     expect(hits, `**古い言い方が残っている**: ${hits.join(', ')}`).toEqual([])
   })
 
@@ -89,7 +127,8 @@ describe('言い切った文言が、いまも本当か', () => {
    * 語句を含まなくなった記録を除外に残すと、**その語句が live へ戻っても静かに通る。**
    */
   it.each(FORBIDDEN_PHRASES)('「$phrase」を免除した記録が、いまもその語句を含む', ({ phrase }) => {
-    const stillQuoting = FROZEN_RECORDS.filter((f) => existsSync(resolve(ROOT, f)) && read(f).includes(phrase))
+    const frozen = trackedFiles().filter((p) => isFrozen(p) && !BINARY_EXT.test(p) && !GENERATED.test(p))
+    const stillQuoting = frozen.filter((f) => existsSync(resolve(ROOT, f)) && read(f).includes(phrase))
     expect(
       mustBeNonEmpty(stillQuoting, `「${phrase}」を引用している記録`).length,
       '**免除する記録が 1 つも語句を含まない＝免除が不要になっている**',
@@ -98,9 +137,9 @@ describe('言い切った文言が、いまも本当か', () => {
 
   /** **非空振り**: 検査が本当に本文を読んでいる */
   it('**この検査が空振りしていない**（存在する語句なら見つかる）', () => {
-    const canary = LIVE_FILES.filter((f) => read(f).includes('v0.4.0 より前'))
+    const canary = LIVE.filter((f) => read(f).includes('v0.4.0 より前'))
     expect(canary.length, '訂正後の言い方すら見つからない＝本文を読めていない').toBeGreaterThan(0)
-    expect(LIVE_FILES.filter((f) => read(f).includes('絶対に出てこない語句ZZZ'))).toEqual([])
+    expect(LIVE.filter((f) => read(f).includes('絶対に出てこない語句ZZZ'))).toEqual([])
   })
 })
 
@@ -110,21 +149,46 @@ describe('言い切った文言が、いまも本当か', () => {
  * **そのファイルは同じ版で消してある。**「登録しろ」と言われた受け手は、無い場所を開くことになる。
  */
 describe('文中で指したリポジトリ内のパスが実在するか', () => {
-  const PATH_TOKEN = /(?:scripts|test|schemas|artifacts)\/[A-Za-z0-9_][A-Za-z0-9_.-]*\.(?:mjs|ts|json|txt)/g
+  /**
+   * **前が語構成文字なら、それは長いパスの途中である（v0.6.16）。**
+   * これを付けないと `node_modules/vitest/package.json` が
+   * `test/package.json` として拾われる（実測で誤検出した）。
+   */
+  const PATH_TOKEN = /(?<![A-Za-z0-9_.\-/])(?:scripts|test|schemas|artifacts)\/[A-Za-z0-9_][A-Za-z0-9_.\-]*\.(?:mjs|ts|json|txt)/g
+  const LIVE = liveFiles()
 
-  it.each(LIVE_FILES)('%s が指すパスがすべて実在する', (file) => {
-    const tokens = [...new Set(read(file).match(PATH_TOKEN) ?? [])]
-    const missing = tokens.filter((t) => !existsSync(resolve(ROOT, t)))
-    expect(missing, `**実在しないパスを指している**: ${missing.join(', ')}`).toEqual([])
+  it('live なファイルが指すパスがすべて実在する', () => {
+    const missing: string[] = []
+    for (const f of LIVE) {
+      for (const t of new Set(read(f).match(PATH_TOKEN) ?? [])) {
+        if ((INTENTIONALLY_ABSENT as readonly string[]).includes(t)) continue
+        if (!existsSync(resolve(ROOT, t))) missing.push(`${f} → ${t}`)
+      }
+    }
+    expect(missing, `**実在しないパスを指している**: ${missing.slice(0, 5).join(' / ')}`).toEqual([])
   })
 
   it('**この検査が空振りしていない**（実在するパスを実際に拾えている）', () => {
-    const all = LIVE_FILES.flatMap((f) => read(f).match(PATH_TOKEN) ?? [])
-    expect(mustBeNonEmpty([...new Set(all)], 'live なファイルが指すパス').length)
-      .toBeGreaterThanOrEqual(20)
+    const all = LIVE.flatMap((f) => read(f).match(PATH_TOKEN) ?? [])
+    expect(mustBeNonEmpty([...new Set(all)], 'live なファイルが指すパス').length).toBeGreaterThanOrEqual(20)
     // 実在しない名前を混ぜたら落ちること（検出器そのものの対照）
     const fake = 'scripts/thisFileDoesNotExist.mjs'
     expect(fake.match(PATH_TOKEN), '検出器がこの形を拾えない').toEqual([fake])
     expect(existsSync(resolve(ROOT, fake))).toBe(false)
+    /** 長いパスの途中を拾わない（誤検出の対照） */
+    expect('node_modules/vitest/package.json'.match(PATH_TOKEN), '長いパスの途中を拾っている').toBeNull()
+  })
+
+  /**
+   * **わざと存在しないと宣言したパスが、いまも参照されているか。**
+   * 参照が消えたのに宣言だけ残ると、**同じ名前が本物の誤りとして現れても素通りする。**
+   */
+  it('**わざと存在しないと宣言したパスが、いまも使われている**', () => {
+    for (const t of INTENTIONALLY_ABSENT) {
+      const used = LIVE.filter((f) => read(f).includes(t))
+      expect(mustBeNonEmpty(used, `${t} を参照しているファイル`).length,
+        `**${t} はもう誰も参照していない。宣言を消すこと**`).toBeGreaterThan(0)
+      expect(existsSync(resolve(ROOT, t)), `${t} は存在してはいけない`).toBe(false)
+    }
   })
 })
