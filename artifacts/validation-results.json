@@ -154,20 +154,25 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-14",
- "generatedFromCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae",
+ "generatedFromCommit": "ffd5f1fbb3fb5bc9ca189775e236425986629219",
  "command": "npm run validate:profiles",
  "targetsTotal": 14,
  "targetsPassed": 14,
  "allPassed": true,
  "artifactValidationStatus": "PASS",
- "releaseReadinessStatus": "READY",
- "releaseReadinessReasons": [],
+ "releaseReadinessStatus": "NOT_READY",
+ "releaseReadinessReasons": [
+  "テストに効くファイルに未コミットの変更が 2 件ある（scripts/buildReleaseEvidence.mjs, test/schemaVersioningPolicy.test.ts）。artifacts/test_counts.json はその前の実行なので取り直すこと"
+ ],
  "testEvidence": {
-  "total": 1236,
+  "total": 1320,
   "failed": 0,
   "skipped": 0,
   "exitCode": 0,
-  "allPassed": true
+  "allPassed": true,
+  "testCountsSha256": "0b7d6ad998ef665221275e7b5ed1f28eb91ca868fb232bafdec7e136767d2014",
+  "testCountsGeneratedFromCommit": "ffd5f1fbb3fb5bc9ca189775e236425986629219",
+  "testCountsGeneratedAt": "2026-08-14"
  },
  "distributedTargets": 10,
  "sourceOnlyTargets": 4,

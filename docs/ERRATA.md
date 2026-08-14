@@ -301,6 +301,113 @@ schema の必須項目検査が落ちて分かりました。展開のあとで�
 
 ---
 
+## v0.6.15（2026-08-14 記載・**v0.6.16 で直しました**）
+
+### 13. **v0.6.15 は `NOT_READY` です。配ったテスト証拠が v0.6.14 のものでした**
+
+| | |
+|---|---|
+| 対象 | **公開済みの v0.6.15 release**（asset は上書きしません） |
+| 症状 | 同梱の `test_counts.json` が **v0.6.14 の実行**（1236 件・`1c79e059`・2026-08-12） |
+| 影響 | `validation-results.json` が `releaseReadinessStatus: READY` を名乗っているが、**その根拠は前の版の実行である** |
+| 直した版 | v0.6.16（門を新設。**v0.6.15 の asset は直しません**） |
+
+**release notes には 1304 件と書き、CI も 1304 件を通していました。**
+配った機械可読の証拠だけが 1236 件のままです。
+
+```
+公開した test_counts.json     total 1236 / generatedAt 2026-08-12
+                              generatedFromCommit 1c79e059…（v0.6.14 第2段）
+公開した validation-results   testEvidence.total 1236 / releaseReadinessStatus READY
+tag 時点の CI                 1304 件 / 32 ファイル / 失敗 0
+```
+
+**なぜ 3 つの門が全部通したか。**
+
+```
+check:vacuity      byFile を「これ以上減ってはいけない下限」として使う
+                   → 1304 ≥ 1236 なので通る（空振り検査としては正しい）
+check:doc-numbers  docs/TEST_RESULTS.md と test_counts.json を突き合わせる
+                   → **どちらも古いので一致する**
+release:evidence   allPassed / failed / exitCode しか見ない
+                   → 古いかどうかは一度も見ていない
+```
+
+**一致は現在性の証拠になりません。古いもの同士は仲良く一致します。**
+
+変異対照（2026-08-14）——v0.6.15 が実際に配った 1236 件の証拠を戻して測りました。
+
+```
+                        v0.6.15 の門    v0.6.16 の門
+check:vacuity              exit 0          exit 0（下限のまま。これは正しい）
+check:test-evidence-current （無い）        **exit 1**
+release:evidence           READY           **NOT_READY**
+release:stage              exit 0          **exit 1**
+```
+
+**受け手への影響。**v0.6.15 の profile の数値・区間・event は変わりません
+（`profileId` も変わりません）。変わるのは「そのテスト証拠を根拠にできるか」だけです。
+**v0.6.15 の `test_counts.json` と `validation-results.testEvidence` は使わないでください。**
+tag `v0.6.15` の CI が 1304 件で通っていることが実際の状態です。
+
+### 14. **道具が、自分の配った schema に反する出力を出していました**
+
+| | |
+|---|---|
+| 対象 | v0.6.15 の `verifyReleaseSourceInputs.mjs`（`toolVersion` 18） |
+| 症状 | 2 経路で `SOURCE_UNAVAILABLE_OTHER` を返す。**同梱 schema の 80 種類の enum に無い値** |
+| 直した版 | v0.6.16（`toolVersion` 19） |
+
+```
+実測 2026-08-14（公開した道具そのもの）
+  --source も --tag も渡さない   SOURCE_UNAVAILABLE / SOURCE_UNAVAILABLE_OTHER
+  GitHub 取得中に fetch が失敗    同じ
+```
+
+再現手順:
+
+```sh
+node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json
+# → stableReasonCode が SOURCE_UNAVAILABLE_OTHER になり、同梱 schema に適合しない
+```
+
+**v0.6.15 で enum へ狭めたときに、名前を付け忘れた経路が残っていたのが原因です。**
+v0.6.16 では出口に関門を置き、契約を破る出力は**そもそも出しません**
+（JSON を出さず、終了コード **3** で止まります——`MISMATCH` の 1 と紛れないため）。
+
+### 15. **「到達しない」と宣言した 8 件のうち 4 件は、実際の経路でした**
+
+| | |
+|---|---|
+| 対象 | v0.6.15 の catalog の `reachability` |
+| 症状 | `SOURCE_GIT_ARCHIVE_FAILED` / `SOURCE_FETCH_FAILED` / `SOURCE_HTTP_ERROR` / `SOURCE_BODY_UNREADABLE` を `defensive-invariant` と宣言していた |
+| 直した版 | v0.6.16（4 件とも `cli-route` へ。defensive は 4 件だけ） |
+
+**v0.6.15 の両方向照合は、この誤りを通しました。**
+「この run で出なかった」を「出ない」の証拠として使っていたためで、
+**その経路を踏む試験を書いていなければ、当然出ません。**
+route の母集団を試験が手で持っていたことが穴でした。
+
+v0.6.16 では `globalThis.fetch` を注入して踏みます（**道具は 1 バイトも変えません**）。
+route の表は `test/_cliRoutes.mjs` の 1 つだけにし、契約の検査と到達性の照合が同じ表を使います。
+
+### 16. **文言の検査そのものが、手書きの一覧を使っていました**
+
+v0.6.15 で新設した `staleWordingAndPaths.test.ts` は「全面へ当てる」と説明しながら、
+**`LIVE_FILES` という手書きの allowlist を使っていました**——**それ自体が同じ形の欠陥**です。
+
+```
+実測 2026-08-14: docs/ へ新しい文書を作り、古い言い方と実在しないパスを両方書いて
+                 全試験を回すと **14 件すべて緑**
+```
+
+v0.6.16 で `git ls-files` からの探索へ変え、免除はパスで名指しし、
+**その免除がいまも要るか**も確かめます。作り直した検査は、
+**旧版が見ていなかった実在しない参照を 1 件見つけました**
+（`test/_corruptTar.d.mts` が `test/_tarExpectations.ts` を指していた。実体は `.mjs`）。
+
+---
+
 ## この正誤表の運用
 
 - **公開済みの release 本文と asset は、いかなる理由でも書き換えない。**

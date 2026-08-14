@@ -18,6 +18,7 @@
  */
 
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -502,5 +503,92 @@ describe('条文 現行 schema', () => {
       const r = diffSchemaObjects(atTag('v0.4.1', p) as any, JSON.parse(readFileSync(resolve(ROOT, p), 'utf8')))
       expect(r.verdict, `${p} を据え置いたが言語が変わっている: ${JSON.stringify(r.facts)}`).not.toBe('BUMP')
     }
+  })
+})
+
+/**
+ * **互換性の 2 つ目の軸（v0.6.16・外部監査 2026-08-14）。**
+ *
+ * 条文はこれまで **producer-forward**（新しい出力が古い schema を通るか）しか見ていなかった。
+ * `HOLD_RECORD`（狭まった＝据え置き可）はその軸の話で、**狭めても新しい出力は通る。**
+ *
+ * もう 1 つの軸は **historical-instance**——**保存した古い結果が、新しい schema を通るか。**
+ * こちらは通らない。v0.6.15 で `policyId` を必須にした時点で、
+ * v0.6.14 の保存済み出力は同じ v1 schema から外れた。
+ *
+ * 版数では解けないので、**結果ごとに突合先の schema を固定する**方針にした
+ * （`docs/SCHEMA_VERSIONING_POLICY.md` 第7条 ／ release index の `verifierContract`）。
+ * ここはその方針が**実際に成り立っているか**を、過去 tag の実物で確かめる。
+ */
+describe('条文 ⑦ 互換性の 2 軸（historical-instance）', () => {
+  const TAG = 'v0.6.14'
+  const SCHEMA_REL = 'schemas/source-verifier-cli-result.v1.schema.json'
+
+  /** その tag の道具を走らせて、実際の出力を得る */
+  function outputAt(tag: string): Record<string, unknown> {
+    const d = mkdtempSync(join(tmpdir(), `hist-${tag}-`))
+    const tool = join(d, 'verifier.mjs')
+    writeFileSync(tool, execFileSync('git', ['show', `${tag}:scripts/verifyReleaseSourceInputs.mjs`],
+      { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 }))
+    try {
+      return JSON.parse(execFileSync('node',
+        [tool, '--manifest', 'artifacts/source-input-manifest.json', '--source', '.'],
+        { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'ignore'] }))
+    } catch (e) {
+      return JSON.parse(String((e as { stdout?: string }).stdout ?? '{}'))
+    } finally {
+      rmSync(d, { recursive: true, force: true })
+    }
+  }
+
+  const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(s)
+  const schemaAt = (tag: string) => JSON.parse(
+    execFileSync('git', ['show', `${tag}:${SCHEMA_REL}`], { cwd: ROOT, encoding: 'utf8' }))
+
+  it('**その版の出力は、その版の schema を通る**（配った組み合わせは成立している）', () => {
+    expect(compile(schemaAt(TAG))(outputAt(TAG)), `${TAG} の出力が ${TAG} の schema を通らない`).toBe(true)
+  })
+
+  it('**新しい出力は、古い schema も通る**（producer-forward は保たれている）', () => {
+    const now = JSON.parse(readFileSync(resolve(ROOT, SCHEMA_REL), 'utf8'))
+    const out = JSON.parse(execFileSync('node',
+      ['scripts/verifyReleaseSourceInputs.mjs', '--manifest', 'artifacts/source-input-manifest.json', '--source', '.'],
+      { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 }))
+    expect(compile(now)(out), '現行の出力が現行の schema を通らない').toBe(true)
+    expect(compile(schemaAt(TAG))(out), '現行の出力が古い schema を通らない（producer-forward が壊れた）').toBe(true)
+  })
+
+  /**
+   * **ここが条文の本体。**「最新 schema で過去の結果を検証してはいけない」を、
+   * **実際に落ちること**で示す。落ちなくなったら、方針の前提が変わったということなので
+   * 第7条を書き直すこと（黙って通さない）。
+   */
+  it('**保存した古い出力は、最新の同じ v1 schema では通らない**（だから版ごとに固定する）', () => {
+    const now = JSON.parse(readFileSync(resolve(ROOT, SCHEMA_REL), 'utf8'))
+    expect(compile(now)(outputAt(TAG)),
+      `${TAG} の出力が最新 schema を通ってしまった。第7条の前提が変わっている`).toBe(false)
+  })
+
+  /**
+   * **索引が「どれが契約か」を名指ししている（v0.6.16）。**
+   *
+   * 欄を足す案は採らなかった——`additionalProperties: false` の schema へ欄を足すのは
+   * 言語の拡大で、判定器が **BUMP**（索引を v2 にする）と出す。
+   * **pin となる digest は既に `assets` に在る**ので、増やさず名指しする形にした。
+   */
+  it('**release index が、突合先と信頼の起点を名指ししている**', () => {
+    const idx = JSON.parse(readFileSync(resolve(ROOT, 'artifacts/trs-jack-3d-release-index.v1.json'), 'utf8'))
+    const notes = (idx.notes as string[]).join('\n')
+    expect(notes, '信頼の起点を言っていない').toContain('信頼の起点')
+    expect(notes, '保存した結果の突合先を言っていない').toContain('保存した検算結果は')
+    /** 名指しした値が、実際に `assets` に在るものと一致すること */
+    const find = (n: string) => (idx.assets as { filename: string, sha256: string }[])
+      .find((a) => a.filename === n)?.sha256
+    const toolSha = find('verifyReleaseSourceInputs.mjs')
+    const schemaSha = find('source-verifier-cli-result.v1.schema.json')
+    expect(toolSha, '道具が assets に無い').toMatch(/^[0-9a-f]{64}$/)
+    expect(notes, `道具の sha256 が本文と食い違う`).toContain(String(toolSha))
+    /** assets の値が、いまの実ファイルのものであること（**古い pin を名指ししていない**） */
+    expect(schemaSha).toBe(createHash('sha256').update(readFileSync(resolve(ROOT, SCHEMA_REL))).digest('hex'))
   })
 })

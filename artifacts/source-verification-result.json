@@ -6,11 +6,11 @@
  "note": "**これは自己申告である。**こちらのリポジトリで verify:release-source-inputs を回した結果でしかなく、受け手の独立検証を置き換えない。**突き合わせ先は生成時の作業ツリーであって tag の source ではない。**tag は evidence をコミットした後に打つので、この時点では存在しない。受け手は同梱の verifyReleaseSourceInputs.mjs を tag に対して回すこと（howToVerifyYourself を参照）。",
  "tool": {
   "script": "scripts/verifyReleaseSourceInputs.mjs",
-  "toolVersion": 18,
-  "sha256": "3d4a5bc145b378417b5f1d7af9fe729a9a6206cb0d6fa4db6047af1e1f82b5eb"
+  "toolVersion": 19,
+  "sha256": "f8596510e24537f046bd0ff985b1f9a8d6e72b17f902ec96bfd52992873cdaf9"
  },
  "sourceOrigin": "directory:.",
- "generatedFromCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae",
+ "generatedFromCommit": "ffd5f1fbb3fb5bc9ca189775e236425986629219",
  "releaseCommit": null,
  "generatedAt": "2026-08-14",
  "status": "OK",
@@ -35,6 +35,7 @@
   "# 明示したときだけ GitHub から source を取る",
   "node verifyReleaseSourceInputs.mjs --manifest source-input-manifest.json --tag <tag> --fetch github --scope source-input-scope.v1.json",
   "# status は OK(0) / MISMATCH(1) / VERIFICATION_INCOMPLETE(1) / ARCHIVE_INVALID(2) / ARCHIVE_UNSUPPORTED(2) / SOURCE_UNAVAILABLE(2) / MANIFEST_UNAVAILABLE(2) / NOTHING_TO_VERIFY(2)。",
+  "# 終了コード 3 は **この道具の欠陥** で、検証の結果ではありません（JSON を出さずに止まります）。",
   "# **取れなかった(2) と 合わなかった(1) を同じ失敗に潰さないこと。**",
   "# **unrecordedInputDetection.performed が false なら「候補 0 件」ではなく「探していない」。**"
  ]

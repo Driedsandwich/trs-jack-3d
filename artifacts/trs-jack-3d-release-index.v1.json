@@ -4,24 +4,9 @@
  "generatedAt": "2026-08-14",
  "releaseTag": null,
  "releaseCommit": null,
- "evidenceBuiltAtCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae",
+ "evidenceBuiltAtCommit": "ffd5f1fbb3fb5bc9ca189775e236425986629219",
  "artifactGenerationCommit": "a28ce75b31e6897dad204536d5ba7f8e5dfb19ca",
  "artifactGenerationCommits": [
-  {
-   "commit": "1c79e059d865895d717786a1f3d4a53c49821897",
-   "assets": [
-    "test_counts.json"
-   ]
-  },
-  {
-   "commit": "68a54d542f33c9c067c3891b5422b8e0e0226eae",
-   "assets": [
-    "source-input-manifest.json",
-    "source-snapshot.v1.json",
-    "source-verification-result.json",
-    "validation-results.json"
-   ]
-  },
   {
    "commit": "891b7f1a87962d590facb79e2b156cb03e5a1ec8",
    "assets": [
@@ -35,6 +20,16 @@
    "assets": [
     "half_plug_topology_profile.v3.trs_jack_trrs.json",
     "half_plug_topology_profile.v3.trs_jack_trs.json"
+   ]
+  },
+  {
+   "commit": "ffd5f1fbb3fb5bc9ca189775e236425986629219",
+   "assets": [
+    "source-input-manifest.json",
+    "source-snapshot.v1.json",
+    "source-verification-result.json",
+    "test_counts.json",
+    "validation-results.json"
    ]
   }
  ],
@@ -126,9 +121,9 @@
   },
   {
    "filename": "source-input-manifest.json",
-   "sha256": "5d7f1bc1d20046fb816548afddec470fa804b1d50febfc2aea9966033d02bc14",
+   "sha256": "91ad8e241197fd211f769ee0150cd201561a395391b5cd2855b55ee4c3759ada",
    "role": "evidence",
-   "generatedFromCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae"
+   "generatedFromCommit": "ffd5f1fbb3fb5bc9ca189775e236425986629219"
   },
   {
    "filename": "source-input-manifest.v2.schema.json",
@@ -147,9 +142,9 @@
   },
   {
    "filename": "source-snapshot.v1.json",
-   "sha256": "b4edb5620ed016ae433060bd1c406195f7aeaef438e8048cbb8642c632ef241b",
+   "sha256": "26d30ae6cd274b04de63238e37e16c0949e609b1ba3437d11b42ff468347d003",
    "role": "evidence",
-   "generatedFromCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae"
+   "generatedFromCommit": "ffd5f1fbb3fb5bc9ca189775e236425986629219"
   },
   {
    "filename": "source-snapshot.v1.schema.json",
@@ -158,9 +153,9 @@
   },
   {
    "filename": "source-verification-result.json",
-   "sha256": "9b37f27453a98e6aed084f09ae8639c9cdbe7ffeb108fcf374641273ab3a9344",
+   "sha256": "0b70f944a45012ee81f31ffceb9a451f61e14670684f834415f53d9cc1102458",
    "role": "evidence",
-   "generatedFromCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae"
+   "generatedFromCommit": "ffd5f1fbb3fb5bc9ca189775e236425986629219"
   },
   {
    "filename": "source-verification-result.v1.schema.json",
@@ -169,14 +164,14 @@
   },
   {
    "filename": "source-verifier-cli-result.v1.schema.json",
-   "sha256": "59b765499cc7b3070ecb6cedbcf54770e35fcbdbd9f505efb92d9310ea928eee",
+   "sha256": "77a32f714d2a11833d6c59f6cac76f82033cafacdd3cd96bc5c359cd1661713e",
    "role": "schema"
   },
   {
    "filename": "test_counts.json",
-   "sha256": "2d74d72efcbace6d1b124356773992e73f26f9da2765e42ff58364df9682657a",
+   "sha256": "0b7d6ad998ef665221275e7b5ed1f28eb91ca868fb232bafdec7e136767d2014",
    "role": "evidence",
-   "generatedFromCommit": "1c79e059d865895d717786a1f3d4a53c49821897"
+   "generatedFromCommit": "ffd5f1fbb3fb5bc9ca189775e236425986629219"
   },
   {
    "filename": "test-counts.v2.schema.json",
@@ -207,9 +202,9 @@
   },
   {
    "filename": "validation-results.json",
-   "sha256": "8cb9640e1ff6fa37a415263f44165906c780ed4cdd1d4d6e108a4b2e0510ef27",
+   "sha256": "072a9c31c2ac3e5e44a08d55f255955445abeaac230ef31a808b937a3c6c1987",
    "role": "evidence",
-   "generatedFromCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae"
+   "generatedFromCommit": "ffd5f1fbb3fb5bc9ca189775e236425986629219"
   },
   {
    "filename": "validation-results.v2.schema.json",
@@ -218,12 +213,15 @@
   },
   {
    "filename": "verifyReleaseSourceInputs.mjs",
-   "sha256": "3d4a5bc145b378417b5f1d7af9fe729a9a6206cb0d6fa4db6047af1e1f82b5eb",
+   "sha256": "f8596510e24537f046bd0ff985b1f9a8d6e72b17f902ec96bfd52992873cdaf9",
    "role": "tool"
   }
  ],
  "notes": [
   "**この索引は release 工程の記録であって、証明ではない。**bytes の検算は SHA256SUMS で行うこと。",
+  "**検算ツールの契約（v0.6.16）。**信頼の起点は assets の verifyReleaseSourceInputs.mjs の sha256（f8596510e24537f046bd0ff985b1f9a8d6e72b17f902ec96bfd52992873cdaf9 ／ toolVersion 19）。",
+  "**保存した検算結果は、この版と一緒に配った source-verifier-cli-result.v1.schema.json （assets の sha256）で検証すること。**$id から最新の v1 を引くと、後の版で狭めた分だけ過去の結果が落ちる（docs/SCHEMA_VERSIONING_POLICY.md 第7条）。",
+  "**archivePolicy の識別子**: trs-jack-3d-source-verifier-archive-policy v1 / policySha256 41adcd453574c3b3d03af2dd98e289a3075af86ad6201b8c39281cb476f226d3。**自己整合の識別子であって、真正性の証明ではない**——同じ道具が policy と digest の両方を書くので、両方書き換えれば一致する。",
   "**`releaseTag` / `releaseCommit` が null なら、まだ tag を打っていない。**evidence をコミットしてから tag を打つ順序なので、生成時点では知りようがない。配布物には RELEASE_TAG / RELEASE_COMMIT を渡して作り直したものを入れること（release:stage が null を拒む）。",
   "**`releaseCommit` と `artifactGenerationCommit` は違う。**tag は artifact をコミットした後に打つので、artifact 自身は必ずそれより前の commit から作られる。一致を要求しないこと。",
   "**生成 commit は 1 つではない**（`artifactGenerationCommits` を見ること）。release 工程が 2 段階で、profile の入力に感度 artifact が含まれるため、先に感度を確定させる必要がある。",

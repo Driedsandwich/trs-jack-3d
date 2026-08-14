@@ -28,7 +28,7 @@ import { validateAll } from './validateProfiles.mjs'
 import { RELEASE_ASSETS, SOURCE_ONLY_TARGETS } from './releaseAssets.mjs'
 import { migrationFor } from './contractMigration.mjs'
 import { buildSourceSnapshot } from './buildSourceSnapshot.mjs'
-import { CLI_STATUSES, CLI_STATUS_EXIT, INTERNAL_FAILURE_EXIT } from './verifyReleaseSourceInputs.mjs'
+import { ARCHIVE_POLICY, CLI_STATUSES, CLI_STATUS_EXIT, INTERNAL_FAILURE_EXIT, TOOL_VERSION } from './verifyReleaseSourceInputs.mjs'
 import { assertExpressibleInSelfReport } from './selfReportStatus.mjs'
 
 const ROOT = process.cwd()
@@ -505,6 +505,20 @@ const index = {
   assets,
   notes: [
     '**この索引は release 工程の記録であって、証明ではない。**bytes の検算は SHA256SUMS で行うこと。',
+    /**
+     * **どれが契約かを名指しする（v0.6.16・外部監査 P1）。**
+     * digest は前から `assets` に入っていたが、「保存した結果をどの schema で読むか」を
+     * 言っていなかった。**索引の欄を増やすと版を上げることになり**（判定器で BUMP と実測）、
+     * 下流に版追従を強いるので、**既に在る値を名指しする**形にした。
+     */
+    `**検算ツールの契約（v0.6.16）。**信頼の起点は assets の `
+      + `verifyReleaseSourceInputs.mjs の sha256（${sha256File(VERIFIER)} ／ toolVersion ${TOOL_VERSION}）。`,
+    '**保存した検算結果は、この版と一緒に配った source-verifier-cli-result.v1.schema.json '
+      + '（assets の sha256）で検証すること。**$id から最新の v1 を引くと、'
+      + '後の版で狭めた分だけ過去の結果が落ちる（docs/SCHEMA_VERSIONING_POLICY.md 第7条）。',
+    `**archivePolicy の識別子**: ${ARCHIVE_POLICY.policyId} v${ARCHIVE_POLICY.policyVersion} `
+      + `/ policySha256 ${ARCHIVE_POLICY.policySha256}。**自己整合の識別子であって、真正性の証明ではない**`
+      + '——同じ道具が policy と digest の両方を書くので、両方書き換えれば一致する。',
     '**`releaseTag` / `releaseCommit` が null なら、まだ tag を打っていない。**'
       + 'evidence をコミットしてから tag を打つ順序なので、生成時点では知りようがない。'
       + '配布物には RELEASE_TAG / RELEASE_COMMIT を渡して作り直したものを入れること（release:stage が null を拒む）。',
