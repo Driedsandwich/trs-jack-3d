@@ -655,6 +655,21 @@ const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }>
    * どれも 2 実装が同じ木を作る——止めているのは実装の割れではなく、
    * **同じ場所を別の綴りで指せると記録との突き合わせが意味を失う**という方針である。
    */
+  /**
+   * **ドライブレターだけは、実装が実際に割れる（CI の ubuntu run が落として判明）。**
+   * macOS では bsdtar が剥がして python が残すので、**同じ archive から別の木ができる**
+   * ——手元では根拠が取れるので表に載せる必要が無かった。
+   * ubuntu では GNU tar と python がそろって `C:evil.txt` を作るため、根拠が消える。
+   *
+   * 実測（2026-08-14・macOS）:
+   *   bsdtar  tar: Removing leading drive letter from member names → evil.txt
+   *   python  例外なし → C:evil.txt
+   */
+  'spell-drive-letter': {
+    on: 'bsdtar',
+    note: 'bsdtar は先頭のドライブレターを剥がして evil.txt を作り、python は C:evil.txt を作る（別の木）。'
+      + 'ubuntu では GNU tar と python がそろって C:evil.txt を作るので、そちらでは根拠が取れない',
+  },
   'spell-dot-component': {
     on: 'none',
     note: 'root/./evil.txt。手元の 2 実装は . を畳んで同じ木を作る。'
@@ -802,7 +817,7 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
      * 根拠が無いと書いた行は、次に直す候補の一覧でもある。
      */
     expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(9)
-    expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(10)
+    expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(11)
     expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(15)
   })
 
