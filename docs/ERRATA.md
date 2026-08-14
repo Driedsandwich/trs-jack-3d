@@ -190,6 +190,117 @@ byte 一致）ためで、その判断自体は今も誤りだと思っていま
 
 ---
 
+## v0.6.14 以前（2026-08-14 記載・**v0.6.15 で直しました**）
+
+### 8. **配布ソースに、2 つ目の status 一覧がまだ残っていた**
+
+| | |
+|---|---|
+| 対象 | v0.6.14 の `verifyReleaseSourceInputs.mjs`（`CLI_STATUS_META` の 12 行上） |
+| 症状 | 手書きの 8 status 一覧。**「同じ境界は 1 か所で持つ」と書いた同じコメント塊の中にあった** |
+| 直した版 | v0.6.15（一覧を消し、意味は `CLI_STATUS_META` の `summary` へ畳んだ） |
+
+**v0.6.14 の notes と作業指示で「一覧そのものを消しました」と書きましたが、消したのは
+冒頭 28〜32 行の 5 種類版だけでした。**正本のすぐ上にある 8 種類版を見落としています。
+
+```
+変異対照（2026-08-14）
+  コメントから VERIFICATION_INCOMPLETE の行を消す → 新たに落ちた試験 **0 件**
+  SECURITY.md の版数を v0.9.9 に書き換える        → **1236 件すべて緑**
+```
+
+**文言は 1 か所も検査されていませんでした。**v0.6.15 で
+`test/staleWordingAndPaths.test.ts` を置き、live なファイルの禁止語句と
+**文中で指したパスの実在**を検査します（免除する記録はパスで名指しし、
+**その記録がいまもその語句を含むか**も確かめます）。
+
+### 9. **受け手向けのエラー文が、存在しないファイルを指していた**
+
+| | |
+|---|---|
+| 対象 | v0.6.14 の `verifyReleaseSourceInputs.mjs`（2 か所） |
+| 症状 | 「`scripts/reasonCodes.mjs` に登録すること」と言うが、**そのファイルは同じ版で消してある** |
+| 直した版 | v0.6.15 |
+
+catalog を単一ファイル配布の制約のため本体へ移したときに、**案内の文だけ古いまま**でした。
+
+### 10. **catalog に載せた止め方のうち 2 つが、一度も出なかった**
+
+| | |
+|---|---|
+| 対象 | v0.6.14 の `SOURCE_SPECIAL_NODE` / `SOURCE_DIRECTORY_UNREADABLE` |
+| 症状 | 名前は在るが実装は別の code を返す。**受け手は来ない分岐を実装することになる** |
+| 直した版 | v0.6.15 |
+
+**外部監査（2026-08-12）の指摘を、こちらで再現しました。**
+
+```
+実測 2026-08-14（v0.6.14 の道具）
+  FIFO を置いた directory   → ENTRY_TYPE_UNSUPPORTED（SOURCE_SPECIAL_NODE は出ない）
+  読めない directory        → SOURCE_UNAVAILABLE / SOURCE_UNAVAILABLE_OTHER
+```
+
+再現手順:
+
+```sh
+D=$(mktemp -d); mkfifo "$D/pipe"
+node scripts/verifyReleaseSourceInputs.mjs --manifest artifacts/source-input-manifest.json --source "$D"
+```
+
+v0.6.15 で `SOURCE_SPECIAL_NODE` を実際に配線し、
+`SOURCE_DIRECTORY_UNREADABLE` の status を `SOURCE_UNAVAILABLE` へ直しました。
+あわせて catalog へ `reachability` を足し、**宣言と実測を両方向で照合**します
+——到達すると宣言した code は出ること、しないと宣言した code は出ないこと。
+
+**このとき、こちらでもう 1 件見つけました。**`SOURCE_ARCHIVE_MISSING`（v0.6.15 で新設）は
+到達しません——存在しない path は、先に directory の判定が `SOURCE_DIRECTORY_MISSING` で止めます。
+`loadFromArchive` の存在検査は死んでいます。**`defensive-invariant` として宣言しました。**
+
+### 11. **`archivePolicy` は、形すら検査されていなかった**
+
+| | |
+|---|---|
+| 対象 | v0.6.14 までの `schemas/source-verifier-cli-result.v1.schema.json` |
+| 症状 | 覆っている範囲の一覧を消しても、偽値に差し替えても、**schema に適合した** |
+| 直した版 | v0.6.15 |
+
+**外部監査の反例 7 件を、自分の道具の実出力と自分の ajv で再現しました（2026-08-14）。**
+
+```
+                                        v0.6.14    v0.6.15
+notMachineReadableHere / families を消す   適合    → 落ちる
+中身を ['TOTALLY_FAKE'] に差し替える        適合    → 落ちる
+acceptedTypeflags を偽値に                 適合    → 落ちる
+endOfArchiveConvention を偽値に            適合    → 落ちる
+limits を {} にする                        適合    → 落ちる
+acceptedHeaderFormats を [] にする         適合    → 落ちる
+stableReasonCode を TOTALLY_FAKE に        適合    → 落ちる
+対照: status を enum の外へ                落ちる  → 落ちる
+対照: archivePolicy ごと削除               落ちる  → 落ちる
+```
+
+`ARCHIVE_POLICY` を道具の中の唯一の正本にし、`policyId` / `policyVersion` /
+`policySha256` / `coverage` を足しました。**schema を狭めましたが版は据え置きです**
+——版数判定器で `HOLD_RECORD`（狭まった＝据え置き可・要記録）と実測したためです。
+
+> ⚠️ **`policySha256` は改竄されていないことの証明にはなりません。**
+> 同じ道具が policy と digest の両方を書いているので、両方書き換えれば一致します。
+> 捕まえられるのは、版を跨いだ取り違えと、途中で欠けた欄だけです。
+
+### 12. **`OK` の出力から `stableReasonCode` が丸ごと消えた（v0.6.15 の作業中）**
+
+公開版の誤りではなく、**この版の作業中にこちらが作って、こちらの検査が捕まえたもの**です。
+`done()` は固定の欄を組んだあとに `...payload` を展開するので、
+呼び出し側が `undefined` を渡すと**欄そのものが消えます**（`JSON.stringify` が落とす）。
+schema の必須項目検査が落ちて分かりました。展開のあとで立て直す形に直しています。
+
+### **`toolVersion` を 18 へ上げました**
+
+`stableReasonCode` が `OK` 以外のすべての status に付くようになり、
+2 つの code の意味と status が変わります。**受け手が機械で分岐する値が変わります。**
+
+---
+
 ## この正誤表の運用
 
 - **公開済みの release 本文と asset は、いかなる理由でも書き換えない。**

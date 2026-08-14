@@ -92,7 +92,8 @@
     <li><a href="#s0">v0.6.11（2026-08-12 記載）</a></li>
     <li><a href="#s1">v0.6.12 以前（2026-08-12 記載・v0.6.13 で直しました）</a></li>
     <li><a href="#s2">v0.6.13 以前（2026-08-12 記載・v0.6.14 で直しました）</a></li>
-    <li><a href="#s3">この正誤表の運用</a></li>
+    <li><a href="#s3">v0.6.14 以前（2026-08-14 記載・v0.6.15 で直しました）</a></li>
+    <li><a href="#s4">この正誤表の運用</a></li>
   </ol>
 </nav>
 <h1>正誤表</h1>
@@ -165,7 +166,49 @@ source root が symlink  ARCHIVE_INVALID / ARCHIVE_INVALID_OTHER
 <p><strong>v0.6.14 は判定の出力そのものが変わります</strong>——<code>ARCHIVE_INVALID_OTHER</code> だったものが <code>GZIP_DECODE_FAILED</code> などになります。<strong>受け手が機械で分岐する値が変わる</strong>ので、 版上げ規則（「判定の意味を変えたら上げる」）にそのまま当たります。</p>
 <div class="note"><p>v0.6.12 と v0.6.13 の道具は、<strong>どちらも <code>toolVersion</code> 16 を名乗ります。</strong></p><p>その 2 つを見分けるには <code>tool.sha256</code> を使ってください。</p></div>
 <hr>
-<h2 id="s3">この正誤表の運用</h2>
+<h2 id="s3">v0.6.14 以前（2026-08-14 記載・<strong>v0.6.15 で直しました</strong>）</h2>
+<h3>8. <strong>配布ソースに、2 つ目の status 一覧がまだ残っていた</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.14 の <code>verifyReleaseSourceInputs.mjs</code>（<code>CLI_STATUS_META</code> の 12 行上）</td></tr><tr><td>症状</td><td>手書きの 8 status 一覧。<strong>「同じ境界は 1 か所で持つ」と書いた同じコメント塊の中にあった</strong></td></tr><tr><td>直した版</td><td>v0.6.15（一覧を消し、意味は <code>CLI_STATUS_META</code> の <code>summary</code> へ畳んだ）</td></tr></tbody></table></div>
+<p><strong>v0.6.14 の notes と作業指示で「一覧そのものを消しました」と書きましたが、消したのは 冒頭 28〜32 行の 5 種類版だけでした。</strong>正本のすぐ上にある 8 種類版を見落としています。</p>
+<pre><code>変異対照（2026-08-14）
+  コメントから VERIFICATION_INCOMPLETE の行を消す → 新たに落ちた試験 **0 件**
+  SECURITY.md の版数を v0.9.9 に書き換える        → **1236 件すべて緑**</code></pre>
+<p><strong>文言は 1 か所も検査されていませんでした。</strong>v0.6.15 で <code>test/staleWordingAndPaths.test.ts</code> を置き、live なファイルの禁止語句と <strong>文中で指したパスの実在</strong>を検査します（免除する記録はパスで名指しし、 <strong>その記録がいまもその語句を含むか</strong>も確かめます）。</p>
+<h3>9. <strong>受け手向けのエラー文が、存在しないファイルを指していた</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.14 の <code>verifyReleaseSourceInputs.mjs</code>（2 か所）</td></tr><tr><td>症状</td><td>「<code>scripts/reasonCodes.mjs</code> に登録すること」と言うが、<strong>そのファイルは同じ版で消してある</strong></td></tr><tr><td>直した版</td><td>v0.6.15</td></tr></tbody></table></div>
+<p>catalog を単一ファイル配布の制約のため本体へ移したときに、<strong>案内の文だけ古いまま</strong>でした。</p>
+<h3>10. <strong>catalog に載せた止め方のうち 2 つが、一度も出なかった</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.14 の <code>SOURCE_SPECIAL_NODE</code> / <code>SOURCE_DIRECTORY_UNREADABLE</code></td></tr><tr><td>症状</td><td>名前は在るが実装は別の code を返す。<strong>受け手は来ない分岐を実装することになる</strong></td></tr><tr><td>直した版</td><td>v0.6.15</td></tr></tbody></table></div>
+<p><strong>外部監査（2026-08-12）の指摘を、こちらで再現しました。</strong></p>
+<pre><code>実測 2026-08-14（v0.6.14 の道具）
+  FIFO を置いた directory   → ENTRY_TYPE_UNSUPPORTED（SOURCE_SPECIAL_NODE は出ない）
+  読めない directory        → SOURCE_UNAVAILABLE / SOURCE_UNAVAILABLE_OTHER</code></pre>
+<p>再現手順:</p>
+<pre><code>D=$(mktemp -d); mkfifo "$D/pipe"
+node scripts/verifyReleaseSourceInputs.mjs --manifest artifacts/source-input-manifest.json --source "$D"</code></pre>
+<p>v0.6.15 で <code>SOURCE_SPECIAL_NODE</code> を実際に配線し、 <code>SOURCE_DIRECTORY_UNREADABLE</code> の status を <code>SOURCE_UNAVAILABLE</code> へ直しました。 あわせて catalog へ <code>reachability</code> を足し、<strong>宣言と実測を両方向で照合</strong>します ——到達すると宣言した code は出ること、しないと宣言した code は出ないこと。</p>
+<p><strong>このとき、こちらでもう 1 件見つけました。</strong><code>SOURCE_ARCHIVE_MISSING</code>（v0.6.15 で新設）は 到達しません——存在しない path は、先に directory の判定が <code>SOURCE_DIRECTORY_MISSING</code> で止めます。 <code>loadFromArchive</code> の存在検査は死んでいます。<strong><code>defensive-invariant</code> として宣言しました。</strong></p>
+<h3>11. <strong><code>archivePolicy</code> は、形すら検査されていなかった</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.14 までの <code>schemas/source-verifier-cli-result.v1.schema.json</code></td></tr><tr><td>症状</td><td>覆っている範囲の一覧を消しても、偽値に差し替えても、<strong>schema に適合した</strong></td></tr><tr><td>直した版</td><td>v0.6.15</td></tr></tbody></table></div>
+<p><strong>外部監査の反例 7 件を、自分の道具の実出力と自分の ajv で再現しました（2026-08-14）。</strong></p>
+<pre><code>                                        v0.6.14    v0.6.15
+notMachineReadableHere / families を消す   適合    → 落ちる
+中身を ['TOTALLY_FAKE'] に差し替える        適合    → 落ちる
+acceptedTypeflags を偽値に                 適合    → 落ちる
+endOfArchiveConvention を偽値に            適合    → 落ちる
+limits を {} にする                        適合    → 落ちる
+acceptedHeaderFormats を [] にする         適合    → 落ちる
+stableReasonCode を TOTALLY_FAKE に        適合    → 落ちる
+対照: status を enum の外へ                落ちる  → 落ちる
+対照: archivePolicy ごと削除               落ちる  → 落ちる</code></pre>
+<p><code>ARCHIVE_POLICY</code> を道具の中の唯一の正本にし、<code>policyId</code> / <code>policyVersion</code> / <code>policySha256</code> / <code>coverage</code> を足しました。<strong>schema を狭めましたが版は据え置きです</strong> ——版数判定器で <code>HOLD_RECORD</code>（狭まった＝据え置き可・要記録）と実測したためです。</p>
+<div class="note"><p>⚠️ <strong><code>policySha256</code> は改竄されていないことの証明にはなりません。</strong></p><p>同じ道具が policy と digest の両方を書いているので、両方書き換えれば一致します。</p><p>捕まえられるのは、版を跨いだ取り違えと、途中で欠けた欄だけです。</p></div>
+<h3>12. <strong><code>OK</code> の出力から <code>stableReasonCode</code> が丸ごと消えた（v0.6.15 の作業中）</strong></h3>
+<p>公開版の誤りではなく、<strong>この版の作業中にこちらが作って、こちらの検査が捕まえたもの</strong>です。 <code>done()</code> は固定の欄を組んだあとに <code>...payload</code> を展開するので、 呼び出し側が <code>undefined</code> を渡すと<strong>欄そのものが消えます</strong>（<code>JSON.stringify</code> が落とす）。 schema の必須項目検査が落ちて分かりました。展開のあとで立て直す形に直しています。</p>
+<h3><strong><code>toolVersion</code> を 18 へ上げました</strong></h3>
+<p><code>stableReasonCode</code> が <code>OK</code> 以外のすべての status に付くようになり、 2 つの code の意味と status が変わります。<strong>受け手が機械で分岐する値が変わります。</strong></p>
+<hr>
+<h2 id="s4">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
 </div>
 </body>
