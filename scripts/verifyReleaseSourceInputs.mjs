@@ -328,6 +328,9 @@ export const REASON_CODES = {
   SOURCE_FETCH_FAILED: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub へ繋がらない' },
   SOURCE_HTTP_ERROR: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub が異常応答を返した' },
   SOURCE_BODY_UNREADABLE: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '応答本文を受け取れない' },
+  SOURCE_FETCH_TIMEOUT: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub からの応答が時間内に来ない' },
+  /** `--source` も `--tag` も渡されていない。**呼び方の誤りで、source が壊れているわけではない** */
+  CLI_ARGUMENTS_MISSING: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'usage', summary: '--source も --tag も無い' },
 
   // ---- manifest を読めなかった ----
   MANIFEST_MISSING: { reachability: 'cli-route', status: 'MANIFEST_UNAVAILABLE', family: 'manifest', summary: 'manifest が無い' },
@@ -378,7 +381,7 @@ export function statusOf(code) {
   return assertCatalogued(code) && REASON_CODES[code].status
 }
 
-export const TOOL_VERSION = 18
+export const TOOL_VERSION = 19
 
 /**
  * **この道具が出しうる status と、そのときの終了コード（v0.6.11・外部監査 §7）。**
@@ -533,8 +536,81 @@ const done = (payload, code) => {
    * 実際、`OK` の出力から `stableReasonCode` が丸ごと消えて schema 検査が落ちた。
    */
   out.stableReasonCode = payload.stableReasonCode ?? null
+  /**
+   * **契約を破る出力は渡さない（v0.6.16・外部監査 P0-2）。**
+   *
+   * ここが鳴るのは**この道具の欠陥のときだけ**である。
+   * 例外のまま落とすと Node は exit 1 で終わり、**`MISMATCH` と見分けが付かない。**
+   * `stdout` は空なのに終了コードだけ「不一致」に見えるのが、いちばん悪い読まれ方になる。
+   * だから JSON を出さず、**status のどれにも使っていない 3** で終わる。
+   */
+  try {
+    assertCliResultSemantics(out)
+  } catch (e) {
+    process.stderr.write(
+      `**この道具の欠陥です。結果を出しません。**\n  ${e.message}\n`
+      + `  toolVersion ${TOOL_VERSION} / status ${out.status} / stableReasonCode ${JSON.stringify(out.stableReasonCode)}\n`
+      + `  終了コード ${INTERNAL_FAILURE_EXIT} は「道具が壊れている」だけに使います`
+      + `（検証の結果ではありません）。\n`,
+    )
+    process.exit(INTERNAL_FAILURE_EXIT)
+  }
   console.log(JSON.stringify(out, null, 1))
   process.exit(code)
+}
+
+/**
+ * **道具自身の欠陥を表す終了コード（v0.6.16）。**
+ * `CLI_STATUS_META` のどの `exit` とも重ならない値を選ぶ——
+ * 重なると、受け手は「検証の結果」と「道具が壊れた」を区別できない。
+ */
+export const INTERNAL_FAILURE_EXIT = 3
+
+/**
+ * **出す直前に、自分の公開契約に収まっているかを見る（v0.6.16・外部監査 P0-2）。**
+ *
+ * v0.6.15 は `stableReasonCode` の enum を 80 種類へ狭めておきながら、
+ * **名前を付け忘れた経路が `${status}_OTHER` を出し続けていた。**
+ * 実測（2026-08-14・公開した道具）:
+ *
+ * ```
+ * --source も --tag も渡さない        SOURCE_UNAVAILABLE / SOURCE_UNAVAILABLE_OTHER → schema 不適合
+ * GitHub 取得中に fetch が失敗        同じ                                          → schema 不適合
+ * ```
+ *
+ * **道具が、自分で配った schema に反する出力を出していた。**
+ * 個々の経路を直しても、次に足す経路でまた同じことが起きる。
+ * **出口は 1 つしかないので、そこで見る。**
+ *
+ * ここで投げると JSON が出ないので、受け手には「道具が壊れた」と見える。
+ * **それでよい**——契約を破った出力を渡すより、渡さないほうが安全である。
+ */
+function assertCliResultSemantics(out) {
+  const meta = CLI_STATUS_META[out.status]
+  if (!meta) throw new Error(`status "${out.status}" は CLI_STATUS_META に無い。**出してはいけない値である。**`)
+  if (out.exitCode !== meta.exit) {
+    throw new Error(`status ${out.status} の終了コードは ${meta.exit} のはずが ${out.exitCode} だった。`
+      + '**受け手は終了コードで分岐する。**')
+  }
+  if (out.status === 'OK') {
+    if (out.stableReasonCode !== null) {
+      throw new Error(`OK なのに理由の名前が付いている: ${out.stableReasonCode}`)
+    }
+    return
+  }
+  if (typeof out.stableReasonCode !== 'string') {
+    throw new Error(`${out.status} に理由の名前が無い。**非 OK では必ず付ける。**`)
+  }
+  if (!Object.hasOwn(REASON_CODES, out.stableReasonCode)) {
+    throw new Error(`stableReasonCode "${out.stableReasonCode}" は catalog に無い。`
+      + '**配布 schema の enum にも無いので、この出力は契約違反になる。**'
+      + `（${OTHER_CODES.includes(out.stableReasonCode) ? '受け皿へ落ちている＝どこかの経路で名前を付け忘れている' : '綴りを確かめること'}）`)
+  }
+  const want = REASON_CODES[out.stableReasonCode].status
+  if (want !== out.status) {
+    throw new Error(`stableReasonCode "${out.stableReasonCode}" は catalog では ${want} だが、`
+      + `${out.status} として出そうとしている。**受け手の読み分けが壊れる。**`)
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -2639,11 +2715,18 @@ async function loadFromGithub(tag) {
     })
   } catch (e) {
     const timedOut = e?.name === 'TimeoutError' || e?.name === 'AbortError'
+    /**
+     * **v0.6.16: ここに名前が無かった（外部監査 P0-2）。**
+     * catalog に `SOURCE_FETCH_FAILED` を作っておきながら配線しておらず、
+     * 通信の失敗は `SOURCE_UNAVAILABLE_OTHER` になっていた——
+     * **v0.6.15 で enum を 80 種類に狭めたので、その出力は自分の公開 schema に反する。**
+     */
     return {
       error: timedOut
         ? `GitHub からの応答が ${TAR_LIMITS.fetchTimeoutMs} ms 以内に来なかった (${url})`
         : `GitHub へ接続できなかった (${url}): ${String(e.message).split('\n')[0]}`,
       kind: 'SOURCE_UNAVAILABLE',
+      stableReasonCode: timedOut ? 'SOURCE_FETCH_TIMEOUT' : 'SOURCE_FETCH_FAILED',
     }
   }
   if (!res.ok) return { error: `GitHub が ${res.status} ${res.statusText} を返した (${url})`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_HTTP_ERROR' }
@@ -2736,7 +2819,7 @@ if (RUN_AS_CLI) {
       ? loadFromGithub(TAG)
       : TAG
         ? loadFromLocalTag(TAG)
-        : { error: '--source か --tag のどちらかが要る' })
+        : { error: '--source か --tag のどちらかが要る', kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'CLI_ARGUMENTS_MISSING' })
 
   if (loaded.error) {
     /**

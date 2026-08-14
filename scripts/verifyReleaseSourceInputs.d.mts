@@ -75,6 +75,9 @@ export interface ReasonCodeMeta { reachability: Reachability, status: string, fa
 export declare const REASON_CODES: Record<string, ReasonCodeMeta>
 export declare const OTHER_CODES: readonly string[]
 export declare function assertCatalogued(code: string): string
+/** **この道具の欠陥**を表す終了コード（v0.6.16）。status の exit とは重ならない値 */
+export declare const INTERNAL_FAILURE_EXIT: number
+
 export declare const CLI_STATUS_META: Record<string, { exit: number, fromLoad: boolean, summary: string, note?: string }>
 
 /** **受け入れる範囲の正本（v0.6.15・外部監査 P1-A）。**CLI 出力・schema・文書はここから作る */

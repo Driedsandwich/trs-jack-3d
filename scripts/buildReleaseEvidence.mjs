@@ -28,7 +28,7 @@ import { validateAll } from './validateProfiles.mjs'
 import { RELEASE_ASSETS, SOURCE_ONLY_TARGETS } from './releaseAssets.mjs'
 import { migrationFor } from './contractMigration.mjs'
 import { buildSourceSnapshot } from './buildSourceSnapshot.mjs'
-import { CLI_STATUSES, CLI_STATUS_EXIT } from './verifyReleaseSourceInputs.mjs'
+import { CLI_STATUSES, CLI_STATUS_EXIT, INTERNAL_FAILURE_EXIT } from './verifyReleaseSourceInputs.mjs'
 import { assertExpressibleInSelfReport } from './selfReportStatus.mjs'
 
 const ROOT = process.cwd()
@@ -277,6 +277,7 @@ const sourceVerification = {
      * **配布物に載る列挙は、権威から生成する。**
      */
     `# status は ${CLI_STATUSES.map((s) => `${s}(${CLI_STATUS_EXIT[s]})`).join(' / ')}。`,
+    `# 終了コード ${INTERNAL_FAILURE_EXIT} は **この道具の欠陥** で、検証の結果ではありません（JSON を出さずに止まります）。`,
     '# **取れなかった(2) と 合わなかった(1) を同じ失敗に潰さないこと。**',
     '# **unrecordedInputDetection.performed が false なら「候補 0 件」ではなく「探していない」。**',
   ],
