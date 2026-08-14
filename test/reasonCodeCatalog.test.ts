@@ -172,6 +172,21 @@ describe('reason code catalog — 止め方の名前は 1 か所で持つ', () =
   })
 
   /**
+   * **配布 schema の enum が catalog と過不足なく一致する（v0.6.15・外部監査 P1-A / P1-B）。**
+   * v0.6.14 の schema は `pattern` だけで、**catalog に無い `TOTALLY_FAKE` も適合した**
+   * ——受け手は「この道具が出しうる名前」を schema から知れなかった。
+   */
+  it('**schema の stableReasonCode の enum が catalog と一致する**', async () => {
+    const { readFileSync } = await import('node:fs')
+    const schema = JSON.parse(readFileSync(
+      resolve(ROOT, 'schemas/source-verifier-cli-result.v1.schema.json'), 'utf8'))
+    const inSchema = (schema.properties.stableReasonCode.enum as (string | null)[])
+      .filter((x): x is string => x !== null).sort()
+    expect(inSchema).toEqual(Object.keys(REASON_CODES).sort())
+    expect(schema.properties.stableReasonCode.enum, 'OK のときの null が入っていない').toContain(null)
+  })
+
+  /**
    * **`OK` 以外は必ず理由の名前が入る（v0.6.15・外部監査 P1-B）。**
    * schema の if/then/else では書いていない（版数判定器が扱えない構文のため）ので、
    * **実際に走らせて確かめる。**
@@ -202,10 +217,20 @@ describe('reason code catalog — 止め方の名前は 1 か所で持つ', () =
   it('**archivePolicy が覆っていない範囲を明示している**', () => {
     const r = runCli(['--manifest', MANIFEST, '--source', '.'])
     const p = r.json.archivePolicy as Record<string, unknown>
-    expect(p.notMachineReadableHere, '覆っていない範囲の一覧が無い').toBeInstanceOf(Array)
-    expect((p.notMachineReadableHere as string[]).length).toBeGreaterThanOrEqual(5)
-    const families = p.reasonCodeFamilies as string[]
-    expect(families.sort()).toEqual([...new Set(Object.values(REASON_CODES).map((x) => x.family))].sort())
+    const cov = p.coverage as Record<string, string[]>
+    expect(cov, '覆っている範囲の宣言が無い').toBeTruthy()
+    expect(cov.machineReadable.length, '機械で読める範囲が空').toBeGreaterThanOrEqual(5)
+    expect(cov.notMachineReadableHere.length, '覆っていない範囲の一覧が無い').toBeGreaterThanOrEqual(5)
+    expect([...cov.reasonCodeFamilies].sort())
+      .toEqual([...new Set(Object.values(REASON_CODES).map((x) => x.family))].sort())
+    /**
+     * **v0.6.14 の名前は導出であって、2 つ目の宣言ではない（v0.6.15）。**
+     * 別に並べたら、また「同じ境界を 2 つの一覧が持つ」形になる。
+     */
+    expect(p.notMachineReadableHere).toEqual(cov.notMachineReadableHere)
+    expect(p.reasonCodeFamilies).toEqual(cov.reasonCodeFamilies)
+    /** **宣言そのものの digest が、自分を除いた正規形と一致する** */
+    expect(p.policySha256, 'policy の digest が無い').toMatch(/^[0-9a-f]{64}$/)
+    expect(p.policyId).toBe('trs-jack-3d-source-verifier-archive-policy')
   })
-
 })

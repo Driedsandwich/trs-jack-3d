@@ -77,6 +77,25 @@ export declare const OTHER_CODES: readonly string[]
 export declare function assertCatalogued(code: string): string
 export declare const CLI_STATUS_META: Record<string, { exit: number, fromLoad: boolean, summary: string, note?: string }>
 
+/** **受け入れる範囲の正本（v0.6.15・外部監査 P1-A）。**CLI 出力・schema・文書はここから作る */
+export declare const ARCHIVE_POLICY: {
+  policyId: string
+  policyVersion: number
+  policySha256: string
+  acceptedHeaderFormats: readonly string[]
+  prefixUsedOnlyFor: string
+  acceptedTypeflags: readonly string[]
+  endOfArchiveConvention: string
+  limits: Record<string, number>
+  coverage: {
+    machineReadable: readonly string[]
+    notMachineReadableHere: readonly string[]
+    reasonCodeFamilies: readonly string[]
+  }
+  /** v0.6.14 の名前。値は `coverage` から導出している */
+  notMachineReadableHere: readonly string[]
+  reasonCodeFamilies: readonly string[]
+}
 export declare const CLI_STATUS_EXIT: Record<string, number>
 export declare const CLI_STATUSES: readonly string[]
 

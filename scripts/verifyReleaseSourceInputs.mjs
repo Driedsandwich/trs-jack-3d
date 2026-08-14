@@ -523,27 +523,7 @@ const done = (payload, code) => {
      */
     stableReasonCode: payload.stableReasonCode ?? null,
     /** **この道具が受け入れる archive の範囲。**受け手が「何を通す道具か」を機械で読める */
-    archivePolicy: {
-      acceptedHeaderFormats: ['posix-ustar', 'old-gnu', 'v7', 'unknown'],
-      prefixUsedOnlyFor: 'posix-ustar',
-      acceptedTypeflags: [...SUPPORTED_TYPEFLAGS].sort(),
-      endOfArchiveConvention: 'two-zero-blocks; trailing partial block after the terminator is ignored',
-      limits: TAR_LIMITS,
-      /**
-       * **ここに載っていない規則がある（v0.6.14・外部監査 P1-D）。**
-       * `archivePolicy` という名前は「この道具が受け入れる範囲の全部」と読めるが、
-       * 実際に機械で読める形にしてあるのは上の 5 つだけ。
-       * PAX の鍵の扱い・パスの綴り・リンクの指す先・checksum・重複は、
-       * **止め方の名前（`stableReasonCode`）でしか表に出ていない。**
-       * 名前を変えると schema が狭まって下流が止まるので、**覆っていない範囲を明示する欄を足した。**
-       */
-      notMachineReadableHere: [
-        'pax-key-handling', 'path-spelling', 'link-target-resolution',
-        'header-checksum', 'duplicate-path', 'root-strip',
-      ],
-      /** 上の 6 つを含む止め方の全体像は、この道具が返す stableReasonCode で見る */
-      reasonCodeFamilies: [...new Set(Object.values(REASON_CODES).map((r) => r.family))].sort(),
-    },
+    archivePolicy: ARCHIVE_POLICY,
     ...payload,
   }
   /**
@@ -1440,6 +1420,73 @@ const CONTENT_BEARING_NOT_HANDLED = new Set(['7', 'S', 'D', 'M', 'N'])
  * device は作れず FIFO は作る——**どちらも「中身を持つファイル」ではない。**
  */
 const SUPPORTED_TYPEFLAGS = new Set(['0', '1', '2', '5', 'x', 'g', 'L', 'K'])
+
+/**
+ * **受け入れる範囲の正本（v0.6.15・外部監査 P1-A）。**
+ *
+ * v0.6.14 まで、この中身は `done()` の中に**直に書いてあった。**
+ * 配布 schema はその中身を一切拘束しておらず、外部監査が反例を出した。
+ * こちらで再現（2026-08-14・自分の道具の実出力と自分の ajv で実測）:
+ *
+ * ```
+ * notMachineReadableHere / reasonCodeFamilies を消す   → schema 適合
+ * 中身を ['TOTALLY_FAKE'] に差し替える                 → schema 適合
+ * acceptedTypeflags / endOfArchiveConvention を偽値に  → schema 適合
+ * limits を {} にする                                  → schema 適合
+ * 対照: status を enum の外へ／archivePolicy ごと削除  → どちらも落ちる
+ * ```
+ *
+ * **つまり「何を通す道具か」の宣言は、形すら検査されていなかった。**
+ *
+ * ここを唯一の正本にして、CLI 出力・専用 schema・文書をここから作る。
+ * **`policySha256` は自分自身を除いた正規形に対する digest** である
+ * ——自分の digest を自分の中に入れると、値が確定しない。
+ *
+ * ⚠️ **これは「改竄されていないこと」の証明にはならない。**
+ * 同じ道具が policy と digest の両方を書いているので、両方を書き換えれば一致する。
+ * **成果物は自分自身を証明できない。**受け手が見るべきは、この道具そのものの `tool.sha256`
+ * と、公開されている release asset の照合である。
+ * ここで防げるのは、**版を跨いだときの取り違えと、途中で欠けた欄**だけ。
+ */
+const ARCHIVE_POLICY_BODY = {
+  policyId: 'trs-jack-3d-source-verifier-archive-policy',
+  policyVersion: 1,
+  acceptedHeaderFormats: ['posix-ustar', 'old-gnu', 'v7', 'unknown'],
+  prefixUsedOnlyFor: 'posix-ustar',
+  acceptedTypeflags: [...SUPPORTED_TYPEFLAGS].sort(),
+  endOfArchiveConvention: 'two-zero-blocks; trailing partial block after the terminator is ignored',
+  limits: TAR_LIMITS,
+  /**
+   * **この宣言がどこまでを覆っているか（v0.6.14 で `notMachineReadableHere` として追加）。**
+   * `archivePolicy` という名前は「受け入れる範囲の全部」と読めるが、
+   * 機械で読める形にしてあるのは上の 5 つだけである。
+   */
+  coverage: {
+    machineReadable: [
+      'accepted-header-formats', 'prefix-field-usage', 'accepted-typeflags',
+      'end-of-archive', 'resource-limits',
+    ],
+    /** ここに挙げた規則は、**止め方の名前（`stableReasonCode`）でしか表に出ていない** */
+    notMachineReadableHere: [
+      'pax-key-handling', 'path-spelling', 'link-target-resolution',
+      'header-checksum', 'duplicate-path', 'root-strip',
+    ],
+    /** 覆っていない分も含めた全体像は、この道具が返す code の族で見る */
+    reasonCodeFamilies: [...new Set(Object.values(REASON_CODES).map((r) => r.family))].sort(),
+  },
+}
+
+/**
+ * v0.6.14 は `notMachineReadableHere` / `reasonCodeFamilies` を**この階層に**出していた。
+ * v0.6.15 で `coverage` へ畳んだが、**消すと受け手が壊れる**ので旧名も出し続ける。
+ * ただし**値は `coverage` から導出する**——別に並べたら、また 2 つ目の一覧になる。
+ */
+export const ARCHIVE_POLICY = {
+  ...ARCHIVE_POLICY_BODY,
+  notMachineReadableHere: ARCHIVE_POLICY_BODY.coverage.notMachineReadableHere,
+  reasonCodeFamilies: ARCHIVE_POLICY_BODY.coverage.reasonCodeFamilies,
+  policySha256: sha256(Buffer.from(JSON.stringify(ARCHIVE_POLICY_BODY))),
+}
 
 /**
  * **ヘッダ形式を magic + version で決める（v0.6.9・外部監査 P0-A）。**
