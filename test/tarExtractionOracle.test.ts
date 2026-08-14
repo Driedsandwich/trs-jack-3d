@@ -646,6 +646,30 @@ const EVIDENCE_ELSEWHERE: Record<string, { on: EvidencePlatform, note: string }>
       + '**v0.6.1 からの方針**（どちらを検算したのか言えなくなる）で止めており、実装の割れが根拠ではない',
   },
   'dup-regular-different-content': { on: 'none', note: '同上（中身が違う版）' },
+  // ---------------------------------------------------------------- v0.6.15
+  /**
+   * **パスの綴り 4 件（外部監査 P1-C で材料を足して判明）。**
+   *
+   * catalog には前から在った止め方なのに corpus に材料が無く、
+   * **材料を足した瞬間に「手元では根拠が取れない」側だと分かった。**
+   * どれも 2 実装が同じ木を作る——止めているのは実装の割れではなく、
+   * **同じ場所を別の綴りで指せると記録との突き合わせが意味を失う**という方針である。
+   */
+  'spell-dot-component': {
+    on: 'none',
+    note: 'root/./evil.txt。手元の 2 実装は . を畳んで同じ木を作る。'
+      + '**方針で止めている**（正規形でない綴りを許すと、同じファイルを 2 通りに書ける）',
+  },
+  'spell-double-slash': { on: 'none', note: '同上（root//evil.txt。空のパス要素）' },
+  'spell-leading-space': {
+    on: 'none',
+    note: '"root/ evil.txt"。手元の 2 実装は空白ごと名前として作る。'
+      + '**方針で止めている**（人が見たときの綴りと展開結果が食い違う）',
+  },
+  'spell-control-char': {
+    on: 'none',
+    note: '名前に U+0001。手元の 2 実装は作る。**方針で止めている**（端末表示と実体が食い違う）',
+  },
   // ---------------------------------------------------------------- v0.6.11
   /**
    * **切れ方の見え方は platform で割れる（CI の ubuntu run が落として判明）。**
@@ -766,7 +790,7 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
    * 受け手にとっては道具の限界そのものなので、**増えたら気づく形**にしておく。
    * 増やしてよいが、そのときはここと notes の両方を直すことになる。
    */
-  it('どちらの必須 oracle でも裏の取れていない拒否は 5 件（内訳を出す）', () => {
+  it('どちらの必須 oracle でも裏の取れていない拒否は 9 件（内訳を出す）', () => {
     const rows = Object.entries(EVIDENCE_ELSEWHERE)
     const byOn: Record<string, string[]> = {}
     for (const [id, v] of rows) (byOn[v.on] ??= []).push(id)
@@ -777,7 +801,7 @@ describe('tar 展開 oracle ③ ARCHIVE_INVALID には手元の根拠がある�
      * 「2 実装が同じ木を作るのに止めている」と書いてあった行**そのものが過剰拒否だった。**
      * 根拠が無いと書いた行は、次に直す候補の一覧でもある。
      */
-    expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(5)
+    expect(byOn['none']?.length ?? 0, '実測の外にある拒否の件数が変わった。notes も直すこと').toBe(9)
     expect(byOn['bsdtar']?.length, 'bsdtar 側でだけ根拠が取れる件数').toBe(10)
     expect(byOn['gnu-tar']?.length, 'GNU tar 側でだけ根拠が取れる件数').toBe(15)
   })

@@ -191,6 +191,9 @@ describe('tar 強化 ② 種類ごとに「なぜ止まったか」まで見る'
    * 母集団は期待値の表から引くので、止める材料を増やすとここが必ず落ちて、書き足しを促す。
    */
   const HARDLINK_REASONS: Record<string, RegExp> = {
+    // v0.6.15（外部監査 P1-C）。catalog に在ったのに材料が無かった 2 件
+    'link-hardlink-empty-target': /リンクの指す先が空である/,
+    'link-hardlink-dot-target': /リンクの指す先がパスになっていない/,
     'link-hardlink-missing-target': /hardlink の指す先が、ここまでの entry に無い/,
     'link-hardlink-forward-reference': /hardlink の指す先が、ここまでの entry に無い/,
     'link-hardlink-self-reference': /hardlink が自分自身を指している/,

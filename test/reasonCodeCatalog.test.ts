@@ -62,7 +62,12 @@ describe('reason code catalog — 止め方の名前は 1 か所で持つ', () =
     for (const [code, meta] of entries) {
       expect(code, `${code}: 名前の形`).toMatch(/^[A-Z][A-Z0-9_]*$/)
       expect(CLI_STATUSES, `${code}: status が CLI の一覧に無い`).toContain(meta.status)
-      expect(['ARCHIVE_INVALID', 'ARCHIVE_UNSUPPORTED'], `${code}: 止め方でない status`).toContain(meta.status)
+      /**
+       * **v0.6.15: `OK` 以外のすべてが対象になった（外部監査 P1-B）。**
+       * v0.6.14 まで archive 系の 2 つだけを許していたが、
+       * **残り 4 つの止まり方には code が無く、`${status}_OTHER` へ落ちていた。**
+       */
+      expect(meta.status, `${code}: OK に理由は付かない`).not.toBe('OK')
       expect(meta.family, `${code}: family が無い`).toBeTypeOf('string')
       expect(meta.summary, `${code}: summary が無い`).toBeTypeOf('string')
     }
@@ -167,6 +172,29 @@ describe('reason code catalog — 止め方の名前は 1 か所で持つ', () =
   })
 
   /**
+   * **`OK` 以外は必ず理由の名前が入る（v0.6.15・外部監査 P1-B）。**
+   * schema の if/then/else では書いていない（版数判定器が扱えない構文のため）ので、
+   * **実際に走らせて確かめる。**
+   */
+  it('**OK 以外の status は、必ず理由の名前を持つ**', () => {
+    const routes: [string, string[]][] = [
+      ['MANIFEST_UNAVAILABLE', ['--manifest', '/nonexistent/m.json', '--source', '.']],
+      ['SOURCE_UNAVAILABLE', ['--manifest', MANIFEST, '--source', '/nonexistent/dir']],
+      ['VERIFICATION_INCOMPLETE', ['--manifest', MANIFEST, '--source', '.', '--scope', '/nonexistent/s.json']],
+    ]
+    for (const [want, args] of routes) {
+      const r = runCli(args)
+      expect(r.json.status).toBe(want)
+      expect(r.json.stableReasonCode, `${want} に理由の名前が無い`).toBeTypeOf('string')
+      assertCatalogued(r.json.stableReasonCode as string)
+    }
+    // 空振り防止: OK のときは null であること
+    const ok = runCli(['--manifest', MANIFEST, '--source', '.'])
+    expect(ok.json.status).toBe('OK')
+    expect(ok.json.stableReasonCode, 'OK なのに理由が付いている').toBeNull()
+  })
+
+  /**
    * **`archivePolicy` が覆っていない範囲を自分で言っている（P1-D）。**
    * 名前は「受け入れる範囲の全部」と読めるが、機械で読める形にしてあるのは一部だけ。
    * **改名は schema を狭めて下流を止めるので、欄を足して明示した。**
@@ -179,4 +207,5 @@ describe('reason code catalog — 止め方の名前は 1 か所で持つ', () =
     const families = p.reasonCodeFamilies as string[]
     expect(families.sort()).toEqual([...new Set(Object.values(REASON_CODES).map((x) => x.family))].sort())
   })
+
 })

@@ -69,11 +69,14 @@ export declare function readBodyLimited(res: Response, limit: number): Promise<B
 /** status と、そのときの終了コード。**列挙を持つ側の正本はここ 1 か所**（v0.6.12） */
 /** status に紐づくもの（終了コード・loader が返してよいか・受け手向け注記）を 1 か所で持つ（v0.6.14） */
 /** 止め方の名前の唯一の正本（v0.6.14）。**配布物 1 ファイルに同梱する** */
-export interface ReasonCodeMeta { status: string, family: string, summary: string }
+/** `reachability` は**宣言**であり、試験が両方向で実測と突き合わせる（v0.6.15・外部監査 P1-C） */
+export type Reachability = 'corpus' | 'external-fixture' | 'cli-route' | 'defensive-invariant'
+export interface ReasonCodeMeta { reachability: Reachability, status: string, family: string, summary: string }
 export declare const REASON_CODES: Record<string, ReasonCodeMeta>
 export declare const OTHER_CODES: readonly string[]
 export declare function assertCatalogued(code: string): string
 export declare const CLI_STATUS_META: Record<string, { exit: number, fromLoad: boolean, summary: string, note?: string }>
+
 export declare const CLI_STATUS_EXIT: Record<string, number>
 export declare const CLI_STATUSES: readonly string[]
 

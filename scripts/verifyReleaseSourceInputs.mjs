@@ -214,85 +214,153 @@ import { fileURLToPath } from 'node:url'
  */
 export const REASON_CODES = {
   // ---- パスそのもの ----
-  PATH_TRAVERSAL: { status: 'ARCHIVE_INVALID', family: 'path', summary: '.. が残るパス' },
-  PATH_ABSOLUTE: { status: 'ARCHIVE_INVALID', family: 'path', summary: '絶対パス' },
-  PATH_DRIVE_LETTER: { status: 'ARCHIVE_INVALID', family: 'path', summary: 'ドライブレター付き' },
-  PATH_NOT_CANONICAL: { status: 'ARCHIVE_INVALID', family: 'path', summary: '正規形でない綴り' },
-  PATH_EMPTY_COMPONENT: { status: 'ARCHIVE_INVALID', family: 'path', summary: '空のパス要素' },
-  PATH_EMPTY_NAME: { status: 'ARCHIVE_INVALID', family: 'path', summary: '実効名が空' },
-  PATH_SURROUNDING_SPACE: { status: 'ARCHIVE_INVALID', family: 'path', summary: '前後に空白' },
-  PATH_CONTROL_CHARACTER: { status: 'ARCHIVE_INVALID', family: 'path', summary: '制御文字' },
-  PATH_TRAILING_SLASH_TYPE_CONFLICT: { status: 'ARCHIVE_INVALID', family: 'path', summary: '末尾スラッシュと型が食い違う' },
-  PATH_BACKSLASH_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'path', summary: 'バックスラッシュ（OS で意味が変わる）' },
-  PATH_TOO_LONG_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: 'パスが長すぎる' },
-  ROOT_STRIP_NOT_A_DIRECTORY: { status: 'ARCHIVE_INVALID', family: 'path', summary: '先頭 1 階層が directory でない' },
+  PATH_TRAVERSAL: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'path', summary: '.. が残るパス' },
+  PATH_ABSOLUTE: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'path', summary: '絶対パス' },
+  PATH_DRIVE_LETTER: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'path', summary: 'ドライブレター付き' },
+  PATH_NOT_CANONICAL: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'path', summary: '正規形でない綴り' },
+  PATH_EMPTY_COMPONENT: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'path', summary: '空のパス要素' },
+  PATH_EMPTY_NAME: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'path', summary: '実効名が空' },
+  PATH_SURROUNDING_SPACE: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'path', summary: '前後に空白' },
+  PATH_CONTROL_CHARACTER: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'path', summary: '制御文字' },
+  PATH_TRAILING_SLASH_TYPE_CONFLICT: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'path', summary: '末尾スラッシュと型が食い違う' },
+  PATH_BACKSLASH_UNSUPPORTED: { reachability: 'corpus', status: 'ARCHIVE_UNSUPPORTED', family: 'path', summary: 'バックスラッシュ（OS で意味が変わる）' },
+  PATH_TOO_LONG_UNSUPPORTED: { reachability: 'corpus', status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: 'パスが長すぎる' },
+  ROOT_STRIP_NOT_A_DIRECTORY: { reachability: 'defensive-invariant', status: 'ARCHIVE_INVALID', family: 'path', summary: '先頭 1 階層が directory でない' },
 
   // ---- 文字 ----
-  TEXT_NOT_UTF8: { status: 'ARCHIVE_INVALID', family: 'text', summary: 'UTF-8 として読めない' },
-  TEXT_CONTAINS_NUL: { status: 'ARCHIVE_INVALID', family: 'text', summary: 'NUL を含む' },
+  TEXT_NOT_UTF8: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'text', summary: 'UTF-8 として読めない' },
+  TEXT_CONTAINS_NUL: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'text', summary: 'NUL を含む' },
 
   // ---- ヘッダ ----
-  HEADER_CHECKSUM_MISMATCH: { status: 'ARCHIVE_INVALID', family: 'header', summary: 'checksum が合わない' },
-  HEADER_FORMAT_PREFIX_CONFLICT: { status: 'ARCHIVE_INVALID', family: 'header', summary: '形式と 345..499 が食い違う' },
-  HEADER_NUMERIC_FIELD_SYNTAX: { status: 'ARCHIVE_INVALID', family: 'header', summary: '数値欄の書式' },
-  HEADER_NUMERIC_FIELD_RANGE: { status: 'ARCHIVE_INVALID', family: 'header', summary: '数値欄の範囲' },
-  HEADER_NUMERIC_FIELD_BASE256_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'header', summary: 'base-256 の数値欄' },
+  HEADER_CHECKSUM_MISMATCH: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'header', summary: 'checksum が合わない' },
+  HEADER_FORMAT_PREFIX_CONFLICT: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'header', summary: '形式と 345..499 が食い違う' },
+  HEADER_NUMERIC_FIELD_SYNTAX: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'header', summary: '数値欄の書式' },
+  HEADER_NUMERIC_FIELD_RANGE: { reachability: 'defensive-invariant', status: 'ARCHIVE_INVALID', family: 'header', summary: '数値欄の範囲' },
+  HEADER_NUMERIC_FIELD_BASE256_UNSUPPORTED: { reachability: 'corpus', status: 'ARCHIVE_UNSUPPORTED', family: 'header', summary: 'base-256 の数値欄' },
 
   // ---- PAX / 拡張ヘッダ ----
-  PAX_RECORD_INVALID: { status: 'ARCHIVE_INVALID', family: 'pax', summary: 'PAX レコードの形が壊れている' },
-  PAX_VALUE_SYNTAX: { status: 'ARCHIVE_INVALID', family: 'pax', summary: 'PAX の値の書式' },
-  PAX_VALUE_RANGE: { status: 'ARCHIVE_INVALID', family: 'pax', summary: 'PAX の値の範囲' },
-  PAX_KEY_DANGEROUS: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '見え方を変える鍵' },
-  PAX_KEY_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'pax', summary: '扱いを決めていない鍵' },
-  PAX_ZERO_LENGTH_VALUE_INVALID: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '長さ 0 の値が許されない鍵' },
-  PAX_ZERO_LENGTH_NAME_AMBIGUOUS: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '長さ 0 の名前指定' },
-  PAX_GLOBAL_NAME_OVERRIDE: { status: 'ARCHIVE_INVALID', family: 'pax', summary: 'global ヘッダで名前を上書き' },
-  EXTENSION_HEADER_DANGLING: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '拡張ヘッダの相手がいない' },
+  PAX_RECORD_INVALID: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: 'PAX レコードの形が壊れている' },
+  PAX_VALUE_SYNTAX: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: 'PAX の値の書式' },
+  PAX_VALUE_RANGE: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: 'PAX の値の範囲' },
+  PAX_KEY_DANGEROUS: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: '見え方を変える鍵' },
+  PAX_KEY_UNSUPPORTED: { reachability: 'corpus', status: 'ARCHIVE_UNSUPPORTED', family: 'pax', summary: '扱いを決めていない鍵' },
+  PAX_ZERO_LENGTH_VALUE_INVALID: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: '長さ 0 の値が許されない鍵' },
+  PAX_ZERO_LENGTH_NAME_AMBIGUOUS: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: '長さ 0 の名前指定' },
+  PAX_GLOBAL_NAME_OVERRIDE: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: 'global ヘッダで名前を上書き' },
+  EXTENSION_HEADER_DANGLING: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: '拡張ヘッダの相手がいない' },
   /** ⚠️ 名前は UNSUPPORTED だが、**実測では ARCHIVE_INVALID**（名前から推測して書いたのが誤りだった・v0.6.14） */
-  EXTENSION_HEADER_SEQUENCE_UNSUPPORTED: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '扱いを決めていない並び' },
-  EXTENSION_OVERRIDE_CONFLICT: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '名前の上書きが 2 つ効く' },
-  EXTENSION_NAME_EMPTY: { status: 'ARCHIVE_INVALID', family: 'pax', summary: '拡張ヘッダの中身が長さ 0' },
+  EXTENSION_HEADER_SEQUENCE_UNSUPPORTED: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: '扱いを決めていない並び' },
+  EXTENSION_OVERRIDE_CONFLICT: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: '名前の上書きが 2 つ効く' },
+  EXTENSION_NAME_EMPTY: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'pax', summary: '拡張ヘッダの中身が長さ 0' },
 
   // ---- entry の型・本体 ----
-  ENTRY_TYPE_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'entry', summary: '扱いを決めていない型' },
-  ENTRY_BODY_ON_BODYLESS_TYPE: { status: 'ARCHIVE_INVALID', family: 'entry', summary: '中身を持てない型に本体がある' },
-  ENTRY_BODY_TRUNCATED: { status: 'ARCHIVE_INVALID', family: 'entry', summary: '本体の詰め物が欠けている' },
-  DUPLICATE_PATH_CONFLICT: { status: 'ARCHIVE_INVALID', family: 'entry', summary: '同じパスが 2 回' },
-  ANCESTOR_TYPE_CONFLICT: { status: 'ARCHIVE_INVALID', family: 'entry', summary: '祖先が directory でない' },
+  ENTRY_TYPE_UNSUPPORTED: { reachability: 'corpus', status: 'ARCHIVE_UNSUPPORTED', family: 'entry', summary: '扱いを決めていない型' },
+  ENTRY_BODY_ON_BODYLESS_TYPE: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'entry', summary: '中身を持てない型に本体がある' },
+  ENTRY_BODY_TRUNCATED: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'entry', summary: '本体の詰め物が欠けている' },
+  DUPLICATE_PATH_CONFLICT: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'entry', summary: '同じパスが 2 回' },
+  ANCESTOR_TYPE_CONFLICT: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'entry', summary: '祖先が directory でない' },
 
   // ---- リンク ----
-  LINK_TARGET_EMPTY: { status: 'ARCHIVE_INVALID', family: 'link', summary: 'リンクの指す先が空' },
-  LINK_TARGET_NOT_A_PATH: { status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先の綴りを受け取れない' },
-  LINK_TARGET_NOT_CANONICAL: { status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先が正規形でない' },
-  LINK_TARGET_TRAILING_SLASH: { status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先が / で終わる' },
-  HARDLINK_TARGET_MISSING: { status: 'ARCHIVE_INVALID', family: 'link', summary: 'hardlink の指す先が無い' },
-  HARDLINK_TARGET_NOT_A_FILE: { status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先が通常ファイルでない' },
-  HARDLINK_SELF_REFERENCE: { status: 'ARCHIVE_INVALID', family: 'link', summary: '自分自身を指す hardlink' },
-  HARDLINK_CHAIN_UNRESOLVED: { status: 'ARCHIVE_INVALID', family: 'link', summary: 'hardlink の連鎖を解決できない' },
+  LINK_TARGET_EMPTY: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'link', summary: 'リンクの指す先が空' },
+  LINK_TARGET_NOT_A_PATH: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先の綴りを受け取れない' },
+  LINK_TARGET_NOT_CANONICAL: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先が正規形でない' },
+  LINK_TARGET_TRAILING_SLASH: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先が / で終わる' },
+  HARDLINK_TARGET_MISSING: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'link', summary: 'hardlink の指す先が無い' },
+  HARDLINK_TARGET_NOT_A_FILE: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'link', summary: '指す先が通常ファイルでない' },
+  HARDLINK_SELF_REFERENCE: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'link', summary: '自分自身を指す hardlink' },
+  HARDLINK_CHAIN_UNRESOLVED: { reachability: 'defensive-invariant', status: 'ARCHIVE_INVALID', family: 'link', summary: 'hardlink の連鎖を解決できない' },
 
   // ---- 終端 ----
-  END_OF_ARCHIVE_LONE_ZERO_BLOCK: { status: 'ARCHIVE_INVALID', family: 'eoa', summary: '終端の印のあとに中身が続く' },
-  END_OF_ARCHIVE_MISSING: { status: 'ARCHIVE_INVALID', family: 'eoa', summary: '終端の印を見ないまま尽きた' },
+  END_OF_ARCHIVE_LONE_ZERO_BLOCK: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'eoa', summary: '終端の印のあとに中身が続く' },
+  END_OF_ARCHIVE_MISSING: { reachability: 'corpus', status: 'ARCHIVE_INVALID', family: 'eoa', summary: '終端の印を見ないまま尽きた' },
 
   // ---- 上限（方針であって archive の欠陥ではない）----
-  LIMIT_ENTRY_COUNT_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: 'entry が多すぎる' },
-  LIMIT_ENTRY_BYTES_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: 'entry が大きすぎる' },
-  LIMIT_BODY_BYTES_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: '本体が大きすぎる' },
-  LIMIT_TOTAL_BYTES_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: '合計が大きすぎる' },
+  LIMIT_ENTRY_COUNT_UNSUPPORTED: { reachability: 'corpus', status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: 'entry が多すぎる' },
+  LIMIT_ENTRY_BYTES_UNSUPPORTED: { reachability: 'corpus', status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: 'entry が大きすぎる' },
+  LIMIT_BODY_BYTES_UNSUPPORTED: { reachability: 'cli-route', status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: '本体が大きすぎる' },
+  LIMIT_TOTAL_BYTES_UNSUPPORTED: { reachability: 'cli-route', status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: '合計が大きすぎる' },
 
   /**
    * ---- ここから下が v0.6.14 で足した 5 つ（外部監査 P0・すべてこちらで再現済み）----
    */
   /** 壊れた gzip。**v16 notes は「付けた」と書いていたが、実装されていなかった** */
-  GZIP_DECODE_FAILED: { status: 'ARCHIVE_INVALID', family: 'container', summary: 'gzip を展開できない' },
+  GZIP_DECODE_FAILED: { reachability: 'cli-route', status: 'ARCHIVE_INVALID', family: 'container', summary: 'gzip を展開できない' },
   /** 手元の archive ファイルが、展開する前の時点で大きすぎる */
-  LIMIT_COMPRESSED_BYTES_UNSUPPORTED: { status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: '圧縮された状態で大きすぎる' },
+  LIMIT_COMPRESSED_BYTES_UNSUPPORTED: { reachability: 'cli-route', status: 'ARCHIVE_UNSUPPORTED', family: 'limit', summary: '圧縮された状態で大きすぎる' },
   /** source として渡された root が symlink。**指す先ごと差し替えられる** */
-  SOURCE_ROOT_SYMLINK: { status: 'ARCHIVE_INVALID', family: 'source', summary: 'source root が symlink' },
-  /** source directory を読めない（権限・消えた・その他 OS のエラー） */
-  SOURCE_DIRECTORY_UNREADABLE: { status: 'ARCHIVE_UNSUPPORTED', family: 'source', summary: 'source ディレクトリを読めない' },
-  /** directory の中に FIFO・socket・device がある */
-  SOURCE_SPECIAL_NODE: { status: 'ARCHIVE_UNSUPPORTED', family: 'source', summary: '通常ファイルでも directory でもないノード' },
+  SOURCE_ROOT_SYMLINK: { reachability: 'cli-route', status: 'ARCHIVE_INVALID', family: 'source', summary: 'source root が symlink' },
+  /**
+   * source directory を読めない（権限・消えた・その他 OS のエラー）。
+   *
+   * **v0.6.15: status を `SOURCE_UNAVAILABLE` へ直した（外部監査 P1-C）。**
+   * v0.6.14 では `ARCHIVE_UNSUPPORTED` として登録し、しかも
+   * **`ArchiveUnsupported` の code 無しフォールバックにだけ置いていた。**
+   * P0 で全 throw に code を付けたので**そのフォールバックは二度と選ばれず**、
+   * 実際の EACCES 経路（`walk` の外の catch）は code を持たないまま
+   * `SOURCE_UNAVAILABLE_OTHER` になっていた。実測 2026-08-14 で確認。
+   */
+  SOURCE_DIRECTORY_UNREADABLE: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'source ディレクトリを読めない' },
+  /**
+   * directory の中に FIFO・socket・device がある。
+   *
+   * **v0.6.15: 実際に配線した（外部監査 P1-C）。**
+   * v0.6.14 で catalog へ足したが、**投げる側は `ENTRY_TYPE_UNSUPPORTED` を渡していた**
+   * ——名前だけ在って一度も出ない code だった。実測 2026-08-14 で確認。
+   * archive の typeflag とは別物（こちらは実在するノード）なので、名前を分けたまま配線する。
+   */
+  SOURCE_SPECIAL_NODE: { reachability: 'cli-route', status: 'ARCHIVE_UNSUPPORTED', family: 'source', summary: '通常ファイルでも directory でもないノード' },
+
+  /**
+   * ---- ここから下が v0.6.15 で足した分（外部監査 P1-B）----
+   *
+   * v0.6.14 まで、`stableReasonCode` は **archive 系の 2 status にしか出なかった。**
+   * 残り 4 つの止まり方（source を取れない・manifest を読めない・入力 0 件・工程未了）は
+   * `${status}_OTHER` へ落ちるだけで、**受け手は「なぜ止まったか」を機械で分岐できない。**
+   * 実測（2026-08-14）: 読めない directory を渡すと `SOURCE_UNAVAILABLE_OTHER`。
+   */
+  // ---- source を取れなかった ----
+  /** **実測 2026-08-14: 到達しない。**存在しない path は先に directory 判定が `SOURCE_DIRECTORY_MISSING` で止める */
+  SOURCE_ARCHIVE_MISSING: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '指定した archive ファイルが無い' },
+  SOURCE_ARCHIVE_UNREADABLE: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'archive ファイルを読めない' },
+  SOURCE_DIRECTORY_MISSING: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '指定した directory が無い' },
+  SOURCE_TAG_NOT_LOCAL: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'tag が手元に無い' },
+  SOURCE_GIT_ARCHIVE_FAILED: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'git archive が失敗した' },
+  SOURCE_FETCH_FAILED: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub へ繋がらない' },
+  SOURCE_HTTP_ERROR: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub が異常応答を返した' },
+  SOURCE_BODY_UNREADABLE: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '応答本文を受け取れない' },
+
+  // ---- manifest を読めなかった ----
+  MANIFEST_MISSING: { reachability: 'cli-route', status: 'MANIFEST_UNAVAILABLE', family: 'manifest', summary: 'manifest が無い' },
+  MANIFEST_UNREADABLE: { reachability: 'cli-route', status: 'MANIFEST_UNAVAILABLE', family: 'manifest', summary: 'manifest を読めない' },
+  MANIFEST_NOT_JSON: { reachability: 'cli-route', status: 'MANIFEST_UNAVAILABLE', family: 'manifest', summary: 'manifest が JSON として読めない' },
+
+  // ---- 何も見ていない ----
+  MANIFEST_INPUTS_EMPTY: { reachability: 'cli-route', status: 'NOTHING_TO_VERIFY', family: 'manifest', summary: 'manifest の inputFiles が 0 件' },
+
+  /**
+   * ---- 工程を実行できていない ----
+   * v0.6.14 まで、この 7 つは `detection.stableReasonCode` の中にだけ在り、
+   * **top-level には出ていなかった。**受け手は入れ子を開けないと理由を取れない。
+   */
+  SCOPE_ABSENT: { reachability: 'cli-route', status: 'VERIFICATION_INCOMPLETE', family: 'scope', summary: 'source に範囲定義が無い' },
+  SCOPE_UNREADABLE: { reachability: 'cli-route', status: 'VERIFICATION_INCOMPLETE', family: 'scope', summary: '--scope を読めない' },
+  SCOPE_UNPARSEABLE: { reachability: 'cli-route', status: 'VERIFICATION_INCOMPLETE', family: 'scope', summary: '範囲定義を parse できない' },
+  SCOPE_SCHEMA_INVALID: { reachability: 'cli-route', status: 'VERIFICATION_INCOMPLETE', family: 'scope', summary: '範囲定義の形が違う' },
+  SCOPE_SHA256_MISMATCH: { reachability: 'cli-route', status: 'VERIFICATION_INCOMPLETE', family: 'scope', summary: '範囲定義が manifest の記録と違う' },
+  SCOPE_NOT_PINNED: { reachability: 'cli-route', status: 'VERIFICATION_INCOMPLETE', family: 'scope', summary: 'manifest が範囲定義を記録していない' },
+  SCOPE_UNPINNED_ACCEPTED: { reachability: 'cli-route', status: 'VERIFICATION_INCOMPLETE', family: 'scope', summary: '--allow-unpinned-scope で縛られていない範囲を受けた' },
+
+  /**
+   * ---- 記録と合わない ----
+   * **1 実行で複数の食い違いが同時に出る。**代表を 1 つ選ぶと嘘になるので、
+   * 2 種類以上あれば `MISMATCH_MULTIPLE` と言い、内訳は `counts` を読ませる。
+   */
+  MISMATCH_RECORDED_DIGEST: { reachability: 'cli-route', status: 'MISMATCH', family: 'mismatch', summary: '記録された sha256 と違う' },
+  MISMATCH_RECORDED_INCONSISTENT: { reachability: 'cli-route', status: 'MISMATCH', family: 'mismatch', summary: '記録そのものが矛盾している' },
+  MISMATCH_MISSING_INPUT: { reachability: 'cli-route', status: 'MISMATCH', family: 'mismatch', summary: '記録された入力が source に無い' },
+  MISMATCH_UNRECORDED_INPUT: { reachability: 'cli-route', status: 'MISMATCH', family: 'mismatch', summary: '範囲の中に記録されていない入力がある' },
+  MISMATCH_SELF_REFERENCING: { reachability: 'cli-route', status: 'MISMATCH', family: 'mismatch', summary: '出力を入力として記録している' },
+  MISMATCH_MULTIPLE: { reachability: 'cli-route', status: 'MISMATCH', family: 'mismatch', summary: '食い違いが 2 種類以上ある' },
 }
 
 
@@ -310,7 +378,7 @@ export function statusOf(code) {
   return assertCatalogued(code) && REASON_CODES[code].status
 }
 
-export const TOOL_VERSION = 17
+export const TOOL_VERSION = 18
 
 /**
  * **この道具が出しうる status と、そのときの終了コード（v0.6.11・外部監査 §7）。**
@@ -442,13 +510,17 @@ const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
  * `exitCode` も入れる——**JSON を保存したあとで終了コードを復元できない**ため。
  */
 const done = (payload, code) => {
-  console.log(JSON.stringify({
+  const out = {
     schemaVersion: 1,
     schemaId: 'trs-jack-3d-source-verifier-cli-result.v1',
     kind: 'source-verifier-cli-result',
     toolVersion: TOOL_VERSION,
     exitCode: code,
-    /** 止めた理由の変わらない名前。`OK` / `MISMATCH` では null */
+    /**
+     * 止めた理由の変わらない名前。**`OK` 以外では必ず入る（v0.6.15・外部監査 P1-B）。**
+     * v0.6.14 まで archive 系の 2 status にしか入らず、
+     * 残りは `${status}_OTHER` か null だった。
+     */
     stableReasonCode: payload.stableReasonCode ?? null,
     /** **この道具が受け入れる archive の範囲。**受け手が「何を通す道具か」を機械で読める */
     archivePolicy: {
@@ -473,7 +545,15 @@ const done = (payload, code) => {
       reasonCodeFamilies: [...new Set(Object.values(REASON_CODES).map((r) => r.family))].sort(),
     },
     ...payload,
-  }, null, 1))
+  }
+  /**
+   * **必須の欄は、展開のあとで立て直す（v0.6.15）。**
+   * `...payload` が後ろにあるので、呼び出し側が `undefined` を渡すと
+   * **欄そのものが消える**（`JSON.stringify` は undefined を落とす）。
+   * 実際、`OK` の出力から `stableReasonCode` が丸ごと消えて schema 検査が落ちた。
+   */
+  out.stableReasonCode = payload.stableReasonCode ?? null
+  console.log(JSON.stringify(out, null, 1))
   process.exit(code)
 }
 
@@ -2308,7 +2388,7 @@ export function readArchiveBuffer(buf, { gzip }) {
  */
 function loadFromArchive(path) {
   const abs = resolve(ROOT, path)
-  if (!existsSync(abs)) return { error: `source archive が無い: ${path}`, kind: 'SOURCE_UNAVAILABLE' }
+  if (!existsSync(abs)) return { error: `source archive が無い: ${path}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_ARCHIVE_MISSING' }
   let buf
   try {
     /**
@@ -2326,7 +2406,7 @@ function loadFromArchive(path) {
     }
     buf = readFileSync(abs)
   } catch (e) {
-    return { error: `source archive を読めない (${path}): ${e.message}`, kind: 'SOURCE_UNAVAILABLE' }
+    return { error: `source archive を読めない (${path}): ${e.message}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_ARCHIVE_UNREADABLE' }
   }
   const r = readArchiveBuffer(buf, { gzip: /\.(tgz|tar\.gz)$/i.test(path) })
   return r.error ? r : { files: r.files, inventory: r.inventory, rootStripped: r.rootStripped, origin: `archive:${path}` }
@@ -2334,13 +2414,13 @@ function loadFromArchive(path) {
 
 function loadFromDir(dir) {
   const abs = resolve(ROOT, dir)
-  if (!existsSync(abs)) return { error: `source ディレクトリが無い: ${dir}`, kind: 'SOURCE_UNAVAILABLE' }
+  if (!existsSync(abs)) return { error: `source ディレクトリが無い: ${dir}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_DIRECTORY_MISSING' }
   // ファイルを渡されたら archive として読む（**ENOTDIR で落とさない**）
   let rootStat
   try {
     rootStat = lstatSync(abs)
   } catch (e) {
-    return { error: `source を読めない (${dir}): ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE' }
+    return { error: `source を読めない (${dir}): ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_DIRECTORY_UNREADABLE' }
   }
   if (rootStat.isSymbolicLink()) {
     return archiveError('SOURCE_ROOT_SYMLINK', `source がシンボリックリンクである: ${dir}`, { path: dir })
@@ -2393,7 +2473,7 @@ function loadFromDir(dir) {
           : st.isCharacterDevice() ? 'chardev' : st.isBlockDevice() ? 'blockdev' : 'unknown'
         throw new ArchiveUnsupported(
           `扱いを決めていない種別のノードがある（${kind}）: ${r}`,
-          { name: r, nodeKind: kind, stableReasonCode: 'ENTRY_TYPE_UNSUPPORTED' },
+          { name: r, nodeKind: kind, stableReasonCode: 'SOURCE_SPECIAL_NODE' },
         )
       }
 
@@ -2442,6 +2522,7 @@ function loadFromDir(dir) {
     return {
       error: `source ディレクトリを走査できない (${dir}): ${String(e.message).split('\n')[0]}`,
       kind: 'SOURCE_UNAVAILABLE',
+      stableReasonCode: 'SOURCE_DIRECTORY_UNREADABLE',
       detail: { code: e?.code ?? null, path: e?.path ?? null },
     }
   }
@@ -2477,13 +2558,13 @@ function loadFromLocalTag(tag) {
   try {
     execFileSync('git', ['rev-parse', '--verify', `refs/tags/${tag}`], { cwd: ROOT, stdio: ['ignore', 'ignore', 'ignore'] })
   } catch {
-    return { error: `tag ${tag} が手元に無い（fetch していないか、存在しない）`, kind: 'SOURCE_UNAVAILABLE' }
+    return { error: `tag ${tag} が手元に無い（fetch していないか、存在しない）`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_TAG_NOT_LOCAL' }
   }
   let tar
   try {
     tar = execFileSync('git', ['archive', '--format=tar', tag], { cwd: ROOT, maxBuffer: 1 << 30 })
   } catch (e) {
-    return { error: `git archive に失敗: ${e.message}`, kind: 'SOURCE_UNAVAILABLE' }
+    return { error: `git archive に失敗: ${e.message}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_GIT_ARCHIVE_FAILED' }
   }
   const r = readArchiveBuffer(tar, { gzip: false })
   return r.error ? r : { files: r.files, inventory: r.inventory, rootStripped: r.rootStripped, origin: `git-archive:${tag}` }
@@ -2518,7 +2599,7 @@ async function loadFromGithub(tag) {
       kind: 'SOURCE_UNAVAILABLE',
     }
   }
-  if (!res.ok) return { error: `GitHub が ${res.status} ${res.statusText} を返した (${url})`, kind: 'SOURCE_UNAVAILABLE' }
+  if (!res.ok) return { error: `GitHub が ${res.status} ${res.statusText} を返した (${url})`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_HTTP_ERROR' }
   /**
    * **Content-Length は補助にしか使わない。**相手が付けてこないことも、嘘をつくこともある。
    * 付いていて上限を超えていれば、そこで body を読まずに終える。
@@ -2540,7 +2621,7 @@ async function loadFromGithub(tag) {
   } catch (e) {
     if (e instanceof ArchiveUnsupported) return { error: e.message, kind: 'ARCHIVE_UNSUPPORTED', detail: e.detail }
     if (e instanceof ArchiveInvalid) return { error: e.message, kind: 'ARCHIVE_INVALID', detail: e.detail }
-    return { error: `本文を受け取れなかった: ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE' }
+    return { error: `本文を受け取れなかった: ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_BODY_UNREADABLE' }
   }
   const r = readArchiveBuffer(gz, { gzip: true })
   return r.error ? r : { files: r.files, inventory: r.inventory, rootStripped: r.rootStripped, origin: `github-tarball:${REPO}@${tag}` }
@@ -2576,13 +2657,30 @@ const RUN_AS_CLI = (() => {
 if (RUN_AS_CLI) {
   const manifestAbs = resolve(ROOT, MANIFEST)
   if (!existsSync(manifestAbs)) {
-    done({ status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST, reason: 'manifest が無い' }, 2)
+    done({ status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST, reason: 'manifest が無い', stableReasonCode: 'MANIFEST_MISSING' }, 2)
+  }
+  /**
+   * **読めないのと、JSON でないのを分ける（v0.6.15・外部監査 P1-B）。**
+   * v0.6.14 まで 1 つの catch にまとめており、受け手は「権限が無い」と
+   * 「中身が壊れている」を読み分けられなかった——**打つ手がまるで違う。**
+   */
+  let manifestText
+  try {
+    manifestText = readFileSync(manifestAbs, 'utf8')
+  } catch (e) {
+    done({
+      status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST,
+      reason: `manifest を読めない: ${e.message}`, stableReasonCode: 'MANIFEST_UNREADABLE',
+    }, 2)
   }
   let manifest
   try {
-    manifest = JSON.parse(readFileSync(manifestAbs, 'utf8'))
+    manifest = JSON.parse(manifestText)
   } catch (e) {
-    done({ status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST, reason: `manifest を読めない: ${e.message}` }, 2)
+    done({
+      status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST,
+      reason: `manifest が JSON として読めない: ${e.message}`, stableReasonCode: 'MANIFEST_NOT_JSON',
+    }, 2)
   }
 
   const loaded = await (SOURCE_DIR
@@ -2786,6 +2884,7 @@ if (RUN_AS_CLI) {
       origin: loaded.origin,
       manifest: MANIFEST,
       reason: 'manifest の inputFiles が 0 件。**この実行は何も検証していない。**',
+      stableReasonCode: 'MANIFEST_INPUTS_EMPTY',
     }, 2)
   }
 
@@ -2807,6 +2906,31 @@ if (RUN_AS_CLI) {
   const status = bad.length || extra.length || selfReferencing.length
     ? 'MISMATCH'
     : incomplete.length ? 'VERIFICATION_INCOMPLETE' : 'OK'
+
+  /**
+   * **止めた理由の名前を、この 2 つの status にも出す（v0.6.15・外部監査 P1-B）。**
+   *
+   * v0.6.14 まで `stableReasonCode` は archive 系の 2 status にしか出ず、
+   * `MISMATCH` は null、`VERIFICATION_INCOMPLETE` は
+   * **`detection` の中にだけ**理由が入っていた（入れ子を開けないと取れない）。
+   *
+   * `MISMATCH` は 1 実行で複数の食い違いが同時に出る。
+   * **代表を 1 つ選ぶと嘘になる**ので、2 種類以上あれば `MISMATCH_MULTIPLE` と言う。
+   * 内訳は `counts` / `unrecorded` / `selfReferencing` を読むこと。
+   */
+  const mismatchKinds = [
+    bad.some((r) => r.outcome === 'MISMATCH') && 'MISMATCH_RECORDED_DIGEST',
+    bad.some((r) => r.outcome === 'MISSING_IN_SOURCE') && 'MISMATCH_MISSING_INPUT',
+    bad.some((r) => r.outcome === 'RECORDED_INCONSISTENT') && 'MISMATCH_RECORDED_INCONSISTENT',
+    extra.length > 0 && 'MISMATCH_UNRECORDED_INPUT',
+    selfReferencing.length > 0 && 'MISMATCH_SELF_REFERENCING',
+  ].filter(Boolean)
+  const topLevelCode = status === 'MISMATCH'
+    ? (mismatchKinds.length > 1 ? 'MISMATCH_MULTIPLE' : mismatchKinds[0] ?? 'MISMATCH_RECORDED_DIGEST')
+    : status === 'VERIFICATION_INCOMPLETE'
+      ? (loadedScope.unpinned ? 'SCOPE_UNPINNED_ACCEPTED' : loadedScope.code ?? 'SCOPE_ABSENT')
+      : undefined
+  if (topLevelCode) assertCatalogued(topLevelCode)
 
   /**
    * **記録漏れの検出をやったのか、やらなかったのか。**
@@ -2840,6 +2964,7 @@ if (RUN_AS_CLI) {
 
   done({
     status,
+    stableReasonCode: topLevelCode,
     origin: loaded.origin,
     networkUsed: loaded.origin.startsWith('github-tarball'),
     manifest: MANIFEST,

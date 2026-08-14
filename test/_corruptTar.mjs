@@ -126,6 +126,14 @@ export const paxCases = () => {
     return Buffer.concat([Buffer.from(String(len)), body])
   }
   return [
+    /**
+     * **レコードが改行で終わっていない（v0.6.15・外部監査 P1-C）。**
+     * catalog に `PAX_RECORD_INVALID` は在ったのに材料が無かった。
+     */
+    { id: 'pax-record-no-newline', tar: buildTar([
+      { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: '10 bad-record\n' },
+      { name: `${TOP}/a.txt`, data: 'A' },
+    ]) },
     { id: 'pax-x-path', tar: buildTar([
       { name: `${TOP}/PaxHeaders/0/a.txt`, type: 'x', data: rec('path', `${TOP}/renamed.txt`) },
       { name: `${TOP}/a.txt`, data: 'A' },
@@ -724,8 +732,41 @@ export const traversalCases = () => [
   { id: 'trav-backslash', tar: buildTar([{ name: `${TOP}/..\\evil.txt`, data: 'E' }]) },
 ]
 
+/**
+ * **パスの綴り（v0.6.15・外部監査 P1-C）。**
+ *
+ * v0.6.14 の catalog には 55 種類の止め方が載っていたが、
+ * **corpus が踏むのは 37 種類**だった。監査が「残りのうち 10 種類は
+ * 外から作った archive で普通に踏める」と反例つきで指摘し、
+ * こちらで 11/12 件を再現できた（2026-08-14）。
+ *
+ * ここはそのうちパスの綴りに関する 5 件。**どれも実装が受け入れる形**で、
+ * 止めているのはこの道具の方針である
+ * ——同じ場所を別の綴りで指せると、記録との突き合わせが意味を失うため。
+ */
+export const pathSpellingCases = () => [
+  { id: 'spell-drive-letter', tar: buildTar([{ name: 'C:evil.txt', data: 'E' }]) },
+  { id: 'spell-dot-component', tar: buildTar([{ name: `${TOP}/./evil.txt`, data: 'E' }]) },
+  { id: 'spell-double-slash', tar: buildTar([{ name: `${TOP}//evil.txt`, data: 'E' }]) },
+  { id: 'spell-leading-space', tar: buildTar([{ name: `${TOP}/ evil.txt`, data: 'E' }]) },
+  { id: 'spell-control-char', tar: buildTar([{ name: `${TOP}/evil\u0001.txt`, data: 'E' }]) },
+]
+
 /** symlink / hardlink。**リンクをファイルとして扱ったら負け** */
 export const linkCases = () => [
+  /**
+   * **リンクの指す先そのものが壊れている 2 件（v0.6.15・外部監査 P1-C）。**
+   * catalog に `LINK_TARGET_EMPTY` / `LINK_TARGET_NOT_A_PATH` は在ったのに、
+   * **corpus には材料が無く、一度も踏まれていなかった。**
+   */
+  { id: 'link-hardlink-empty-target', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/link`, type: '1', linkname: '' },
+  ]) },
+  { id: 'link-hardlink-dot-target', tar: buildTar([
+    { name: `${TOP}/a.txt`, data: 'A' },
+    { name: `${TOP}/link`, type: '1', linkname: '.' },
+  ]) },
   { id: 'link-symlink-rel', tar: buildTar([
     { name: `${TOP}/a.txt`, data: 'A' },
     { name: `${TOP}/link.txt`, type: '2', linkname: 'a.txt' },
@@ -1411,6 +1452,7 @@ export const allCases = () => ({
   longName: longNameCases(),
   checksum: checksumCases(),
   traversal: traversalCases(),
+  pathSpelling: pathSpellingCases(),
   link: linkCases(),
   resource: resourceCases(),
   entryType: entryTypeCases(),

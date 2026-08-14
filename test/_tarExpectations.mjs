@@ -29,6 +29,8 @@ export const EXPECTED = {
   longName: 'safe',   // 正常な GNU long name は通る。危険なものだけ止まる
   checksum: 'invalid',
   traversal: 'invalid',
+  /** 同じ場所を別の綴りで指せる形（v0.6.15・外部監査 P1-C）。**実装は受け入れる。方針で止める** */
+  pathSpelling: 'invalid',
   link: 'safe',       // リンクは読み飛ばす。止める必要は無い
   resource: 'unsupported',  // 上限は**方針**であって archive の欠陥ではない（v0.6.7）
   entryType: 'unsupported',  // 扱いを決めていない型。**決めていないのは archive の欠陥ではない**（下の個別指定）
@@ -77,6 +79,15 @@ export const EXPECTED = {
  * **期待値を手で書かずにふつうの tar 展開から作る**検査を別に置いた。
  */
 export const EXPECTED_BY_ID = {
+  /**
+   * **v0.6.15（外部監査 P1-C）。**catalog には在るのに材料が無かった止め方。
+   * `link` の既定は `safe`（リンクは読み飛ばす）だが、
+   * **指す先そのものが壊れている 2 件は読み飛ばせない。**
+   */
+  'link-hardlink-empty-target': 'invalid',
+  'link-hardlink-dot-target': 'invalid',
+  /** `pax` の既定は `safe` だが、レコードの形が壊れていれば読めない */
+  'pax-record-no-newline': 'invalid',
   // 'pax-x-path' は **safe**。v0.6.3 で `path=` を解釈するようにしたので、展開結果と一致する
   'pax-x-size-override': 'invalid',  // size 上書き → 読む長さが食い違う
   'gnu-L-traversal': 'invalid',
