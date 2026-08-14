@@ -324,13 +324,19 @@ export const REASON_CODES = {
   SOURCE_ARCHIVE_UNREADABLE: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'archive ファイルを読めない' },
   SOURCE_DIRECTORY_MISSING: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '指定した directory が無い' },
   SOURCE_TAG_NOT_LOCAL: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'tag が手元に無い' },
-  SOURCE_GIT_ARCHIVE_FAILED: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'git archive が失敗した' },
-  SOURCE_FETCH_FAILED: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub へ繋がらない' },
-  SOURCE_HTTP_ERROR: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub が異常応答を返した' },
-  SOURCE_BODY_UNREADABLE: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '応答本文を受け取れない' },
-  SOURCE_FETCH_TIMEOUT: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub からの応答が時間内に来ない' },
+  /**
+   * **v0.6.16: 実測で到達した（外部監査 P1）。**
+   * v0.6.15 は「この run で出なかった」ことを根拠に `defensive-invariant` と宣言したが、
+   * **出なかったのは、その経路を踏む試験を書いていなかったからだった。**
+   * 依存注入（PATH の git 差し替え）で `git rev-parse` は通し `git archive` だけ失敗させると出る。
+   */
+  SOURCE_GIT_ARCHIVE_FAILED: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'git archive が失敗した' },
+  SOURCE_FETCH_FAILED: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub へ繋がらない' },
+  SOURCE_HTTP_ERROR: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub が異常応答を返した' },
+  SOURCE_BODY_UNREADABLE: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '応答本文を受け取れない' },
+  SOURCE_FETCH_TIMEOUT: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'GitHub からの応答が時間内に来ない' },
   /** `--source` も `--tag` も渡されていない。**呼び方の誤りで、source が壊れているわけではない** */
-  CLI_ARGUMENTS_MISSING: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'usage', summary: '--source も --tag も無い' },
+  CLI_ARGUMENTS_MISSING: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'usage', summary: '--source も --tag も無い' },
 
   // ---- manifest を読めなかった ----
   MANIFEST_MISSING: { reachability: 'cli-route', status: 'MANIFEST_UNAVAILABLE', family: 'manifest', summary: 'manifest が無い' },

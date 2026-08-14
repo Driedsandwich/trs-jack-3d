@@ -40,6 +40,7 @@ import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { allCases, normalTar } from './_corruptTar.mjs'
 import { REASON_CODES, TAR_LIMITS, readArchiveBuffer, readBodyLimited } from '../scripts/verifyReleaseSourceInputs.mjs'
+import { injectedRoutes } from './_cliRoutes.mjs'
 import { mustBeNonEmpty } from './_must'
 
 const ROOT = resolve(__dirname, '..')
@@ -113,6 +114,34 @@ for (const [kind, list] of Object.entries(allCases() as Record<string, { id: str
 }
 
 describe('catalog の到達性の宣言が、実測と合っているか', () => {
+  /**
+   * **契約の検査と同じ route 表を使う（v0.6.16・外部監査 P1）。**
+   *
+   * v0.6.15 はここに**自分だけの一覧**を持っていた。そこに書かなかった経路は
+   * 当然「出なかった」ので、`SOURCE_HTTP_ERROR` など 4 件を
+   * **「外部入力から到達しない」と宣言して公開した。**外部監査が全件実経路だと示した。
+   *
+   * **route の母集団を 2 か所で持たない。**表は `test/_cliRoutes.mjs` の 1 つだけ。
+   */
+  it.each(injectedRoutes(tmps).map((r) => [r.label, r.code, r] as const))(
+    '注入で踏む: %s → %s',
+    (_label, want, route) => {
+      const argv = [...(route.preload ? ['--import', route.preload] : []),
+        'scripts/verifyReleaseSourceInputs.mjs', ...route.args]
+      let json: Record<string, unknown> = {}
+      try {
+        json = JSON.parse(execFileSync('node', argv, {
+          cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28,
+          stdio: ['ignore', 'pipe', 'ignore'], env: { ...process.env, ...route.env },
+        }))
+      } catch (e) {
+        try { json = JSON.parse(String((e as { stdout?: string }).stdout ?? '{}')) } catch { /* JSON が出ない経路 */ }
+      }
+      expect(json.stableReasonCode).toBe(want)
+      see(json.stableReasonCode, `injected:${want}`)
+    },
+  )
+
   it('壊れた gzip → GZIP_DECODE_FAILED', () => {
     const d = tmpDir()
     const p = join(d, 'bad.tar.gz')
