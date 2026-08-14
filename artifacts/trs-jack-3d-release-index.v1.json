@@ -4,8 +4,8 @@
  "generatedAt": "2026-08-14",
  "releaseTag": null,
  "releaseCommit": null,
- "evidenceBuiltAtCommit": "40c783f16adb4ca75fd07ffc98b7a45aa0df476f",
- "artifactGenerationCommit": "64ea10a82c415cf334e0460989ff7be72324e5d1",
+ "evidenceBuiltAtCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae",
+ "artifactGenerationCommit": "a28ce75b31e6897dad204536d5ba7f8e5dfb19ca",
  "artifactGenerationCommits": [
   {
    "commit": "1c79e059d865895d717786a1f3d4a53c49821897",
@@ -14,7 +14,7 @@
    ]
   },
   {
-   "commit": "40c783f16adb4ca75fd07ffc98b7a45aa0df476f",
+   "commit": "68a54d542f33c9c067c3891b5422b8e0e0226eae",
    "assets": [
     "source-input-manifest.json",
     "source-snapshot.v1.json",
@@ -23,7 +23,7 @@
    ]
   },
   {
-   "commit": "52608254f91a08aeddc6103684d1ee2a3747cfd9",
+   "commit": "891b7f1a87962d590facb79e2b156cb03e5a1ec8",
    "assets": [
     "sensitivity.trs_jack_trrs.json",
     "sensitivity.trs_jack_trs.json",
@@ -31,7 +31,7 @@
    ]
   },
   {
-   "commit": "64ea10a82c415cf334e0460989ff7be72324e5d1",
+   "commit": "a28ce75b31e6897dad204536d5ba7f8e5dfb19ca",
    "assets": [
     "half_plug_topology_profile.v3.trs_jack_trrs.json",
     "half_plug_topology_profile.v3.trs_jack_trs.json"
@@ -43,28 +43,28 @@
  "profiles": {
   "TRS|JACK-TRS": {
    "filename": "half_plug_topology_profile.v3.trs_jack_trs.json",
-   "profileId": "trs-jack-3d:TRS|JACK-TRS:864677448069",
-   "inputDigest": "8646774480692869fb414bcd1f55eb81b2c05f192cd24a344c2904559e68c8a5",
-   "sha256": "7fd5623e00ad5a86e894a299be809b2ab8a0f475c086c58cc4138fa90fcc6307",
-   "generatedFromCommit": "64ea10a82c415cf334e0460989ff7be72324e5d1",
+   "profileId": "trs-jack-3d:TRS|JACK-TRS:1ee9fcdb2c88",
+   "inputDigest": "1ee9fcdb2c88a19ca7e1a352cf8fc352d99060b6f610b2c6ca416df98115a676",
+   "sha256": "f303e3b58a2942fef9d4fe6cdf5658ccf64f44c97b9d6fe3ede1cf776122e6f7",
+   "generatedFromCommit": "a28ce75b31e6897dad204536d5ba7f8e5dfb19ca",
    "sensitivityAsset": {
     "filename": "sensitivity.trs_jack_trs.json",
-    "sha256": "956f0ef057f2ce6c7b55bfe2d8155a52d52df68bcfca3d7de3b3aab5a28bf82f",
-    "inputDigest": "73d64f71c92204309c8d433ee3ffab969d8c132469e9e07713a010ebc78ede4f",
-    "generatedFromCommit": "52608254f91a08aeddc6103684d1ee2a3747cfd9"
+    "sha256": "5bc2be8f693ba39d58a49aaf3683aab6d477fde6d5822dffc04d32436f6ed0ce",
+    "inputDigest": "f28e6a8f63551f53deb7c6878f860e4a4c1f06257552afc73ae2fe302dc947b6",
+    "generatedFromCommit": "891b7f1a87962d590facb79e2b156cb03e5a1ec8"
    }
   },
   "TRS|JACK-TRRS": {
    "filename": "half_plug_topology_profile.v3.trs_jack_trrs.json",
-   "profileId": "trs-jack-3d:TRS|JACK-TRRS:a5cf46509971",
-   "inputDigest": "a5cf465099710f909ac5fd74f004247ff407f22eddd8f54676adbbfdde21cea2",
-   "sha256": "cc77dd9110f415121901cfbdcd312fad19fc8830fb3ef819b7ee487ee44cee0f",
-   "generatedFromCommit": "64ea10a82c415cf334e0460989ff7be72324e5d1",
+   "profileId": "trs-jack-3d:TRS|JACK-TRRS:2eb28f2d173e",
+   "inputDigest": "2eb28f2d173ef00c33560b5800dbac4c2c2b773bad631424a82350fcd7467ce3",
+   "sha256": "4350c8d559342c49e3880cb34b2ce524d0eb1b0f328946b21fe0d5b0de10cf18",
+   "generatedFromCommit": "a28ce75b31e6897dad204536d5ba7f8e5dfb19ca",
    "sensitivityAsset": {
     "filename": "sensitivity.trs_jack_trrs.json",
-    "sha256": "f100c6d24c92ec3076f70a2b52ced75818f8f314a44c5588a31d01b8c582c357",
-    "inputDigest": "7b6e22ca9803de35679219f19924341d7a85bac783c27a85eea111c7ce972b5b",
-    "generatedFromCommit": "52608254f91a08aeddc6103684d1ee2a3747cfd9"
+    "sha256": "9eaa03ada10afb2087e30a0efceda7161eb5a0a7af069fe568941b8098abeac7",
+    "inputDigest": "661a5de8770c3f68d03ac2bacc8ccb9bc921b44d5e2d98187a44b36414e41939",
+    "generatedFromCommit": "891b7f1a87962d590facb79e2b156cb03e5a1ec8"
    }
   }
  },
@@ -86,19 +86,19 @@
   },
   {
    "filename": "half_plug_topology_profile.v3.trs_jack_trrs.json",
-   "sha256": "cc77dd9110f415121901cfbdcd312fad19fc8830fb3ef819b7ee487ee44cee0f",
+   "sha256": "4350c8d559342c49e3880cb34b2ce524d0eb1b0f328946b21fe0d5b0de10cf18",
    "role": "profile",
-   "generatedFromCommit": "64ea10a82c415cf334e0460989ff7be72324e5d1",
-   "inputDigest": "a5cf465099710f909ac5fd74f004247ff407f22eddd8f54676adbbfdde21cea2",
-   "profileId": "trs-jack-3d:TRS|JACK-TRRS:a5cf46509971"
+   "generatedFromCommit": "a28ce75b31e6897dad204536d5ba7f8e5dfb19ca",
+   "inputDigest": "2eb28f2d173ef00c33560b5800dbac4c2c2b773bad631424a82350fcd7467ce3",
+   "profileId": "trs-jack-3d:TRS|JACK-TRRS:2eb28f2d173e"
   },
   {
    "filename": "half_plug_topology_profile.v3.trs_jack_trs.json",
-   "sha256": "7fd5623e00ad5a86e894a299be809b2ab8a0f475c086c58cc4138fa90fcc6307",
+   "sha256": "f303e3b58a2942fef9d4fe6cdf5658ccf64f44c97b9d6fe3ede1cf776122e6f7",
    "role": "profile",
-   "generatedFromCommit": "64ea10a82c415cf334e0460989ff7be72324e5d1",
-   "inputDigest": "8646774480692869fb414bcd1f55eb81b2c05f192cd24a344c2904559e68c8a5",
-   "profileId": "trs-jack-3d:TRS|JACK-TRS:864677448069"
+   "generatedFromCommit": "a28ce75b31e6897dad204536d5ba7f8e5dfb19ca",
+   "inputDigest": "1ee9fcdb2c88a19ca7e1a352cf8fc352d99060b6f610b2c6ca416df98115a676",
+   "profileId": "trs-jack-3d:TRS|JACK-TRS:1ee9fcdb2c88"
   },
   {
    "filename": "half-plug-topology-profile.v3.schema.json",
@@ -112,23 +112,23 @@
   },
   {
    "filename": "sensitivity.trs_jack_trrs.json",
-   "sha256": "f100c6d24c92ec3076f70a2b52ced75818f8f314a44c5588a31d01b8c582c357",
+   "sha256": "9eaa03ada10afb2087e30a0efceda7161eb5a0a7af069fe568941b8098abeac7",
    "role": "sensitivity",
-   "generatedFromCommit": "52608254f91a08aeddc6103684d1ee2a3747cfd9",
-   "inputDigest": "7b6e22ca9803de35679219f19924341d7a85bac783c27a85eea111c7ce972b5b"
+   "generatedFromCommit": "891b7f1a87962d590facb79e2b156cb03e5a1ec8",
+   "inputDigest": "661a5de8770c3f68d03ac2bacc8ccb9bc921b44d5e2d98187a44b36414e41939"
   },
   {
    "filename": "sensitivity.trs_jack_trs.json",
-   "sha256": "956f0ef057f2ce6c7b55bfe2d8155a52d52df68bcfca3d7de3b3aab5a28bf82f",
+   "sha256": "5bc2be8f693ba39d58a49aaf3683aab6d477fde6d5822dffc04d32436f6ed0ce",
    "role": "sensitivity",
-   "generatedFromCommit": "52608254f91a08aeddc6103684d1ee2a3747cfd9",
-   "inputDigest": "73d64f71c92204309c8d433ee3ffab969d8c132469e9e07713a010ebc78ede4f"
+   "generatedFromCommit": "891b7f1a87962d590facb79e2b156cb03e5a1ec8",
+   "inputDigest": "f28e6a8f63551f53deb7c6878f860e4a4c1f06257552afc73ae2fe302dc947b6"
   },
   {
    "filename": "source-input-manifest.json",
-   "sha256": "d2ede04d0967ab1403b66d0914668aa97b4743eb6a911b9e284a62fd9d2e91cf",
+   "sha256": "5d7f1bc1d20046fb816548afddec470fa804b1d50febfc2aea9966033d02bc14",
    "role": "evidence",
-   "generatedFromCommit": "40c783f16adb4ca75fd07ffc98b7a45aa0df476f"
+   "generatedFromCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae"
   },
   {
    "filename": "source-input-manifest.v2.schema.json",
@@ -147,9 +147,9 @@
   },
   {
    "filename": "source-snapshot.v1.json",
-   "sha256": "8e49e7b2003040fdd012caf8c2d35c85e74d29340a907753e8c427ca50738d45",
+   "sha256": "b4edb5620ed016ae433060bd1c406195f7aeaef438e8048cbb8642c632ef241b",
    "role": "evidence",
-   "generatedFromCommit": "40c783f16adb4ca75fd07ffc98b7a45aa0df476f"
+   "generatedFromCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae"
   },
   {
    "filename": "source-snapshot.v1.schema.json",
@@ -158,9 +158,9 @@
   },
   {
    "filename": "source-verification-result.json",
-   "sha256": "a104badd43d4c84f04b388ef9d27473b1f7beb476d0add0b8f88f1a0647bb785",
+   "sha256": "9b37f27453a98e6aed084f09ae8639c9cdbe7ffeb108fcf374641273ab3a9344",
    "role": "evidence",
-   "generatedFromCommit": "40c783f16adb4ca75fd07ffc98b7a45aa0df476f"
+   "generatedFromCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae"
   },
   {
    "filename": "source-verification-result.v1.schema.json",
@@ -185,10 +185,10 @@
   },
   {
    "filename": "topology-robustness.trs_jack_trrs.json",
-   "sha256": "247209f56f6ccc5768721eb3ff4cf10f7298dbf2f93e1985d418e0310649c49c",
+   "sha256": "9bac1f2431343649e1e438dbf3d64c1fee691fb72ca005defa458c44ec8e659d",
    "role": "robustness",
-   "generatedFromCommit": "52608254f91a08aeddc6103684d1ee2a3747cfd9",
-   "inputDigest": "d0b4cfe2ba6f425baf629a46e71e15bab90aa893325d73d53a84ba0e30dc12c5"
+   "generatedFromCommit": "891b7f1a87962d590facb79e2b156cb03e5a1ec8",
+   "inputDigest": "aec3b86433a47f3f71eea57d287637247e1b96b1d13d22efc511413f77763f00"
   },
   {
    "filename": "topology-robustness.v3.schema.json",
@@ -207,9 +207,9 @@
   },
   {
    "filename": "validation-results.json",
-   "sha256": "191453ff82e3b655deb928e32da89611237394a527e60f43fc69b99af16724ee",
+   "sha256": "8cb9640e1ff6fa37a415263f44165906c780ed4cdd1d4d6e108a4b2e0510ef27",
    "role": "evidence",
-   "generatedFromCommit": "40c783f16adb4ca75fd07ffc98b7a45aa0df476f"
+   "generatedFromCommit": "68a54d542f33c9c067c3891b5422b8e0e0226eae"
   },
   {
    "filename": "validation-results.v2.schema.json",
