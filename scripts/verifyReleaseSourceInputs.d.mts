@@ -1,6 +1,13 @@
 /** 道具の版。判定の意味を変えたら上げる */
 export declare const TOOL_VERSION: number
 
+/** 出力契約の版・schemaId・配布 path。**版数の正本はここ 1 か所**（v0.6.17） */
+export declare const CLI_RESULT_SCHEMA_VERSION: number
+export declare const CLI_RESULT_SCHEMA_ID: string
+export declare const CLI_RESULT_SCHEMA_PATH: string
+/** その契約版を出し始めた道具の版。上げない */
+export declare const CLI_RESULT_MIN_TOOL_VERSION: number
+
 /**
  * 信頼できない archive を読むための上限。
  * 値は v0.5.2 の実物を測ってから決めた（→ 本体の JSDoc）。

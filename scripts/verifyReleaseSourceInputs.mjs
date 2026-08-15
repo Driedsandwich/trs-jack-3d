@@ -387,7 +387,34 @@ export function statusOf(code) {
   return assertCatalogued(code) && REASON_CODES[code].status
 }
 
-export const TOOL_VERSION = 19
+export const TOOL_VERSION = 20
+
+/**
+ * **出力契約の版（v0.6.17・外部監査 P0）。**
+ *
+ * v0.6.16 は `stableReasonCode` へ 2 値、`reasonCodeFamilies` へ `usage` を足しながら
+ * **`schemaVersion` を 1 のまま配った。**言語が広がっているので、条文
+ * （`docs/SCHEMA_VERSIONING_POLICY.md`）では `BUMP` である。実測（2026-08-15）:
+ *
+ * ```
+ * diffSchemaObjects(v0.6.15 の v1, v0.6.16 の v1) = BUMP（WIDEN 3 件）
+ * v0.6.16 の出力を v0.6.15 の v1 schema で検証 → **不適合**
+ *   ——`OK` の正常な出力までも落ちる。`usage` は archivePolicy に載るので全出力に出る
+ * ```
+ *
+ * **版数と schemaId とファイル名は、ここ 1 か所から決める。**
+ * v0.6.16 まで、出力側（`done`）と生成器（`syncCliResultSchema.mjs`）が
+ * 別々に文字列を持っていた——**同じ境界を 2 つの一覧で持つ**形である。
+ */
+export const CLI_RESULT_SCHEMA_VERSION = 2
+export const CLI_RESULT_SCHEMA_ID = `trs-jack-3d-source-verifier-cli-result.v${CLI_RESULT_SCHEMA_VERSION}`
+export const CLI_RESULT_SCHEMA_PATH = `schemas/source-verifier-cli-result.v${CLI_RESULT_SCHEMA_VERSION}.schema.json`
+/**
+ * **この契約の版を出し始めた道具の版。上げない。**
+ * `TOOL_VERSION` に連動させると、道具の版を上げるたびに schema が狭まり、
+ * **保存済みの v2 出力を後から弾く。**
+ */
+export const CLI_RESULT_MIN_TOOL_VERSION = 20
 
 /**
  * **この道具が出しうる status と、そのときの終了コード（v0.6.11・外部監査 §7）。**
@@ -520,8 +547,8 @@ const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
  */
 const done = (payload, code) => {
   const out = {
-    schemaVersion: 1,
-    schemaId: 'trs-jack-3d-source-verifier-cli-result.v1',
+    schemaVersion: CLI_RESULT_SCHEMA_VERSION,
+    schemaId: CLI_RESULT_SCHEMA_ID,
     kind: 'source-verifier-cli-result',
     toolVersion: TOOL_VERSION,
     exitCode: code,

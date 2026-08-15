@@ -22,12 +22,12 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import Ajv from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
-import { CLI_STATUSES, CLI_STATUS_EXIT } from '../scripts/verifyReleaseSourceInputs.mjs'
+import { CLI_RESULT_SCHEMA_PATH, CLI_STATUSES, CLI_STATUS_EXIT } from '../scripts/verifyReleaseSourceInputs.mjs'
 import { mustBeNonEmpty } from './_must'
 import { expectedOutcome } from './_tarExpectations.mjs'
 
 const ROOT = resolve(__dirname, '..')
-const SCHEMA_PATH = 'schemas/source-verifier-cli-result.v1.schema.json'
+const SCHEMA_PATH = CLI_RESULT_SCHEMA_PATH
 const SCHEMA = JSON.parse(readFileSync(resolve(ROOT, SCHEMA_PATH), 'utf8'))
 const validate = new Ajv({ allErrors: true, strict: false }).compile(SCHEMA)
 
@@ -77,7 +77,7 @@ const CASES: readonly (readonly [string, string[]])[] = [
   })), '--source', '.']],
 ]
 
-describe('source-verifier-cli-result.v1 — 受け手向けの契約', () => {
+describe('source-verifier-cli-result — 受け手向けの契約', () => {
   it('**schema は Draft-07 として成立している**', () => {
     expect(SCHEMA.$schema).toBe('http://json-schema.org/draft-07/schema#')
     expect(typeof validate).toBe('function')

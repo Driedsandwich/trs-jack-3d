@@ -15,6 +15,8 @@
  * 検証結果と入力一覧を渡さなければ、「こちらでは通っている」を確かめられない。
  */
 
+import { CLI_RESULT_SCHEMA_PATH } from './verifyReleaseSourceInputs.mjs'
+
 export const RELEASE_ASSETS = [
   // --- 本体 ---
   { path: 'artifacts/half_plug_topology_profile.v3.trs_jack_trs.json', role: 'profile' },
@@ -36,8 +38,11 @@ export const RELEASE_ASSETS = [
    * **受け手が回した結果の契約（v0.6.11・外部監査 §7）。**
    * 上の `source-verification-result.v1` は**こちらが回した記録**で、出る status が違う。
    * 記録側の enum を CLI の一覧として読むと取りこぼすので、別の schema にして同梱する。
+   *
+   * **path は道具から引く（v0.6.17・外部監査 P0）。**ここに文字列で書いていたので、
+   * v0.6.16 で契約が広がっても**一覧の側は v1 を配り続けられる**形になっていた。
    */
-  { path: 'schemas/source-verifier-cli-result.v1.schema.json', role: 'schema' },
+  { path: CLI_RESULT_SCHEMA_PATH, role: 'schema' },
   { path: 'schemas/topology-search.v1.schema.json', role: 'schema' },
   { path: 'schemas/real-jack-comparison.v1.schema.json', role: 'schema' },
   { path: 'schemas/test-counts.v2.schema.json', role: 'schema' },

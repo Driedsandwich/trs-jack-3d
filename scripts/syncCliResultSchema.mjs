@@ -18,10 +18,23 @@
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { ARCHIVE_POLICY, REASON_CODES, TAR_LIMITS } from './verifyReleaseSourceInputs.mjs'
+import {
+  ARCHIVE_POLICY,
+  CLI_RESULT_MIN_TOOL_VERSION,
+  CLI_RESULT_SCHEMA_ID,
+  CLI_RESULT_SCHEMA_PATH,
+  CLI_RESULT_SCHEMA_VERSION,
+  REASON_CODES,
+  TAR_LIMITS,
+} from './verifyReleaseSourceInputs.mjs'
 
 const ROOT = process.cwd()
-export const CLI_RESULT_SCHEMA_PATH = 'schemas/source-verifier-cli-result.v1.schema.json'
+/**
+ * **path も版数も道具から引く（v0.6.17・外部監査 P0）。**
+ * v0.6.16 まで、ここは `...v1.schema.json` という文字列を自分で持っていた。
+ * 道具が版を上げても生成器は古いファイルを書き続ける——**同じ境界の 2 つ目の一覧**である。
+ */
+export { CLI_RESULT_SCHEMA_PATH }
 
 /** 道具から決まる部分だけを差し替えた schema を返す（元の説明文は保つ） */
 export function syncedSchema(root = ROOT) {
@@ -29,6 +42,14 @@ export function syncedSchema(root = ROOT) {
   const ap = s.properties.archivePolicy.properties
   const cov = ARCHIVE_POLICY.coverage
 
+  s.properties.schemaVersion.const = CLI_RESULT_SCHEMA_VERSION
+  s.properties.schemaId.const = CLI_RESULT_SCHEMA_ID
+  /**
+   * **この版を出し始めた道具の版。動かさない。**
+   * `TOOL_VERSION` に連動させると、版を上げるたびに schema が狭まり、
+   * **保存済みの v2 出力を後から弾く**（historical-instance 側が壊れる）。
+   */
+  s.properties.toolVersion.minimum = CLI_RESULT_MIN_TOOL_VERSION
   s.properties.stableReasonCode.enum = [...Object.keys(REASON_CODES).sort(), null]
   ap.policyId.const = ARCHIVE_POLICY.policyId
   ap.acceptedTypeflags.items.enum = [...ARCHIVE_POLICY.acceptedTypeflags]

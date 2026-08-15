@@ -27,17 +27,21 @@
  * 出力は毎回 ajv で公開 schema に掛ける——status と code だけ見て満足しない。
  */
 
-import { execFileSync } from 'node:child_process'
-import { readFileSync, rmSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 import Ajv from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
-import { CLI_STATUS_EXIT, INTERNAL_FAILURE_EXIT, REASON_CODES } from '../scripts/verifyReleaseSourceInputs.mjs'
+import {
+  CLI_RESULT_SCHEMA_PATH, CLI_STATUS_EXIT, INTERNAL_CONTRACT_FAILURE_MARKER,
+  INTERNAL_FAILURE_EXIT, REASON_CODES,
+} from '../scripts/verifyReleaseSourceInputs.mjs'
 import { injectedRoutes } from './_cliRoutes.mjs'
 import { mustBeNonEmpty } from './_must'
 
 const ROOT = resolve(__dirname, '..')
-const SCHEMA = JSON.parse(readFileSync(resolve(ROOT, 'schemas/source-verifier-cli-result.v1.schema.json'), 'utf8'))
+const SCHEMA = JSON.parse(readFileSync(resolve(ROOT, CLI_RESULT_SCHEMA_PATH), 'utf8'))
 const validate = new Ajv({ allErrors: true, strict: false }).compile(SCHEMA)
 
 const tmps: string[] = []

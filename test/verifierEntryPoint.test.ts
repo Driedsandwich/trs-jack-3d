@@ -31,6 +31,7 @@ import { copyFileSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'n
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
+import { CLI_RESULT_SCHEMA_ID } from '../scripts/verifyReleaseSourceInputs.mjs'
 
 const ROOT = resolve(__dirname, '..')
 const VERIFIER = resolve(ROOT, 'scripts/verifyReleaseSourceInputs.mjs')
@@ -78,7 +79,7 @@ describe('検算ツールの入口 — 名前を変えても黙らない', () =>
     expect(r.out.length, `${name}: **無言で終わった**（終了コードだけ見る受け手には合格に見える）`)
       .toBeGreaterThan(0)
     const j = JSON.parse(r.out)
-    expect(j.schemaId).toBe('trs-jack-3d-source-verifier-cli-result.v1')
+    expect(j.schemaId).toBe(CLI_RESULT_SCHEMA_ID)
     expect(j.status, `${name}: status が出ていない`).toBeTypeOf('string')
   })
 

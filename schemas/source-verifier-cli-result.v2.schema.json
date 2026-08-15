@@ -1,0 +1,518 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/source-verifier-cli-result.v2.schema.json",
+  "title": "trs-jack-3d source verifier CLI result v2",
+  "description": "同梱の verifyReleaseSourceInputs.mjs が標準出力へ書く JSON の契約。**受け手が回した結果**の形であって、こちらが回した記録（source-verification-result.v1）とは別物である。出る status が違う——作業ツリーを読む経路では archive 系が出ないため、記録側の enum を CLI の一覧として読むと取りこぼす。この schema は**実際に出るものだけ**を書く。出ない値を enum へ入れると、schema が「出うる」と嘘をつく。\n\n**v1 との違い（v0.6.17・外部監査 P0）。**v0.6.16 は v1 を名乗ったまま言語を広げていた——`stableReasonCode` へ CLI_ARGUMENTS_MISSING と SOURCE_FETCH_TIMEOUT、`reasonCodeFamilies` へ usage。後者は archivePolicy に載るので、**`OK` の正常な出力までも v1 では落ちる。**条文どおり版を上げた。**v1 のファイルは変更していない**ので、v0.6.16 以前が出した記録はその版と一緒に配った v1 で検証すること（結果ごとに突合先を固定する方針・docs/SCHEMA_VERSIONING_POLICY.md 第7条）。",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "schemaId",
+    "kind",
+    "toolVersion",
+    "exitCode",
+    "stableReasonCode",
+    "archivePolicy",
+    "status",
+    "manifest"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "schemaId": {
+      "const": "trs-jack-3d-source-verifier-cli-result.v2"
+    },
+    "kind": {
+      "const": "source-verifier-cli-result"
+    },
+    "toolVersion": {
+      "type": "integer",
+      "minimum": 20,
+      "description": "この契約（v2）を名乗るのは v20 以降。**判定の意味を変えたら上げる**ので、受け手はこれで挙動を見分けられる。**この床は動かさない**——道具の版に連動させると、版を上げるたびに保存済みの v2 出力を後から弾く。"
+    },
+    "exitCode": {
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "description": "0=OK / 1=不一致か工程未了 / 2=source・manifest を取れない、範囲の外、壊れている。**JSON を保存したあとで終了コードを復元できない**ので出力にも入れる。"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OK",
+        "MISMATCH",
+        "VERIFICATION_INCOMPLETE",
+        "ARCHIVE_INVALID",
+        "ARCHIVE_UNSUPPORTED",
+        "SOURCE_UNAVAILABLE",
+        "MANIFEST_UNAVAILABLE",
+        "NOTHING_TO_VERIFY"
+      ],
+      "description": "**`OK` は必須の工程が全部終わったときだけ。**記録漏れの探索をしていなければ VERIFICATION_INCOMPLETE になる（**v0.4.0 より前の tag はこれに当たる。v0.3.0 自身も対象**——範囲定義 inputScope が入ったのは v0.4.0 から。21 tag すべてをその tag の source に対して走らせて実測した）。**監査の草案にある INTERNAL_ERROR は入れていない**——この道具は出さないため。出さない値を enum へ書くと、受け手が来ない分岐を実装することになる。"
+    },
+    "stableReasonCode": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "ANCESTOR_TYPE_CONFLICT",
+        "CLI_ARGUMENTS_MISSING",
+        "DUPLICATE_PATH_CONFLICT",
+        "END_OF_ARCHIVE_LONE_ZERO_BLOCK",
+        "END_OF_ARCHIVE_MISSING",
+        "ENTRY_BODY_ON_BODYLESS_TYPE",
+        "ENTRY_BODY_TRUNCATED",
+        "ENTRY_TYPE_UNSUPPORTED",
+        "EXTENSION_HEADER_DANGLING",
+        "EXTENSION_HEADER_SEQUENCE_UNSUPPORTED",
+        "EXTENSION_NAME_EMPTY",
+        "EXTENSION_OVERRIDE_CONFLICT",
+        "GZIP_DECODE_FAILED",
+        "HARDLINK_CHAIN_UNRESOLVED",
+        "HARDLINK_SELF_REFERENCE",
+        "HARDLINK_TARGET_MISSING",
+        "HARDLINK_TARGET_NOT_A_FILE",
+        "HEADER_CHECKSUM_MISMATCH",
+        "HEADER_FORMAT_PREFIX_CONFLICT",
+        "HEADER_NUMERIC_FIELD_BASE256_UNSUPPORTED",
+        "HEADER_NUMERIC_FIELD_RANGE",
+        "HEADER_NUMERIC_FIELD_SYNTAX",
+        "LIMIT_BODY_BYTES_UNSUPPORTED",
+        "LIMIT_COMPRESSED_BYTES_UNSUPPORTED",
+        "LIMIT_ENTRY_BYTES_UNSUPPORTED",
+        "LIMIT_ENTRY_COUNT_UNSUPPORTED",
+        "LIMIT_TOTAL_BYTES_UNSUPPORTED",
+        "LINK_TARGET_EMPTY",
+        "LINK_TARGET_NOT_A_PATH",
+        "LINK_TARGET_NOT_CANONICAL",
+        "LINK_TARGET_TRAILING_SLASH",
+        "MANIFEST_INPUTS_EMPTY",
+        "MANIFEST_MISSING",
+        "MANIFEST_NOT_JSON",
+        "MANIFEST_UNREADABLE",
+        "MISMATCH_MISSING_INPUT",
+        "MISMATCH_MULTIPLE",
+        "MISMATCH_RECORDED_DIGEST",
+        "MISMATCH_RECORDED_INCONSISTENT",
+        "MISMATCH_SELF_REFERENCING",
+        "MISMATCH_UNRECORDED_INPUT",
+        "PATH_ABSOLUTE",
+        "PATH_BACKSLASH_UNSUPPORTED",
+        "PATH_CONTROL_CHARACTER",
+        "PATH_DRIVE_LETTER",
+        "PATH_EMPTY_COMPONENT",
+        "PATH_EMPTY_NAME",
+        "PATH_NOT_CANONICAL",
+        "PATH_SURROUNDING_SPACE",
+        "PATH_TOO_LONG_UNSUPPORTED",
+        "PATH_TRAILING_SLASH_TYPE_CONFLICT",
+        "PATH_TRAVERSAL",
+        "PAX_GLOBAL_NAME_OVERRIDE",
+        "PAX_KEY_DANGEROUS",
+        "PAX_KEY_UNSUPPORTED",
+        "PAX_RECORD_INVALID",
+        "PAX_VALUE_RANGE",
+        "PAX_VALUE_SYNTAX",
+        "PAX_ZERO_LENGTH_NAME_AMBIGUOUS",
+        "PAX_ZERO_LENGTH_VALUE_INVALID",
+        "ROOT_STRIP_NOT_A_DIRECTORY",
+        "SCOPE_ABSENT",
+        "SCOPE_NOT_PINNED",
+        "SCOPE_SCHEMA_INVALID",
+        "SCOPE_SHA256_MISMATCH",
+        "SCOPE_UNPARSEABLE",
+        "SCOPE_UNPINNED_ACCEPTED",
+        "SCOPE_UNREADABLE",
+        "SOURCE_ARCHIVE_MISSING",
+        "SOURCE_ARCHIVE_UNREADABLE",
+        "SOURCE_BODY_UNREADABLE",
+        "SOURCE_DIRECTORY_MISSING",
+        "SOURCE_DIRECTORY_UNREADABLE",
+        "SOURCE_FETCH_FAILED",
+        "SOURCE_FETCH_TIMEOUT",
+        "SOURCE_GIT_ARCHIVE_FAILED",
+        "SOURCE_HTTP_ERROR",
+        "SOURCE_ROOT_SYMLINK",
+        "SOURCE_SPECIAL_NODE",
+        "SOURCE_TAG_NOT_LOCAL",
+        "TEXT_CONTAINS_NUL",
+        "TEXT_NOT_UTF8",
+        null
+      ],
+      "description": "止めた理由の、文章とは別の**変わらない名前**。文章は版ごとに書き換わるので、機械で分岐するならこちらを見る。**v0.6.15 で OK 以外のすべての status に付くようになった**（v0.6.14 までは archive 系の 2 つだけ）。一覧は道具の REASON_CODES が正本で、この enum はそれと過不足なく一致することを試験が確かめている。欄名・型・パスの具体値は detail に入る（**欄ごとの code は作らない**）。 **`OK` のときだけ null。**この「OK 以外は必ず入る」規則を schema の if/then/else では書いていない——版数判定器が扱えない構文で、入れると**この schema の今後の差分がすべて判定不能（=無条件で版上げ）になる。**規則は道具の側（catalog に無い名前は例外）と試験（全 status の経路を実際に踏んで確かめる）で担保している。"
+    },
+    "reason": {
+      "type": "string",
+      "description": "人が読む説明。**分岐に使わない**（版ごとに書き換わる）"
+    },
+    "detail": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "archivePolicy": {
+      "type": "object",
+      "description": "**この道具が受け入れる archive の範囲。**受け手が「何を通す道具か」を機械で読めるようにする。ここに無い形は status で止まる。**v0.6.15（外部監査 P1-A）で中身を拘束した**——v0.6.14 までは欄の有無も値も検査しておらず、覆っている範囲の一覧を消しても偽値に差し替えても適合した。notMachineReadableHere / reasonCodeFamilies は v0.6.14 の名前で、値は coverage から導出している（受け手を壊さないために必須のまま残す）。",
+      "required": [
+        "policyId",
+        "policyVersion",
+        "policySha256",
+        "acceptedHeaderFormats",
+        "prefixUsedOnlyFor",
+        "acceptedTypeflags",
+        "endOfArchiveConvention",
+        "limits",
+        "coverage",
+        "notMachineReadableHere",
+        "reasonCodeFamilies"
+      ],
+      "properties": {
+        "acceptedHeaderFormats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "posix-ustar",
+              "old-gnu",
+              "v7",
+              "unknown"
+            ]
+          },
+          "description": "**形式そのものは拒まない。**345..499 を prefix として読むのは POSIX ustar のときだけで、他の形式でそこが非空なら止める（読み手ごとに名前が変わるため）。",
+          "minItems": 1
+        },
+        "prefixUsedOnlyFor": {
+          "const": "posix-ustar"
+        },
+        "acceptedTypeflags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1",
+              "2",
+              "5",
+              "K",
+              "L",
+              "g",
+              "x"
+            ]
+          },
+          "description": "**許可表**（除外表ではない）。載っていない型は ARCHIVE_UNSUPPORTED で止まる。",
+          "minItems": 1
+        },
+        "endOfArchiveConvention": {
+          "const": "two-zero-blocks; trailing partial block after the terminator is ignored"
+        },
+        "limits": {
+          "type": "object",
+          "required": [
+            "maxEntries",
+            "maxEntryBytes",
+            "maxTotalBytes",
+            "maxPathLength",
+            "fetchTimeoutMs",
+            "maxCompressedBytes"
+          ],
+          "properties": {
+            "maxEntries": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxEntryBytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxTotalBytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxPathLength": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "fetchTimeoutMs": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxCompressedBytes": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "description": "資源の上限。**方針であって archive の欠陥ではない**（超えたら ARCHIVE_UNSUPPORTED）。"
+        },
+        "policyId": {
+          "const": "trs-jack-3d-source-verifier-archive-policy"
+        },
+        "policyVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "policySha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "**この宣言そのものの digest**（policySha256 を除いた正規形に対して計算する）。⚠️ 同じ道具が両方を書いているので、**改竄されていないことの証明にはならない**——版を跨いだ取り違えと、途中で欠けた欄を捕まえるためのもの。"
+        },
+        "coverage": {
+          "type": "object",
+          "required": [
+            "machineReadable",
+            "notMachineReadableHere",
+            "reasonCodeFamilies"
+          ],
+          "properties": {
+            "machineReadable": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "accepted-header-formats",
+                  "prefix-field-usage",
+                  "accepted-typeflags",
+                  "end-of-archive",
+                  "resource-limits"
+                ]
+              }
+            },
+            "notMachineReadableHere": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "pax-key-handling",
+                  "path-spelling",
+                  "link-target-resolution",
+                  "header-checksum",
+                  "duplicate-path",
+                  "root-strip"
+                ]
+              }
+            },
+            "reasonCodeFamilies": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "container",
+                  "entry",
+                  "eoa",
+                  "header",
+                  "limit",
+                  "link",
+                  "manifest",
+                  "mismatch",
+                  "path",
+                  "pax",
+                  "scope",
+                  "source",
+                  "text",
+                  "usage"
+                ]
+              }
+            }
+          },
+          "description": "**この宣言がどこまでを覆っているか（v0.6.15・外部監査 P1-A）。**名前は「受け入れる範囲の全部」と読めるが、機械で読める形にしてあるのは machineReadable の 5 つだけ。残りは stableReasonCode でしか表に出ていない。"
+        },
+        "notMachineReadableHere": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "pax-key-handling",
+              "path-spelling",
+              "link-target-resolution",
+              "header-checksum",
+              "duplicate-path",
+              "root-strip"
+            ]
+          },
+          "description": "**v0.6.14 の名前。**値は coverage.notMachineReadableHere と同じ（導出）。受け手を壊さないために残している。",
+          "minItems": 1
+        },
+        "reasonCodeFamilies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "container",
+              "entry",
+              "eoa",
+              "header",
+              "limit",
+              "link",
+              "manifest",
+              "mismatch",
+              "path",
+              "pax",
+              "scope",
+              "source",
+              "text",
+              "usage"
+            ]
+          },
+          "description": "**v0.6.14 の名前。**値は coverage.reasonCodeFamilies と同じ（導出）。",
+          "minItems": 1
+        }
+      }
+    },
+    "incompletePhases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "**終わっていない必須工程。**空でなければ status は OK にならない。`unrecorded-input-detection`（範囲定義が無い・読めない・manifest の記録と違う）と `scope-not-pinned-to-manifest`（--allow-unpinned-scope で古い tag を検算した）が出る。"
+    },
+    "rootTransform": {
+      "type": "object",
+      "required": [
+        "stripped"
+      ],
+      "properties": {
+        "stripped": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "剥がした先頭 1 階層の名前。GitHub の tarball は `trs-jack-3d-<sha>/` を持つ。**剥がした事実を出さないと、パスが一致したことの意味を受け手が確かめられない。**"
+        }
+      }
+    },
+    "origin": {
+      "type": "string",
+      "description": "source をどこから取ったか（git-archive / dir / archive / github-tarball）"
+    },
+    "networkUsed": {
+      "type": "boolean",
+      "description": "既定は false。--fetch github を明示したときだけ true"
+    },
+    "manifest": {
+      "type": "string"
+    },
+    "tag": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "fetch": {
+      "type": "string"
+    },
+    "selfReported": {
+      "type": "object",
+      "description": "**manifest がそう名乗っているだけの値。**下の independentVerification と混ぜない"
+    },
+    "independentVerification": {
+      "type": "object",
+      "description": "**この実行で計算し直した結果。**",
+      "required": [
+        "checked",
+        "matched",
+        "mismatched"
+      ],
+      "properties": {
+        "checked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "matched": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mismatched": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missingInSource": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recordedInconsistent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unrecordedInputCandidates": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "selfReferencingInputs": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "unrecordedInputDetection": {
+      "type": "object",
+      "required": [
+        "performed"
+      ],
+      "description": "**探したのか、探さなかったのか。**探していないのに候補 0 件を合格の根拠にしないため、performed を先に見る。",
+      "properties": {
+        "performed": {
+          "type": "boolean"
+        },
+        "scopeSource": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "boundTo": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "範囲定義がどの記録に縛られているか。null なら manifest が範囲を記録していない古い版で、その場合 status は OK にならない。"
+        },
+        "scopeSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "stableReasonCode": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        }
+      }
+    },
+    "mismatches": {
+      "type": "array"
+    },
+    "unrecordedInputCandidates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "selfReferencingInputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notCoveredByDigest": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "範囲定義が「覆えない」と自己申告しているもの（Node の版・ロケール・環境変数など）。**一致は、これらが同じだったことを意味しない。**"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "note": {
+      "type": "string"
+    }
+  }
+}

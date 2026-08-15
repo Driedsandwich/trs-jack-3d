@@ -33,8 +33,8 @@ import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { allCases } from './_corruptTar.mjs'
 import {
-  ArchiveInvalid, ArchiveUnsupported, CLI_STATUSES, CLI_STATUS_META, OTHER_CODES,
-  REASON_CODES, assertCatalogued, readArchiveBuffer,
+  ArchiveInvalid, ArchiveUnsupported, CLI_RESULT_SCHEMA_PATH, CLI_STATUSES, CLI_STATUS_META,
+  OTHER_CODES, REASON_CODES, assertCatalogued, readArchiveBuffer,
 } from '../scripts/verifyReleaseSourceInputs.mjs'
 
 const ROOT = resolve(__dirname, '..')
@@ -179,7 +179,7 @@ describe('reason code catalog — 止め方の名前は 1 か所で持つ', () =
   it('**schema の stableReasonCode の enum が catalog と一致する**', async () => {
     const { readFileSync } = await import('node:fs')
     const schema = JSON.parse(readFileSync(
-      resolve(ROOT, 'schemas/source-verifier-cli-result.v1.schema.json'), 'utf8'))
+      resolve(ROOT, CLI_RESULT_SCHEMA_PATH), 'utf8'))
     const inSchema = (schema.properties.stableReasonCode.enum as (string | null)[])
       .filter((x): x is string => x !== null).sort()
     expect(inSchema).toEqual(Object.keys(REASON_CODES).sort())
