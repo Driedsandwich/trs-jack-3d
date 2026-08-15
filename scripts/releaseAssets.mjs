@@ -48,6 +48,17 @@ export const RELEASE_ASSETS = [
   { path: 'schemas/test-counts.v2.schema.json', role: 'schema' },
   { path: 'schemas/source-snapshot.v1.schema.json', role: 'schema' },
   { path: 'schemas/contract-migration.v1.schema.json', role: 'schema' },
+  /**
+   * **最終関門の記録の契約（v0.6.22・外部監査 P1）。**
+   *
+   * `release-stage-attestation.v1.json` は前から `schemaId` を名乗っていたが、
+   * **対応する schema を配っていなかった。**受け手は「名乗っている形」を
+   * 独立検証できず、`schemaId` は名前だけの飾りになっていた。
+   *
+   * **記録そのものは索引の外のまま**（自己参照を避けるため。SHA256SUMS が持つ）。
+   * 索引へ入れるのは**この schema だけ**である。
+   */
+  { path: 'schemas/release-stage-attestation.v1.schema.json', role: 'schema' },
 
   // --- 自己完結性のための証拠（P2-7）---
   { path: 'artifacts/test_counts.json', role: 'evidence' },

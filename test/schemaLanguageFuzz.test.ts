@@ -37,7 +37,7 @@
 import Ajv from 'ajv'
 import { describe, expect, it } from 'vitest'
 import { diffSchemaObjects } from '../scripts/schemaLanguageDiff.mjs'
-import { depthOf, genRoot, hasRef, mutate, rng, witnesses } from './_schemaFuzz.mjs'
+import { candidates, depthOf, genRoot, hasRef, mutate, rng, witnesses } from './_schemaFuzz.mjs'
 
 const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(s)
 
@@ -130,5 +130,72 @@ describe('property-based: 探索そのものが働いていること', () => {
       try { compile(p.old); return false } catch { return true }
     })
     expect(bad.map((p) => p.seed), 'ajv が読めない schema を生成している').toEqual([])
+  })
+})
+
+/**
+ * ⚠️ **v0.6.22（外部監査 P0）。この試験が反例を見逃した理由の対照。**
+ *
+ * v0.6.21 の試験は緑だったが、監査は同じ根の反例を 2 件出した。
+ * 「反例が出なかった」を「反例が無い」と読んではいけないので、
+ * **見逃した 2 つの理由を、それぞれ数で固定する。**
+ *
+ * ```text
+ *                                    v0.6.21   v0.6.22
+ * 枝・property 位置の $ref+sibling      0 件      20 件   ← 形を作れていなかった
+ * 候補値のうち property が null          0 件      85 件   ← 証人を作れていなかった
+ * ```
+ *
+ * **どちらか片方でも 0 なら、判定器を直しても試験は自力で見つけられない。**
+ */
+describe('property-based: 監査が見つけた形を、この試験が自力で作れること', () => {
+  /** 枝・property の位置に居る `$ref` + sibling を数える */
+  const branchRefSiblings = (root: object) => {
+    let n = 0
+    const walk = (node: unknown, inBranch: boolean) => {
+      if (!node || typeof node !== 'object') return
+      if (!Array.isArray(node) && '$ref' in node && Object.keys(node).length > 1 && inBranch) n++
+      for (const [k, v] of Object.entries(node)) {
+        const b = inBranch || ['oneOf', 'anyOf', 'allOf', 'properties', 'items'].includes(k)
+        Array.isArray(v) ? v.forEach((x) => walk(x, b)) : walk(v, b)
+      }
+    }
+    walk(root, false)
+    return n
+  }
+
+  it('⑥ 生成器が **$ref + sibling を枝・property の位置に**作る（v0.6.21 は 0 件だった）', () => {
+    const total = PAIRS.reduce((a, p) => a + branchRefSiblings(p.old), 0)
+    expect(total, '監査の反例の形を一度も作れていない').toBeGreaterThanOrEqual(5)
+  })
+
+  it('⑦ 候補値に **1 つの key だけが null** の object が在る（v0.6.21 は 0 件だった）', () => {
+    const nested = PAIRS.reduce((a, p) => a
+      + candidates(p.old, p.neu).filter((v) => v && typeof v === 'object' && !Array.isArray(v)
+        && Object.values(v as object).some((x) => x === null)).length, 0)
+    expect(nested, '{"x":null} の形の候補を作れていない — 監査の反例 2 件の証人がこれ').toBeGreaterThanOrEqual(20)
+  })
+
+  it('⑧ **監査の反例 2 件で、証人探しが証人を出す**（判定器でなく探索側の対照）', () => {
+    const S = 'http://json-schema.org/draft-07/schema#'
+    const branch = { $ref: '#/definitions/d0', description: 'branch' }
+    const body = { type: 'object', additionalProperties: false, properties: { x: { oneOf: [branch, { type: 'number' }] } } }
+    const w1 = witnesses(compile,
+      { $schema: S, definitions: { d0: { type: 'string' } }, ...body },
+      { $schema: S, definitions: { d0: { type: ['string', 'null'] } }, ...body })
+    expect(w1.widenWitness, 'oneOf + $ref sibling の証人が出ない').toEqual({ x: null })
+
+    const shell = { type: 'object', additionalProperties: false, properties: { x: { $ref: '#/definitions/outer' } } }
+    const w2 = witnesses(compile,
+      { $schema: S, ...shell, definitions: { outer: { not: { $ref: '#/definitions/inner' } }, inner: { type: ['string', 'null'] } } },
+      { $schema: S, ...shell, definitions: { outer: { not: { $ref: '#/definitions/inner' } }, inner: { type: 'string' } } })
+    expect(w2.widenWitness, 'not + $ref の証人が出ない').toEqual({ x: null })
+  })
+
+  it('⑨ 対照: 合成した候補が**何にでも鳴るわけではない**（同一 schema では証人 0 件）', () => {
+    const s = { type: 'object', properties: { x: { type: ['string', 'null'] }, y: { type: 'number' } } }
+    const w = witnesses(compile, s, structuredClone(s))
+    expect(w.widenWitness).toBeUndefined()
+    expect(w.narrowWitness).toBeUndefined()
   })
 })

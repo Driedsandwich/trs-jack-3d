@@ -17,6 +17,7 @@
 
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
+import Ajv from 'ajv'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, resolve } from 'node:path'
 import { RELEASE_ASSETS, REMOVED_SINCE_V011 } from './releaseAssets.mjs'
@@ -301,6 +302,24 @@ const ATTESTATION_NAME = 'release-stage-attestation.v1.json'
       '**索引はこの記録の sha256 を持たない。**索引はこれより前に作られ、'
       + 'これは索引を読んでから作られるので、入れると 1 回の実行で収束しない。'
       + '**SHA256SUMS がこの記録の sha256 を持つ。**',
+  }
+  /**
+   * ⚠️ **書く前に、実 object を schema で検証する（v0.6.22・外部監査 P1）。**
+   *
+   * v0.6.21 まで、この記録の形を見ていたのは `test/stageAttestation.test.ts` の
+   * **source text 検査**だけだった（「このコードに field 名が書いてあるか」）。
+   * **生成された実物を検証してはいなかった。**
+   *
+   * 検証は**書く前**に行う。書いてから検証すると、
+   * 落ちたときに「途中まで正しく見える記録」が `OUT` に残る
+   * ——次の実行が拾うか、人が配ってしまう。
+   */
+  const attSchema = read(resolve(ROOT, 'schemas/release-stage-attestation.v1.schema.json'))
+  const validate = new Ajv({ allErrors: true, strict: false }).compile(attSchema)
+  if (!validate(attestation)) {
+    console.error(`\n**最終関門の記録が ${basename(ATTESTATION_NAME)} の契約に合わない。**記録も SHA256SUMS も出さずに止まる。`)
+    for (const e of validate.errors ?? []) console.error(`  ${e.instancePath || '/'} ${e.message}`)
+    process.exit(1)
   }
   writeFileSync(resolve(OUT, ATTESTATION_NAME), JSON.stringify(attestation, null, 1) + '\n')
   rows.push({ name: ATTESTATION_NAME, sha256: sha256(resolve(OUT, ATTESTATION_NAME)), role: 'attestation' })

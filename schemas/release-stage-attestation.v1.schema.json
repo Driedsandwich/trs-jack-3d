@@ -1,0 +1,100 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://github.com/Driedsandwich/trs-jack-3d/schemas/release-stage-attestation.v1.schema.json",
+ "title": "release 最終関門の記録 v1",
+ "description": "npm run release:stage が最終関門を通ったことの記録。**この記録は自己申告である**——作った側が作った側を検査した結果でしかなく、受け手の独立検証を置き換えない。記録の bytes は SHA256SUMS で検算すること（索引はこの記録の sha256 を持たない。索引を読んでから作られるので、入れると 1 回の実行で収束しない）。この schema は v0.6.22 で新設した（外部監査 P1）——それ以前の版の記録は schemaId を名乗っていたが、対応する schema を配っていなかったので、受け手は形を独立検証できなかった。",
+ "type": "object",
+ "required": [
+  "schemaVersion",
+  "schemaId",
+  "kind",
+  "purpose",
+  "releaseTag",
+  "stageCommand",
+  "stageToolVersion",
+  "generatedAt",
+  "sourceCommit",
+  "testCountsSha256",
+  "validationResultsSha256",
+  "releaseIndexSha256",
+  "exactTestEvidenceMatched",
+  "testEvidenceCrossBound",
+  "releaseReadinessStatus",
+  "exitCode",
+  "notInReleaseIndex"
+ ],
+ "additionalProperties": false,
+ "definitions": {
+  "sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$",
+   "description": "**配った実物の sha256。**repo 側の写しではない——索引は配布時に releaseTag / releaseCommit を書き込むので値が違う（v0.6.17 で実際にずれた）。"
+  }
+ },
+ "properties": {
+  "schemaVersion": {
+   "const": 1
+  },
+  "schemaId": {
+   "const": "trs-jack-3d-release-stage-attestation.v1"
+  },
+  "kind": {
+   "const": "release-stage-attestation"
+  },
+  "purpose": {
+   "type": "string",
+   "minLength": 1
+  },
+  "releaseTag": {
+   "type": "string",
+   "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+   "description": "**null を許さない。**tag を打つ前の生成物を配らないため（release:stage が null を拒む）。"
+  },
+  "stageCommand": {
+   "const": "npm run release:stage"
+  },
+  "stageToolVersion": {
+   "type": "integer",
+   "minimum": 1,
+   "description": "門を足したり判定を変えたら上げる。受け手はこの値で「どの門を通った記録か」を知る。"
+  },
+  "generatedAt": {
+   "type": "string",
+   "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+  },
+  "sourceCommit": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{40}$",
+   "description": "**短縮形を許さない。**短縮 commit は衝突しうるうえ、突合の鍵は変わらない形にする。"
+  },
+  "testCountsSha256": {
+   "$ref": "#/definitions/sha256"
+  },
+  "validationResultsSha256": {
+   "$ref": "#/definitions/sha256"
+  },
+  "releaseIndexSha256": {
+   "$ref": "#/definitions/sha256"
+  },
+  "exactTestEvidenceMatched": {
+   "const": true,
+   "description": "**false のまま配れない。**門は既に process.exit しているので、記録に残る値は true しかありえない。ここを type: boolean にすると、止まったはずの状態を記録として配れてしまう。"
+  },
+  "testEvidenceCrossBound": {
+   "const": true,
+   "description": "**false のまま配れない。**exactTestEvidenceMatched と同じ理由。v0.6.22 でこの欄を必須一覧へ入れた（外部監査 P1・それまで required に無かった）。"
+  },
+  "releaseReadinessStatus": {
+   "const": "READY",
+   "description": "release:evidence 時点の判定。**NOT_READY のまま配れない。**"
+  },
+  "exitCode": {
+   "const": 0
+  },
+  "notInReleaseIndex": {
+   "type": "string",
+   "minLength": 1,
+   "description": "索引がこの記録の sha256 を持たない理由。受け手が「索引に無い＝欠けている」と読まないため。"
+  }
+ }
+}

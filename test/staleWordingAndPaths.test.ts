@@ -268,3 +268,55 @@ describe('「無い」と書いたものが、本当に無いか', () => {
     expect(SCRIPTS.some((s) => '- `no-such-script` は未実装です'.includes(`\`${s}\``))).toBe(false)
   })
 })
+
+/**
+ * ⚠️ **tag の中で古くなる書き方をしていないか（v0.6.22・外部監査 P2）。**
+ *
+ * `SECURITY.md` は「直近の release 1 本（現時点では vX.Y.Z）」と書いていた。
+ * `check:doc-numbers` が**手元の控えの最大版数**で縛るので `main` では常に正しい。
+ * **それでも tag の中身は恒久的に 1 版古い。**release を作る commit の時点では
+ * その版はまだ公開されていないので、書けるのは 1 つ前の版だけである。
+ *
+ * ```text
+ * v0.6.18 の tag → 「現時点では v0.6.17」
+ * v0.6.19 の tag → 「現時点では v0.6.18」
+ * v0.6.20 の tag → 「現時点では v0.6.19」
+ * v0.6.21 の tag → 「現時点では v0.6.20」     4/4 tag で実測
+ * ```
+ *
+ * **受け手が読むのは tag の中身**なので、`main` が正しいことは救いにならない。
+ * これは「在ると言ったのに無い」でも「無いと言ったのに在る」でもない 3 つ目の型で、
+ * **文書が「いま」を名乗った瞬間に、immutable な写しが嘘になる。**
+ *
+ * 直したうえで、**書き足されたら止まる**ようにここへ置く
+ * ——在ることの検査（`check:doc-numbers`）だけでは、版数を書き足しても誰も止まらない。
+ */
+describe('release のたびに tag の中で古くなる書き方をしていない', () => {
+  const LIVE = liveFiles()
+
+  /** 「いまの版はこれ」と名乗る形。**その文書が tag に入った瞬間に嘘になる** */
+  const SELF_DATING = /(現時点では|最新は|いまは|今は)\s*[`「]?v\d+\.\d+\.\d+/
+
+  /** 公開済みの記録は当時のまま残す（→ 上の EXEMPT_PREFIX と同じ考え方） */
+  const EXEMPT_PREFIX = ['docs/release/', 'CHANGELOG.md', 'docs/ERRATA.md']
+
+  it('**「現時点では vX.Y.Z」と書いた live 文書が無い**', () => {
+    const bad: string[] = []
+    for (const f of LIVE) {
+      if (EXEMPT_PREFIX.some((p) => f.startsWith(p))) continue
+      read(f).split('\n').forEach((l, i) => {
+        if (SELF_DATING.test(l)) bad.push(`${f}:${i + 1} ${l.trim().slice(0, 80)}`)
+      })
+    }
+    expect(bad, '**tag に入った瞬間に 1 版古くなる。**`Latest` の表示を指すこと').toEqual([])
+  })
+
+  it('**この検査が空振りしていない**（偽の文言を混ぜると拾える）', () => {
+    mustBeNonEmpty(LIVE, '走査対象の live ファイル')
+    expect(SELF_DATING.test('- 直近の release 1 本（現時点では v0.6.21）'), '直した形を拾えない').toBe(true)
+    expect(SELF_DATING.test('- 最新は v1.2.3 です'), '別の言い回しを拾えない').toBe(true)
+    /** 逆の対照: 版数を名乗らない書き方は拾わない */
+    expect(SELF_DATING.test('GitHub Releases で `Latest` と表示されている 1 本です。'), '正しい書き方を誤検出する').toBe(false)
+    expect(SELF_DATING.test('v0.6.21 で直しました'), '履歴の記述を誤検出する').toBe(false)
+  })
+})

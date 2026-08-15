@@ -56,7 +56,16 @@ export function genSchema(r, depth = 0, refs = { defs: {}, n: 0 }) {
   if (depth > 0 && depth < 4 && chance(r, 0.22) && refs.n < 4) {
     const name = `d${refs.n++}`
     refs.defs[name] = genSchema(r, depth + 1, refs)
-    return { $ref: `#/definitions/${name}` }
+    /**
+     * ⚠️ **半分は annotation の sibling を付ける（v0.6.22・外部監査 P0）。**
+     *
+     * v0.6.21 の生成器は `$ref` を**単独でしか作らなかった**ので、
+     * 監査が見つけた形（`{ $ref, description }` が枝に居る）を
+     * **一度も作っていなかった**（実測: 枝位置の `$ref`+sibling は 300 種で 0 件）。
+     * 現行 schema の `evidenceGrade` は実際にこの形なので、
+     * 「現行に無い形」ですらない。
+     */
+    return chance(r, 0.5) ? { $ref: `#/definitions/${name}`, description: 'ref sibling' } : { $ref: `#/definitions/${name}` }
   }
 
   const kind = pick(r, ['integer', 'number', 'string', 'boolean', 'enum', 'const', 'array', 'object', 'oneOf'])
@@ -218,6 +227,7 @@ export function candidates(oldS, newS) {
     }
   }
   walk(oldS); walk(newS)
+  out.push(...synth(oldS, oldS), ...synth(newS, newS))
   // 重複を潰す（JSON で見た同一性でよい）
   const seen = new Set(); const uniq = []
   for (const v of out) {
@@ -225,6 +235,56 @@ export function candidates(oldS, newS) {
     if (!seen.has(k)) { seen.add(k); uniq.push(v) }
   }
   return uniq
+}
+
+/** 1 つの property だけを差し替えて試す値 */
+const PROBES = [null, 'a', 1, true, [], {}]
+
+/**
+ * **schema をたどって値を組み立てる（証人の合成）。**
+ *
+ * ⚠️ **固定候補を足すだけでは足りない（v0.6.22・外部監査 P0）。**
+ * 上の `walk` は「schema に出てくる値」（enum・const・境界）を拾い、
+ * object は**全 key を同じ値で埋めた**形しか作らない。だから
+ * `{"x": null}` のような**1 つの key だけが null**の値を
+ * **1 件も作れなかった**（実測: 300 種 6,219 候補中 0 件）。
+ * 監査の反例 2 件はどちらも証人が `{"x": null}` で、
+ * **判定器を直しても、この合成が無いと試験は自力で見つけられない。**
+ *
+ * `$ref` は辿る（sibling が在っても）。深さと循環は打ち切る——
+ * 証人は「在れば十分」なので、網羅する必要はない。
+ */
+export function synth(node, root, depth = 0, seen = new Set()) {
+  if (depth > 3 || !node || typeof node !== 'object' || Array.isArray(node)) return [null, 'a', 1]
+  if (typeof node.$ref === 'string') {
+    if (seen.has(node.$ref)) return [null]
+    const parts = node.$ref.replace(/^#\//, '').split('/')
+    let cur = root
+    for (const p of parts) { cur = cur && typeof cur === 'object' ? cur[p] : undefined }
+    return cur ? synth(cur, root, depth + 1, new Set([...seen, node.$ref])) : [null]
+  }
+  const out = []
+  if (Array.isArray(node.enum)) out.push(...node.enum, 'zzNotInEnum')
+  if ('const' in node) out.push(node.const)
+  for (const kw of ['oneOf', 'anyOf', 'allOf']) {
+    if (Array.isArray(node[kw])) for (const b of node[kw]) out.push(...synth(b, root, depth + 1, seen).slice(0, 4))
+  }
+  for (const t of Array.isArray(node.type) ? node.type : node.type ? [node.type] : []) {
+    if (t === 'null') out.push(null)
+    else if (t === 'string') out.push('a', '')
+    else if (t === 'integer' || t === 'number') out.push(0, 1, -1)
+    else if (t === 'boolean') out.push(true, false)
+    else if (t === 'array') out.push([], node.items ? synth(node.items, root, depth + 1, seen).slice(0, 2) : ['a'])
+  }
+  if (node.properties && typeof node.properties === 'object') {
+    const keys = Object.keys(node.properties)
+    const base = {}
+    for (const k of keys) base[k] = synth(node.properties[k], root, depth + 1, seen)[0]
+    out.push(base)
+    // ★ **key を 1 つだけ差し替える。**`{"x": null}` はここでしか出ない
+    for (const k of keys) for (const p of PROBES) out.push({ ...base, [k]: p })
+  }
+  return out.length ? out : [null, 'a', 1]
 }
 
 /**

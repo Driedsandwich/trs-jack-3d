@@ -143,13 +143,6 @@ function declarations() {
     .flatMap(([kind, list]) => list.map((c) => expectedOutcome(kind, c.id)))
     .filter((w) => w === 'safe').length
 
-  /** 手元に控えのある release のうち最大の版数（`docs/release/<tag>-SHA256SUMS.txt`） */
-  const latestRecordedTag = readdirSync(resolve(ROOT, 'docs/release'))
-    .map((f) => /^(v\d+\.\d+\.\d+)-SHA256SUMS\.txt$/.exec(f)?.[1])
-    .filter(Boolean)
-    .sort((a, b) => a.slice(1).split('.').map(Number).reduce((s, n, i) => s || n - Number(b.slice(1).split('.')[i]), 0))
-    .pop()
-
   return [
     ['docs/VERIFICATION_PLAN.md', '**L だけが 1.45 mm 離れています。**', Math.abs(gap('L')) === 1.45],
     ['docs/VERIFICATION_PLAN.md', '次点は GND（0.34 mm）', Math.abs(gap('GND')) === 0.34],
@@ -194,10 +187,21 @@ function declarations() {
     ['docs/TEST_RESULTS.md', `**${vr.targetsTotal} 件すべて適合**（schema = ajv draft-07`, true],
     ['docs/TEST_RESULTS.md', `**入力 ${man.inputFilesTotal} 件すべて一致**`, true],
     /**
-     * 直近 release だけは artifact に無いので、**手元の SHA256SUMS の控えの最大版数**で縛る。
-     * 版を出したら控えを置く運用なので、控えが増えればここも動く。
+     * ⚠️ **直近 release の版数を書かせない（v0.6.22・外部監査 P2）。**
+     *
+     * v0.6.21 まではここで `現時点では <直近 tag>` を**要求**していた
+     * （`docs/release/<tag>-SHA256SUMS.txt` の最大版数で縛っていた）。
+     * 手元の控えの最大版数で縛るので `main` では常に正しくなるが、
+     * **tag の中身は恒久的に 1 版古くなる。**release を作る commit の時点では
+     * その版はまだ公開されていないので、書けるのは 1 つ前の版だけである
+     * （実測: v0.6.18 / v0.6.19 / v0.6.20 / v0.6.21 の 4 tag すべてがそうなっていた）。
+     *
+     * **受け手が読むのは tag の中身**なので、`main` が正しいことは救いにならない。
+     * 版数の代わりに `Latest` の表示を指す形へ変え、ここは**その文言が在ること**を縛る。
+     * 「版数を書いていないこと」は下の `mustNotAppear` が縛る（在ることの検査だけでは、
+     * 版数を書き足しても誰も止まらない）。
      */
-    ['SECURITY.md', `- 直近の release 1 本（現時点では ${latestRecordedTag}）`, true],
+    ['SECURITY.md', '**直近の release 1 本**——GitHub Releases で `Latest` と表示されている 1 本です。', true],
 
     /** 根拠の区分。**3 つの文書が同じ数を別々に書いている**ので、3 つとも縛る */
     ['SECURITY.md', `**\`ASSUMPTION\` が ${vs.ASSUMPTION} 件あります**`, true],

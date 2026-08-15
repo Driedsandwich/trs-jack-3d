@@ -435,6 +435,168 @@ describe('条文 ①-c3 oneOf の枝が $ref・参照先だけ変わる（proper
   })
 })
 
+/**
+ * ⚠️ **条文 ①-c4（v0.6.22・外部監査 P0）。**
+ *
+ * v0.6.21 で `oneOf` の枝の `$ref` を展開するようにしたが、**展開したのは
+ * `$ref` が唯一の key のときだけ**だった（`expandRefs` の
+ * `Object.keys(node).length === 1`）。枝が
+ *
+ * ```json
+ * { "$ref": "#/definitions/d0", "description": "branch" }
+ * ```
+ *
+ * のように **annotation の sibling を持つと展開されない。**枝の文字列は新旧同じままなので
+ * 参照先の変更が見えず、他に差分が無ければ **HOLD** を返していた。
+ *
+ * ```text
+ * 旧  definitions.d0.type = 'string'
+ * 新  definitions.d0.type = ['string','null']
+ * ajv  {"x":null} が旧 invalid → 新 valid   **広がっている**
+ * 判定 HOLD / exit 0                        ← 危険側
+ * ```
+ *
+ * **`compare()` には「節は同じで参照先だけ変わった」を見る仕組みが既にある**が、
+ * `oneOf` の枝は `compare()` を通らない（枝ごとの再帰比較は健全でないので、
+ * 文字列の一致だけを見ている）。**仕組みが在る場所と、通る経路が違っていた。**
+ */
+describe('条文 ①-c4 oneOf の枝が $ref + sibling・参照先だけ変わる（外部監査 P0）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const branch = { $ref: '#/definitions/d0', description: 'branch' }
+  const body = { type: 'object', additionalProperties: false, properties: { x: { oneOf: [branch, { type: 'number' }] } } }
+  const OLD = { $schema: S, definitions: { d0: { type: 'string' } }, ...body }
+  const NEW = { $schema: S, definitions: { d0: { type: ['string', 'null'] } }, ...body }
+
+  it('① ajv: {"x":null} が旧 invalid → 新 valid（＝新は旧に収まっていない）', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(s)
+    const o = compile(structuredClone(OLD)); const n = compile(structuredClone(NEW))
+    expect(o({ x: null }), '旧で通ってしまう（反例の前提が崩れている）').toBe(false)
+    expect(n({ x: null }), '新で通らない（反例の前提が崩れている）').toBe(true)
+    // 枝の文字列は同じ＝素朴な比較でも v0.6.21 の展開でも差分が見えない、という前提を固定する
+    expect(JSON.stringify(OLD.properties.x.oneOf)).toBe(JSON.stringify(NEW.properties.x.oneOf))
+  })
+
+  it('② 判定器は BUMP を返す', () => {
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ 対照: 参照先が変わらなければ HOLD のまま（何にでも鳴らない）', () => {
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+
+  it('④ 対照: sibling が無い形（v0.6.21 で直した分）は今も BUMP', () => {
+    const o = { $schema: S, definitions: { d0: { type: 'string' } }, oneOf: [{ type: 'number' }, { $ref: '#/definitions/d0' }] }
+    const n = { $schema: S, definitions: { d0: { type: ['string', 'null'] } }, oneOf: [{ type: 'number' }, { $ref: '#/definitions/d0' }] }
+    expect(diffSchemaObjects(o, n).verdict).toBe('BUMP')
+  })
+})
+
+/**
+ * ⚠️ **条文 ①-c5（v0.6.22・外部監査 P0）。同じ根の 2 つ目。**
+ *
+ * allowlist ゲートは「宣言外の keyword が在る」だけで倒すが、
+ * **`JSON.stringify(o) !== JSON.stringify(n)` を条件にしている。**
+ * 節そのものが変わらず、**その中の `$ref` の参照先だけが変わる**と条件を満たさない。
+ *
+ * ```text
+ * definitions.outer = { not: { $ref: '#/definitions/inner' } }   ← 新旧まったく同じ
+ * 旧  definitions.inner.type = ['string','null']
+ * 新  definitions.inner.type = 'string'
+ * ajv  {"x":null} が旧 invalid → 新 valid   **広がっている**（not の中が狭まると外は広がる）
+ * 判定 HOLD / exit 0                        ← 危険側
+ * ```
+ *
+ * **同じ節を同じにしておけば検査を免れる**——①-c4 と根は同じで、
+ * 「節の文字列が変わっていない」ことを「意味が変わっていない」の証拠にしていた。
+ */
+describe('条文 ①-c5 未対応 keyword が包む $ref の参照先だけ変わる（外部監査 P0）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const shell = {
+    type: 'object',
+    additionalProperties: false,
+    properties: { x: { $ref: '#/definitions/outer' } },
+  }
+  const OLD = { $schema: S, ...shell, definitions: { outer: { not: { $ref: '#/definitions/inner' } }, inner: { type: ['string', 'null'] } } }
+  const NEW = { $schema: S, ...shell, definitions: { outer: { not: { $ref: '#/definitions/inner' } }, inner: { type: 'string' } } }
+
+  it('① ajv: {"x":null} が旧 invalid → 新 valid', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(s)
+    const o = compile(structuredClone(OLD)); const n = compile(structuredClone(NEW))
+    expect(o({ x: null }), '旧で通ってしまう（反例の前提が崩れている）').toBe(false)
+    expect(n({ x: null }), '新で通らない（反例の前提が崩れている）').toBe(true)
+    // 未対応 keyword を包む節は新旧まったく同じ、という前提を固定する
+    expect(JSON.stringify(OLD.definitions.outer)).toBe(JSON.stringify(NEW.definitions.outer))
+  })
+
+  it('② 判定器は BUMP を返す', () => {
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ 対照: 参照先が変わらなければ HOLD のまま', () => {
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+
+  it('④ 対照: 未対応 keyword の節そのものが変われば、前から倒れていた', () => {
+    const n2 = structuredClone(OLD) as { definitions: { outer: { not: { $ref?: string, type?: string } } } }
+    n2.definitions.outer.not = { type: 'string' }
+    expect(diffSchemaObjects(OLD, n2).verdict).toBe('BUMP')
+  })
+})
+
+/**
+ * ⚠️ **条文 ①-c6（v0.6.22）。同じ根の 3 つ目——こちらは監査の指摘には無い。**
+ *
+ * ①-c4 / ①-c5 を直すとき「文字列の一致を意味の一致と置いた箇所」を数えたら、
+ * `anyOf` / `allOf` の**早期 continue** が 3 つ目だった。
+ *
+ * ```js
+ * if (JSON.stringify(ol) === JSON.stringify(nl)) continue   // ← 参照先を見ていない
+ * ```
+ *
+ * `anyOf` / `allOf` は枝ごとの再帰比較が健全なので、**再帰へ入りさえすれば**
+ * 「$ref に sibling がある節の参照先」が拾う。**入る前に打ち切っていた。**
+ *
+ * この節が無いと、直した 3 か所のうちここだけ**外しても落ちない行**になる
+ * （変異対照で実測: 直す前は 75 件すべて通った）。
+ */
+describe('条文 ①-c6 anyOf/allOf の枝が $ref + sibling・参照先だけ変わる', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const branch = { $ref: '#/definitions/d0', description: 'branch' }
+  const mk = (kw: 'anyOf' | 'allOf', d0: object, other: object) => ({
+    $schema: S,
+    definitions: { d0 },
+    type: 'object',
+    additionalProperties: false,
+    properties: { x: { [kw]: [branch, other] } },
+  })
+  const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(structuredClone(s))
+
+  it('① anyOf: ajv で広がっていることを確かめ、判定器が BUMP を返す', () => {
+    const OLD = mk('anyOf', { type: 'string' }, { type: 'number' })
+    const NEW = mk('anyOf', { type: ['string', 'null'] }, { type: 'number' })
+    expect(compile(OLD)({ x: null }), '旧で通ってしまう').toBe(false)
+    expect(compile(NEW)({ x: null }), '新で通らない').toBe(true)
+    expect(JSON.stringify(OLD.properties.x.anyOf), '枝の文字列が違う（前提が崩れている）')
+      .toBe(JSON.stringify(NEW.properties.x.anyOf))
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('② allOf: 同じ形で BUMP を返す', () => {
+    const OLD = mk('allOf', { type: ['string', 'null'] }, { type: ['string', 'null', 'number'] })
+    const NEW = mk('allOf', { type: ['string', 'null', 'number'] }, { type: ['string', 'null', 'number'] })
+    expect(compile(OLD)({ x: 1 }), '旧で通ってしまう').toBe(false)
+    expect(compile(NEW)({ x: 1 }), '新で通らない').toBe(true)
+    expect(JSON.stringify(OLD.properties.x.allOf), '枝の文字列が違う（前提が崩れている）')
+      .toBe(JSON.stringify(NEW.properties.x.allOf))
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ 対照: 参照先が変わらなければ HOLD のまま', () => {
+    const OLD = mk('anyOf', { type: 'string' }, { type: 'number' })
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+})
+
 describe('条文 ①-d allowlist そのもの', () => {
   it('宣言集合が、現行 schema の使う keyword をすべて覆っている', () => {
     const APPLICATORS = new Set(['properties', 'definitions', '$defs', 'patternProperties', 'dependencies'])

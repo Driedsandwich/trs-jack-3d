@@ -32,6 +32,18 @@ export declare function hasRef(node: unknown): boolean
 export declare function candidates(oldS: object, newS: object): unknown[]
 
 /**
+ * schema をたどって値を組み立てる（証人の合成）。
+ * **1 つの key だけを差し替えた object** を作るのがここの役目で、
+ * `{"x": null}` のような証人はこれが無いと出ない
+ */
+export declare function synth(
+  node: unknown,
+  root: object,
+  depth?: number,
+  seen?: Set<string>,
+): unknown[]
+
+/**
  * ajv を正解器にして包含関係の真値を出す。
  * `widenWitness` が undefined でなければ「新だけが通す値」が実在する
  */

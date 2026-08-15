@@ -96,20 +96,46 @@ const REF_LIMIT = 50
  * （呼び出し側の allowlist ゲートと `deref` の目印が別に倒す）。
  *
  * 展開は比較用の一時オブジェクトで、判定結果の pointer には影響しない。
+ *
+ * ⚠️ **`$ref` に sibling があっても展開する（v0.6.22・外部監査 P0）。**
+ * v0.6.21 は `Object.keys(node).length === 1` のときしか展開しなかったので、
+ * `{ $ref: '#/definitions/d0', description: 'branch' }` のような節は
+ * **参照先が変わっても写しが同じ**になり、危険側の HOLD を返していた。
+ *
+ * sibling が在るときは**参照先と sibling の両方**を残す。片方だけにすると、
+ * 残さなかったほうの変化が見えなくなる。`__refTarget__` は schema の keyword
+ * ではないので、実在の key と衝突しない。
  */
 function expandRefs(node, root, seen = new Set(), depth = 0) {
   if (depth > REF_LIMIT || !node || typeof node !== 'object') return node
   if (Array.isArray(node)) return node.map((x) => expandRefs(x, root, seen, depth + 1))
-  if ('$ref' in node && Object.keys(node).length === 1) {
+  if ('$ref' in node) {
     if (seen.has(node.$ref)) return node          // 循環。$ref のまま残す
     const t = deref({ $ref: node.$ref }, root)
     if (!t || typeof t !== 'object' || '__unresolvable__' in t) return node
-    return expandRefs(t, root, new Set([...seen, node.$ref]), depth + 1)
+    const target = expandRefs(t, root, new Set([...seen, node.$ref]), depth + 1)
+    const rest = Object.fromEntries(Object.entries(node).filter(([k]) => k !== '$ref'))
+    if (Object.keys(rest).length === 0) return target
+    return { ...expandRefs(rest, root, seen, depth + 1), __refTarget__: target }
   }
   const out = {}
   for (const [k, v] of Object.entries(node)) out[k] = expandRefs(v, root, seen, depth + 1)
   return out
 }
+
+/**
+ * **「この節は変わっていない」を判定するための写し。**
+ *
+ * 素の `JSON.stringify` と違い、`$ref` の**参照先の変化まで見える**。
+ * 節の文字列が同じでも参照先が変わっていれば、この写しは変わる。
+ *
+ * ⚠️ **「文字列が同じ＝意味が同じ」と置いた箇所は、必ずこれを通すこと。**
+ * v0.6.22 の外部監査 P0 は、その置き換えを 3 か所のうち 1 か所でしかやって
+ * いなかったことが原因である（`oneOf` だけ直し、allowlist ゲートと
+ * `anyOf`/`allOf` の早期 continue が残っていた）。
+ */
+const sameShape = (a, b, aroot, broot) =>
+  JSON.stringify(expandRefs(a, aroot)) === JSON.stringify(expandRefs(b, broot))
 
 /** JSON Pointer のトークンを escape する (RFC 6901) */
 const tok = (k) => String(k).replace(/~/g, '~0').replace(/\//g, '~1')
@@ -350,8 +376,12 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
    *   ajv  null が旧 invalid → 新 valid = **広がっている**。判定は HOLD だった（危険側）
    *
    * root が `$ref` の場合は `deref()` が入口で辿るので前から正しかった。**枝だけが素通り**していた。
+   *
+   * ⚠️ **v0.6.22（外部監査 P0）で、枝が `$ref` + sibling の形も見えるようにした。**
+   * v0.6.21 の展開は `$ref` が唯一の key のときだけだったので、
+   * `{ $ref: '#/definitions/d0', description: 'branch' }` は素通りしたままだった。
    */
-  if (JSON.stringify(expandRefs(o.oneOf, oroot)) !== JSON.stringify(expandRefs(n.oneOf, nroot))) {
+  if (!sameShape(o.oneOf, n.oneOf, oroot, nroot)) {
     d.add(
       UNDEC,
       path,
@@ -366,12 +396,17 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
    * こちらは和と積なので**枝ごとに単調である**。
    * 各枝が狭まれば ∪ も ∩ も狭まり、各枝が広がれば逆も同じ。
    * 枝が混在すれば WIDEN と NARROW が両方立ち、verdict は BUMP になる (安全側)。
-   * so 枝ごとの再帰比較で健全。
+   * つまり枝ごとの再帰比較で健全。
+   *
+   * ⚠️ **早期 continue は参照先の変化を見てから（v0.6.22・外部監査 P0）。**
+   * 枝が `$ref` + sibling で参照先だけ変わると、素の文字列は一致するので
+   * **再帰比較へ入る前に打ち切っていた。**再帰へ入りさえすれば
+   * 下の「$ref に sibling がある節の参照先」が拾う。
    */
   for (const kw of ['anyOf', 'allOf']) {
     const ol = o[kw]
     const nl = n[kw]
-    if (JSON.stringify(ol) === JSON.stringify(nl)) continue
+    if (JSON.stringify(ol) === JSON.stringify(nl) && sameShape(ol, nl, oroot, nroot)) continue
     if (!ol || !nl || ol.length !== nl.length) {
       d.add(UNDEC, path, `${ptr}/${kw}`, `${kw}: 枝の数が変わった (包含は機械判定しない)`)
     } else {
@@ -388,6 +423,11 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
    *
    * ただし**その節が新旧でまったく同じなら倒さない。**言語も同じだからで、
    * ここを倒すと同一 schema 同士の比較まで BUMP になり、条文が使えなくなる。
+   *
+   * ⚠️ **「まったく同じ」は参照先まで見て決める（v0.6.22・外部監査 P0）。**
+   * 素の文字列で見ていたので、`{ not: { $ref: '#/definitions/inner' } }` のように
+   * **未対応 keyword が `$ref` を包んでいる**と、参照先を広げても節の文字列は同じで、
+   * このゲートを免れていた。**同じ節を同じにしておけば検査を通る**形だった。
    */
   const reasons = []
   for (const k of [...new Set([...Object.keys(o), ...Object.keys(n)])].sort()) {
@@ -397,7 +437,7 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
   for (const [label, node] of [['旧', o], ['新', n]]) {
     if ('$ref' in node && Object.keys(node).length > 1) reasons.push(`${label}の $ref に sibling がある`)
   }
-  if (reasons.length > 0 && JSON.stringify(o) !== JSON.stringify(n)) {
+  if (reasons.length > 0 && !sameShape(o, n, oroot, nroot)) {
     d.add(UNDEC, path, ptr, `扱えない構文があり、この節が変わっている (${[...new Set(reasons)].join(' / ')}) — 判定できないので BUMP 側へ倒す`)
   }
 }
