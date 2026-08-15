@@ -98,7 +98,8 @@
     <li><a href="#s6">v0.6.17（2026-08-15 記載・次の版で直します）</a></li>
     <li><a href="#s7">docs（2026-08-15 記載・同日直しました）</a></li>
     <li><a href="#s8">判定器（2026-08-15 記載・同日直しました）</a></li>
-    <li><a href="#s9">この正誤表の運用</a></li>
+    <li><a href="#s9">v0.6.21（2026-08-15 記載・同日直しました・外部監査）</a></li>
+    <li><a href="#s10">この正誤表の運用</a></li>
   </ol>
 </nav>
 <h1>正誤表</h1>
@@ -353,7 +354,49 @@ ajv   null が旧 invalid → 新 valid  ＝ **広がっている**
 <p><strong>見つけ方が今までと違います。</strong> これまでの 4 件は外部監査からでしたが、 これは<strong>ランダム生成した schema 対</strong>から出ました （<code>test/schemaLanguageFuzz.test.ts</code>。計画 <code>docs/V060_PLAN_20260805.md</code> §3 が <code>[AI]</code> で約束したまま 10 日落ちていた property-based 試験）。961 対のうち 4 件。</p>
 <p><strong>直す前に回帰テストを入れました</strong>（条文 ①-c3。入れた時点では落ちます）。 修正を戻すと 3 件落ちることも実測しています。</p>
 <p><strong>限界。</strong> 探しているのは「新だけが通す値が実在するのに BUMP でない」だけです。 値は schema 対から作りますが、<strong>作れない値があれば広がりを見逃します。</strong> 探索が働いていることは同じファイルの対照 5 つで確かめています （既知の広がりで証人が出る／同一 schema では出ない／深いネストと <code>$ref</code> を作れている／ 判定が BUMP 一色でない／変異が当たった対だけ数えている）。</p>
-<h2 id="s9">この正誤表の運用</h2>
+<h2 id="s9">v0.6.21（2026-08-15 記載・<strong>同日直しました</strong>・外部監査）</h2>
+<h3>26. <strong>同じ根が 2 か所残っていました（<code>$ref</code> に sibling がある形）</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><code>scripts/schemaLanguageDiff.mjs</code>（<strong>配布物ではありません</strong>。版を上げるかを決める判定器）</td></tr><tr><td>症状</td><td>節の<strong>文字列は同じまま</strong>参照先だけ変わると、「変わっていない」と判定</td></tr><tr><td>影響</td><td><strong>言語が広がっているのに「据え置き可」と答える。</strong>§25 と同じ危険側</td></tr><tr><td>見つけた人</td><td><strong>外部監査</strong>（v0.6.21 の公開物に対する指摘）。§25 はこちらの property-based 試験でした</td></tr><tr><td>直した版</td><td>2026-08-15（<code>v0.6.21</code> 公開後・次の版に入ります）</td></tr></tbody></table></div>
+<p><strong>§25 で直したのは 1 か所だけでした。</strong>あのとき <code>expandRefs()</code> を入れましたが、 展開するのは <strong><code>$ref</code> が唯一の key のとき</strong>だけ（<code>Object.keys(node).length === 1</code>）。 <code>{ $ref: …, description: … }</code> のように annotation が付いていると展開されません。</p>
+<pre><code>反例1  oneOf の枝が { $ref: '#/definitions/d0', description: 'branch' }
+       旧 d0.type = 'string'  →  新 d0.type = ['string','null']
+       ajv  {"x":null} が旧 invalid → 新 valid  ＝ 広がっている
+       判定 HOLD / exit 0                        ← 危険側
+
+反例2  definitions.outer = { not: { $ref: '#/definitions/inner' } }   ← 新旧まったく同じ
+       旧 inner.type = ['string','null']  →  新 inner.type = 'string'
+       ajv  {"x":null} が旧 invalid → 新 valid  ＝ 広がっている（not の中が狭まると外は広がる）
+       判定 HOLD / exit 0                        ← 危険側</code></pre>
+<p><strong>原因は 1 つです。</strong>「節の文字列が変わっていない」を「意味が変わっていない」の 証拠にしていました。<code>$ref</code> は<strong>参照先を指すだけ</strong>なので、指す先が変われば 文字列が同じままで意味が変わります。<strong>同じ節を同じにしておけば検査を免れる</strong>形でした。</p>
+<p><strong>その置き方が 3 か所にありました。</strong>§25 で直したのは 1 か所目です。</p>
+<div class="tw"><table><thead><tr><th></th><th>直した版</th><th>見つけた人</th></tr></thead><tbody><tr><td><code>oneOf</code> の枝の比較</td><td>§25（v0.6.21）</td><td>property-based 試験</td></tr><tr><td>同上・<strong>枝に sibling がある形</strong></td><td>§26（この版）</td><td><strong>外部監査</strong></td></tr><tr><td>allowlist ゲート（未対応 keyword が <code>$ref</code> を包む）</td><td>§26（この版）</td><td><strong>外部監査</strong></td></tr><tr><td><code>anyOf</code> / <code>allOf</code> の早期 <code>continue</code></td><td>§26（この版）</td><td><strong>こちら</strong>（上の 2 つを直すとき数え直して見つけた）</td></tr></tbody></table></div>
+<p>3 か所目は監査の指摘には無く、<strong>直す前に「文字列の一致を意味の一致と置いた箇所」を 数えた</strong>ときに出ました。1 件目だけ直して終わりにしない ——<strong>同じ誤りは全部数えてから直す</strong>。</p>
+<p><strong>§25 が名指しした限界が、そのまま当たりました。</strong>§25 の末尾にこう書いています。</p>
+<div class="note"><p>値は schema 対から作りますが、<strong>作れない値があれば広がりを見逃します。</strong></p></div>
+<p>監査の反例 2 件は、どちらも証人が <code>{"x": null}</code> でした。 <strong>当時の試験は「1 つの key だけが null」の値を 1 件も作れていません</strong> （実測: 300 種 6,219 候補中 <strong>0 件</strong>）。生成器の側も、 <code>$ref</code> に sibling を付けた形を<strong>枝の位置で 1 件も作っていません</strong>（実測 <strong>0 件</strong>）。 <strong>どちらか片方でも 0 なら、判定器を直しても試験は自力で見つけられません。</strong></p>
+<p>補強したうえで、v0.6.21 の判定器に対して回すと<strong>自力で反例を出しました</strong> （seed 266・枝が <code>{$ref, description}</code>・参照先の <code>type</code> が広がった形）。</p>
+<p><strong>現行 schema への影響はありません。</strong><code>$ref</code> + sibling は現行 schema に 3 件 （<code>evidenceGrade</code> が 3 版すべてでこの形）ありますが、いずれも <code>properties</code> の位置で、 そこは前から正しく判定していました（<code>compare()</code> が再帰するため）。 実 schema 194 対（現行 25 schema × 直近 8 tag）で<strong>判定は 1 件も変わっていません。</strong></p>
+<h3>27. <strong><code>schemaId</code> を名乗りながら、その schema を配っていませんでした</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><code>release-stage-attestation.v1.json</code>（最終関門の記録・<strong>配布物</strong>）</td></tr><tr><td>症状</td><td><code>schemaId: trs-jack-3d-release-stage-attestation.v1</code> と名乗るが、対応する schema が asset に無い</td></tr><tr><td>影響</td><td><strong>受け手が形を独立検証できない。</strong><code>schemaId</code> が名前だけの飾りになっていた</td></tr><tr><td>見つけた人</td><td>外部監査</td></tr><tr><td>直した版</td><td>2026-08-15（<code>v0.6.21</code> 公開後・次の版に入ります）</td></tr></tbody></table></div>
+<p><strong>記録の中身は正しいものでした。</strong>監査も現物は妥当と実測しています。 欠けていたのは<strong>受け手が確かめる手段</strong>です。</p>
+<p>検査していたのは <code>test/stageAttestation.test.ts</code> の <strong>source text 検査</strong>だけでした ——「<code>stageRelease.mjs</code> に <code>exitCode:</code> と書いてあるか」は分かりますが、 <strong>生成された実物が契約に合うかは見ていません。</strong></p>
+<p>直した内容:</p>
+<ul><li><code>schemas/release-stage-attestation.v1.schema.json</code> を新設し、<strong>配布一覧へ入れた</strong></li><li><code>stageRelease.mjs</code> が<strong>書く前に</strong>実 object を検証し、合わなければ 記録も SHA256SUMS も出さずに止まる（書いてから検証すると、 落ちたときに「途中まで正しく見える記録」が残ります）</li><li><code>testEvidenceCrossBound</code> を必須欄へ入れた（<strong>それまで必須一覧に無かった</strong>）</li><li>壊した記録 8 種類＋必須欄を 1 つずつ落とした 17 通りを、schema が拒むことを実測</li><li><strong>生成器が書く欄と schema の必須欄が同じ</strong>であることを機械照合 （同じ境界を 2 つの一覧で持つと、片方しか見ない経路ができます）</li></ul>
+<p><strong>記録そのものは索引の外のままです</strong>（自己参照を避けるため。SHA256SUMS が持ちます）。 索引へ入れたのは schema だけです。</p>
+<h3>28. <strong>tag の中の <code>SECURITY.md</code> が、恒久的に 1 版古くなっていました</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><code>SECURITY.md</code>（「対象の範囲」）</td></tr><tr><td>症状</td><td>「直近の release 1 本（現時点では vX.Y.Z）」の版数が、<strong>その tag の 1 つ前</strong>を指す</td></tr><tr><td>影響</td><td>受け手が読むのは tag の中身。<code>main</code> が正しくても救いになりません</td></tr><tr><td>見つけた人</td><td>外部監査</td></tr><tr><td>直した版</td><td>2026-08-15（<code>v0.6.21</code> 公開後・次の版に入ります）</td></tr></tbody></table></div>
+<pre><code>v0.6.18 の tag → 「現時点では v0.6.17」
+v0.6.19 の tag → 「現時点では v0.6.18」
+v0.6.20 の tag → 「現時点では v0.6.19」
+v0.6.21 の tag → 「現時点では v0.6.20」     4/4 tag で実測</code></pre>
+<p><strong>工程上どうやっても直りません。</strong>release を作る commit の時点では、その版はまだ 公開されていないので、書ける最新は 1 つ前です。<code>check:doc-numbers</code> は <strong>手元の控えの最大版数</strong>でこの行を縛っていたので <code>main</code> では常に正しく、 <strong>だからこそ誰も気づきませんでした。</strong></p>
+<p>これは「在ると言ったのに無い」（v0.6.15 の検査）でも 「無いと言ったのに在る」（v0.6.21 の検査）でもない <strong>3 つ目の型</strong>です。 <strong>文書が「いま」を名乗った瞬間に、immutable な写しが嘘になる。</strong></p>
+<p>版数を書かず <code>Latest</code> の表示を指す形へ変え、 <strong>書き足されたら止まる検査</strong>を入れました（<code>test/staleWordingAndPaths.test.ts</code>）。 在ることの検査だけでは、版数を書き足しても誰も止まりません ——<strong>強制は検査に入れる。</strong>証拠に書いても誰も止まりません。</p>
+<h3>29. <strong>索引の <code>notes</code> が「4 点」と書いて 5 つ並べていました</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><code>trs-jack-3d-release-index.v1.json</code> の <code>notes</code>（<strong>説明文。機械契約ではありません</strong>）</td></tr><tr><td>症状</td><td>「受け手が固定すべき <strong>4 点</strong>」の後ろに、ファイルが <strong>5 つ</strong>並ぶ</td></tr><tr><td>影響</td><td>説明文の食い違いのみ。機械契約は <code>assets[]</code> なので分岐には影響しません</td></tr><tr><td>見つけた人</td><td>外部監査</td></tr><tr><td>直した版</td><td>2026-08-15（<code>v0.6.21</code> 公開後・次の版に入ります）</td></tr></tbody></table></div>
+<p>一覧は <code>RELEASE_ASSETS</code> から役割で引いているのに、<strong>数だけ手で書いていました。</strong> profile が 2 本になった時点でずれています。<strong>数を言わない</strong>形へ変え （受け手が固定するのは「名指しされた配布物すべて」で、個数ではありません）、 <code>notes</code> が件数を手書きしていないことを検査に入れました。</p>
+<p>同じ節の「検算ツールの契約（v0.6.16）」も、直後に <code>toolVersion 20</code> と書いていても <strong>「これは v0.6.16 の契約だ」と読めます。</strong>版数は*いつこの形にしたか*であって 契約の版ではないので、そう読める書き方をやめました。</p>
+<h2 id="s10">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
 </div>
 </body>

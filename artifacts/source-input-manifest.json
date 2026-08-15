@@ -98,7 +98,7 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-15",
- "generatedFromCommit": "b7d4d481f0119e29f7c8280ac8d7e81f6f8b1758",
+ "generatedFromCommit": "9f04cec0b0f04435deb975353dcddf0dbf2eab7a",
  "purpose": "release asset の provenance.inputFiles[].sha256 を、tag source の実ファイルと独立に検算するための一覧。**この manifest 自身は証明ではない。**GitHub の tag source archive を取得して、ここに並ぶ path の sha256 を自分で計算し、突き合わせること。",
  "inputFilesTotal": 32,
  "inconsistentAcrossArtifacts": 0,
@@ -176,9 +176,9 @@
   {
    "path": "artifacts/sensitivity.trs_jack_trrs.json",
    "role": "sensitivity-input",
-   "recordedSha256": "407e24392833bf7d31145b7d802286f3a96ba1e844611bf2489d32a6ea977876",
+   "recordedSha256": "3a35aaf3662cf972afbea29ec7ea61307142f3775af2d1076ee87e59ae446985",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "407e24392833bf7d31145b7d802286f3a96ba1e844611bf2489d32a6ea977876",
+   "actualSha256AtBuild": "3a35aaf3662cf972afbea29ec7ea61307142f3775af2d1076ee87e59ae446985",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json"
@@ -187,9 +187,9 @@
   {
    "path": "artifacts/sensitivity.trs_jack_trs.json",
    "role": "sensitivity-input",
-   "recordedSha256": "52ed828945735f00804e5e7594a1cbd8292d42200629f27123cf77886523b3b9",
+   "recordedSha256": "7385635cb167f5bb1caee5d723c0cc4ca1c559442311fd6ec0740df276188814",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "52ed828945735f00804e5e7594a1cbd8292d42200629f27123cf77886523b3b9",
+   "actualSha256AtBuild": "7385635cb167f5bb1caee5d723c0cc4ca1c559442311fd6ec0740df276188814",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v3.trs_jack_trs.json"
@@ -213,9 +213,9 @@
   {
    "path": "package-lock.json",
    "role": "lockfile",
-   "recordedSha256": "45d88824abc715f6be5e7a23550ccc7ad55e543d95a5592fedac1010ad85fd30",
+   "recordedSha256": "9d78777b5bd65cbdadeb43dd21582f32f7199d4207fc6b15681710870f1b41c9",
    "consistentAcrossArtifacts": true,
-   "actualSha256AtBuild": "45d88824abc715f6be5e7a23550ccc7ad55e543d95a5592fedac1010ad85fd30",
+   "actualSha256AtBuild": "9d78777b5bd65cbdadeb43dd21582f32f7199d4207fc6b15681710870f1b41c9",
    "matchesWorkingTree": true,
    "consumedBy": [
     "artifacts/half_plug_topology_profile.v3.trs_jack_trrs.json",
