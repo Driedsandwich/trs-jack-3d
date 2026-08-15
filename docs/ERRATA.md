@@ -551,6 +551,48 @@ testEvidence ごと消す       **止める**
 
 ---
 
+## v0.6.17（2026-08-15 記載・**次の版で直します**）
+
+### 23. **attestation の `releaseIndexSha256` が、配った索引を指していません**
+
+| | |
+|---|---|
+| 対象 | **公開済みの v0.6.17 release** の `release-stage-attestation.v1.json`（asset は上書きしません） |
+| 症状 | `releaseIndexSha256` が **repo 側の索引**（`releaseTag: null`）の digest |
+| 影響 | 受け手が**配った索引の sha256 を計算しても一致しません** |
+| 直す版 | 次の版（コードは直済み・**v0.6.17 の asset は直しません**） |
+
+**公開した直後に、自分で添付を検算して見つけました。**
+
+```
+attestation が名乗る値   e9c72e2412fa6e21…  ← repo 側（releaseTag: null）
+配布した索引の実測       a014768129b56e18…  ← 受け手が計算する値
+違う欄                   releaseTag / releaseCommit（配布時に書き込む）
+```
+
+**3 つの digest のうち 2 つは正しい。**`test_counts.json` と
+`validation-results.json` は配布時にそのまま写すので、repo 側と配布物が同じ値になります。
+**索引だけが写しではない**——`releaseTag` と `releaseCommit` を配布時に書き込むためです。
+
+```
+testCountsSha256         一致
+validationResultsSha256  一致
+releaseIndexSha256       **不一致**
+```
+
+**これは「検証した物と出荷した物を別にしない」の再発です。**
+attestation を書く工程が `resolve(ROOT, …)` を測っていました。測るべきは `OUT` の側です。
+
+**受け手への影響。**profile の数値・区間・event・`profileId` は変わりません。
+`SHA256SUMS` は配布物から作っているので正しく、**索引の検算は `SHA256SUMS` で行えます。**
+使えないのは `attestation.releaseIndexSha256` の 1 欄だけです。
+
+次の版で `OUT` を測るよう直し、**この欠陥を捕まえる検査**を入れました。
+変異対照（2026-08-15）: `resolve(ROOT, …)` へ戻すと**その検査だけが落ちます**
+（他 8 件は緑のまま＝別の検査の副作用で落ちているのではありません）。
+
+---
+
 ## この正誤表の運用
 
 - **公開済みの release 本文と asset は、いかなる理由でも書き換えない。**

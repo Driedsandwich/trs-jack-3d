@@ -58,6 +58,42 @@ describe('release-stage-attestation', () => {
       .toBeGreaterThan(STAGE.indexOf('const INDEX_REL'))
   })
 
+  /**
+   * **配った実物を測っているか（v0.6.18・v0.6.17 の欠陥）。**
+   *
+   * v0.6.17 は `resolve(ROOT, ...)` を測っていた。写しである 2 つは同じ値になるが、
+   * **索引だけは配布時に releaseTag / releaseCommit を書き込む**ので違う。
+   * 結果、公開した attestation は
+   *
+   *   名乗り e9c72e24…（repo 側・releaseTag: null）
+   *   配布物 a0147681…（受け手が計算する値）
+   *
+   * となり、受け手が突き合わせても一致しなかった（公開後に実測して発見）。
+   *
+   * **この検査はソースを読む。**staging を実際に回すとテストが 30 秒級になるため。
+   * 代わりに「repo 側を測っていないこと」を名指しで見る。
+   */
+  it('**digest は配った実物（OUT）から測っている**', () => {
+    const block = STAGE.slice(STAGE.indexOf('const ATTESTATION_NAME'))
+    for (const k of ['testCountsSha256', 'validationResultsSha256', 'releaseIndexSha256']) {
+      const line = block.split('\n').find((l) => l.trimStart().startsWith(`${k}:`))
+      expect(line, `${k} を書いていない`).toBeTruthy()
+      expect(line, `${k} が repo 側を測っている（配布物と違う値になる）`).toContain('resolve(OUT,')
+      expect(line, `${k} が repo 側を測っている`).not.toContain('resolve(ROOT,')
+    }
+  })
+
+  /**
+   * **索引は写しではない**ことを、実物で確かめる（この検査の前提そのもの）。
+   * 前提が崩れたら（配布時に何も書き込まなくなったら）上の検査は無意味になるので、
+   * そのときはここが落ちて気づける。
+   */
+  it('配布する索引は repo 側と別物である（だから OUT を測る意味がある）', () => {
+    expect(STAGE, '配布用の索引を書き込んでいない').toContain('stagedIndex')
+    expect(STAGE, 'tag と commit を書き込んでいない')
+      .toMatch(/stagedIndex = \{ \.\.\.idx, releaseTag: tag, releaseCommit: commit \}/)
+  })
+
   it('自己申告であることを、成果物自身が名乗っている', () => {
     expect(STAGE, '自己申告だと書いていない').toContain('自己申告')
     expect(STAGE, '受け手の独立検証を置き換えないと書いていない').toContain('独立検証を置き換えない')

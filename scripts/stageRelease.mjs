@@ -275,9 +275,23 @@ const ATTESTATION_NAME = 'release-stage-attestation.v1.json'
     stageToolVersion: STAGE_TOOL_VERSION,
     generatedAt: process.env.ARTIFACT_DATE ?? new Date().toISOString().slice(0, 10),
     sourceCommit: git(['rev-parse', 'HEAD']),
-    testCountsSha256: sha256(resolve(ROOT, TEST_COUNTS)),
-    validationResultsSha256: sha256(resolve(ROOT, VALIDATION)),
-    releaseIndexSha256: sha256(resolve(ROOT, INDEX_REL)),
+    /**
+     * **配った実物を測る（v0.6.18・v0.6.17 の欠陥）。**
+     *
+     * v0.6.17 はここで `resolve(ROOT, ...)` を測っていた。
+     * `test_counts.json` と `validation-results.json` は写しなので同じ値になるが、
+     * **索引だけは配布時に `releaseTag` / `releaseCommit` を書き込む**ので違う。
+     * 結果、v0.6.17 の attestation は
+     *
+     *   名乗り e9c72e24…（repo 側・releaseTag: null）
+     *   配布物 a0147681…（受け手が計算する値）
+     *
+     * となり、**受け手が突き合わせても一致しない**（実測 2026-08-15）。
+     * 検証した物と出荷した物を別にしない——測るのは `OUT` の側である。
+     */
+    testCountsSha256: sha256(resolve(OUT, basename(TEST_COUNTS))),
+    validationResultsSha256: sha256(resolve(OUT, basename(VALIDATION))),
+    releaseIndexSha256: sha256(resolve(OUT, basename(INDEX_REL))),
     /** 上の門の結果。**false のまま配れないよう、門は既に process.exit している** */
     exactTestEvidenceMatched: STAGE_GATES.exactTestEvidenceMatched,
     testEvidenceCrossBound: STAGE_GATES.testEvidenceCrossBound,
