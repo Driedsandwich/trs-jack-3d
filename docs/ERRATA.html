@@ -310,7 +310,7 @@ testEvidence ごと消す       **止める**</code></pre>
 <hr>
 <h2 id="s6">v0.6.17（2026-08-15 記載・<strong>次の版で直します</strong>）</h2>
 <h3>23. <strong>attestation の <code>releaseIndexSha256</code> が、配った索引を指していません</strong></h3>
-<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><strong>公開済みの v0.6.17 release</strong> の <code>release-stage-attestation.v1.json</code>（asset は上書きしません）</td></tr><tr><td>症状</td><td><code>releaseIndexSha256</code> が <strong>repo 側の索引</strong>（<code>releaseTag: null</code>）の digest</td></tr><tr><td>影響</td><td>受け手が<strong>配った索引の sha256 を計算しても一致しません</strong></td></tr><tr><td>直す版</td><td>次の版（コードは直済み・<strong>v0.6.17 の asset は直しません</strong>）</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><strong>公開済みの v0.6.17 release</strong> の <code>release-stage-attestation.v1.json</code>（asset は上書きしません）</td></tr><tr><td>症状</td><td><code>releaseIndexSha256</code> が <strong>repo 側の索引</strong>（<code>releaseTag: null</code>）の digest</td></tr><tr><td>影響</td><td>受け手が<strong>配った索引の sha256 を計算しても一致しません</strong></td></tr><tr><td>直した版</td><td><strong>v0.6.18</strong>（測る先を配布物の側へ。<strong>v0.6.17 の asset は直しません</strong>）</td></tr></tbody></table></div>
 <p><strong>公開した直後に、自分で添付を検算して見つけました。</strong></p>
 <pre><code>attestation が名乗る値   e9c72e2412fa6e21…  ← repo 側（releaseTag: null）
 配布した索引の実測       a014768129b56e18…  ← 受け手が計算する値
@@ -321,7 +321,13 @@ validationResultsSha256  一致
 releaseIndexSha256       **不一致**</code></pre>
 <p><strong>これは「検証した物と出荷した物を別にしない」の再発です。</strong> attestation を書く工程が <code>resolve(ROOT, …)</code> を測っていました。測るべきは <code>OUT</code> の側です。</p>
 <p><strong>受け手への影響。</strong>profile の数値・区間・event・<code>profileId</code> は変わりません。 <code>SHA256SUMS</code> は配布物から作っているので正しく、<strong>索引の検算は <code>SHA256SUMS</code> で行えます。</strong> 使えないのは <code>attestation.releaseIndexSha256</code> の 1 欄だけです。</p>
-<p>次の版で <code>OUT</code> を測るよう直し、<strong>この欠陥を捕まえる検査</strong>を入れました。 変異対照（2026-08-15）: <code>resolve(ROOT, …)</code> へ戻すと<strong>その検査だけが落ちます</strong> （他 8 件は緑のまま＝別の検査の副作用で落ちているのではありません）。</p>
+<p>v0.6.18 で <code>OUT</code> を測るよう直し、<strong>この欠陥を捕まえる検査</strong>を入れました。 変異対照（2026-08-15）: <code>resolve(ROOT, …)</code> へ戻すと<strong>その検査だけが落ちます</strong> （他 8 件は緑のまま＝別の検査の副作用で落ちているのではありません）。</p>
+<p><strong>直ったことを公開物で確かめました</strong>（2026-08-15）。</p>
+<pre><code>v0.6.18 の添付を取得して attestation の 3 digest を検算
+  testCountsSha256         一致
+  validationResultsSha256  一致
+  releaseIndexSha256       一致   ← v0.6.17 ではここだけ不一致だった
+対照  別ファイルの digest と比べると不一致を検出</code></pre>
 <hr>
 <h2 id="s7">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
