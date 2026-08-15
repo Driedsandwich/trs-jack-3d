@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRS:7807bfc628e4",
+ "profileId": "trs-jack-3d:TRS|JACK-TRS:015000d7e7f4",
  "variantId": "TRS|JACK-TRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -323,16 +323,16 @@
    "constructedFrom": []
   }
  },
- "sourceRevision": "6afc1d35b7aa8cbfa7691b619b782dfa56bc4c76",
+ "sourceRevision": "7d88a0aafd31448da7b1fae5dda5d71a1552e965",
  "generatedAt": "2026-08-15",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "6afc1d35b7aa8cbfa7691b619b782dfa56bc4c76",
+  "generatedFromCommit": "7d88a0aafd31448da7b1fae5dda5d71a1552e965",
   "workingTreeDirty": false,
   "revisionOverride": false,
   "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "7807bfc628e44e65eac26eff662b8dd4c7501d407effe3d8426a90c36bd73313",
+  "inputDigest": "015000d7e7f46afcba0d99e5d9a3b80dbdd48dc3beae94cb31b7d3b19d393606",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
@@ -342,7 +342,7 @@
    },
    {
     "path": "artifacts/sensitivity.trs_jack_trs.json",
-    "sha256": "3d0839763201e1bca95f408ca1b3f3445f80f0ed0feae5998908261d714cb090",
+    "sha256": "52ed828945735f00804e5e7594a1cbd8292d42200629f27123cf77886523b3b9",
     "role": "sensitivity-input"
    },
    {
@@ -352,7 +352,7 @@
    },
    {
     "path": "package-lock.json",
-    "sha256": "c7b6d3d0d1cfed84ce066e18a1ffa79d53dc5f34c924a9614c77b77aa4e99692",
+    "sha256": "45d88824abc715f6be5e7a23550ccc7ad55e543d95a5592fedac1010ad85fd30",
     "role": "lockfile"
    },
    {
@@ -4058,8 +4058,8 @@
     "jack.contact.sleeve.axialCenter",
     "jack.contact.sleeve.padWidth"
    ],
-   "generatedFromCommit": "710f169213894fac03d295838bab78f42e8a70f2",
-   "inputDigest": "bf36daa8f0a80a1af5517bfa8301e3ea4f5453754c9a9015fc27fc6e3795e552",
+   "generatedFromCommit": "70b77837105d449f23641566f14b596e8b93257a",
+   "inputDigest": "fc5545a9ef7b98022d1695df6d4c6826072758971cbb85f8b053d8fa33654d92",
    "configurationsUsable": 869,
    "shippedInsideSweptRange": true
   },
