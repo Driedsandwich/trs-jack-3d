@@ -319,8 +319,13 @@ export const REASON_CODES = {
    * 実測（2026-08-14）: 読めない directory を渡すと `SOURCE_UNAVAILABLE_OTHER`。
    */
   // ---- source を取れなかった ----
-  /** **実測 2026-08-14: 到達しない。**存在しない path は先に directory 判定が `SOURCE_DIRECTORY_MISSING` で止める */
-  SOURCE_ARCHIVE_MISSING: { reachability: 'defensive-invariant', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '指定した archive ファイルが無い' },
+  /**
+   * **決定的には到達しない（v0.6.17・外部監査 §8）。**
+   * 存在しない path は先に directory 判定が `SOURCE_DIRECTORY_MISSING` で止める（実測 2026-08-14）。
+   * ただし**絶対に到達しないわけではない**——存在を確かめてから開くまでの間に消されれば通る。
+   * `defensive-invariant`（論理的に起こりえない）と混ぜず、`race-defensive` として分ける。
+   */
+  SOURCE_ARCHIVE_MISSING: { reachability: 'race-defensive', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '指定した archive ファイルが無い' },
   SOURCE_ARCHIVE_UNREADABLE: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'archive ファイルを読めない' },
   SOURCE_DIRECTORY_MISSING: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '指定した directory が無い' },
   SOURCE_TAG_NOT_LOCAL: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'tag が手元に無い' },
@@ -372,6 +377,37 @@ export const REASON_CODES = {
   MISMATCH_MULTIPLE: { reachability: 'cli-route', status: 'MISMATCH', family: 'mismatch', summary: '食い違いが 2 種類以上ある' },
 }
 
+
+/**
+ * **到達性の語彙（v0.6.17・外部監査 §8）。**
+ *
+ * v0.6.16 は 4 種類の値を使いながら、意味をどこにも書いていなかった。
+ * 検査（`test/reasonCodeReachability.test.ts`）は
+ * `reachability !== 'defensive-invariant'` という**文字列の否定**で 2 群に分けており、
+ * 新しい値を足すと**黙って「到達するはず」側へ入る。**
+ *
+ * `reachedInRun` = **この repo の試験一式で、決定的に踏めるか。**
+ * 「到達しうるか」ではない——TOCTOU は到達しうるが決定的には踏めない。
+ */
+export const REACHABILITY_KINDS = {
+  corpus: { reachedInRun: true, meaning: '壊した tar の材料から出る' },
+  'cli-route': { reachedInRun: true, meaning: 'CLI の引数・環境・依存注入から出る' },
+  'defensive-invariant': { reachedInRun: false, meaning: '先行する不変条件に遮られ、外部入力からは論理的に到達しない' },
+  'race-defensive': { reachedInRun: false, meaning: '確認と使用の間で状態が変われば到達しうるが、決定的には踏めない' },
+}
+
+/** catalog の全 code の `reachability` が語彙に載っていること。**知らない値を黙って通さない** */
+export function assertReachabilityVocabulary(codes = REASON_CODES) {
+  const bad = Object.entries(codes)
+    .filter(([, m]) => !Object.hasOwn(REACHABILITY_KINDS, m.reachability))
+    .map(([c, m]) => `${c}: "${m.reachability}"`)
+  if (bad.length) {
+    throw new Error(`知らない reachability がある: ${bad.join(', ')}。`
+      + `**REACHABILITY_KINDS へ意味と reachedInRun を書くこと。**書かずに足すと、`
+      + '両方向の照合が勝手にどちらかの群へ入れる。')
+  }
+  return true
+}
 
 /** catalog に載っているか。載っていなければ投げる（静かに `*_OTHER` へ落とさない） */
 export function assertCatalogued(code) {
@@ -581,7 +617,8 @@ const done = (payload, code) => {
     assertCliResultSemantics(out)
   } catch (e) {
     process.stderr.write(
-      `**この道具の欠陥です。結果を出しません。**\n  ${e.message}\n`
+      `${INTERNAL_CONTRACT_FAILURE_MARKER}\n`
+      + `**この道具の欠陥です。結果を出しません。**\n  ${e.message}\n`
       + `  toolVersion ${TOOL_VERSION} / status ${out.status} / stableReasonCode ${JSON.stringify(out.stableReasonCode)}\n`
       + `  終了コード ${INTERNAL_FAILURE_EXIT} は「道具が壊れている」だけに使います`
       + `（検証の結果ではありません）。\n`,
@@ -598,6 +635,15 @@ const done = (payload, code) => {
  * 重なると、受け手は「検証の結果」と「道具が壊れた」を区別できない。
  */
 export const INTERNAL_FAILURE_EXIT = 3
+
+/**
+ * **stderr の先頭に置く目印（v0.6.17・外部監査 §9）。**
+ * 受け手が「道具が壊れた」を機械で見分けられるようにする。
+ * 説明文は変わりうるので、**文言でなくこの 1 語で分岐すること。**
+ * 通常の CLI 結果 schema へ `INTERNAL_ERROR` は足さない
+ * ——壊れた道具が schema 適合の検証結果を捏造するほうが危ない。
+ */
+export const INTERNAL_CONTRACT_FAILURE_MARKER = 'TRS_JACK_VERIFIER_INTERNAL_CONTRACT_FAILURE'
 
 /**
  * **出す直前に、自分の公開契約に収まっているかを見る（v0.6.16・外部監査 P0-2）。**

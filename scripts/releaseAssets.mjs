@@ -136,6 +136,20 @@ export const SOURCE_ONLY_TARGETS = [
   },
 ]
 
+/**
+ * **受け手が必ず lock すべき配布物（v0.6.17・外部監査 §10）。**
+ *
+ * 監査の指摘は「索引へ欄を足す必要はないが、`notes` だけを機械契約にするな」。
+ * 値の正本は `assets[]` の filename と sha256 で、ここは**どれを固定すべきかの名前**だけを持つ。
+ *
+ * **一覧を手で書かない**——`RELEASE_ASSETS` から role で引く。
+ * 手で書くと、配布物の名前が変わったときにここだけ古くなる。
+ */
+export const REQUIRED_CONSUMER_PINS = RELEASE_ASSETS
+  .filter((a) => a.role === 'tool' || a.role === 'profile'
+    || a.path === CLI_RESULT_SCHEMA_PATH || a.path === 'artifacts/source-input-manifest.json')
+  .map((a) => a.path.split('/').pop())
+
 export const REMOVED_SINCE_V011 = [
   {
     path: 'half-plug-topology-profile.v1.schema.json',

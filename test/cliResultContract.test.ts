@@ -98,4 +98,50 @@ describe('CLI 結果は、どの止まり方でも公開契約に収まる', () 
     expect(Object.values(CLI_STATUS_EXIT)).not.toContain(INTERNAL_FAILURE_EXIT)
     expect(INTERNAL_FAILURE_EXIT).toBe(3)
   })
+
+  /**
+   * **壊れたときの見分け方を、文言でなく 1 語にする（v0.6.17・外部監査 §9）。**
+   *
+   * v0.6.16 は stderr へ日本語の説明を書いていたが、**説明文は版ごとに書き換わる。**
+   * 受け手がそれで分岐すると、こちらが言い回しを直した回に黙って外れる。
+   *
+   * ここでは**実際に契約違反の出力を作らせて**、
+   * stdout が空・exit 3・stderr の先頭が目印、の 3 つを同時に見る。
+   * 注入は preload で `assertCliResultSemantics` を壊す形にし、**道具のファイルは変えない。**
+   */
+  it('**契約違反のときは JSON を出さず、exit 3 と目印で止まる**', () => {
+    const d = mkdtempSync(join(tmpdir(), 'internal-'))
+    tmps.push(d)
+    const src = readFileSync(resolve(ROOT, 'scripts/verifyReleaseSourceInputs.mjs'), 'utf8')
+    /** 出す直前の検査を「必ず投げる」に差し替える。**配る側のファイルは触らない** */
+    const TARGET = 'function assertCliResultSemantics(out) {'
+    const broken = src.replace(TARGET, `${TARGET}\n  throw new Error('注入した契約違反')`)
+    /**
+     * **変異が当たったことを先に確かめる（→ メモリ prove-the-mutation-applied）。**
+     * 当たらなかった変異と素通りした変異は**出力が同じ**なので、
+     * ここを飛ばすと「関門が無い」と読み違える。実際 1 回読み違えた（2026-08-15）。
+     */
+    expect(broken, '差し替えが当たっていない（宣言の書式が変わった）').not.toBe(src)
+    expect(broken.length, '差し替えで短くなっている').toBeGreaterThan(src.length)
+
+    const tool = join(d, 'verifier.mjs')
+    writeFileSync(tool, broken)
+    const r = spawnSync('node', [tool, '--source', '.'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 })
+
+    expect(r.status, `exit が 3 でない（stderr: ${String(r.stderr).slice(0, 200)}）`).toBe(INTERNAL_FAILURE_EXIT)
+    expect(String(r.stdout), '契約を破った出力を渡している').toBe('')
+    expect(String(r.stderr).split('\n')[0], 'stderr の先頭が目印でない')
+      .toBe(INTERNAL_CONTRACT_FAILURE_MARKER)
+    /** **通常の CLI 結果 schema に `INTERNAL_ERROR` を足していない**（監査 §9） */
+    expect(Object.keys(REASON_CODES), 'catalog に INTERNAL_ERROR を足している').not.toContain('INTERNAL_ERROR')
+  })
+
+  /** 対照: 注入しなければ、同じ呼び方で JSON が出て 3 では終わらない */
+  it('対照: 注入しなければ exit 3 にならない', () => {
+    const r = spawnSync('node', ['scripts/verifyReleaseSourceInputs.mjs', '--source', '.'],
+      { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 })
+    expect(r.status, '何もしていないのに道具の欠陥で止まっている').not.toBe(INTERNAL_FAILURE_EXIT)
+    expect(String(r.stdout).trim().length, 'JSON を出していない').toBeGreaterThan(0)
+    expect(String(r.stderr)).not.toContain(INTERNAL_CONTRACT_FAILURE_MARKER)
+  })
 })

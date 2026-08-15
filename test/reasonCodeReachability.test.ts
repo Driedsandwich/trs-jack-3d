@@ -39,7 +39,10 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { allCases, normalTar } from './_corruptTar.mjs'
-import { REASON_CODES, TAR_LIMITS, readArchiveBuffer, readBodyLimited } from '../scripts/verifyReleaseSourceInputs.mjs'
+import {
+  REACHABILITY_KINDS, REASON_CODES, TAR_LIMITS, assertReachabilityVocabulary,
+  readArchiveBuffer, readBodyLimited,
+} from '../scripts/verifyReleaseSourceInputs.mjs'
 import { injectedRoutes } from './_cliRoutes.mjs'
 import { mustBeNonEmpty } from './_must'
 
@@ -424,8 +427,17 @@ describe('catalog の到達性の宣言が、実測と合っているか', () =>
    */
   it('**宣言した到達性が、この run の実測と両方向で一致する**', () => {
     const entries = Object.entries(REASON_CODES)
-    const shouldReach = entries.filter(([, m]) => m.reachability !== 'defensive-invariant').map(([c]) => c)
-    const shouldNot = entries.filter(([, m]) => m.reachability === 'defensive-invariant').map(([c]) => c)
+    /**
+     * **群分けは語彙表から引く（v0.6.17・外部監査 §8）。**
+     * v0.6.16 まで `!== 'defensive-invariant'` という文字列の否定で分けていた。
+     * その形だと、新しい種類（`race-defensive`）を足した瞬間に
+     * **黙って「到達するはず」側へ入り、実測と食い違って落ちる**——
+     * あるいは逆に、宣言を書き換えるだけで検査から外せてしまう。
+     */
+    assertReachabilityVocabulary(REASON_CODES)
+    const reached = (m: { reachability: string }) => REACHABILITY_KINDS[m.reachability].reachedInRun
+    const shouldReach = entries.filter(([, m]) => reached(m)).map(([c]) => c)
+    const shouldNot = entries.filter(([, m]) => !reached(m)).map(([c]) => c)
 
     const missing = shouldReach.filter((c) => !observed.has(c))
     const unexpected = shouldNot.filter((c) => observed.has(c))

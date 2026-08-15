@@ -134,6 +134,7 @@ if (existsSync(resolve(ROOT, TEST_COUNTS))) {
     if (!ALLOW_NOT_READY) process.exit(1)
     console.log('  --allow-not-ready が付いているので続行する。')
   } else {
+    STAGE_GATES.exactTestEvidenceMatched = true
     console.log(`  実測 ${live.total} 件 / ${Object.keys(live.byFile).length} ファイル — 記録と全欄一致\n`)
   }
 }
@@ -238,6 +239,57 @@ for (const a of RELEASE_ASSETS) {
     copyFileSync(src, dst)
   }
   rows.push({ name: basename(a.path), sha256: sha256(dst), role: a.role })
+}
+
+/**
+ * --- 最終関門を通ったこと自体を残す（v0.6.17・外部監査 P1-F）------------------
+ *
+ * ここまでの門（実測の突き合わせ・cross-binding・local 拒否）は**通ったら黙って進む。**
+ * 通った事実は CI のログと作業報告にしか残らず、**配布物からは読めなかった。**
+ * `validation-results.releaseReadinessStatus: READY` は
+ * `release:evidence` の時点の判定なので、**最終関門を通った証拠ではない。**
+ *
+ * ## なぜ索引に入れないのか（自己参照を避ける）
+ *
+ * 索引 `trs-jack-3d-release-index.v1.json` は `release:evidence` が作り、
+ * **その時点で全 asset の sha256 を持つ。**この attestation は
+ * **その索引を読んでから**作られるので、索引が自分の digest を持つことはできない。
+ * 入れようとすると「索引 → attestation → 索引」で 1 回の実行では収束しない
+ * （`validation-results.json` を検証対象から外しているのと同じ理由）。
+ *
+ * 代わりに **SHA256SUMS が持つ。**SHA256SUMS は staging の最後に作られるので循環しない。
+ */
+const ATTESTATION_NAME = 'release-stage-attestation.v1.json'
+{
+  const attestation = {
+    schemaVersion: 1,
+    schemaId: 'trs-jack-3d-release-stage-attestation.v1',
+    kind: 'release-stage-attestation',
+    purpose:
+      '**最終関門（npm run release:stage）を通ったことの記録。**'
+      + 'validation-results.releaseReadinessStatus は release:evidence 時点の判定であって、'
+      + 'ここを通った証拠ではない。**この記録も自己申告である**'
+      + '——作った側が作った側を検査した結果でしかない。受け手の独立検証を置き換えない。',
+    releaseTag: VERSION,
+    stageCommand: 'npm run release:stage',
+    stageToolVersion: STAGE_TOOL_VERSION,
+    generatedAt: process.env.ARTIFACT_DATE ?? new Date().toISOString().slice(0, 10),
+    sourceCommit: git(['rev-parse', 'HEAD']),
+    testCountsSha256: sha256(resolve(ROOT, TEST_COUNTS)),
+    validationResultsSha256: sha256(resolve(ROOT, VALIDATION)),
+    releaseIndexSha256: sha256(resolve(ROOT, INDEX_REL)),
+    /** 上の門の結果。**false のまま配れないよう、門は既に process.exit している** */
+    exactTestEvidenceMatched: STAGE_GATES.exactTestEvidenceMatched,
+    testEvidenceCrossBound: STAGE_GATES.testEvidenceCrossBound,
+    releaseReadinessStatus: read(resolve(ROOT, VALIDATION)).releaseReadinessStatus ?? null,
+    exitCode: 0,
+    notInReleaseIndex:
+      '**索引はこの記録の sha256 を持たない。**索引はこれより前に作られ、'
+      + 'これは索引を読んでから作られるので、入れると 1 回の実行で収束しない。'
+      + '**SHA256SUMS がこの記録の sha256 を持つ。**',
+  }
+  writeFileSync(resolve(OUT, ATTESTATION_NAME), JSON.stringify(attestation, null, 1) + '\n')
+  rows.push({ name: ATTESTATION_NAME, sha256: sha256(resolve(OUT, ATTESTATION_NAME)), role: 'attestation' })
 }
 
 // --- SHA256SUMS --------------------------------------------------------------

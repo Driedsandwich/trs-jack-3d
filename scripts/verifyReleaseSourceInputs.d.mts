@@ -77,7 +77,7 @@ export declare function readBodyLimited(res: Response, limit: number): Promise<B
 /** status に紐づくもの（終了コード・loader が返してよいか・受け手向け注記）を 1 か所で持つ（v0.6.14） */
 /** 止め方の名前の唯一の正本（v0.6.14）。**配布物 1 ファイルに同梱する** */
 /** `reachability` は**宣言**であり、試験が両方向で実測と突き合わせる（v0.6.15・外部監査 P1-C） */
-export type Reachability = 'corpus' | 'external-fixture' | 'cli-route' | 'defensive-invariant'
+export type Reachability = 'corpus' | 'external-fixture' | 'cli-route' | 'defensive-invariant' | 'race-defensive'
 export interface ReasonCodeMeta { reachability: Reachability, status: string, family: string, summary: string }
 export declare const REASON_CODES: Record<string, ReasonCodeMeta>
 export declare const OTHER_CODES: readonly string[]
@@ -111,3 +111,9 @@ export declare const CLI_STATUSES: readonly string[]
 
 /** `{ kind: ARCHIVE_* }` を直に組み立てず、catalog から kind を引く（v0.6.14） */
 export declare function archiveError(code: string, error: string, detail?: Record<string, unknown>): { error: string, kind: string, detail: Record<string, unknown>, stableReasonCode: string }
+
+/** 到達性の語彙。`reachedInRun` = この repo の試験一式で決定的に踏めるか（v0.6.17） */
+export declare const REACHABILITY_KINDS: Record<string, { reachedInRun: boolean, meaning: string }>
+export declare function assertReachabilityVocabulary(codes?: unknown): boolean
+/** 道具自身の欠陥を stderr の先頭で名乗る目印（v0.6.17） */
+export declare const INTERNAL_CONTRACT_FAILURE_MARKER: string
