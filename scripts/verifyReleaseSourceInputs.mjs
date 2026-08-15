@@ -590,6 +590,17 @@ export function defaultIo() {
     statSync: (p) => statSync(p),
     lstatSync: (p) => lstatSync(p),
     readdirSync: (p) => readdirSync(p),
+    /**
+     * **network（v0.6.20・core / CLI 分離のあと）。**
+     *
+     * v0.6.19 まで `SOURCE_FETCH_*` は `globalThis.fetch` を差し替えて踏んでいた。
+     * `main(args, io)` を抽出したので、**global を触らずに注入できる。**
+     *
+     * **timeout の合図もここへ含める。**`AbortSignal.timeout` は
+     * `TimeoutError` を投げる約束で、判定側はその `name` を見ている。
+     * 差し替える側は同じ約束を守ればよい——判定側は 1 行も変えない。
+     */
+    fetch: (url, init) => fetch(url, init),
   }
 }
 
@@ -2901,7 +2912,7 @@ async function loadFromGithub(tag) {
   let res
   try {
     // **timeout を置く（v0.6.0 P1）。**返らない相手に当たると、道具が止まったまま戻らない
-    res = await fetch(url, {
+    res = await io.fetch(url, {
       headers: { 'user-agent': 'trs-jack-3d-verify', accept: 'application/vnd.github+json' },
       signal: AbortSignal.timeout(TAR_LIMITS.fetchTimeoutMs),
     })

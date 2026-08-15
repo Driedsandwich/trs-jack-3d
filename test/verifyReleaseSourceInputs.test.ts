@@ -82,8 +82,18 @@ describe('§5-1 read-only であること', () => {
   it('**`gh` に依存していない**（受け手の環境に無くても使える）', () => {
     expect(SRC).not.toMatch(/execFileSync\(\s*'gh'/)
     expect(SRC).not.toMatch(/'gh api'/)
-    // 取得は組み込みの fetch を GET で使う（read-only の性質は変わらない）
-    expect(SRC).toMatch(/await fetch\(/)
+    /**
+     * 取得は組み込みの `fetch` を GET で使う（read-only の性質は変わらない）。
+     *
+     * **v0.6.20 で `io.fetch` 経由になった。**`io` の既定は組み込みの `fetch` そのもので、
+     * 性質は変わらない。ここで見たいのは「外部コマンドに頼っていないこと」なので、
+     * **どちらの書き方でも通す。**
+     * 素の `await fetch(` だけを要求すると、`io` へ寄せた瞬間に落ちる
+     * ——実際 v0.6.20 で落ちた（この検査が正しく鳴った）。
+     */
+    expect(SRC, '取得の経路が見当たらない').toMatch(/await (io\.)?fetch\(/)
+    /** **`io` の既定が組み込みの fetch であること。**別のものへ差し替えていない */
+    expect(SRC, 'io の既定が組み込みの fetch でない').toMatch(/fetch: \(url, init\) => fetch\(url, init\)/)
   })
 
   it('tar を展開せずメモリ上で読んでいる', () => {

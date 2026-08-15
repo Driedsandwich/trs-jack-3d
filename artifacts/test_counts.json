@@ -174,7 +174,7 @@
  },
  "generatedAt": "2026-08-15",
  "note": "npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。byFile は npm run check:vacuity の下限としても使う。件数が減る変更は理由を書く。",
- "total": 1371,
+ "total": 1376,
  "byFile": {
   "ciWorkflow.test.ts": 35,
   "cliOutputBaseline.test.ts": 7,
@@ -186,7 +186,7 @@
   "docs.test.ts": 72,
   "generatorDependencyClosure.test.ts": 14,
   "halfPlugProfile.test.ts": 23,
-  "mainInjection.test.ts": 7,
+  "mainInjection.test.ts": 12,
   "measurementGate.test.ts": 41,
   "provenance.test.ts": 8,
   "realJackComparison.test.ts": 12,
@@ -223,5 +223,5 @@
  "runner": "vitest",
  "runnerVersion": "4.1.10",
  "nodeVersion": "v22.22.3",
- "generatedFromCommit": "108166eecb03fc21ec5cced1066301b1013a1828"
+ "generatedFromCommit": "82ef01c6d62b890ea05917e39b48c7decaa79d86"
 }

@@ -460,3 +460,55 @@ io 注入          本体が io しか見ていないことを示す
 
 `io` に fetch を足せば、`SOURCE_FETCH_*` も global を差し替えずに踏めます。
 **この版ではやりません**——接点の追加であって抽出ではないためです。
+
+---
+
+# 第4段の実施記録（2026-08-15）— `io` に fetch を足す
+
+**上に「この版ではやりません」と書いた分をやりました。**
+
+```
+io へ fetch を足す          差し替えたのは呼び出し 1 か所だけ
+判定ロジック                差分 0 行（AbortSignal.timeout が TimeoutError を投げる約束はそのまま）
+既存 10 経路の出力           byte 一致
+出しうる code               82 種類のまま
+toolVersion / schemaVersion 20 / 2 のまま
+```
+
+## 4 経路すべてを global 差し替えなしで踏みました
+
+```
+SOURCE_FETCH_FAILED      fetch が throw
+SOURCE_FETCH_TIMEOUT     name = 'TimeoutError' で throw
+SOURCE_HTTP_ERROR        503 を返す
+SOURCE_BODY_UNREADABLE   本文の reader が失敗する
+```
+
+**変異対照。**`io.fetch` を素の `fetch` へ戻すと、**この 4 件だけが落ちます**。
+
+**`globalThis.fetch` を触っていないこと**も試験で確かめています
+——触っていたら、この試験は「global の差し替えが効いた」ことしか示しません。
+
+**呼ばれた回数も数えます**（各 1 回）。呼ばれていなければ、別の経路で止まっています。
+
+## 子プロセスの route 表は残しました
+
+理由は v0.6.19 の notes §4 のとおりです。**`io` 注入は子プロセスへ効きません。**
+あの表は `spawnSync` で起動するので、呼び出し側のオブジェクトは相手に届きません。
+
+```
+子プロセスの表  配った 1 ファイルを、受け手と同じ起動のされ方で踏む
+io 注入         本体が io しか見ていないことを示す
+```
+
+## `io` に残っているもの
+
+```
+足した   cwd / argv / stdout / stderr / exit（v0.6.18）
+         existsSync / readFileSync / statSync / lstatSync / readdirSync（v0.6.18）
+         fetch（v0.6.20）
+残る     入口の判定（realpathSync）— これは「この道具が起動されたのか」を見るもので、
+         検証の入力ではない。**io には入れない。**
+         execFileSync（git rev-parse / git archive）— 外部プロセスなので、
+         差し替えるなら PATH のほうが素直。子プロセスの表がそれをやっている
+```

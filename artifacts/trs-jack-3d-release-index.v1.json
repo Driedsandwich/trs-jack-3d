@@ -4,11 +4,11 @@
  "generatedAt": "2026-08-15",
  "releaseTag": null,
  "releaseCommit": null,
- "evidenceBuiltAtCommit": "108166eecb03fc21ec5cced1066301b1013a1828",
+ "evidenceBuiltAtCommit": "82ef01c6d62b890ea05917e39b48c7decaa79d86",
  "artifactGenerationCommit": "90380a5481b70d93f83ce5d524ce1a53fb6e3e60",
  "artifactGenerationCommits": [
   {
-   "commit": "108166eecb03fc21ec5cced1066301b1013a1828",
+   "commit": "82ef01c6d62b890ea05917e39b48c7decaa79d86",
    "assets": [
     "source-input-manifest.json",
     "source-snapshot.v1.json",
@@ -121,9 +121,9 @@
   },
   {
    "filename": "source-input-manifest.json",
-   "sha256": "29a8916bf8687b1673f44bd796ecae53389a9027b58b9c8d8b34799f688f2fbc",
+   "sha256": "747d86b73bfb89d6ae9e63cf24d6b856ec496c2df2fb617969dbfeb7b17511f9",
    "role": "evidence",
-   "generatedFromCommit": "108166eecb03fc21ec5cced1066301b1013a1828"
+   "generatedFromCommit": "82ef01c6d62b890ea05917e39b48c7decaa79d86"
   },
   {
    "filename": "source-input-manifest.v2.schema.json",
@@ -142,9 +142,9 @@
   },
   {
    "filename": "source-snapshot.v1.json",
-   "sha256": "4b1f6dca705be69c49b5ee07eea16a2d2bf4b4e54832a4392695e678866d0421",
+   "sha256": "1dfeee8df559e32c59673d6a753f762c71238c47ef45ad5c9ad6d7cfbbb80528",
    "role": "evidence",
-   "generatedFromCommit": "108166eecb03fc21ec5cced1066301b1013a1828"
+   "generatedFromCommit": "82ef01c6d62b890ea05917e39b48c7decaa79d86"
   },
   {
    "filename": "source-snapshot.v1.schema.json",
@@ -153,9 +153,9 @@
   },
   {
    "filename": "source-verification-result.json",
-   "sha256": "9f3c9d0963e33baeaaad672dfb591157de143492da1026eae6fc971e6910ce8d",
+   "sha256": "c36db26fbc46c71f47d2daea55c8ebf53172f4f386945f1805cac3113b08e485",
    "role": "evidence",
-   "generatedFromCommit": "108166eecb03fc21ec5cced1066301b1013a1828"
+   "generatedFromCommit": "82ef01c6d62b890ea05917e39b48c7decaa79d86"
   },
   {
    "filename": "source-verification-result.v1.schema.json",
@@ -169,9 +169,9 @@
   },
   {
    "filename": "test_counts.json",
-   "sha256": "2ee1d95060214b20d2617d786e8efdef78482e9127bdc8706b89d5583f8f8219",
+   "sha256": "1b37f62bd7c57d7211597aeee9c0ce79fbce95a13d831f55c1736a9c1eb616bf",
    "role": "evidence",
-   "generatedFromCommit": "108166eecb03fc21ec5cced1066301b1013a1828"
+   "generatedFromCommit": "82ef01c6d62b890ea05917e39b48c7decaa79d86"
   },
   {
    "filename": "test-counts.v2.schema.json",
@@ -202,9 +202,9 @@
   },
   {
    "filename": "validation-results.json",
-   "sha256": "40cc19f7f02f3f96e4d65312870d47431a9eab345d2e6ed8e195f47832cec8b6",
+   "sha256": "59bc0e5f42c8308ba2f8778725d00e3efda54638e9934866c2a96889a58f0c52",
    "role": "evidence",
-   "generatedFromCommit": "108166eecb03fc21ec5cced1066301b1013a1828"
+   "generatedFromCommit": "82ef01c6d62b890ea05917e39b48c7decaa79d86"
   },
   {
    "filename": "validation-results.v3.schema.json",
@@ -213,13 +213,13 @@
   },
   {
    "filename": "verifyReleaseSourceInputs.mjs",
-   "sha256": "b8d555bbc9048f7f783d243bf26201c82e21ce0df6b52847da0f19de4e516144",
+   "sha256": "da1e5558d0a4cdf38c23274c4486bbbbf94cc79bf02a28a49cd01765af325401",
    "role": "tool"
   }
  ],
  "notes": [
   "**この索引は release 工程の記録であって、証明ではない。**bytes の検算は SHA256SUMS で行うこと。",
-  "**検算ツールの契約（v0.6.16）。**信頼の起点は assets の verifyReleaseSourceInputs.mjs の sha256（b8d555bbc9048f7f783d243bf26201c82e21ce0df6b52847da0f19de4e516144 ／ toolVersion 20）。",
+  "**検算ツールの契約（v0.6.16）。**信頼の起点は assets の verifyReleaseSourceInputs.mjs の sha256（da1e5558d0a4cdf38c23274c4486bbbbf94cc79bf02a28a49cd01765af325401 ／ toolVersion 20）。",
   "**保存した検算結果は、この版と一緒に配った source-verifier-cli-result.v2.schema.json （assets の sha256）で検証すること。**$id から最新版を引くと、後の版で狭めた分だけ過去の結果が落ちる（docs/SCHEMA_VERSIONING_POLICY.md 第7条）。",
   "**受け手が固定すべき 4 点**（`assets[]` の filename と sha256 を lock すること）: half_plug_topology_profile.v3.trs_jack_trs.json / half_plug_topology_profile.v3.trs_jack_trrs.json / source-verifier-cli-result.v2.schema.json / source-input-manifest.json / verifyReleaseSourceInputs.mjs。**この `notes` の文そのものは機械契約ではない**——分岐に使わないこと。",
   "**archivePolicy の識別子**: trs-jack-3d-source-verifier-archive-policy v1 / policySha256 41adcd453574c3b3d03af2dd98e289a3075af86ad6201b8c39281cb476f226d3。**自己整合の識別子であって、真正性の証明ではない**——同じ道具が policy と digest の両方を書くので、両方書き換えれば一致する。",

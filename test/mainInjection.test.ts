@@ -121,6 +121,54 @@ describe('main(args, io) へ直接注入する', () => {
     expect(r.json.stableReasonCode).toBe('MANIFEST_MISSING')
   })
 
+  /**
+   * **network も `io` から取る（v0.6.20）。**
+   *
+   * v0.6.19 まで `SOURCE_FETCH_*` は `globalThis.fetch` を差し替えて踏んでいた。
+   * **その差し替えは、同じプロセスの全部に効く。**試験どうしが干渉しうるし、
+   * 「差し替えが効いていただけで、本体は別の経路を通ったのでは」を排除できない。
+   *
+   * `io.fetch` なら**この呼び出しだけ**に効く。判定側は 1 行も変えていない
+   * ——`AbortSignal.timeout` が `TimeoutError` を投げる約束をそのまま使う。
+   */
+  const FETCH_CASES: readonly (readonly [string, () => Promise<Response>])[] = [
+    ['SOURCE_FETCH_FAILED', async () => { throw new TypeError('fetch failed') }],
+    ['SOURCE_FETCH_TIMEOUT', async () => {
+      const e = new Error('timed out'); e.name = 'TimeoutError'; throw e
+    }],
+    ['SOURCE_HTTP_ERROR', async () => new Response('', { status: 503, statusText: 'Service Unavailable' })],
+    ['SOURCE_BODY_UNREADABLE', async () => new Response(
+      new ReadableStream({ start(c) { c.error(new Error('body broke')) } }),
+      { status: 200, headers: { 'content-length': '10' } })],
+  ]
+
+  it.each(FETCH_CASES.map((c) => [c[0], c] as const))(
+    '**%s を io.fetch の注入だけで踏む**',
+    async (_n, [want, f]) => {
+      let called = 0
+      const { io } = passthroughIo({
+        fetch: (...a: unknown[]) => { called += 1; return f(...(a as [])) },
+      })
+      const r = await run(['--manifest', MANIFEST, '--tag', 'v0.6.15', '--fetch', 'github'], io)
+      expect(r.json.stableReasonCode).toBe(want)
+      expect(r.json.status).toBe('SOURCE_UNAVAILABLE')
+      expect(r.code).toBe(2)
+      /** **本当に注入した fetch を通ったこと。**通っていなければ別の経路で止まっている */
+      expect(called, 'io.fetch が呼ばれていない').toBe(1)
+    },
+  )
+
+  /**
+   * **対照: `globalThis.fetch` は触っていない。**
+   * 触っていたら、この試験は「global の差し替えが効いた」ことしか示さない。
+   */
+  it('対照: globalThis.fetch を差し替えていない', async () => {
+    const before = globalThis.fetch
+    const { io } = passthroughIo({ fetch: async () => { throw new TypeError('fetch failed') } })
+    await run(['--manifest', MANIFEST, '--tag', 'v0.6.15', '--fetch', 'github'], io)
+    expect(globalThis.fetch, 'global を書き換えている').toBe(before)
+  })
+
   it('引数は `args` から取る（`process.argv` を見ていない）', async () => {
     const { io } = passthroughIo()
     const r = await run([], io)
