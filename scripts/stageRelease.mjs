@@ -20,6 +20,7 @@ import { execFileSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, resolve } from 'node:path'
 import { RELEASE_ASSETS, REMOVED_SINCE_V011 } from './releaseAssets.mjs'
+import { crossBindTestEvidence } from './measureTests.mjs'
 
 const ROOT = process.cwd()
 const argv = process.argv.slice(2)
@@ -80,6 +81,15 @@ if (dup.length) {
  */
 const ALLOW_NOT_READY = argv.includes('--allow-not-ready')
 const TEST_COUNTS = 'artifacts/test_counts.json'
+
+/**
+ * **この工程自身の版（v0.6.17・外部監査 P1-F）。**
+ * 門を足したり判定を変えたら上げる。受け手は attestation の値で
+ * 「どこまで見た staging か」を見分けられる。
+ */
+const STAGE_TOOL_VERSION = 1
+/** 各門の結果。**通ったことを配布物に残す**ため、判定をその場で控える */
+const STAGE_GATES = { exactTestEvidenceMatched: false, testEvidenceCrossBound: false }
 if (existsSync(resolve(ROOT, TEST_COUNTS))) {
   const tc = read(resolve(ROOT, TEST_COUNTS))
   const reasons = []
@@ -141,6 +151,30 @@ if (existsSync(resolve(ROOT, VALIDATION))) {
     console.log('  npm run release:evidence を回し直すこと。')
     if (!ALLOW_NOT_READY) process.exit(1)
     console.log('  --allow-not-ready が付いているので続行する。')
+  }
+
+  /**
+   * **2 つの証拠を、値まで結び直す（v0.6.17・外部監査 P1-B）。**
+   *
+   * ここまでの検査は、
+   *   - `test_counts.json` が実測と一致するか（上の鮮度検査）
+   *   - `validation-results.json` が `READY` と言っているか
+   * を**別々に**見ていた。**片方だけ作り直した状態は、どちらも通る。**
+   *
+   * `validation-results.testEvidence` は「どの `test_counts.json` を根拠にしたか」を
+   * sha256・commit・日付で名乗っている。**名乗った先の実物と突き合わせる。**
+   */
+  const problems = crossBindTestEvidence(read(resolve(ROOT, TEST_COUNTS)), vr, sha256(resolve(ROOT, TEST_COUNTS)))
+  if (problems.length) {
+    console.log(`**${VALIDATION} が指している証拠と、${TEST_COUNTS} の実物が食い違う。**`)
+    console.log('  片方だけ作り直すと、どちらの検査も単体では通ってしまう。')
+    for (const p of problems) console.log(`  ${p}`)
+    console.log('  npm run release:evidence を回し直すこと。')
+    if (!ALLOW_NOT_READY) process.exit(1)
+    console.log('  --allow-not-ready が付いているので続行する。')
+  } else {
+    STAGE_GATES.testEvidenceCrossBound = true
+    console.log(`  ${VALIDATION} が指す証拠と ${TEST_COUNTS} の実物が一致（sha256 / commit / 日付 / 5 欄）\n`)
   }
 }
 

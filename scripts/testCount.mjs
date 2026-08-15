@@ -13,12 +13,12 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { migrationFor } from './contractMigration.mjs'
+import { runVitestJson, summarizeVitestReport } from './measureTests.mjs'
 
 const ROOT = process.cwd()
-const TMP = resolve(ROOT, 'node_modules/.cache/test-count.json')
 const OUT = resolve(ROOT, 'artifacts/test_counts.json')
 
 /** 引けなければ `UNKNOWN`。**推測で埋めない** */
@@ -37,7 +37,6 @@ const runnerVersion = () => {
   }
 }
 
-mkdirSync(resolve(ROOT, 'node_modules/.cache'), { recursive: true })
 /**
  * **失敗しても続ける。生成は止めない。**
  *
@@ -54,30 +53,19 @@ mkdirSync(resolve(ROOT, 'node_modules/.cache'), { recursive: true })
  * 生成を止める設計にすると上の循環に戻るので、**生成は許して配布を止める。**
  * `npm run release:stage` が `allPassed !== true` を拒否し、
  * `validation-results.json` の `releaseReadinessStatus` にも出す。
+ *
+ * ## 数え方はここに書かない（v0.6.17・外部監査 P1-D）
+ *
+ * v0.6.16 まで、この file は `byFile` の作り方・skip の数え方・`allPassed` の決め方を
+ * **`measureTests.mjs` と別に持っていた。**値がたまたま一致していたので誰も気付かない。
+ * 書く側と検査側が同じ pure な集計器を使う（実行経路だけが別でよい）。
+ *
+ * **飛ばされたテストを数える**のは `npm run check:vacuity` のため
+ * ——「通った」と「そもそも走っていない」を同じ緑にしない (→ CONTRIBUTING §7)。
  */
-let exitCode = 0
-try {
-  execFileSync('npx', ['vitest', 'run', '--reporter=json', `--outputFile=${TMP}`], {
-    cwd: ROOT,
-    stdio: ['ignore', 'ignore', 'inherit'],
-  })
-} catch (e) {
-  exitCode = typeof e.status === 'number' ? e.status : 1
-  // レポートが書けていれば続行する。書けていなければ次の readFileSync で落ちる
-}
-
-const r = JSON.parse(readFileSync(TMP, 'utf8'))
-rmSync(TMP, { force: true })
-
-const byFile = {}
-let skipped = 0
-for (const f of r.testResults) {
-  byFile[f.name.split('/').slice(-1)[0]] = f.assertionResults.length
-  // **飛ばされたテストを数える。** 0 でないと npm run check:vacuity が落ちる。
-  // 「通った」と「そもそも走っていない」を同じ緑にしないため (→ CONTRIBUTING §7)
-  skipped += f.assertionResults.filter((a) => a.status === 'skipped' || a.status === 'pending').length
-}
-const total = Object.values(byFile).reduce((a, b) => a + b, 0)
+const { report: r, exitCode } = runVitestJson(ROOT)
+const m = summarizeVitestReport(r, exitCode)
+const { total, byFile, skipped } = m
 
 // ARTIFACT_DATE で固定できる。既存 artifact と同じ規約
 const generatedAt = process.env.ARTIFACT_DATE ?? new Date().toISOString().slice(0, 10)
@@ -95,17 +83,17 @@ writeFileSync(
         + '手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。'
         + 'byFile は npm run check:vacuity の下限としても使う。件数が減る変更は理由を書く。',
       total,
-      byFile: Object.fromEntries(Object.entries(byFile).sort()),
+      byFile,
       skipped,
       /**
        * **同じ実行から取る（v0.4.1・P0-1）。**
        * `allPassed` だけだと「なぜ false なのか」が残らず、
        * 直したあと取り直したかどうかも分からない。
        */
-      failed: r.numFailedTests ?? 0,
-      failedSuites: r.numFailedTestSuites ?? 0,
-      exitCode,
-      allPassed: r.numFailedTests === 0 && exitCode === 0,
+      failed: m.failed,
+      failedSuites: m.failedSuites,
+      exitCode: m.exitCode,
+      allPassed: m.allPassed,
       testCommand: 'npx vitest run --reporter=json',
       runner: 'vitest',
       runnerVersion: runnerVersion(),
@@ -118,7 +106,7 @@ writeFileSync(
 )
 console.log(`artifacts/test_counts.json: 合計 ${total} 件 / ${Object.keys(byFile).length} ファイル`)
 for (const [k, v] of Object.entries(byFile).sort()) console.log(`  ${k.padEnd(30)} ${v}`)
-if (r.numFailedTests || exitCode) {
-  console.log(`\n  **失敗 ${r.numFailedTests} 件 / exit ${exitCode}。件数は記録したが、この artifact では配布できない。**`)
+if (m.failed || m.exitCode) {
+  console.log(`\n  **失敗 ${m.failed} 件 / exit ${m.exitCode}。件数は記録したが、この artifact では配布できない。**`)
   console.log('  npm run release:stage が allPassed !== true を拒否する。直してから取り直すこと。')
 }

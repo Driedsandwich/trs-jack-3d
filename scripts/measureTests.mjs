@@ -34,7 +34,7 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 /**
@@ -53,9 +53,19 @@ export function measureTests(root = process.cwd(), reportPath = null) {
   if (reportPath) {
     const r = JSON.parse(readFileSync(reportPath, 'utf8'))
     /** 終了コードは報告から導く。**0 を決め打ちすると、落ちた run を「通った」と数える** */
-    return summarize(r, (r.numFailedTests ?? 0) > 0 || (r.numFailedTestSuites ?? 0) > 0 ? 1 : 0)
+    return summarizeVitestReport(r, (r.numFailedTests ?? 0) > 0 || (r.numFailedTestSuites ?? 0) > 0 ? 1 : 0)
   }
+  const { report, exitCode } = runVitestJson(root)
+  return summarizeVitestReport(report, exitCode)
+}
 
+/**
+ * vitest を 1 回走らせて、JSON 報告と終了コードを返す。
+ *
+ * **落ちても投げない。**テストが落ちている間に「件数を数え直せない」という循環に入る
+ * （v0.4.1 で実際に入った）。成否は `exitCode` として返し、止めるのは配布側で行う。
+ */
+export function runVitestJson(root = process.cwd()) {
   const tmp = resolve(root, 'node_modules/.cache/test-count.json')
   mkdirSync(resolve(root, 'node_modules/.cache'), { recursive: true })
   let exitCode = 0
@@ -67,13 +77,22 @@ export function measureTests(root = process.cwd(), reportPath = null) {
   } catch (e) {
     exitCode = typeof e.status === 'number' ? e.status : 1
   }
-  const r = JSON.parse(readFileSync(tmp, 'utf8'))
+  const report = JSON.parse(readFileSync(tmp, 'utf8'))
   rmSync(tmp, { force: true })
-  return summarize(r, exitCode)
+  return { report, exitCode }
 }
 
-/** vitest の JSON 報告を、`test_counts.json` に入るのと同じ形へ畳む */
-function summarize(r, exitCode) {
+/**
+ * vitest の JSON 報告を、`test_counts.json` に入るのと同じ形へ畳む。
+ *
+ * **これが唯一の集計器（v0.6.17・外部監査 P1-D）。**
+ * v0.6.16 まで、`testCount.mjs`（書く側）がこれと同じ処理を**別に持っていた**
+ * ——`byFile` の作り方、skip の数え方、`allPassed` の決め方まで二重実装だった。
+ * 値がたまたま一致していたので誰も気付かない。**同じ境界を 2 つの一覧で持たない。**
+ *
+ * 純関数にしてあるので、実行経路（live / 保存済み報告）は別でよい。
+ */
+export function summarizeVitestReport(r, exitCode) {
   const byFile = {}
   let skipped = 0
   for (const f of r.testResults) {
@@ -101,6 +120,34 @@ function summarize(r, exitCode) {
  */
 export const EVIDENCE_FIELDS = ['total', 'skipped', 'failed', 'failedSuites', 'exitCode', 'allPassed']
 
+/**
+ * **テストの結果を変えうるファイルの範囲（v0.6.17・外部監査 P1-E）。**
+ *
+ * v0.6.16 まで `buildReleaseEvidence.mjs` の関数の中に直書きされていて、
+ * `tsconfig*.json` と lint 設定が抜けていた。中央へ出し、抜けを埋める。
+ *
+ * **artifact と文書はここに入れない。**入れると、証拠を書く工程が自分の書き込みで
+ * 「古くなった」と判定して収束しない（循環）。
+ *
+ * **これは補助的な由来の検査に使う範囲であって、現在性の最終判定ではない。**
+ * 最終判定は `release:stage` が実際に測り直して行う（`checkTestEvidenceCurrent.mjs` 冒頭）。
+ * ここに漏れがあっても最終判定はすり抜けない——漏れると、
+ * **`release:evidence` の段階で気付けなくなるだけ**である。
+ */
+const TEST_INPUT_DIRS = ['test/', 'src/', 'scripts/', 'schemas/']
+const TEST_INPUT_FILES = ['package.json', 'package-lock.json', 'vitest.config.ts', '.oxlintrc.json']
+
+/**
+ * その時点の実在から範囲を決める。
+ * **`tsconfig*.json` を手で並べない**——v0.6.17 の作業中に実際、
+ * 手で 3 本書いたら `tsconfig.scripts.json` が抜けた。数は増える。
+ */
+export function testInputPaths(root = process.cwd()) {
+  const tsconfigs = readdirSync(root).filter((f) => /^tsconfig\..*\.json$|^tsconfig\.json$/.test(f))
+  return [...TEST_INPUT_DIRS, ...TEST_INPUT_FILES, ...tsconfigs.sort()]
+    .filter((p) => p.endsWith('/') || existsSync(resolve(root, p)))
+}
+
 export function diffEvidence(live, recorded) {
   const problems = []
   for (const k of EVIDENCE_FIELDS) {
@@ -111,6 +158,48 @@ export function diffEvidence(live, recorded) {
     const a = live.byFile[n]
     const b = recorded?.byFile?.[n]
     if (a !== b) problems.push(`byFile.${n}: 実測 ${a ?? '(無し)'} / 記録 ${b ?? '(無し)'}`)
+  }
+  return problems
+}
+
+/**
+ * **2 つの証拠を結び直す（v0.6.17・外部監査 P1-B）。**
+ *
+ * `validation-results.testEvidence` は「どの `test_counts.json` を根拠にしたか」を
+ * sha256・commit・日付で名乗る。v0.6.16 はその値を**書いてはいた**が、
+ * **名乗った先の実物と突き合わせる工程がどこにも無かった。**
+ *
+ * 結果として、**片方だけ作り直した状態**——`test_counts.json` は新しいのに
+ * `validation-results.json` が古いまま——を、どの検査も単体では通してしまう。
+ * 鮮度検査は `test_counts.json` しか見ず、`READY` の検査は文字列しか見ないためである。
+ *
+ * @param tc         `artifacts/test_counts.json` の中身
+ * @param validation `artifacts/validation-results.json` の中身
+ * @param tcSha256   `artifacts/test_counts.json` の実ファイルの sha256
+ * @returns 食い違いの一覧（空なら一致）
+ */
+export function crossBindTestEvidence(tc, validation, tcSha256) {
+  const problems = []
+  const te = validation?.testEvidence
+  if (!te) return ['validation-results.json に testEvidence が無い（何を根拠にしたか名乗っていない）']
+
+  if (te.testCountsSha256 !== tcSha256) {
+    problems.push(`testCountsSha256: 名乗り ${String(te.testCountsSha256).slice(0, 12)}…`
+      + ` / 実物 ${tcSha256.slice(0, 12)}…（別の test_counts.json を指している）`)
+  }
+  if (te.testCountsGeneratedFromCommit !== (tc.generatedFromCommit ?? null)) {
+    problems.push(`testCountsGeneratedFromCommit: 名乗り ${te.testCountsGeneratedFromCommit}`
+      + ` / 実物 ${tc.generatedFromCommit}`)
+  }
+  if (te.testCountsGeneratedAt !== (tc.generatedAt ?? null)) {
+    problems.push(`testCountsGeneratedAt: 名乗り ${te.testCountsGeneratedAt} / 実物 ${tc.generatedAt}`)
+  }
+  /** 数値も同じ 1 つの実行から来ているか。**sha256 が合っていれば従属だが、単独でも読めるようにする** */
+  for (const k of EVIDENCE_FIELDS) {
+    if (k === 'failedSuites') continue // testEvidence は持たない欄
+    const a = te[k]
+    const b = tc[k] ?? null
+    if (a !== b) problems.push(`${k}: validation ${JSON.stringify(a)} / test_counts ${JSON.stringify(b)}`)
   }
   return problems
 }

@@ -16,11 +16,25 @@
  * **完全一致**で比べる。`byFile` を下限で見ない——**増えても止める。**
  * 増えた分は記録に入っていないテストであり、その証拠で配ってはいけない。
  *
- * ## 使うところ
+ * ## 使うところ——**2 つの門は、同じことをしていない**（v0.6.17・外部監査 P1-C）
  *
- * `release:evidence` と `release:stage` の両方が必ず通す。
- * 片方だけだと、もう片方から入る経路が残る（v0.6.15 はまさに
- * 「`test:count` を回さずに `release:evidence` だけ回した」形で起きた）。
+ * v0.6.16 のこの説明は「両方が必ず通す」と書いていたが、実装は違った。
+ * 監査の指摘どおり、実際はこうである。
+ *
+ * ```
+ * release:evidence   由来だけを見る（provenance gate）
+ *                    ——証拠を取った commit 以降に、テストへ効くファイルが動いていないか
+ * release:stage      実際に測り直して全欄を突き合わせる（live exact gate）
+ * check:test-evidence-current / CI   この file を直接叩く（live exact gate）
+ * ```
+ *
+ * **`release:evidence` の中でテストを回さないのには理由がある。**
+ * `validation-results.json` はその実行の結果を自分の中へ書くので、
+ * 回した瞬間に「いま書いている自分」を含まない証拠になり、**`READY` へ到達できなくなる。**
+ * だから生成側は由来だけを見て、実測は配布側（`release:stage`）で行う。
+ *
+ * 由来の検査は**補助**であって、現在性の最終判定ではない。
+ * 最終判定は `release:stage` の live exact gate が行う。
  */
 
 import { existsSync, readFileSync } from 'node:fs'

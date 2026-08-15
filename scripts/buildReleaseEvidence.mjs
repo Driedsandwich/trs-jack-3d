@@ -25,11 +25,15 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import Ajv from 'ajv'
 import { validateAll } from './validateProfiles.mjs'
-import { RELEASE_ASSETS, SOURCE_ONLY_TARGETS } from './releaseAssets.mjs'
+import { RELEASE_ASSETS, REQUIRED_CONSUMER_PINS, SOURCE_ONLY_TARGETS } from './releaseAssets.mjs'
 import { migrationFor } from './contractMigration.mjs'
 import { buildSourceSnapshot } from './buildSourceSnapshot.mjs'
-import { ARCHIVE_POLICY, CLI_STATUSES, CLI_STATUS_EXIT, INTERNAL_FAILURE_EXIT, TOOL_VERSION } from './verifyReleaseSourceInputs.mjs'
+import {
+  ARCHIVE_POLICY, CLI_RESULT_SCHEMA_PATH, CLI_STATUSES, CLI_STATUS_EXIT,
+  INTERNAL_FAILURE_EXIT, TOOL_VERSION,
+} from './verifyReleaseSourceInputs.mjs'
 import { assertExpressibleInSelfReport } from './selfReportStatus.mjs'
+import { testInputPaths } from './measureTests.mjs'
 
 const ROOT = process.cwd()
 const read = (p) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'))
@@ -336,8 +340,12 @@ function staleTestEvidenceReasons(tc) {
   } catch {
     return [`${tcPath} の generatedFromCommit (${at.slice(0, 12)}) が履歴に無い`]
   }
-  /** **テストの結果を変えうる範囲**。artifact と文書はここに入れない（循環するため） */
-  const WATCHED = ['test/', 'src/', 'scripts/', 'schemas/', 'package.json', 'package-lock.json', 'vitest.config.ts']
+  /**
+   * **テストの結果を変えうる範囲。**正本は `scripts/measureTests.mjs`（v0.6.17・外部監査 P1-E）。
+   * ここに直書きしていたので `tsconfig*.json` と lint 設定が抜けていた。
+   * **実在しないパスは git が拒む**ので、綴りの間違いは黙って「変更なし」にならない。
+   */
+  const WATCHED = testInputPaths(ROOT)
   let changed
   try {
     changed = execFileSync('git', ['diff', '--name-only', `${at}..HEAD`, '--', ...WATCHED], { cwd: ROOT, encoding: 'utf8' })
@@ -362,18 +370,26 @@ function staleTestEvidenceReasons(tc) {
     )
   }
   if (dirty.length) {
+    /**
+     * **「古い」ではなく「汚れた木から取った」と言う（v0.6.17）。**
+     * v0.6.16 の文言は「その前の実行なので取り直すこと」だったが、
+     * **取り直しても消えない**——未コミットの変更がある限り鳴り続ける。
+     * 実際 v0.6.17 の作業中、取り直した直後に同じ文が出て読み違えかけた。
+     * ここが見ているのは**証拠の古さではなく、取った木が clean だったか**である。
+     */
     reasons.push(
       `テストに効くファイルに未コミットの変更が ${dirty.length} 件ある`
       + `（${dirty.slice(0, 3).join(', ')}${dirty.length > 3 ? ` ほか ${dirty.length - 3} 件` : ''}）。`
-      + `${tcPath} はその前の実行なので取り直すこと`,
+      + `${tcPath} は**汚れた作業ツリーから取ったもの**なので、release の証拠にはできない`
+      + '（取り直しても消えない。**変更をコミットしてから** test:count → release:evidence の順で回すこと）',
     )
   }
   return reasons
 }
 
 const validation = {
-  schemaVersion: 2,
-  contractMigration: migrationFor('validation-results.v2'),
+  schemaVersion: 3,
+  contractMigration: migrationFor('validation-results.v3'),
   generatedBy: 'npm run release:evidence',
   generatedAt: ARTIFACT_DATE,
   generatedFromCommit: git(['rev-parse', 'HEAD']),
@@ -513,9 +529,17 @@ const index = {
      */
     `**検算ツールの契約（v0.6.16）。**信頼の起点は assets の `
       + `verifyReleaseSourceInputs.mjs の sha256（${sha256File(VERIFIER)} ／ toolVersion ${TOOL_VERSION}）。`,
-    '**保存した検算結果は、この版と一緒に配った source-verifier-cli-result.v1.schema.json '
-      + '（assets の sha256）で検証すること。**$id から最新の v1 を引くと、'
+    `**保存した検算結果は、この版と一緒に配った ${CLI_RESULT_SCHEMA_PATH.split('/').pop()} `
+      + '（assets の sha256）で検証すること。**$id から最新版を引くと、'
       + '後の版で狭めた分だけ過去の結果が落ちる（docs/SCHEMA_VERSIONING_POLICY.md 第7条）。',
+    /**
+     * **`notes` は機械契約ではない（v0.6.17・外部監査 §10）。**
+     * 監査の指摘どおり、受け手が lock すべき対象を**名前で名指しする**。
+     * 値そのものは `assets[]` が持っている（そちらが機械可読な正本）。
+     */
+    `**受け手が固定すべき 4 点**（\`assets[]\` の filename と sha256 を lock すること）: `
+      + `${REQUIRED_CONSUMER_PINS.join(' / ')}。`
+      + '**この `notes` の文そのものは機械契約ではない**——分岐に使わないこと。',
     `**archivePolicy の識別子**: ${ARCHIVE_POLICY.policyId} v${ARCHIVE_POLICY.policyVersion} `
       + `/ policySha256 ${ARCHIVE_POLICY.policySha256}。**自己整合の識別子であって、真正性の証明ではない**`
       + '——同じ道具が policy と digest の両方を書くので、両方書き換えれば一致する。',
@@ -536,7 +560,7 @@ writeFileSync(resolve(ROOT, INDEX_PATH), JSON.stringify(index, null, 1) + '\n')
 const ajv = new Ajv({ allErrors: true, strict: false })
 let selfBad = 0
 for (const [artifactPath, schemaPath] of [
-  ['artifacts/validation-results.json', 'schemas/validation-results.v2.schema.json'],
+  ['artifacts/validation-results.json', 'schemas/validation-results.v3.schema.json'],
   [INDEX_PATH, 'schemas/trs-jack-3d-release-index.v1.schema.json'],
   // 検証を回した記録も同じ扱い。**validateAll の対象に入れると、その回の自分自身を見ることになる**
   [SOURCE_VERIFICATION_PATH, 'schemas/source-verification-result.v1.schema.json'],
