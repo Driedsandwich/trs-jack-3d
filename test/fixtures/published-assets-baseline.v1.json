@@ -4224,6 +4224,161 @@
    "tag": "v0.6.22",
    "name": "verifyReleaseSourceInputs.mjs",
    "digest": "sha256:da1e5558d0a4cdf38c23274c4486bbbbf94cc79bf02a28a49cd01765af325401"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "contract-migration.v1.json",
+   "digest": "sha256:f27ce53531e00880146b917e9df9cb0042b0ea63b0a096afcf2108604686b520"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "contract-migration.v1.schema.json",
+   "digest": "sha256:5928b45f52b5ed95b568d8538b7e4ea30eec9bbc50781356f9c4dfa83db1e424"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "event-sensitivity.v2.schema.json",
+   "digest": "sha256:e9cd21c7cb09e496aa9e5609e126493e06871e0bac99cf9dcec79f8d8e7f80ce"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "half_plug_topology_profile.v3.trs_jack_trrs.json",
+   "digest": "sha256:8a5d09a65d90098100f1404fe819a917b578a75ef5230ba4e963433d7382ed33"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "half_plug_topology_profile.v3.trs_jack_trs.json",
+   "digest": "sha256:a593988af08a62765e60c129c70aecc250cf4464295c83b5c51f2469e320dcfa"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "half-plug-topology-profile.v3.schema.json",
+   "digest": "sha256:d6dc207471e2ddb7bc78d6d39dab43fff5063e067ff183b7b8dcecd8c7ef7433"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "real-jack-comparison.v1.schema.json",
+   "digest": "sha256:24d85873781f23c9f81da25676cbf98c2b9ea5a0de90a81275f936e5f4a93be4"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "release-stage-attestation.v1.json",
+   "digest": "sha256:e5e5d762a4b7522a9d4a13cfacb7501f950479acf7f12f8da947a1348df16165"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "release-stage-attestation.v1.schema.json",
+   "digest": "sha256:fb8cb735769eb11aaaad26404c17f47807a6e2a9047889b2c9be9f2bc25b25f5"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "sensitivity.trs_jack_trrs.json",
+   "digest": "sha256:d63e24eea91150246c9be507e7ab258a6f88df297178f687a3e6472de96246d8"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "sensitivity.trs_jack_trs.json",
+   "digest": "sha256:808440c9bc63e55410d4cfc327e3ae7c6f3991d0739753881dbcea6d65a48eb0"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "SHA256SUMS",
+   "digest": "sha256:6c3a296d118e855a7e945a8baf0a7cf211ad879c1d4ad9e4812b4c687dcbc38c"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "source-input-manifest.json",
+   "digest": "sha256:9d4d3b9484778a63ec1ea66f03083913518682ed540a3b72d0d1f9ba423e17fe"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "source-input-manifest.v2.schema.json",
+   "digest": "sha256:06a26fe4ed66d91e64a6a7ec39649028e5148701681c02842e8e641865ca8358"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "source-input-scope.v1.json",
+   "digest": "sha256:ba7a855da4a06cd05f99a5387ab6537d741339d2b6c3aa86b06bd4454161dd43"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "source-input-scope.v1.schema.json",
+   "digest": "sha256:607b7f6ce9c39500e2f479941ae723d04ae761047ec1ba68ed4f0b84b0b2b2a6"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "source-snapshot.v1.json",
+   "digest": "sha256:1478063ca973ee1a8a675d5dbd0bb78d99b5fa26d9a136679ca49afcebb3622a"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "source-snapshot.v1.schema.json",
+   "digest": "sha256:046cc9177d15a2e4d7d1f604d4844784a245761b866e636ec22178548e9afd61"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "source-verification-result.json",
+   "digest": "sha256:7dee0484591bbd941230ffd90a211ab8cc8aca039ddb539509a361e950f80cbf"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "source-verification-result.v1.schema.json",
+   "digest": "sha256:95e344b76f6c823266cf597606dbf1d3e85dd78e489499ca4ad7e8c185b9ae0b"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "source-verifier-cli-result.v2.schema.json",
+   "digest": "sha256:0aea97c50b146bf730d82252a8f62ffe63c10d8cb6d93d5f337f9e127ffcca90"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "test_counts.json",
+   "digest": "sha256:a0395967650834f43f136d91048359b2beecf9927d09e401ef685f586d9f190f"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "test-counts.v2.schema.json",
+   "digest": "sha256:23199aa88003c6e6fc36b7a52ef8aa9e48fcfe907eb5e473c7af7c03fa5ac37d"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "topology-robustness.trs_jack_trrs.json",
+   "digest": "sha256:af30e049646d2c5afbc2703b6e33c30c45bf331b3ec30802d774682374dc5b93"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "topology-robustness.v3.schema.json",
+   "digest": "sha256:10ec667f043c2c65a017ae3ae2ed2765679a90026eb450d59fb02f4bc70bd1c3"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "topology-search.v1.schema.json",
+   "digest": "sha256:d7904318a00cd842b9d780bd84fd0e40fd8634a4dc6844ed1c7ec6fa9eff9c4f"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "trs-jack-3d-release-index.v1.json",
+   "digest": "sha256:3ad13371568682206d71c0d0590ce7331a3e279fb46d65c4614b43031c5f7978"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "trs-jack-3d-release-index.v1.schema.json",
+   "digest": "sha256:b986b063677905b7d1edae3f18e7b8aace61c5ee833c53b059640a34d73e88f9"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "validation-results.json",
+   "digest": "sha256:9caae615e3ed2fea6bbe0e5e103710bc5e03629e7647218f616f3f910d8d2b05"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "validation-results.v3.schema.json",
+   "digest": "sha256:b599e383a170484790d8762fecb9bc9e26572a4ccd99c19e5f6492db188237f6"
+  },
+  {
+   "tag": "v0.6.23",
+   "name": "verifyReleaseSourceInputs.mjs",
+   "digest": "sha256:da1e5558d0a4cdf38c23274c4486bbbbf94cc79bf02a28a49cd01765af325401"
   }
  ]
 }
