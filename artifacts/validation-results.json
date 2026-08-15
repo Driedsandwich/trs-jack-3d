@@ -87,8 +87,8 @@
   ]
  },
  "generatedBy": "npm run release:evidence",
- "generatedAt": "2026-08-15",
- "generatedFromCommit": "9f04cec0b0f04435deb975353dcddf0dbf2eab7a",
+ "generatedAt": "2026-08-16",
+ "generatedFromCommit": "f36c9e237e099366978684397d87d6be12317e1b",
  "command": "npm run validate:profiles",
  "targetsTotal": 14,
  "targetsPassed": 14,
@@ -97,14 +97,14 @@
  "releaseReadinessStatus": "READY",
  "releaseReadinessReasons": [],
  "testEvidence": {
-  "total": 1433,
+  "total": 1457,
   "failed": 0,
   "skipped": 0,
   "exitCode": 0,
   "allPassed": true,
-  "testCountsSha256": "078fd0c309ab3eaec87332cee31b108026840c288d29337bcc1f9ea689ef46fb",
-  "testCountsGeneratedFromCommit": "9f04cec0b0f04435deb975353dcddf0dbf2eab7a",
-  "testCountsGeneratedAt": "2026-08-15"
+  "testCountsSha256": "67f17ce7188f2ab3d3c84125a529775922ce4a8225462fee0b0a429d9fc699a2",
+  "testCountsGeneratedFromCommit": "f36c9e237e099366978684397d87d6be12317e1b",
+  "testCountsGeneratedAt": "2026-08-16"
  },
  "distributedTargets": 10,
  "sourceOnlyTargets": 4,
