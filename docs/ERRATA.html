@@ -96,7 +96,8 @@
     <li><a href="#s4">v0.6.15（2026-08-14 記載・v0.6.16 で直しました）</a></li>
     <li><a href="#s5">v0.6.16（2026-08-15 記載・v0.6.17 で直しました）</a></li>
     <li><a href="#s6">v0.6.17（2026-08-15 記載・次の版で直します）</a></li>
-    <li><a href="#s7">この正誤表の運用</a></li>
+    <li><a href="#s7">docs（2026-08-15 記載・同日直しました）</a></li>
+    <li><a href="#s8">この正誤表の運用</a></li>
   </ol>
 </nav>
 <h1>正誤表</h1>
@@ -329,7 +330,17 @@ releaseIndexSha256       **不一致**</code></pre>
   releaseIndexSha256       一致   ← v0.6.17 ではここだけ不一致だった
 対照  別ファイルの digest と比べると不一致を検出</code></pre>
 <hr>
-<h2 id="s7">この正誤表の運用</h2>
+<h2 id="s7">docs（2026-08-15 記載・<strong>同日直しました</strong>）</h2>
+<h3>24. <strong>実装済みの道具を「未実装」と書いていました（9 日間）</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><code>docs/VERIFICATION_PLAN.md</code> §「何が決まるか」／<code>docs/V060_PLAN_20260805.md</code></td></tr><tr><td>症状</td><td>「<code>npm run fit:contacts</code> の 4極版は<strong>未実装</strong>」と書いていた</td></tr><tr><td>実際</td><td><code>npm run fit:contacts:trrs</code> が <strong>2026-08-06 から在る</strong>（<code>scripts/fitContactsTrrs.ts</code>）</td></tr><tr><td>影響</td><td><strong>測ってくださる方に、在る道具を「無い」と伝えていました。</strong>手計算を促していた</td></tr><tr><td>直した版</td><td>2026-08-15（release 前・公開済み asset には影響しません）</td></tr></tbody></table></div>
+<p><strong>経緯（commit の時刻で実測）:</strong></p>
+<pre><code>11:21  6e151bc  docs   「4極版は未実装」と書いた
+11:38  7602666  script **その 17 分後**に fitContactsTrrs.ts が入った
+15:53  18abe44  docs   同じ文書を再び触ったが、直っていない</code></pre>
+<p><strong>なぜ 9 日も残ったか。</strong> この repo の文言検査は「<strong>在ると言ったのに無い</strong>」だけを見ていました （指したパスが実在するか）。<strong>反対向き＝「無いと言ったのに在る」には検査が 1 つも無かった。</strong></p>
+<p>害は<strong>受け手の側にしか出ません</strong>——書いた本人は道具が在ることを知っているので、 読み返しても違和感がありません。実装が進むほど増える型です。</p>
+<p><strong>同じ型を機械で捕まえる検査を入れました</strong>（<code>test/staleWordingAndPaths.test.ts</code> 「「無い」と書いたものが、本当に無いか」）。否定語と同じ行にある npm script 名を拾い、 その script が <code>package.json</code> に<strong>無いこと</strong>を要求します。 公開済みの release notes と CHANGELOG は、その時点の記録なので対象外です。</p>
+<h2 id="s8">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
 </div>
 </body>

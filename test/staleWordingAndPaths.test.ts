@@ -202,3 +202,69 @@ describe('文中で指したリポジトリ内のパスが実在するか', () =
     }
   })
 })
+
+/**
+ * **「無いと言ったのに在る」を捕まえる（v0.6.21・逆向きの陳腐化）。**
+ *
+ * ここまでの検査は「**在ると言ったのに無い**」を見ている——指したパスが実在するか。
+ * だが**反対向きは誰も見ていなかった。**実測（2026-08-15）:
+ *
+ * ```
+ * 11:21  docs 6e151bc   「fit:contacts の 4極版は未実装」と書いた
+ * 11:38  script 7602666 **その 17 分後に fitContactsTrrs.ts が入った**
+ * 15:53  docs 18abe44   同じ文書を再び触ったが、直っていない
+ * ```
+ *
+ * **9 日間、測ってくださる方へ「無い」と伝え続けた。**
+ * 実装が進むほど増える型で、しかも**害は受け手の側にしか出ない**
+ * ——書いた本人は道具が在ることを知っているので、読み返しても違和感が無い。
+ *
+ * 検査は「否定語と同じ行に npm script 名がある」ものを拾い、
+ * **その script が package.json に無いこと**を要求する。在るなら文言が古い。
+ */
+describe('「無い」と書いたものが、本当に無いか', () => {
+  const LIVE = liveFiles()
+
+  /** 実装の不在を言う語。ここに無い言い回しは拾えない（検査の範囲＝次に守られる範囲） */
+  const ABSENCE = /未実装|用意していません|作っていません|入れていません|足していません|ありません/
+
+  /** 不在の主張ではないもの。**語句でなくパスの前方一致で宣言する**（→ 上の EXEMPT と同じ考え方） */
+  const EXEMPT_PREFIX = [
+    'docs/release/',   // 公開済みの release notes は書き換えない（その時点の記録）
+    'CHANGELOG.md',    // 履歴
+  ]
+
+  const SCRIPTS = Object.keys(
+    (JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts,
+  )
+
+  /** 行を拾う。`npm run x` と `` `x` `` の両方の書かれ方を見る */
+  const claims = (files: string[]) => {
+    const out: { file: string, line: number, script: string, text: string }[] = []
+    for (const f of files) {
+      if (EXEMPT_PREFIX.some((p) => f.startsWith(p))) continue
+      read(f).split('\n').forEach((l, i) => {
+        if (!ABSENCE.test(l)) return
+        for (const s of SCRIPTS) {
+          if (l.includes(`npm run ${s}`) || l.includes(`\`${s}\``)) out.push({ file: f, line: i + 1, script: s, text: l.trim() })
+        }
+      })
+    }
+    return out
+  }
+
+  it('**実装されている script を「無い」と書いていない**', () => {
+    const bad = claims(LIVE).filter((c) => SCRIPTS.includes(c.script) && ABSENCE.test(c.text)
+      && /未実装|用意していません|作っていません|入れていません|足していません/.test(c.text))
+    expect(bad.map((c) => `${c.file}:${c.line} ${c.script} — ${c.text.slice(0, 70)}`),
+      '**その script は package.json に在る。文言が古い**').toEqual([])
+  })
+
+  it('**この検査が空振りしていない**（偽の文言を混ぜると拾える）', () => {
+    const fake = '- `check:vacuity` の 4極版は未実装です'
+    expect(ABSENCE.test(fake), '否定語を拾えない').toBe(true)
+    expect(SCRIPTS.some((s) => fake.includes(`\`${s}\``)), 'script 名を拾えない').toBe(true)
+    /** 逆の対照: 実在しない script 名なら拾わない */
+    expect(SCRIPTS.some((s) => '- `no-such-script` は未実装です'.includes(`\`${s}\``))).toBe(false)
+  })
+})

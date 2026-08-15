@@ -212,7 +212,8 @@
 <pre><code>端子番号 / 役割 / 対応するプラグ導体 / 最初の導通時のすき間（3 回）/ ノギスの分解能
 使ったジャックの型番とロット / 4極プラグの型番</code></pre>
 <h3>何が決まるか</h3>
-<p>深さから接点の軸位置を逆算できます（<code>npm run fit:contacts</code> の 4極版は未実装ですが、 <code>すき間 = 14 − 深さ</code>、<code>接点位置 ≒ 深さ − プラグ導体の前端</code> で手計算できます）。</p>
+<p>深さから接点の軸位置を逆算できます。<strong>4極版は <code>npm run fit:contacts:trrs</code> で回せます</strong> （3極版は <code>npm run fit:contacts</code>）。手計算でも出せます—— <code>すき間 = 14 − 深さ</code>、<code>接点位置 ≒ 深さ − プラグ導体の前端</code>。</p>
+<div class="note"><p><strong>2026-08-15 訂正。</strong> ここには 2026-08-06 から「4極版は未実装」と書いてありました。</p><p>実際には<strong>その記述の 17 分後に実装されています</strong>（<code>scripts/fitContactsTrrs.ts</code>・commit <code>7602666</code>）。</p><p>9 日間、測ってくださる方へ無い道具を「無い」と伝え続けていました。</p><p>同じ型（<strong>無いと言ったのに在る</strong>）を機械で捕まえる検査を、同時に入れました。</p></div>
 <p>これが決まると:</p>
 <ul><li><a href="../UNKNOWNS.md">UNKNOWNS.md</a> §5-2 が <strong>ASSUMPTION → 実測</strong>になります</li><li>看板の結論の<strong>深さ 13.30〜13.52 mm</strong> が、仮定ではなく実測に基づく値になります</li><li><code>topology_search</code> の 4極側の結果が、実在部品の話として読めるようになります</li></ul>
 <div class="note"><p><strong>「合わなかった」結果も同じ価値があります。</strong>モデルの予測（上の表）は</p><p>測る前に公開してあるので、<strong>後出しで合わせることはできません。</strong></p><p>大きくずれたら、それは仮定が間違っていた証拠として記録します。</p></div>

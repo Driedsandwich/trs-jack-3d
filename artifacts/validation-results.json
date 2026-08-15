@@ -88,7 +88,7 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-15",
- "generatedFromCommit": "1f49599bba2c921f2bd18f6366bc2505957f78d8",
+ "generatedFromCommit": "41f763a280e93b21aee8528e2dbf0d206efdac74",
  "command": "npm run validate:profiles",
  "targetsTotal": 14,
  "targetsPassed": 14,
@@ -96,16 +96,16 @@
  "artifactValidationStatus": "PASS",
  "releaseReadinessStatus": "NOT_READY",
  "releaseReadinessReasons": [
-  "テストに効くファイルに未コミットの変更が 6 件ある（package.json, test/ciWorkflow.test.ts, scripts/publishedAssetBaseline.d.mts ほか 3 件）。artifacts/test_counts.json は**汚れた作業ツリーから取ったもの**なので、release の証拠にはできない（取り直しても消えない。**変更をコミットしてから** test:count → release:evidence の順で回すこと）"
+  "テストに効くファイルに未コミットの変更が 1 件ある（test/staleWordingAndPaths.test.ts）。artifacts/test_counts.json は**汚れた作業ツリーから取ったもの**なので、release の証拠にはできない（取り直しても消えない。**変更をコミットしてから** test:count → release:evidence の順で回すこと）"
  ],
  "testEvidence": {
-  "total": 1395,
+  "total": 1397,
   "failed": 0,
   "skipped": 0,
   "exitCode": 0,
   "allPassed": true,
-  "testCountsSha256": "f2099a7bdb8a07c2feebed4dbb66ce18b1aea4457e9342fba83e01ef084b1869",
-  "testCountsGeneratedFromCommit": "1f49599bba2c921f2bd18f6366bc2505957f78d8",
+  "testCountsSha256": "072abbd8bff60fffa46c94208acdfbd6c965176ba00018dd90cd65b7a0df9554",
+  "testCountsGeneratedFromCommit": "41f763a280e93b21aee8528e2dbf0d206efdac74",
   "testCountsGeneratedAt": "2026-08-15"
  },
  "distributedTargets": 10,
