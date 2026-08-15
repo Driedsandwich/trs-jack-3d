@@ -112,3 +112,9 @@ jobs:
       # **配布 schema のうち道具から決まる部分が、道具とずれていないか（v0.6.16）。**
       - name: 配布 schema の同期
         run: npm run check:cli-schema-sync
+
+      # **CLI の出力が、分離前の基準から 1 バイトも動いていないか（v0.6.18）。**
+      # core / CLI 分離は「何も変えない」変更なので、変えていないことを byte で示す。
+      # JSON として比べない——キーの順序が変われば受け手の差分も変わるため。
+      - name: CLI 出力の基準との突合
+        run: npm run check:cli-output

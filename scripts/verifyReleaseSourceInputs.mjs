@@ -534,8 +534,35 @@ export const CLI_STATUSES = Object.keys(CLI_STATUS_META)
  */
 export const OTHER_CODES = CLI_STATUSES.map((s) => `${s}_OTHER`)
 
-const ROOT = process.cwd()
-const argv = process.argv.slice(2)
+/**
+ * **プロセスとの接点を 1 か所に集める（v0.6.18・外部監査 P2・core / CLI 分離 段 1）。**
+ *
+ * この道具は 3200 行の 1 ファイルで、判定のロジックと
+ * プロセスとの接点（作業 directory・引数・標準出力・終了コード）が混ざっている。
+ * そのせいで**踏めない経路**が残っている——`SOURCE_ARCHIVE_MISSING` は
+ * 「存在を確かめてから開くまでの間に消される」経路で、filesystem を差し替えないと踏めない。
+ *
+ * ここでは**まだ何も差し替えない。**接点を名前の付いた 1 つの object にするだけである。
+ * 判定のロジックには 1 行も触らない。`toolVersion` も上げない
+ * ——**上げたくなったら、それは分離ではない。**
+ *
+ * 出力が 1 バイトでも変わっていないことは、`scripts/cliOutputBaseline.mjs` が
+ * 9 経路の stdout / stderr / 終了コードの sha256 で確かめる（分離の前に取った基準）。
+ */
+export function defaultIo() {
+  return {
+    cwd: () => process.cwd(),
+    argv: () => process.argv.slice(2),
+    /** **`console.log` は改行を足す。**基準と byte 一致させるため、ここでも足す */
+    stdout: (s) => console.log(s),
+    stderr: (s) => process.stderr.write(s),
+    exit: (code) => process.exit(code),
+  }
+}
+
+const io = defaultIo()
+const ROOT = io.cwd()
+const argv = io.argv()
 const argOf = (n, d = null) => {
   const i = argv.indexOf(`--${n}`)
   return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : d
@@ -613,20 +640,25 @@ const done = (payload, code) => {
    * `stdout` は空なのに終了コードだけ「不一致」に見えるのが、いちばん悪い読まれ方になる。
    * だから JSON を出さず、**status のどれにも使っていない 3** で終わる。
    */
+  /**
+   * **書き出しと終了は `io` を通す（v0.6.18・core / CLI 分離 段 2〜4）。**
+   * 文言も順序も変えていない——`io` の既定は `console.log` と `process.stderr.write`
+   * と `process.exit` そのものである。差し替えられるようにしただけ。
+   */
   try {
     assertCliResultSemantics(out)
   } catch (e) {
-    process.stderr.write(
+    io.stderr(
       `${INTERNAL_CONTRACT_FAILURE_MARKER}\n`
       + `**この道具の欠陥です。結果を出しません。**\n  ${e.message}\n`
       + `  toolVersion ${TOOL_VERSION} / status ${out.status} / stableReasonCode ${JSON.stringify(out.stableReasonCode)}\n`
       + `  終了コード ${INTERNAL_FAILURE_EXIT} は「道具が壊れている」だけに使います`
       + `（検証の結果ではありません）。\n`,
     )
-    process.exit(INTERNAL_FAILURE_EXIT)
+    io.exit(INTERNAL_FAILURE_EXIT)
   }
-  console.log(JSON.stringify(out, null, 1))
-  process.exit(code)
+  io.stdout(JSON.stringify(out, null, 1))
+  io.exit(code)
 }
 
 /**

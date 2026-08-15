@@ -1,0 +1,19 @@
+{
+ "schemaVersion": 1,
+ "schemaId": "trs-jack-3d-source-input-scope.v1",
+ "purpose": "**CLI 出力の基準を、artifact から切り離して取るための固定 fixture（v0.6.18）。**本番の source-input-scope.v1.json とは別物で、中身は意図的に小さい。",
+ "why": "基準の OK 経路が live な artifact を読むと、artifact を再生成するたびに基準が古くなり、CI が誤検出する。**分離が何も変えていないことだけを測りたい**ので、入力そのものを固定する。",
+ "recursiveDirectories": [
+  "src/model"
+ ],
+ "requiredExactFiles": [],
+ "allowedGeneratedInputs": [],
+ "excludedOutputs": [],
+ "excludedOutputsNote": "この fixture には生成物が無い",
+ "generators": [],
+ "generatorsNote": "この fixture には生成器が無い",
+ "commonInputs": [],
+ "commonInputsNote": "同上",
+ "notCovered": [],
+ "notCoveredNote": "同上"
+}

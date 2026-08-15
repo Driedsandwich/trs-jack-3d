@@ -1,0 +1,148 @@
+{
+ "schemaVersion": 1,
+ "schemaId": "trs-jack-3d-cli-output-baseline.v1",
+ "purpose": "**core / CLI 分離が「何も変えていない」ことを確かめるための基準。**分離の前に取り、分離のあとで byte 一致を見る。JSON として比べず byte で比べる——キーの順序が変われば受け手の差分も変わるため。",
+ "takenAt": "2026-08-15",
+ "takenFromCommit": "dab485c2260c9809ece93fe8f7c6902195241b76",
+ "toolSha256": "b208399106bb1d97f00f79ef7cd90a867a4bc5bf400f6d2c5d36345d16314239",
+ "routes": [
+  {
+   "label": "引数なし",
+   "args": [],
+   "injected": null,
+   "exitCode": 2,
+   "stdoutBytes": 2251,
+   "stdoutSha256": "286dee04ede24fad31bf87b5d5bffee8d8a41626be85b534824d023c8620036b",
+   "stderrBytes": 0,
+   "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "label": "OK（固定 fixture を検算）",
+   "args": [
+    "--manifest",
+    "test/fixtures/ok-source/source-input-manifest.json",
+    "--source",
+    "test/fixtures/ok-source"
+   ],
+   "injected": null,
+   "exitCode": 0,
+   "stdoutBytes": 3834,
+   "stdoutSha256": "a77210be5ef4db4b8139810a9920284ed3582739823f1d9b85a1a7b29d93bf07",
+   "stderrBytes": 0,
+   "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "label": "引数不足（--source も --tag も無い）",
+   "args": [
+    "--manifest",
+    "artifacts/source-input-manifest.json"
+   ],
+   "injected": null,
+   "exitCode": 2,
+   "stdoutBytes": 2251,
+   "stdoutSha256": "286dee04ede24fad31bf87b5d5bffee8d8a41626be85b534824d023c8620036b",
+   "stderrBytes": 0,
+   "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "label": "GitHub へ繋がらない",
+   "args": [
+    "--manifest",
+    "artifacts/source-input-manifest.json",
+    "--tag",
+    "v0.6.15",
+    "--fetch",
+    "github"
+   ],
+   "injected": "fetch",
+   "exitCode": 2,
+   "stdoutBytes": 2334,
+   "stdoutSha256": "bbe4faf9622f6f00ad2a208a7b3a313435f5a4e504c57cbd9cf20100c3689c06",
+   "stderrBytes": 0,
+   "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "label": "GitHub からの応答が来ない",
+   "args": [
+    "--manifest",
+    "artifacts/source-input-manifest.json",
+    "--tag",
+    "v0.6.15",
+    "--fetch",
+    "github"
+   ],
+   "injected": "fetch",
+   "exitCode": 2,
+   "stdoutBytes": 2346,
+   "stdoutSha256": "46d5ddced3c3d49552950dbad8a43f3a64add8bad38406793e378978e06fcd2d",
+   "stderrBytes": 0,
+   "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "label": "GitHub が 503 を返す",
+   "args": [
+    "--manifest",
+    "artifacts/source-input-manifest.json",
+    "--tag",
+    "v0.6.15",
+    "--fetch",
+    "github"
+   ],
+   "injected": "fetch",
+   "exitCode": 2,
+   "stdoutBytes": 2331,
+   "stdoutSha256": "66217563712b216cdb2160723af9bb2dd502519ed1e2edf091921469dbb1d638",
+   "stderrBytes": 0,
+   "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "label": "応答本文を読めない",
+   "args": [
+    "--manifest",
+    "artifacts/source-input-manifest.json",
+    "--tag",
+    "v0.6.15",
+    "--fetch",
+    "github"
+   ],
+   "injected": "fetch",
+   "exitCode": 2,
+   "stdoutBytes": 2261,
+   "stdoutSha256": "9df2fccd489d83c3ec9e7a3f8a21ce5b815932c32ede0c2a485dc5ebf7a8a214",
+   "stderrBytes": 0,
+   "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "label": "git archive が失敗する",
+   "args": [
+    "--manifest",
+    "artifacts/source-input-manifest.json",
+    "--tag",
+    "v0.6.15",
+    "--fetch",
+    "git"
+   ],
+   "injected": "PATH",
+   "exitCode": 2,
+   "stdoutBytes": 2326,
+   "stdoutSha256": "d142d0e2f6a4a45123f5558394ffdc9a791dda64d5b3912d68b185fcfda63d2b",
+   "stderrBytes": 36,
+   "stderrSha256": "c86f2851ecf72b635a804763278e26f89e34e546559e14a1f4d3ea83c34f4fde"
+  },
+  {
+   "label": "manifest が無い",
+   "args": [
+    "--manifest",
+    "/nonexistent/m.json",
+    "--source",
+    "."
+   ],
+   "injected": null,
+   "exitCode": 2,
+   "stdoutBytes": 1944,
+   "stdoutSha256": "07ec21aa901927010ae321f2411482e2072e458fc73c4cd8b651d5281245780a",
+   "stderrBytes": 0,
+   "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+ ]
+}

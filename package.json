@@ -43,6 +43,7 @@
     "compare:real-jack": "vite-node scripts/compareRealJack.ts",
     "export:half-plug:all": "npm run export:half-plug -- --variant \"TRS|JACK-TRS\" && npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
     "check:test-evidence-current": "node scripts/checkTestEvidenceCurrent.mjs",
+    "check:cli-output": "node scripts/cliOutputBaseline.mjs --check",
     "check:cli-schema-sync": "node scripts/syncCliResultSchema.mjs --check"
   },
   "dependencies": {

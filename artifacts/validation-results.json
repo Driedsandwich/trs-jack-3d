@@ -88,7 +88,7 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-15",
- "generatedFromCommit": "d973f664736ba059bebd9efa68909762d02167d4",
+ "generatedFromCommit": "dab485c2260c9809ece93fe8f7c6902195241b76",
  "command": "npm run validate:profiles",
  "targetsTotal": 14,
  "targetsPassed": 14,
@@ -96,16 +96,16 @@
  "artifactValidationStatus": "PASS",
  "releaseReadinessStatus": "NOT_READY",
  "releaseReadinessReasons": [
-  "テストに効くファイルに未コミットの変更が 2 件ある（scripts/stageRelease.mjs, test/stageAttestation.test.ts）。artifacts/test_counts.json は**汚れた作業ツリーから取ったもの**なので、release の証拠にはできない（取り直しても消えない。**変更をコミットしてから** test:count → release:evidence の順で回すこと）"
+  "テストに効くファイルに未コミットの変更が 7 件ある（package.json, scripts/verifyReleaseSourceInputs.mjs, scripts/cliOutputBaseline.d.mts ほか 4 件）。artifacts/test_counts.json は**汚れた作業ツリーから取ったもの**なので、release の証拠にはできない（取り直しても消えない。**変更をコミットしてから** test:count → release:evidence の順で回すこと）"
  ],
  "testEvidence": {
-  "total": 1354,
+  "total": 1361,
   "failed": 0,
   "skipped": 0,
   "exitCode": 0,
   "allPassed": true,
-  "testCountsSha256": "ed137ea09d78864f8817a95ff997f3f0176d60b083b2e5b883f129a57d67efcf",
-  "testCountsGeneratedFromCommit": "d973f664736ba059bebd9efa68909762d02167d4",
+  "testCountsSha256": "2f1423f3676dbc16cca7127dc9d77366306cc4a8824d119d1e3761f9d068d27c",
+  "testCountsGeneratedFromCommit": "dab485c2260c9809ece93fe8f7c6902195241b76",
   "testCountsGeneratedAt": "2026-08-15"
  },
  "distributedTargets": 10,
