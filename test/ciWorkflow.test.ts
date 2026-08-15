@@ -110,7 +110,21 @@ describe('CI ③ 回すものと回さないもの', () => {
     'npm run build', 'npm run check:test-evidence-current', 'npm run check:cli-schema-sync']
   /** **重い成果物は CI で回さない。**通らないから通るまで回す運用になり、artifact が CI の都合で動く */
   const NEVER = ['npm run search:topology', 'npm run sensitivity', 'npm run search:robustness',
-    'npm run export:half-plug', 'npm run release:evidence', 'npm run release:stage']
+    'npm run export:half-plug', 'npm run release:evidence', 'npm run release:stage',
+    /**
+     * **公開済み asset の突合は CI で回さない（v0.6.20 のあと）。**重いからではなく、
+     * **push では変わらないものを測るから**である——公開済み asset が変わるのは
+     * 誰かが release を編集・削除したときで、commit とは無関係に起きる。
+     *
+     * それを毎 push の関門に置くと、通信の揺らぎが
+     * **その commit の欠陥のような顔で release の関門を赤くする。**
+     * 道具は「測れなかった」を終了コード 2 で分けているのに、CI は緑か赤しか持てない。
+     *
+     * **判定の中身は CI で守っている**——`test/publishedAssetBaseline.test.ts` が
+     * io を注入して `main()` を回すので、GitHub を 1 回も叩かずに規則が固定される。
+     * 実際の突合は `npm run check:published-assets` を手元で回す（release 前など）。
+     */
+    'npm run check:published-assets']
 
   it.each(RUN)('%s を回している', (cmd) => {
     expect(SRC, `${cmd} を回していない`).toContain(cmd)
