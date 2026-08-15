@@ -105,21 +105,35 @@ const REF_LIMIT = 50
  * sibling が在るときは**参照先と sibling の両方**を残す。片方だけにすると、
  * 残さなかったほうの変化が見えなくなる。`__refTarget__` は schema の keyword
  * ではないので、実在の key と衝突しない。
+ *
+ * ⚠️ **諦めたら、諦めたと言う（v0.6.23・外部監査 P0）。**
+ * v0.6.22 までは、深すぎる・循環・解決できない・object でない、のどれでも
+ * **黙って元の節を返していた。新旧そろって諦めると写しが一致する**ので、
+ * 「変わっていない」と読めてしまう。`gaveUp` に理由を積んで呼び出し側へ渡す。
  */
-function expandRefs(node, root, seen = new Set(), depth = 0) {
-  if (depth > REF_LIMIT || !node || typeof node !== 'object') return node
-  if (Array.isArray(node)) return node.map((x) => expandRefs(x, root, seen, depth + 1))
+function expandRefs(node, root, seen = new Set(), depth = 0, gaveUp = []) {
+  if (depth > REF_LIMIT) { gaveUp.push('depth'); return node }
+  if (!node || typeof node !== 'object') return node
+  if (Array.isArray(node)) return node.map((x) => expandRefs(x, root, seen, depth + 1, gaveUp))
   if ('$ref' in node) {
-    if (seen.has(node.$ref)) return node          // 循環。$ref のまま残す
+    if (seen.has(node.$ref)) { gaveUp.push('cycle'); return node }   // 循環。$ref のまま残す
     const t = deref({ $ref: node.$ref }, root)
-    if (!t || typeof t !== 'object' || '__unresolvable__' in t) return node
-    const target = expandRefs(t, root, new Set([...seen, node.$ref]), depth + 1)
+    if (t === undefined || (t && typeof t === 'object' && '__unresolvable__' in t)) {
+      gaveUp.push('unresolvable')
+      return node
+    }
+    /**
+     * **`true` / `false` も Draft-07 の正当な schema である（v0.6.23・外部監査 P0）。**
+     * `true` は全部通し、`false` は全部拒む。object でないからと展開を諦めると、
+     * **`false` → `true` という最大級の変更が見えない。**
+     */
+    const target = typeof t === 'boolean' ? t : expandRefs(t, root, new Set([...seen, node.$ref]), depth + 1, gaveUp)
     const rest = Object.fromEntries(Object.entries(node).filter(([k]) => k !== '$ref'))
     if (Object.keys(rest).length === 0) return target
-    return { ...expandRefs(rest, root, seen, depth + 1), __refTarget__: target }
+    return { ...expandRefs(rest, root, seen, depth + 1, gaveUp), __refTarget__: target }
   }
   const out = {}
-  for (const [k, v] of Object.entries(node)) out[k] = expandRefs(v, root, seen, depth + 1)
+  for (const [k, v] of Object.entries(node)) out[k] = expandRefs(v, root, seen, depth + 1, gaveUp)
   return out
 }
 
@@ -133,9 +147,26 @@ function expandRefs(node, root, seen = new Set(), depth = 0) {
  * v0.6.22 の外部監査 P0 は、その置き換えを 3 か所のうち 1 か所でしかやって
  * いなかったことが原因である（`oneOf` だけ直し、allowlist ゲートと
  * `anyOf`/`allOf` の早期 continue が残っていた）。
+ *
+ * ⚠️ **展開を諦めたときは「同じ」と言わない（v0.6.23・外部監査 P0）。**
+ *
+ * 深すぎる・循環・解決できない、は**その節の意味を確かめられなかった**ということで、
+ * 「変わっていない」の証拠にはならない。**新旧そろって同じ位置で諦める**ので、
+ * 写しの一致は何も保証しない（監査の反例＝55 段の連鎖がこれ）。
+ *
+ * ただし**諦めを一律に「変わった」とすると、同一 schema 同士の比較まで BUMP になる**
+ * ——深いだけの schema を自分自身と比べても落ちてしまい、条文が使えなくなる。
+ * そこで諦めが起きたときだけ **root どうしを丸ごと比べる**。
+ * まったく同じなら言語も同じなので「同じ」、違えば決められないので「違う」側へ倒す。
  */
-const sameShape = (a, b, aroot, broot) =>
-  JSON.stringify(expandRefs(a, aroot)) === JSON.stringify(expandRefs(b, broot))
+function sameShape(a, b, aroot, broot) {
+  const ga = []; const gb = []
+  const sa = JSON.stringify(expandRefs(a, aroot, new Set(), 0, ga))
+  const sb = JSON.stringify(expandRefs(b, broot, new Set(), 0, gb))
+  if (sa !== sb) return false
+  if (ga.length === 0 && gb.length === 0) return true
+  return JSON.stringify(aroot) === JSON.stringify(broot)
+}
 
 /** JSON Pointer のトークンを escape する (RFC 6901) */
 const tok = (k) => String(k).replace(/~/g, '~0').replace(/\//g, '~1')
@@ -157,6 +188,16 @@ class Diff {
   }
 }
 
+/**
+ * **JSON Pointer のトークンを復号する（RFC 6901）。**
+ *
+ * ⚠️ **`~1` → `/`、`~0` → `~` の順で戻すこと（v0.6.23・外部監査 P0）。**
+ * 逆順にすると `~01` が `~1` を経て `/` になってしまう（正しくは `~1` という文字列）。
+ * 復号していなかったので `#/definitions/a~1b` が `definitions["a~1b"]` を探しに行き、
+ * **解決できないまま「変わっていない」と答えていた。**
+ */
+const untok = (s) => String(s).replace(/~1/g, '/').replace(/~0/g, '~')
+
 /** $ref を辿る。辿れない・深すぎるときは目印を返し、呼び出し側で UNDEC にする */
 function deref(node, root) {
   let n = 0
@@ -165,7 +206,7 @@ function deref(node, root) {
     if (typeof ref !== 'string' || !ref.startsWith('#/')) return { __unresolvable__: String(ref) }
     let cur = root
     for (const part of ref.slice(2).split('/')) {
-      cur = cur && typeof cur === 'object' ? cur[part] : undefined
+      cur = cur && typeof cur === 'object' ? cur[untok(part)] : undefined
       if (cur === undefined) return { __unresolvable__: ref }
     }
     node = cur
@@ -311,7 +352,26 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
     const p = `${ptr}/items`
     if (!('items' in o)) d.add(NARROW, path, p, 'items: 要素に制約が付いた')
     else if (!('items' in n)) d.add(WIDEN, path, p, 'items: 要素の制約が外れた')
-    else compare(o.items, n.items, oroot, nroot, `${path}[]`, p, d, seen)
+    /**
+     * ⚠️ **配列形（tuple validation）は位置ごとに比べる（v0.6.23・外部監査 P0）。**
+     *
+     * Draft-07 の `items` は schema 1 つでも schema の配列でもよい。配列を
+     * `compare()` へ渡すと**「schema でない値」として素の文字列比較**に落ちるので、
+     * 枝が `{ $ref: … }` なら**参照先が変わっても差分が見えなかった。**
+     *
+     * 位置ごとの比較は健全である——ある位置が広がれば全体も広がる
+     * （`additionalItems` の既定は `true` なので、後ろが増える方向は別に効く）。
+     * **長さが変われば決められない**ので BUMP 側へ倒す。
+     */
+    else if (Array.isArray(o.items) || Array.isArray(n.items)) {
+      if (!Array.isArray(o.items) || !Array.isArray(n.items)) {
+        d.add(UNDEC, path, p, 'items: 単一 schema と配列 (tuple) が入れ替わった (包含は機械判定しない)')
+      } else if (o.items.length !== n.items.length) {
+        d.add(UNDEC, path, p, `items: tuple の長さが変わった ${o.items.length} -> ${n.items.length} (包含は機械判定しない)`)
+      } else {
+        o.items.forEach((a, i) => compare(a, n.items[i], oroot, nroot, `${path}[${i}]`, `${p}/${i}`, d, seen))
+      }
+    } else compare(o.items, n.items, oroot, nroot, `${path}[]`, p, d, seen)
   }
 
   // --- 数値境界 ---

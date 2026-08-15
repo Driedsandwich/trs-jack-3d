@@ -198,4 +198,73 @@ describe('property-based: 監査が見つけた形を、この試験が自力で
     expect(w.widenWitness).toBeUndefined()
     expect(w.narrowWitness).toBeUndefined()
   })
+
+  /**
+   * ⚠️ **v0.6.23（外部監査 P0）。今回見逃した 4 形も、数で固定する。**
+   *
+   * ```text
+   *                                    v0.6.22   v0.6.23
+   * tuple 形式の items                    0 件      12 件
+   * 指す先が boolean schema の $ref        0 件       9 件
+   * ~0 / ~1 を含む $ref                   0 件      20 件
+   * 候補値のうち「要素が null の配列」        0 件      43 件
+   * ```
+   *
+   * **前の版で見逃した理由と同じ**——形を作れなければ、判定器を直しても
+   * 試験は自力で見つけられない（→ 上の ⑥⑦）。
+   */
+  it('⑩ 生成器が **tuple 形式の items / boolean schema / escaped $ref** を作る（v0.6.22 は全部 0 件）', () => {
+    const untok = (x: string) => x.replace(/~1/g, '/').replace(/~0/g, '~')
+    let tuple = 0; let boolRef = 0; let esc = 0
+    for (const p of PAIRS) {
+      const root = p.old as Record<string, unknown>
+      const res = (ref: string) => {
+        let c: unknown = root
+        for (const s of ref.replace(/^#\//, '').split('/')) c = c && typeof c === 'object' ? (c as Record<string, unknown>)[untok(s)] : undefined
+        return c
+      }
+      const walk = (n: unknown) => {
+        if (!n || typeof n !== 'object') return
+        if (Array.isArray(n)) return n.forEach(walk)
+        const o = n as Record<string, unknown>
+        if (Array.isArray(o.items)) tuple++
+        if (typeof o.$ref === 'string') {
+          if (/~[01]/.test(o.$ref)) esc++
+          if (typeof res(o.$ref) === 'boolean') boolRef++
+        }
+        Object.values(o).forEach(walk)
+      }
+      walk(root)
+    }
+    expect(tuple, 'tuple 形式の items を作れていない').toBeGreaterThanOrEqual(3)
+    expect(boolRef, '指す先が boolean schema の $ref を作れていない').toBeGreaterThanOrEqual(3)
+    expect(esc, '~0 / ~1 を含む $ref を作れていない').toBeGreaterThanOrEqual(3)
+  })
+
+  it('⑪ 候補値に **要素が null の配列** が在る（tuple の反例の証人がこれ・v0.6.22 は 0 件）', () => {
+    const n = PAIRS.reduce((a, p) => a
+      + candidates(p.old, p.neu).filter((v) => Array.isArray(v) && v.some((x) => x === null)).length, 0)
+    expect(n, '[null] の形の候補を作れていない').toBeGreaterThanOrEqual(10)
+  })
+
+  it('⑫ **監査の反例 4 件で、証人探しが証人を出す**（判定器でなく探索側の対照）', () => {
+    const S = 'http://json-schema.org/draft-07/schema#'
+    const cases: [string, object, object, unknown][] = [
+      ['tuple items',
+        { $schema: S, type: 'array', items: [{ $ref: '#/definitions/d0' }], definitions: { d0: { type: 'string' } } },
+        { $schema: S, type: 'array', items: [{ $ref: '#/definitions/d0' }], definitions: { d0: { type: ['string', 'null'] } } },
+        [null]],
+      ['escaped $ref',
+        { $schema: S, oneOf: [{ $ref: '#/definitions/a~1b' }, { type: 'number' }], definitions: { 'a/b': { type: 'string' } } },
+        { $schema: S, oneOf: [{ $ref: '#/definitions/a~1b' }, { type: 'number' }], definitions: { 'a/b': { type: ['string', 'null'] } } },
+        null],
+      ['boolean schema',
+        { $schema: S, oneOf: [{ $ref: '#/definitions/d0' }, { type: 'number' }], definitions: { d0: false } },
+        { $schema: S, oneOf: [{ $ref: '#/definitions/d0' }, { type: 'number' }], definitions: { d0: true } },
+        null],
+    ]
+    for (const [name, o, n, want] of cases) {
+      expect(witnesses(compile, o, n).widenWitness, `${name} の証人が出ない`).toEqual(want)
+    }
+  })
 })

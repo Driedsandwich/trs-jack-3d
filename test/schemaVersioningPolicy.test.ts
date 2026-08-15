@@ -597,6 +597,257 @@ describe('条文 ①-c6 anyOf/allOf の枝が $ref + sibling・参照先だけ�
   })
 })
 
+/**
+ * ⚠️ **条文 ①-c7〜①-c10（v0.6.23・外部監査 P0）。根は 1 つで、逃げ道が 6 本あった。**
+ *
+ * v0.6.22 は「**節の文字列が変わっていない**」を「**意味が変わっていない**」の証拠に
+ * していた 3 か所を直した。今回の根はその隣にある——
+ * **「解決できなかった／扱えなかった」を「変わっていない」と同じ扱いにしていた**（fail-open）。
+ *
+ * ```text
+ * E1 expandRefs 深さ上限を超えた          → return node（諦めたことを誰にも伝えない）
+ * E2 expandRefs 循環を見つけた            → return node
+ * E3 expandRefs 参照先を解決できない       → return node
+ * E4 expandRefs 参照先が object でない     → return node（boolean schema は正当な schema）
+ * E5 deref が RFC 6901 の ~0 / ~1 を復号しない → E3 へ落ちる
+ * E6 compare() が schema object でない節を素の文字列でしか比べない（tuple 形式の items）
+ * ```
+ *
+ * **諦めた側と諦めなかった側の出力が同じ**なので、新旧そろって諦めると「同じ」に見える。
+ *
+ * 監査の反例 4 件は E6 / E5 / E1 / E4 に当たる。E2 と E3 は反例をもらっていないが、
+ * **同じ根なので一緒に倒す**（数え直して見つけた分。①-c6 と同じ手順）。
+ *
+ * **現行 schema にこの 4 形は 1 件も無い**（tuple items 0 / `$ref`→boolean 0 /
+ * `~0~1` を含む `$ref` 0 / 循環 0 / `$ref` 連鎖の最長 1 段。実測 2026-08-16）。
+ */
+describe('条文 ①-c7 tuple 形式の items の参照先だけ変わる（外部監査 P0）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const shell = { type: 'array', items: [{ $ref: '#/definitions/d0' }] }
+  const OLD = { $schema: S, ...shell, definitions: { d0: { type: 'string' } } }
+  const NEW = { $schema: S, ...shell, definitions: { d0: { type: ['string', 'null'] } } }
+
+  it('① ajv: [null] が旧 invalid → 新 valid', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(structuredClone(s))
+    expect(compile(OLD)([null]), '旧で通ってしまう').toBe(false)
+    expect(compile(NEW)([null]), '新で通らない').toBe(true)
+    expect(JSON.stringify(OLD.items), 'items の文字列が違う（前提が崩れている）').toBe(JSON.stringify(NEW.items))
+  })
+
+  it('② 判定器は BUMP を返す', () => {
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ 対照: 参照先が変わらなければ HOLD のまま', () => {
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+
+  it('④ 対照: items が単一 schema の形は前から正しかった', () => {
+    const o = { $schema: S, type: 'array', items: { $ref: '#/definitions/d0' }, definitions: { d0: { type: 'string' } } }
+    const n = { $schema: S, type: 'array', items: { $ref: '#/definitions/d0' }, definitions: { d0: { type: ['string', 'null'] } } }
+    expect(diffSchemaObjects(o, n).verdict).toBe('BUMP')
+  })
+
+  it('⑤ 対照: tuple の長さが変わったら決められない（BUMP 側へ倒す）', () => {
+    const n = structuredClone(OLD) as { items: object[] }
+    n.items = [...n.items, { type: 'number' }]
+    expect(diffSchemaObjects(OLD, n).verdict).toBe('BUMP')
+  })
+})
+
+/**
+ * ⚠️ **条文 ①-c8。`$ref` の RFC 6901 escape（v0.6.23・外部監査 P0）。**
+ *
+ * `#/definitions/a~1b` は `definitions["a/b"]` を指す（`~1` = `/`・`~0` = `~`）。
+ * 復号していなかったので `definitions["a~1b"]` を探しに行って解決できず、
+ * **解決できないまま「変わっていない」と答えていた。**
+ */
+describe('条文 ①-c8 $ref の RFC 6901 escape を復号していない（外部監査 P0）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const branch = [{ $ref: '#/definitions/a~1b' }, { type: 'number' }]
+  const OLD = { $schema: S, oneOf: branch, definitions: { 'a/b': { type: 'string' } } }
+  const NEW = { $schema: S, oneOf: branch, definitions: { 'a/b': { type: ['string', 'null'] } } }
+
+  it('① ajv: null が旧 invalid → 新 valid', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(structuredClone(s))
+    expect(compile(OLD)(null), '旧で通ってしまう').toBe(false)
+    expect(compile(NEW)(null), '新で通らない').toBe(true)
+  })
+
+  it('② 判定器は BUMP を返す', () => {
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ 対照: 参照先が変わらなければ HOLD のまま', () => {
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+
+  it('④ ~0（チルダ）も復号する', () => {
+    const b = [{ $ref: '#/definitions/a~0b' }, { type: 'number' }]
+    const o = { $schema: S, oneOf: b, definitions: { 'a~b': { type: 'string' } } }
+    const n = { $schema: S, oneOf: b, definitions: { 'a~b': { type: ['string', 'null'] } } }
+    expect(diffSchemaObjects(o, n).verdict).toBe('BUMP')
+  })
+
+  /**
+   * ⚠️ **復号は「安全のため」ではなく「精度のため」である。**
+   *
+   * 復号しなくても解決に失敗して諦めるので、下の root 比較へ落ちて **BUMP にはなる**
+   * （危険側の誤りは出ない）。**だが escaped `$ref` を使う schema は、
+   * 参照先が変わっていなくても、無関係な definition が動くたびに BUMP になる。**
+   * 復号して初めて「変わっていない」と言えるようになる。
+   *
+   * この試験が無いと、復号を消しても何も落ちない（実測: 変異で 93 件すべて通った）。
+   */
+  it('⑤ **復号できると、無関係な definition が増えても HOLD のまま**（誤検出しない）', () => {
+    const b = [{ $ref: '#/definitions/a~1b' }, { type: 'number' }]
+    const o = { $schema: S, oneOf: b, definitions: { 'a/b': { type: 'string' } } }
+    const n = { $schema: S, oneOf: b, definitions: { 'a/b': { type: 'string' }, zz: { type: 'number' } } }
+    expect(diffSchemaObjects(o, n).verdict, '参照先は変わっていないのに BUMP になっている').toBe('HOLD')
+  })
+})
+
+/**
+ * ⚠️ **条文 ①-c11。展開の深さ上限より奥にある `$ref`（v0.6.23）。**
+ *
+ * 監査の反例（55 段の連鎖）は `deref()` の反復上限を踏むので、
+ * **`expandRefs` の深さ上限とは別の経路**である。実測して分かった
+ * ——反例 ①-c9 は `expandRefs` の `depth` を消しても落ちなかった。
+ *
+ * こちらは `oneOf` の枝の中で 60 段ネストし、その奥に `$ref` を置く。
+ * `oneOf` の枝は `compare()` を通らない（枝ごとの再帰が健全でないため）ので、
+ * **`expandRefs` が諦めた時点で誰も参照先を見ない。**
+ */
+describe('条文 ①-c11 展開の深さ上限より奥にある $ref（数え直して見つけた）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const nest = (inner: object) => {
+    let n: object = inner
+    for (let i = 0; i < 60; i++) n = { type: 'object', properties: { a: n } }
+    return n
+  }
+  const mk = (d0: object) => ({ $schema: S, oneOf: [nest({ $ref: '#/definitions/d0' }), { type: 'number' }], definitions: { d0 } })
+  const OLD = mk({ type: 'string' })
+  const NEW = mk({ type: ['string', 'null'] })
+  const deepVal = (v: unknown) => { let x: unknown = v; for (let i = 0; i < 60; i++) x = { a: x }; return x }
+
+  it('① ajv: 奥が null の値が旧 invalid → 新 valid', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(structuredClone(s))
+    expect(compile(OLD)(deepVal(null)), '旧で通ってしまう').toBe(false)
+    expect(compile(NEW)(deepVal(null)), '新で通らない').toBe(true)
+    expect(JSON.stringify(OLD.oneOf), '枝の文字列が違う（前提が崩れている）').toBe(JSON.stringify(NEW.oneOf))
+  })
+
+  it('② 判定器は BUMP を返す', () => {
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ 対照: 参照先が変わらなければ HOLD のまま', () => {
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+})
+
+/**
+ * ⚠️ **条文 ①-c12。循環を見つけたら保守側へ倒す（v0.6.23）。**
+ *
+ * 監査の指摘には無い。**「諦めた」経路を数え直したときに残った 1 つ**である。
+ *
+ * 循環がある schema は、その先を確かめられない。だから
+ * **「変わっていない」とは言えない。**この版からは root どうしを比べて、
+ * まったく同じでなければ決められない側（BUMP）へ倒す。
+ *
+ * 保守側なので**誤って上げる**ことはある（循環がある schema は、
+ * 無関係な definition が動くだけで BUMP になる）。現行 schema に循環は
+ * **0 件**なので、いまの版に影響しない（実測 2026-08-16）。
+ */
+describe('条文 ①-c12 循環がある schema は保守側へ倒す（数え直して見つけた）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const mk = (unused: object) => ({
+    $schema: S,
+    oneOf: [{ $ref: '#/definitions/d0' }, { type: 'number' }],
+    definitions: { d0: { oneOf: [{ $ref: '#/definitions/d0' }, { type: 'string' }] }, dUnused: unused },
+  })
+
+  it('① 循環の先を確かめられないので、無関係な変更でも BUMP へ倒す', () => {
+    expect(diffSchemaObjects(mk({ type: 'string' }), mk({ type: 'number' })).verdict).toBe('BUMP')
+  })
+
+  it('② **対照: まったく同じなら HOLD**（循環を一律 BUMP にしていない）', () => {
+    const o = mk({ type: 'string' })
+    expect(diffSchemaObjects(o, structuredClone(o)).verdict).toBe('HOLD')
+  })
+})
+
+/**
+ * ⚠️ **条文 ①-c9。`$ref` の連鎖が長すぎて解決できない（v0.6.23・外部監査 P0）。**
+ *
+ * 55 段の連鎖は `deref()` の反復上限（`REF_LIMIT`）を超え、解決できない目印を返す。
+ * `expandRefs` はそれを見て元の節を返していた。**新旧そろって同じ位置で諦める**ので
+ * 写しは一致し、「変わっていない」と読めてしまう。**諦めたのなら、決められないと言うべき。**
+ *
+ * > **`expandRefs` の `depth` 上限とは別の経路である。**実測で分かった
+ * > ——この反例は `depth` の記録を消しても落ちない。そちらは条文 ①-c11 で見る。
+ *
+ * ⚠️ **同一 schema 同士は HOLD のままでなければならない**（深いだけで BUMP にすると条文が使えない）。
+ * 諦めが起きたときは**root どうしを比べて**、まったく同じなら HOLD、違えば決められない、とする。
+ */
+describe('条文 ①-c9 $ref の連鎖が長すぎて解決できない（外部監査 P0）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const N = 55
+  const chain = (tail: object) => {
+    const defs: Record<string, object> = {}
+    for (let i = 0; i < N; i++) defs[`d${i}`] = { $ref: `#/definitions/d${i + 1}` }
+    defs[`d${N}`] = tail
+    return defs
+  }
+  const OLD = { $schema: S, oneOf: [{ $ref: '#/definitions/d0' }, { type: 'number' }], definitions: chain({ type: 'string' }) }
+  const NEW = { $schema: S, oneOf: [{ $ref: '#/definitions/d0' }, { type: 'number' }], definitions: chain({ type: ['string', 'null'] }) }
+
+  it('① ajv: null が旧 invalid → 新 valid', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(structuredClone(s))
+    expect(compile(OLD)(null), '旧で通ってしまう').toBe(false)
+    expect(compile(NEW)(null), '新で通らない').toBe(true)
+  })
+
+  it('② 判定器は BUMP を返す', () => {
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ **対照: 深いだけで同一なら HOLD のまま**（諦めを一律 BUMP にしていない）', () => {
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+})
+
+/**
+ * ⚠️ **条文 ①-c10。参照先が boolean schema（v0.6.23・外部監査 P0）。**
+ *
+ * Draft-07 では `true` / `false` も正当な schema である（`true` は全部通し、`false` は全部拒む）。
+ * `expandRefs` は参照先が object でなければ展開せず元の節を返していたので、
+ * **`false` → `true` という最大級の変更が見えなかった。**
+ */
+describe('条文 ①-c10 参照先が boolean schema（外部監査 P0）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const branch = [{ $ref: '#/definitions/d0' }, { type: 'number' }]
+  const OLD = { $schema: S, oneOf: branch, definitions: { d0: false } }
+  const NEW = { $schema: S, oneOf: branch, definitions: { d0: true } }
+
+  it('① ajv: 広がりと狭まりが両方ある（oneOf は「ちょうど 1 枝」なので）', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(structuredClone(s))
+    const o = compile(OLD); const n = compile(NEW)
+    expect(o('x'), '旧で文字列が通ってしまう').toBe(false)
+    expect(n('x'), '新で文字列が通らない').toBe(true)     // 広がった
+    expect(o(1), '旧で数値が通らない').toBe(true)
+    expect(n(1), '新で数値が通ってしまう').toBe(false)    // 狭まった（2 枝が一致するので oneOf は落ちる）
+  })
+
+  it('② 判定器は BUMP を返す', () => {
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ 対照: 参照先が変わらなければ HOLD のまま', () => {
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+})
+
 describe('条文 ①-d allowlist そのもの', () => {
   it('宣言集合が、現行 schema の使う keyword をすべて覆っている', () => {
     const APPLICATORS = new Set(['properties', 'definitions', '$defs', 'patternProperties', 'dependencies'])

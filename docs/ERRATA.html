@@ -99,7 +99,8 @@
     <li><a href="#s7">docs（2026-08-15 記載・同日直しました）</a></li>
     <li><a href="#s8">判定器（2026-08-15 記載・同日直しました）</a></li>
     <li><a href="#s9">v0.6.21（2026-08-15 記載・同日直しました・外部監査）</a></li>
-    <li><a href="#s10">この正誤表の運用</a></li>
+    <li><a href="#s10">v0.6.22（2026-08-16 記載・同日直しました・外部監査）</a></li>
+    <li><a href="#s11">この正誤表の運用</a></li>
   </ol>
 </nav>
 <h1>正誤表</h1>
@@ -396,7 +397,33 @@ v0.6.21 の tag → 「現時点では v0.6.20」     4/4 tag で実測</code></
 <div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><code>trs-jack-3d-release-index.v1.json</code> の <code>notes</code>（<strong>説明文。機械契約ではありません</strong>）</td></tr><tr><td>症状</td><td>「受け手が固定すべき <strong>4 点</strong>」の後ろに、ファイルが <strong>5 つ</strong>並ぶ</td></tr><tr><td>影響</td><td>説明文の食い違いのみ。機械契約は <code>assets[]</code> なので分岐には影響しません</td></tr><tr><td>見つけた人</td><td>外部監査</td></tr><tr><td>直した版</td><td>2026-08-15（<code>v0.6.21</code> 公開後・次の版に入ります）</td></tr></tbody></table></div>
 <p>一覧は <code>RELEASE_ASSETS</code> から役割で引いているのに、<strong>数だけ手で書いていました。</strong> profile が 2 本になった時点でずれています。<strong>数を言わない</strong>形へ変え （受け手が固定するのは「名指しされた配布物すべて」で、個数ではありません）、 <code>notes</code> が件数を手書きしていないことを検査に入れました。</p>
 <p>同じ節の「検算ツールの契約（v0.6.16）」も、直後に <code>toolVersion 20</code> と書いていても <strong>「これは v0.6.16 の契約だ」と読めます。</strong>版数は*いつこの形にしたか*であって 契約の版ではないので、そう読める書き方をやめました。</p>
-<h2 id="s10">この正誤表の運用</h2>
+<h2 id="s10">v0.6.22（2026-08-16 記載・<strong>同日直しました</strong>・外部監査）</h2>
+<h3>30. <strong>「解決できなかった」を「変わっていない」と同じ扱いにしていました</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><code>scripts/schemaLanguageDiff.mjs</code>（<strong>配布物ではありません</strong>。版を上げるかを決める判定器）</td></tr><tr><td>症状</td><td><code>$ref</code> を辿れない・深すぎる・扱えない形のとき、<strong>黙って諦めて「変わっていない」と答える</strong></td></tr><tr><td>影響</td><td><strong>言語が広がっているのに「据え置き可」と答える。</strong>§25・§26 と同じ危険側</td></tr><tr><td>見つけた人</td><td><strong>外部監査</strong>（4 件）＋ <strong>こちら</strong>（数え直して 2 件）</td></tr><tr><td>直した版</td><td>2026-08-16（<code>v0.6.22</code> 公開後・次の版に入ります）</td></tr></tbody></table></div>
+<p><strong>§26 で直した根の隣にありました。</strong>§26 は「節の文字列が変わっていない」を 「意味が変わっていない」の証拠にしていた形。今回は <strong>「確かめられなかった」を「変わっていない」と同じ扱いにしていた</strong>形です（fail-open）。</p>
+<p><strong>諦めた側と諦めなかった側の出力が同じ</strong>なので、新旧そろって諦めると「同じ」に見えます。</p>
+<pre><code>逃げ道                                        反例をくれた人
+E1 expandRefs の深さ上限を超えた                 こちら（数え直して発見）
+E2 循環を見つけた                               こちら（同上）
+E3 $ref を解決できない                          監査（55 段の連鎖）
+E4 参照先が object でない（boolean schema）      監査
+E5 deref が RFC 6901 の ~0 / ~1 を復号しない     監査
+E6 tuple 形式の items を素の文字列でしか比べない   監査</code></pre>
+<p>監査の反例 4 件は、こちらの環境でそのまま再現しました（すべて <code>HOLD</code> / exit 0）。 包含関係の真値も ajv で独立に出しています。</p>
+<pre><code>tuple_items_ref  旧invalid→新valid: [[null]]
+escaped_ref      旧invalid→新valid: [null]
+deep_ref         旧invalid→新valid: [null]
+boolean_ref      旧invalid→新valid: [null,"x","a",true,false,[],[null],["a"],[1],{},…]
+                 旧valid→新invalid: [1,0]        ← 広がりと狭まりが同時（oneOf のため）
+陰性対照（同一 schema 同士）  広がり証人 0 件</code></pre>
+<p><strong>直し方。</strong>解決できるものは解決し（E5 の復号・E4 の boolean 展開・E6 の位置ごと比較）、 <strong>解決できないものは「変わっていない」と言わない</strong>（E1・E2・E3）。 諦めが起きたときだけ <strong>root どうしを丸ごと比べ</strong>、まったく同じなら <code>HOLD</code>、 違えば決められない側へ倒します——<strong>諦めを一律 BUMP にすると、 深いだけの schema を自分自身と比べても落ちて</strong>条文が使えなくなるためです。</p>
+<p><strong>回帰試験を先に入れてから直しました</strong>（条文 ①-c7 〜 ①-c12。入れた時点で 5 件落ちます）。</p>
+<p><strong>変異対照で 3 か所が「外しても落ちない行」でした。</strong> E1・E2・E5 は、消しても 93 件すべて通りました。理由も測っています。</p>
+<ul><li><strong>E1</strong> は監査の反例（55 段）が <code>deref</code> の反復上限（E3）を先に踏むため。 <code>oneOf</code> の枝の中で 60 段ネストし、その奥に <code>$ref</code> を置くと E1 を踏みます（条文 ①-c11）。</li><li><strong>E2</strong> は反例をもらっていません。<strong>循環がある schema は保守側へ倒す</strong>という 振る舞いそのものを固定しました（条文 ①-c12）。</li><li><strong>E5</strong> は<strong>安全のためでなく精度のため</strong>でした。復号しなくても諦めて root 比較へ落ちるので 危険側の誤りは出ませんが、escaped <code>$ref</code> を使う schema は**参照先が変わっていなくても 無関係な definition が動くたびに BUMP** になります（条文 ①-c8 ⑤）。</li></ul>
+<p>足したあと、<strong>7 か所すべてが変異で落ちます</strong>（99 件）。</p>
+<p><strong>試験の側も直しました。</strong>v0.6.22 の生成器はこの 4 形を一度も作っていません （実測 300 種で tuple 0 件・<code>$ref</code>→boolean 0 件・<code>~0~1</code> 0 件・要素が null の配列 0 件）。 補強後は 12 / 9 / 20 / 43 件になり、<strong>v0.6.22 の判定器へ当てると自力で反例を出します</strong> （seed 299・tuple 形式の 2 番目の枝が <code>$ref</code>・証人 <code>[0,null]</code>・手書き fixture 抜き）。</p>
+<p><strong>現行 schema への影響はありません。</strong>この 4 形は現行 26 schema に 1 件もありません （tuple items 0 / <code>$ref</code>→boolean 0 / <code>~0~1</code> を含む <code>$ref</code> 0 / 循環 0 / <code>$ref</code> 連鎖の最長 1 段）。実 schema <strong>197 対</strong>（現行 26 schema × 直近 8 tag）で <strong>判定は 1 件も変わっていません。</strong></p>
+<h2 id="s11">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
 </div>
 </body>

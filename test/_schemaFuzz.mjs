@@ -54,8 +54,24 @@ const WORDS = ['a', 'b', 'c', 'input', 'scope', 'role', 'x1']
 export function genSchema(r, depth = 0, refs = { defs: {}, n: 0 }) {
   // $ref の連鎖: definitions を作って、そこを指す
   if (depth > 0 && depth < 4 && chance(r, 0.22) && refs.n < 4) {
-    const name = `d${refs.n++}`
-    refs.defs[name] = genSchema(r, depth + 1, refs)
+    /**
+     * ⚠️ **名前に `/` と `~` を混ぜる（v0.6.23・外部監査 P0）。**
+     * `$ref` では RFC 6901 の `~1` / `~0` で綴る。復号していない実装は
+     * **解決に失敗して黙って諦める**ので、この形を作らないと気づけない
+     * （実測: v0.6.22 の生成器は 300 種で 0 件）。
+     */
+    const raw = chance(r, 0.2) ? `d${refs.n}${pick(r, ['/x', '~x'])}` : `d${refs.n}`
+    refs.n++
+    const name = raw
+    const ptr = raw.replace(/~/g, '~0').replace(/\//g, '~1')
+    /**
+     * ⚠️ **参照先が boolean schema になる場合を作る（v0.6.23・外部監査 P0）。**
+     * Draft-07 では `true` / `false` も正当な schema である。
+     */
+    refs.defs[name] = chance(r, 0.12) ? chance(r, 0.5) : genSchema(r, depth + 1, refs)
+    if (typeof refs.defs[name] === 'boolean' || ptr !== raw) {
+      return chance(r, 0.5) ? { $ref: `#/definitions/${ptr}`, description: 'ref sibling' } : { $ref: `#/definitions/${ptr}` }
+    }
     /**
      * ⚠️ **半分は annotation の sibling を付ける（v0.6.22・外部監査 P0）。**
      *
@@ -65,7 +81,7 @@ export function genSchema(r, depth = 0, refs = { defs: {}, n: 0 }) {
      * 現行 schema の `evidenceGrade` は実際にこの形なので、
      * 「現行に無い形」ですらない。
      */
-    return chance(r, 0.5) ? { $ref: `#/definitions/${name}`, description: 'ref sibling' } : { $ref: `#/definitions/${name}` }
+    return chance(r, 0.5) ? { $ref: `#/definitions/${ptr}`, description: 'ref sibling' } : { $ref: `#/definitions/${ptr}` }
   }
 
   const kind = pick(r, ['integer', 'number', 'string', 'boolean', 'enum', 'const', 'array', 'object', 'oneOf'])
@@ -92,7 +108,14 @@ export function genSchema(r, depth = 0, refs = { defs: {}, n: 0 }) {
     case 'const':
       return { const: pick(r, WORDS) }
     case 'array': {
-      const s = { type: 'array', items: depth < 3 ? genSchema(r, depth + 1, refs) : { type: 'string' } }
+      const one = () => (depth < 3 ? genSchema(r, depth + 1, refs) : { type: 'string' })
+      /**
+       * ⚠️ **`items` の配列形（tuple validation）も作る（v0.6.23・外部監査 P0）。**
+       * Draft-07 の `items` は schema 1 つでも schema の配列でもよい。
+       * 配列形を作らなかったので、**枝が `$ref` の tuple で参照先が変わる形**を
+       * 一度も試していなかった（実測: v0.6.22 の生成器は 300 種で 0 件）。
+       */
+      const s = { type: 'array', items: chance(r, 0.25) ? [one(), ...(chance(r, 0.5) ? [one()] : [])] : one() }
       if (chance(r, 0.4)) s.minItems = Math.floor(r() * 2)
       if (chance(r, 0.4)) s.maxItems = (s.minItems ?? 0) + 1 + Math.floor(r() * 2)
       if (chance(r, 0.3)) s.uniqueItems = true
@@ -274,7 +297,19 @@ export function synth(node, root, depth = 0, seen = new Set()) {
     else if (t === 'string') out.push('a', '')
     else if (t === 'integer' || t === 'number') out.push(0, 1, -1)
     else if (t === 'boolean') out.push(true, false)
-    else if (t === 'array') out.push([], node.items ? synth(node.items, root, depth + 1, seen).slice(0, 2) : ['a'])
+    /**
+     * ⚠️ **配列は「要素を 1 つだけ差し替えた」形も作る（v0.6.23・外部監査 P0）。**
+     * tuple 形式の反例の証人は `[null]` である。v0.6.22 の合成は
+     * **要素が null の配列を 1 件も作れなかった**（実測: 300 種 6,732 候補中 0 件）。
+     */
+    else if (t === 'array') {
+      const items = Array.isArray(node.items) ? node.items : node.items ? [node.items] : []
+      const base = items.map((s) => synth(s, root, depth + 1, seen)[0])
+      out.push([], base.length ? base : ['a'])
+      for (let i = 0; i < items.length; i++) {
+        for (const p of PROBES) out.push(base.map((v, j) => (j === i ? p : v)))
+      }
+    }
   }
   if (node.properties && typeof node.properties === 'object') {
     const keys = Object.keys(node.properties)
