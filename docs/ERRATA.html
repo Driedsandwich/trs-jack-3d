@@ -97,7 +97,8 @@
     <li><a href="#s5">v0.6.16（2026-08-15 記載・v0.6.17 で直しました）</a></li>
     <li><a href="#s6">v0.6.17（2026-08-15 記載・次の版で直します）</a></li>
     <li><a href="#s7">docs（2026-08-15 記載・同日直しました）</a></li>
-    <li><a href="#s8">この正誤表の運用</a></li>
+    <li><a href="#s8">判定器（2026-08-15 記載・同日直しました）</a></li>
+    <li><a href="#s9">この正誤表の運用</a></li>
   </ol>
 </nav>
 <h1>正誤表</h1>
@@ -340,7 +341,19 @@ releaseIndexSha256       **不一致**</code></pre>
 <p><strong>なぜ 9 日も残ったか。</strong> この repo の文言検査は「<strong>在ると言ったのに無い</strong>」だけを見ていました （指したパスが実在するか）。<strong>反対向き＝「無いと言ったのに在る」には検査が 1 つも無かった。</strong></p>
 <p>害は<strong>受け手の側にしか出ません</strong>——書いた本人は道具が在ることを知っているので、 読み返しても違和感がありません。実装が進むほど増える型です。</p>
 <p><strong>同じ型を機械で捕まえる検査を入れました</strong>（<code>test/staleWordingAndPaths.test.ts</code> 「「無い」と書いたものが、本当に無いか」）。否定語と同じ行にある npm script 名を拾い、 その script が <code>package.json</code> に<strong>無いこと</strong>を要求します。 公開済みの release notes と CHANGELOG は、その時点の記録なので対象外です。</p>
-<h2 id="s8">この正誤表の運用</h2>
+<h2 id="s8">判定器（2026-08-15 記載・<strong>同日直しました</strong>）</h2>
+<h3>25. <strong><code>oneOf</code> の枝が <code>$ref</code> のとき、参照先の変更が見えていませんでした</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><code>scripts/schemaLanguageDiff.mjs</code>（<strong>配布物ではありません</strong>。版を上げるかを決める判定器）</td></tr><tr><td>症状</td><td><code>oneOf</code> の枝が <code>{ $ref: … }</code> のとき、参照先だけが変わっても「変わっていない」と判定</td></tr><tr><td>影響</td><td><strong>言語が広がっているのに「据え置き可」と答える。</strong>受け手は旧 schema を pin しているので拒む</td></tr><tr><td>直した版</td><td>2026-08-15（<code>v0.6.20</code> 公開後・次の版に入ります）</td></tr></tbody></table></div>
+<pre><code>旧  oneOf: [{type:'string'}, {$ref:'#/definitions/d0'}]   definitions.d0.type = 'boolean'
+新  同じ oneOf                                             definitions.d0.type = ['boolean','null']
+
+ajv   null が旧 invalid → 新 valid  ＝ **広がっている**
+判定  HOLD（据え置き可）             ← 危険側</code></pre>
+<p><strong>原因。</strong> <code>oneOf</code> は枝の言語について単調でないので、枝ごとの比較ができません。 そこで「変わったか」を <code>JSON.stringify(o.oneOf) !== JSON.stringify(n.oneOf)</code> で見ていました。 枝が <code>$ref</code> なら<strong>参照先が変わっても文字列は同じ</strong>です。 root が <code>$ref</code> の場合は入口で辿るので前から正しく、<strong>枝だけが素通り</strong>していました。</p>
+<p><strong>見つけ方が今までと違います。</strong> これまでの 4 件は外部監査からでしたが、 これは<strong>ランダム生成した schema 対</strong>から出ました （<code>test/schemaLanguageFuzz.test.ts</code>。計画 <code>docs/V060_PLAN_20260805.md</code> §3 が <code>[AI]</code> で約束したまま 10 日落ちていた property-based 試験）。961 対のうち 4 件。</p>
+<p><strong>直す前に回帰テストを入れました</strong>（条文 ①-c3。入れた時点では落ちます）。 修正を戻すと 3 件落ちることも実測しています。</p>
+<p><strong>限界。</strong> 探しているのは「新だけが通す値が実在するのに BUMP でない」だけです。 値は schema 対から作りますが、<strong>作れない値があれば広がりを見逃します。</strong> 探索が働いていることは同じファイルの対照 5 つで確かめています （既知の広がりで証人が出る／同一 schema では出ない／深いネストと <code>$ref</code> を作れている／ 判定が BUMP 一色でない／変異が当たった対だけ数えている）。</p>
+<h2 id="s9">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
 </div>
 </body>

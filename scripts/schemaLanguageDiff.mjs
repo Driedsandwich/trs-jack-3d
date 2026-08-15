@@ -84,6 +84,33 @@ export const HANDLED_KEYWORDS = new Set([
 
 const REF_LIMIT = 50
 
+/**
+ * **`$ref` を展開した写しを返す（比較のためだけに使う）。**
+ *
+ * `oneOf` は枝を再帰比較できない（枝の言語について単調でない）ので、
+ * 「変わったかどうか」を文字列で見るしかない。そのとき**参照先の変化が見えない**ので、
+ * 比べる前にここで展開する。
+ *
+ * 循環は `seen` で打ち切り、`$ref` を**そのまま残す**——消すと
+ * 「循環している 2 つ」が同じ形に見えてしまう。辿れない参照も残す
+ * （呼び出し側の allowlist ゲートと `deref` の目印が別に倒す）。
+ *
+ * 展開は比較用の一時オブジェクトで、判定結果の pointer には影響しない。
+ */
+function expandRefs(node, root, seen = new Set(), depth = 0) {
+  if (depth > REF_LIMIT || !node || typeof node !== 'object') return node
+  if (Array.isArray(node)) return node.map((x) => expandRefs(x, root, seen, depth + 1))
+  if ('$ref' in node && Object.keys(node).length === 1) {
+    if (seen.has(node.$ref)) return node          // 循環。$ref のまま残す
+    const t = deref({ $ref: node.$ref }, root)
+    if (!t || typeof t !== 'object' || '__unresolvable__' in t) return node
+    return expandRefs(t, root, new Set([...seen, node.$ref]), depth + 1)
+  }
+  const out = {}
+  for (const [k, v] of Object.entries(node)) out[k] = expandRefs(v, root, seen, depth + 1)
+  return out
+}
+
 /** JSON Pointer のトークンを escape する (RFC 6901) */
 const tok = (k) => String(k).replace(/~/g, '~0').replace(/\//g, '~1')
 
@@ -310,7 +337,21 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
    *
    * 一般の包含判定を作る必要は無い。**変更があれば無条件で BUMP 側へ倒す。**
    */
-  if (JSON.stringify(o.oneOf) !== JSON.stringify(n.oneOf)) {
+  /**
+   * ⚠️ **比べる前に `$ref` を展開する（v0.6.21・property-based で見つけた 5 件目）。**
+   *
+   * v0.6.20 までは `JSON.stringify(o.oneOf)` をそのまま比べていた。
+   * 枝が `{ $ref: '#/definitions/d0' }` なら、**参照先が変わっても枝の文字列は同じ**なので
+   * 「変わっていない」と見なし、他に差分が無ければ **HOLD** を返していた。
+   * 実測した反例（`test/schemaVersioningPolicy.test.ts` ①-c3）:
+   *
+   *   旧  oneOf: [{type:'string'}, {$ref:'#/definitions/d0'}]  definitions.d0.type = 'boolean'
+   *   新  同じ oneOf                                            definitions.d0.type = ['boolean','null']
+   *   ajv  null が旧 invalid → 新 valid = **広がっている**。判定は HOLD だった（危険側）
+   *
+   * root が `$ref` の場合は `deref()` が入口で辿るので前から正しかった。**枝だけが素通り**していた。
+   */
+  if (JSON.stringify(expandRefs(o.oneOf, oroot)) !== JSON.stringify(expandRefs(n.oneOf, nroot))) {
     d.add(
       UNDEC,
       path,

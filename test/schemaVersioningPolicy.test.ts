@@ -372,6 +372,69 @@ describe('条文 ①-c2 sibling 付き $ref の参照先（v0.5.2 の実装中�
   })
 })
 
+// ---------------------------------------------------------------- ①-c3 oneOf の枝が $ref
+
+/**
+ * **`oneOf` の枝が `$ref` のとき、参照先だけが変わっても見えなかった（5 件目）。**
+ *
+ * 見つけ方が今までと違う。**外部監査ではなく、ランダム生成した schema 対から出た**
+ * （`test/_schemaFuzz.mjs`・計画 `docs/V060_PLAN_20260805.md` §3 が [AI] で
+ * 約束したまま 10 日落ちていた property-based 試験）。961 対のうち 4 件。
+ *
+ * ## 何が起きていたか
+ *
+ * `oneOf` は枝の言語について単調でないので、**変更があれば無条件で UNDEC へ倒す**設計である。
+ * その「変更があったか」を `JSON.stringify(o.oneOf) !== JSON.stringify(n.oneOf)` で見ていた。
+ *
+ * 枝が `{ $ref: '#/definitions/d0' }` なら、参照先が変わっても**枝の文字列は同じ**。
+ * → 変更なしと見なす → 他に差分が無ければ **HOLD**（据え置き可）。
+ *
+ * ```
+ * 旧  { oneOf: [{ type:'string' }, { $ref:'#/definitions/d0' }], definitions:{ d0:{ type:'boolean' } } }
+ * 新  同じ。ただし definitions.d0.type が ['boolean','null']
+ *
+ * ajv   null は 旧 invalid → 新 valid   **広がっている**
+ * 判定  HOLD                            ← 危険側（上げるべきなのに据え置き可）
+ * ```
+ *
+ * **root が `$ref` の場合は正しく BUMP を返す**（`deref()` が入口で辿るため）。
+ * `oneOf` の枝だけが素通りしていた。
+ */
+describe('条文 ①-c3 oneOf の枝が $ref・参照先だけ変わる（property-based で発見）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const OLD = { $schema: S, oneOf: [{ type: 'string' }, { $ref: '#/definitions/d0' }], definitions: { d0: { type: 'boolean' } } }
+  const NEW = { $schema: S, oneOf: [{ type: 'string' }, { $ref: '#/definitions/d0' }], definitions: { d0: { type: ['boolean', 'null'] } } }
+
+  it('① ajv: null が旧 invalid → 新 valid（＝新は旧に収まっていない）', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(s)
+    const o = compile(OLD); const n = compile(NEW)
+    expect(o(null), '旧で null が通ってしまう（反例の前提が崩れている）').toBe(false)
+    expect(n(null), '新で null が通らない（反例の前提が崩れている）').toBe(true)
+    // 枝の文字列は同じ＝素朴な比較では差分が見えない、という前提も固定する
+    expect(JSON.stringify(OLD.oneOf)).toBe(JSON.stringify(NEW.oneOf))
+  })
+
+  it('② 判定器は BUMP を返す', () => {
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ **その経路が鳴っている**（別の理由で BUMP になっていない）', () => {
+    const r = diffSchemaObjects(OLD, NEW)
+    const blob = r.facts.map((f: { kind: string, pointer: string, detail: string }) => `${f.kind} ${f.pointer} ${f.detail}`).join('\n')
+    expect(blob, 'oneOf の経路で倒れていない').toContain('oneOf')
+  })
+
+  it('④ 対照: 参照先が変わらなければ HOLD のまま（何にでも鳴らない）', () => {
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+
+  it('⑤ 対照: root が $ref の場合は前から正しかった', () => {
+    const o = { $schema: S, $ref: '#/definitions/d0', definitions: { d0: { type: 'boolean' } } }
+    const n = { $schema: S, $ref: '#/definitions/d0', definitions: { d0: { type: ['boolean', 'null'] } } }
+    expect(diffSchemaObjects(o, n).verdict).toBe('BUMP')
+  })
+})
+
 describe('条文 ①-d allowlist そのもの', () => {
   it('宣言集合が、現行 schema の使う keyword をすべて覆っている', () => {
     const APPLICATORS = new Set(['properties', 'definitions', '$defs', 'patternProperties', 'dependencies'])
