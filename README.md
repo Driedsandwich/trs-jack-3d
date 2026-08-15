@@ -332,7 +332,7 @@ src/
 
 ## Half-Plug Lab との連携
 
-**配布物は [v0.6.19](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.6.19) です。**
+**配布物は [v0.6.20](https://github.com/Driedsandwich/trs-jack-3d/releases/tag/v0.6.20) です。**
 
 **`profileId` を報告文から転記しないでください。**同梱の
 `trs-jack-3d-release-index.v1.json` から引くのが正本です
