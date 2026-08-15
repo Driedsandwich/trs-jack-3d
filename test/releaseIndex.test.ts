@@ -135,7 +135,7 @@ describe('§1 release index — 下流が手で転記しなくて済む', () => 
 
 describe('§2 evidence が schema を持ち、それに適合する', () => {
   for (const [artifact, schema] of [
-    ['artifacts/validation-results.json', 'schemas/validation-results.v2.schema.json'],
+    ['artifacts/validation-results.json', 'schemas/validation-results.v3.schema.json'],
     ['artifacts/source-input-manifest.json', 'schemas/source-input-manifest.v2.schema.json'],
     [INDEX_PATH, 'schemas/trs-jack-3d-release-index.v1.schema.json'],
   ] as const) {
@@ -155,7 +155,7 @@ describe('§2 evidence が schema を持ち、それに適合する', () => {
 
   it('**schema が実際に効く**（壊した文書を弾く）', () => {
     // 通るだけの schema では意味がない
-    const v = compile('schemas/validation-results.v2.schema.json')
+    const v = compile('schemas/validation-results.v3.schema.json')
     expect(v({ ...validation, schemaVersion: 1 })).toBe(false)
     expect(v({ ...validation, results: [] })).toBe(false)
     const m = compile('schemas/source-input-manifest.v2.schema.json')

@@ -975,6 +975,197 @@
      ]
     }
    ]
+  },
+  "source-verifier-cli-result.v2": {
+   "schemaId": "source-verifier-cli-result.v2",
+   "previousSchemaId": "source-verifier-cli-result.v1",
+   "fromSchemaVersion": 1,
+   "toSchemaVersion": 2,
+   "breaking": true,
+   "policy": {
+    "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+    "policyVersion": 1,
+    "decisionRule": "language-subset",
+    "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+   },
+   "consumerAction": "**schemaVersion で分岐すること。**1 を期待する実装は 2 を受け取ったら停止し、この表で対応づける。**保存済みの結果を作り直す必要はない**——v0.6.16 以前が出した記録は、その版と一緒に配った v1 schema で検証すること（結果ごとに突合先を固定する方針・docs/SCHEMA_VERSIONING_POLICY.md 第7条）。**v1 のファイルは変更していない。**配布名も変わるので、v1 のファイル名で引いている lock は schema 検査へ到達する前に「ファイルが無い」で止まる（renamedAssets）。止め方の名前の一覧・archivePolicy・status・終了コードの意味は v1 から変わっていない。",
+   "renamedAssets": [
+    {
+     "from": "source-verifier-cli-result.v1.schema.json",
+     "to": "source-verifier-cli-result.v2.schema.json",
+     "reason": "schema ファイル名に版が入っている。**名前で引く lock はここで止まる**"
+    }
+   ],
+   "history": [
+    {
+     "shippedIn": "v0.6.16",
+     "previousRelease": "v0.6.15",
+     "previousSchemaPath": "schemas/source-verifier-cli-result.v1.schema.json",
+     "currentSchemaPath": "schemas/source-verifier-cli-result.v1.schema.json",
+     "schemaVersionAtTheTime": 1,
+     "schemaVersionShouldHaveBeen": 2,
+     "versionWasHeld": true,
+     "policyVerdict": "BUMP",
+     "recordedRetroactivelyIn": "v0.6.17",
+     "changes": [
+      {
+       "kind": "enum-value-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/stableReasonCode/enum",
+       "instancePath": "$.stableReasonCode",
+       "added": [
+        "CLI_ARGUMENTS_MISSING",
+        "SOURCE_FETCH_TIMEOUT"
+       ],
+       "reason": "名前を付け忘れていた 2 経路へ code を配線した（v0.6.15 の P0-2 是正）。**止め方の名前が増えるのは言語が広がること**なので、条文では BUMP である"
+      },
+      {
+       "kind": "enum-value-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/archivePolicy/properties/coverage/properties/reasonCodeFamilies/items/enum",
+       "instancePath": "$.archivePolicy.coverage.reasonCodeFamilies[]",
+       "added": [
+        "usage"
+       ],
+       "reason": "新しい code の族。**この配列は全出力に載る**ので、`OK` の正常な出力までも旧 schema で落ちる"
+      },
+      {
+       "kind": "enum-value-added",
+       "effect": "WIDEN",
+       "schemaPointer": "/properties/archivePolicy/properties/reasonCodeFamilies/items/enum",
+       "instancePath": "$.archivePolicy.reasonCodeFamilies[]",
+       "added": [
+        "usage"
+       ],
+       "reason": "v0.6.14 の名前で残している導出の別名。coverage と同じ値を持つので同じだけ広がった"
+      }
+     ]
+    },
+    {
+     "shippedIn": "v0.6.17",
+     "previousRelease": "v0.6.16",
+     "previousSchemaPath": "schemas/source-verifier-cli-result.v1.schema.json",
+     "currentSchemaPath": "schemas/source-verifier-cli-result.v2.schema.json",
+     "schemaVersionAtTheTime": 2,
+     "versionWasHeld": false,
+     "policyVerdict": "BUMP",
+     "changes": [
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaVersion/const",
+       "instancePath": "$.schemaVersion",
+       "from": 1,
+       "to": 2,
+       "reason": "版を上げた。**この回は条文どおりに上げている**（v0.6.16 の据え置きを是正）"
+      },
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaId/const",
+       "instancePath": "$.schemaId",
+       "from": "trs-jack-3d-source-verifier-cli-result.v1",
+       "to": "trs-jack-3d-source-verifier-cli-result.v2",
+       "reason": "schemaId で分岐する受け手が、版の違いを名前で見分けられるようにする"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "NARROW",
+       "schemaPointer": "/properties/toolVersion/minimum",
+       "instancePath": "$.toolVersion",
+       "from": 16,
+       "to": 20,
+       "reason": "この契約を出し始めた道具の版。**この床は今後動かさない**——道具の版に連動させると、版を上げるたびに保存済みの v2 出力を後から弾く"
+      }
+     ]
+    }
+   ]
+  },
+  "validation-results.v3": {
+   "schemaId": "validation-results.v3",
+   "previousSchemaId": "validation-results.v2",
+   "fromSchemaVersion": 2,
+   "toSchemaVersion": 3,
+   "breaking": true,
+   "policy": {
+    "document": "docs/SCHEMA_VERSIONING_POLICY.md",
+    "policyVersion": 1,
+    "decisionRule": "language-subset",
+    "note": "判定は新旧 2 つの schema だけで行う。artifact の中身は見ない"
+   },
+   "consumerAction": "**schemaVersion で分岐すること。**2 を期待する実装は 3 を受け取ったら停止する。v2 で「あってもなくてもよい」だった証拠の由来 3 欄が**必須**になり、余分な項目を禁じた。値そのものは v0.6.16 から入っていたので、**読む側の実装は変えなくてよい**——変わるのは「無いものを受け取りうるか」だけである。**artifact の配布名は変わらない。**",
+   "renamedAssets": [
+    {
+     "from": "validation-results.v2.schema.json",
+     "to": "validation-results.v3.schema.json",
+     "reason": "schema ファイル名。artifact 側の名前は変わらない"
+    }
+   ],
+   "history": [
+    {
+     "shippedIn": "v0.6.17",
+     "previousRelease": "v0.6.16",
+     "previousSchemaPath": "schemas/validation-results.v2.schema.json",
+     "currentSchemaPath": "schemas/validation-results.v3.schema.json",
+     "schemaVersionAtTheTime": 3,
+     "versionWasHeld": false,
+     "policyVerdict": "BUMP",
+     "changes": [
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/schemaVersion/const",
+       "instancePath": "$.schemaVersion",
+       "from": 2,
+       "to": 3,
+       "reason": "版を上げた。**この回は条文どおりに上げている**"
+      },
+      {
+       "kind": "constraint-tightened",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/testEvidence/oneOf",
+       "instancePath": "$.testEvidence",
+       "reason": "証拠の由来 3 欄（testCountsSha256 / testCountsGeneratedFromCommit / testCountsGeneratedAt）を必須にし、additionalProperties:false を入れた。**狭める変更だが、`oneOf` の中なので判定器は判定不能を返す**（枝の言語について単調でないため）。実測 2026-08-15 の判定は BUMP。外部監査は HOLD_RECORD を想定していたが、判定器の実測に従って版を上げた"
+      },
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/contractMigration/properties/schemaId/const",
+       "instancePath": "$.contractMigration.schemaId",
+       "from": "validation-results.v2",
+       "to": "validation-results.v3",
+       "reason": "対応表が自分の版を名乗る欄。**版を上げたら必ず一緒に動く**"
+      },
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/contractMigration/properties/previousSchemaId/const",
+       "instancePath": "$.contractMigration.previousSchemaId",
+       "from": "validation-results.v1",
+       "to": "validation-results.v2",
+       "reason": "対応表が自分の版を名乗る欄。**版を上げたら必ず一緒に動く**"
+      },
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/contractMigration/properties/fromSchemaVersion/const",
+       "instancePath": "$.contractMigration.fromSchemaVersion",
+       "from": 1,
+       "to": 2,
+       "reason": "対応表が自分の版を名乗る欄。**版を上げたら必ず一緒に動く**"
+      },
+      {
+       "kind": "const-changed",
+       "effect": "UNDECIDABLE",
+       "schemaPointer": "/properties/contractMigration/properties/toSchemaVersion/const",
+       "instancePath": "$.contractMigration.toSchemaVersion",
+       "from": 2,
+       "to": 3,
+       "reason": "対応表が自分の版を名乗る欄。**版を上げたら必ず一緒に動く**"
+      }
+     ]
+    }
+   ]
   }
  }
 }

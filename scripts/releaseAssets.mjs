@@ -30,7 +30,7 @@ export const RELEASE_ASSETS = [
   { path: 'schemas/event-sensitivity.v2.schema.json', role: 'schema' },
   { path: 'schemas/topology-robustness.v3.schema.json', role: 'schema' },
   { path: 'schemas/trs-jack-3d-release-index.v1.schema.json', role: 'schema' },
-  { path: 'schemas/validation-results.v2.schema.json', role: 'schema' },
+  { path: 'schemas/validation-results.v3.schema.json', role: 'schema' },
   { path: 'schemas/source-input-manifest.v2.schema.json', role: 'schema' },
   { path: 'schemas/source-input-scope.v1.schema.json', role: 'schema' },
   { path: 'schemas/source-verification-result.v1.schema.json', role: 'schema' },
