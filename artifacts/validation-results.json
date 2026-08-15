@@ -88,24 +88,27 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-15",
- "generatedFromCommit": "0b0297674530df9f0a362de445dc5535dd5fa502",
+ "generatedFromCommit": "5cfcc5f20069b689129cfc2204e436fbeb4443e4",
  "command": "npm run validate:profiles",
  "targetsTotal": 14,
- "targetsPassed": 14,
- "allPassed": true,
- "artifactValidationStatus": "PASS",
+ "targetsPassed": 13,
+ "allPassed": false,
+ "artifactValidationStatus": "FAIL",
  "releaseReadinessStatus": "NOT_READY",
  "releaseReadinessReasons": [
-  "テストに効くファイルに未コミットの変更が 5 件ある（scripts/schemaLanguageDiff.mjs, test/schemaVersioningPolicy.test.ts, test/_schemaFuzz.d.mts ほか 2 件）。artifacts/test_counts.json は**汚れた作業ツリーから取ったもの**なので、release の証拠にはできない（取り直しても消えない。**変更をコミットしてから** test:count → release:evidence の順で回すこと）"
+  "validate:profiles が 1 件不適合",
+  "artifacts/test_counts.json の allPassed が false",
+  "artifacts/test_counts.json の failed が 27",
+  "artifacts/test_counts.json の exitCode が 1"
  ],
  "testEvidence": {
   "total": 1410,
-  "failed": 0,
+  "failed": 27,
   "skipped": 0,
-  "exitCode": 0,
-  "allPassed": true,
-  "testCountsSha256": "982a35c3cd7a00b291d7f63097c16a9168befaaae48bffd306591cad289f5022",
-  "testCountsGeneratedFromCommit": "0b0297674530df9f0a362de445dc5535dd5fa502",
+  "exitCode": 1,
+  "allPassed": false,
+  "testCountsSha256": "0a41cccac50f4f89c578134d7151ae5aa84be3ebbf01f6cf28bbafd217354552",
+  "testCountsGeneratedFromCommit": "5cfcc5f20069b689129cfc2204e436fbeb4443e4",
   "testCountsGeneratedAt": "2026-08-15"
  },
  "distributedTargets": 10,
@@ -237,9 +240,12 @@
    "missing": false,
    "distribution": "SOURCE_ONLY",
    "schemaErrorCount": 0,
-   "semanticErrorCount": 0,
+   "semanticErrorCount": 2,
    "schemaErrors": [],
-   "semanticErrors": []
+   "semanticErrors": [
+    "package.json の version (0.6.21) と package-lock.json の root の version (0.6.20) が違う",
+    "package.json の version (0.6.21) と package-lock.json の packages[\"\"].version (0.6.20) が違う"
+   ]
   },
   {
    "artifact": "docs/measurements/measurement-records.v1.json",
