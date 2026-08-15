@@ -199,17 +199,29 @@ describe('contractMigration ①②③ 記録と schema 実物の突き合わせ'
     expect(readFromGit, 'tag から読んだ回数').toBeGreaterThan(10)
 
     /**
-     * **v0.5.0 を release する前と後で、読み元が変わる。**
-     *   release 前: tag が無いので v0.5.0 の記録は作業ツリーから読む
+     * **release する前と後で、読み元が変わる。**
+     *   release 前: tag が無いので、その版の記録は作業ツリーから読む
      *   release 後: tag があるので tag から読む（こちらのほうが強い）
      * どちらでも空振りしないよう、**その時点で正しいほうを名指しで検査する。**
+     *
+     * ## **契約を変えない版もある（v0.6.18 で気づいた）**
+     *
+     * v0.6.17 まで、この検査は「準備中の版には必ず記録がある」と決め打っていた。
+     * だが**schema を 1 本も変えない版**は正常にありうる——v0.6.18 がそれで、
+     * core / CLI 分離は判定にも契約にも触っていない。
+     * そのとき記録は 0 件になり、作業ツリーからは 1 度も読まない。
+     *
+     * **記録があるときだけ、読み元を検査する。**
      */
+    const unreleasedEntries = ALL_ENTRIES.filter(({ entry }) => entry.shippedIn === UNRELEASED)
     if (tagExists(UNRELEASED)) {
       expect(readFromTree, `${UNRELEASED} の tag があるのに作業ツリーを読んでいる`).toBe(0)
-      const entries = ALL_ENTRIES.filter(({ entry }) => entry.shippedIn === UNRELEASED)
-      expect(entries.length, `${UNRELEASED} の記録が 1 件も無い`).toBeGreaterThan(0)
-    } else {
+      expect(unreleasedEntries.length, `${UNRELEASED} の記録が 1 件も無い`).toBeGreaterThan(0)
+    } else if (unreleasedEntries.length > 0) {
       expect(readFromTree, `${UNRELEASED} の tag が無いので作業ツリーから読むはず`).toBeGreaterThan(0)
+    } else {
+      /** **記録が 0 件であることを、黙って通さず名指しで確かめる。** */
+      expect(readFromTree, `${UNRELEASED} の記録が無いのに作業ツリーを読んでいる`).toBe(0)
     }
   })
 })
