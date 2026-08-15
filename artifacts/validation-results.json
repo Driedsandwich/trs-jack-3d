@@ -88,15 +88,14 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-08-15",
- "generatedFromCommit": "5cfcc5f20069b689129cfc2204e436fbeb4443e4",
+ "generatedFromCommit": "3b825855409ff9f46e7dd34d23d6c7d43bbcdf2f",
  "command": "npm run validate:profiles",
  "targetsTotal": 14,
- "targetsPassed": 13,
- "allPassed": false,
- "artifactValidationStatus": "FAIL",
+ "targetsPassed": 14,
+ "allPassed": true,
+ "artifactValidationStatus": "PASS",
  "releaseReadinessStatus": "NOT_READY",
  "releaseReadinessReasons": [
-  "validate:profiles が 1 件不適合",
   "artifacts/test_counts.json の allPassed が false",
   "artifacts/test_counts.json の failed が 27",
   "artifacts/test_counts.json の exitCode が 1"
@@ -107,8 +106,8 @@
   "skipped": 0,
   "exitCode": 1,
   "allPassed": false,
-  "testCountsSha256": "0a41cccac50f4f89c578134d7151ae5aa84be3ebbf01f6cf28bbafd217354552",
-  "testCountsGeneratedFromCommit": "5cfcc5f20069b689129cfc2204e436fbeb4443e4",
+  "testCountsSha256": "bdc0a489c817ba43394d170d8a47c9f0d54f45f2d72603218e9169e46267f859",
+  "testCountsGeneratedFromCommit": "3b825855409ff9f46e7dd34d23d6c7d43bbcdf2f",
   "testCountsGeneratedAt": "2026-08-15"
  },
  "distributedTargets": 10,
@@ -240,12 +239,9 @@
    "missing": false,
    "distribution": "SOURCE_ONLY",
    "schemaErrorCount": 0,
-   "semanticErrorCount": 2,
+   "semanticErrorCount": 0,
    "schemaErrors": [],
-   "semanticErrors": [
-    "package.json の version (0.6.21) と package-lock.json の root の version (0.6.20) が違う",
-    "package.json の version (0.6.21) と package-lock.json の packages[\"\"].version (0.6.20) が違う"
-   ]
+   "semanticErrors": []
   },
   {
    "artifact": "docs/measurements/measurement-records.v1.json",
