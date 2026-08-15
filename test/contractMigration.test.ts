@@ -40,8 +40,30 @@ const ROOT = resolve(__dirname, '..')
 const VALUES = JSON.parse(readFileSync(resolve(ROOT, 'contract-migration.v1.json'), 'utf8'))
 const MIGRATIONS: Record<string, any> = VALUES.migrations
 
-/** この release より新しい記録は working tree から読む（tag がまだ無い） */
-const UNRELEASED = 'v0.5.0'
+/**
+ * この release より新しい記録は working tree から読む（tag がまだ無い）。
+ *
+ * **手で書かない（v0.6.17・外部監査 P0）。**v0.6.16 までここは `'v0.5.0'` の直書きで、
+ * **11 版のあいだ動かないまま**だった。④「据え置きゼロ」は `shippedIn >= UNRELEASED` で
+ * 絞るので、床が古いほど広く見えて安全側に見えるが、**準備中の版を tag から読もうとして
+ * 落ちる**ため、新しい記録を足せない。準備中の版は `package.json` が知っている。
+ */
+const UNRELEASED = `v${(JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as { version: string }).version}`
+
+/**
+ * **版数は数で比べる（v0.6.17）。**
+ * ④ は `shippedIn >= UNRELEASED` で「新しく増えた違反」を絞る。
+ * 文字列比較のままだと **`'v0.6.9' >= 'v0.6.17'` が `true`** になり、
+ * 版が 2 桁へ入った時点で過去の記録を「新しい違反」と誤検出する。
+ * v0.6.16 までは `UNRELEASED` が固定値だったので誰も踏まなかったが、
+ * `package.json` から引くようにした以上、この比較も効くようになる。
+ */
+const vnum = (v: string) => v.replace(/^v/, '').split('.').map(Number)
+const atOrAfter = (a: string, b: string) => {
+  const [x, y] = [vnum(a), vnum(b)]
+  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i]
+  return true
+}
 
 /**
  * **同じ問い合わせで git を何度も起動しない（2026-08-11）。**
@@ -198,7 +220,7 @@ describe('contractMigration 正本と schema の対応', () => {
     ['event-sensitivity.v2', 'schemas/event-sensitivity.v2.schema.json'],
     ['topology-robustness.v3', 'schemas/topology-robustness.v3.schema.json'],
     ['source-input-manifest.v2', 'schemas/source-input-manifest.v2.schema.json'],
-    ['validation-results.v2', 'schemas/validation-results.v2.schema.json'],
+    ['validation-results.v3', 'schemas/validation-results.v3.schema.json'],
     ['test-counts.v2', 'schemas/test-counts.v2.schema.json'],
   ]
 
@@ -233,7 +255,7 @@ describe('contractMigration 正本と schema の対応', () => {
       ['event-sensitivity.v2', 'artifacts/sensitivity.trs_jack_trrs.json'],
       ['topology-robustness.v3', 'artifacts/topology-robustness.trs_jack_trrs.json'],
       ['source-input-manifest.v2', 'artifacts/source-input-manifest.json'],
-      ['validation-results.v2', 'artifacts/validation-results.json'],
+      ['validation-results.v3', 'artifacts/validation-results.json'],
       ['test-counts.v2', 'artifacts/test_counts.json'],
     ]
     let checked = 0
@@ -250,8 +272,17 @@ describe('contractMigration 正本と schema の対応', () => {
 
 describe('contractMigration ④ 据え置きゼロ', () => {
   it('v0.5.0 以降に versionWasHeld:true が無い', () => {
-    const bad = ALL_ENTRIES.filter(({ entry }) => entry.shippedIn >= UNRELEASED && entry.versionWasHeld)
+    const bad = ALL_ENTRIES.filter(({ entry }) => atOrAfter(entry.shippedIn, UNRELEASED) && entry.versionWasHeld)
     expect(bad.map((b) => `${b.id} ${b.entry.shippedIn}`), '条文を破った回が新たに増えている').toEqual([])
+  })
+
+  /** **比較そのものの対照。**文字列比較なら 2 件目が通ってしまう */
+  it('版数を数で比べている（2 桁になっても壊れない）', () => {
+    expect(atOrAfter('v0.6.17', 'v0.6.17'), '同じ版').toBe(true)
+    expect(atOrAfter('v0.6.16', 'v0.6.17'), '1 つ前').toBe(false)
+    expect(atOrAfter('v0.6.9', 'v0.6.17'), '**文字列比較ならここが true になる**').toBe(false)
+    expect(atOrAfter('v0.10.0', 'v0.9.0'), '**文字列比較ならここが false になる**').toBe(true)
+    expect(atOrAfter('v1.0.0', 'v0.9.9'), 'major が上').toBe(true)
   })
 
   it('遡って記録した違反が実在する（④ が空振りでないこと）', () => {

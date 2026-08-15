@@ -25,6 +25,7 @@ import { join, resolve } from 'node:path'
 import Ajv from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
 import { HANDLED_KEYWORDS, diffSchemaFiles, diffSchemaObjects } from '../scripts/schemaLanguageDiff.mjs'
+import { CLI_RESULT_SCHEMA_PATH } from '../scripts/verifyReleaseSourceInputs.mjs'
 import { mustBeNonEmpty } from './_must'
 
 const ROOT = resolve(__dirname, '..')
@@ -33,10 +34,36 @@ const ROOT = resolve(__dirname, '..')
 const DRAFT7 = 'http://json-schema.org/draft-07/schema#'
 
 /**
- * **直近の release tag。**版を据え置いた回はここから言語が変わっていないはずである。
- * 上げた回はここを新しい tag へ進める（進め忘れると検査が古い版を見続ける）。
+ * **直前の release tag を、毎回その場で決める（v0.6.17・外部監査 P0）。**
+ *
+ * v0.6.16 まで、ここは `const LATEST_TAG = 'v0.5.1'` の直書きだった。
+ * 「上げた回はここを進める」とコメントに書いてあったが、**11 版のあいだ進まなかった。**
+ * 結果として、
+ *
+ *   - 母集団が **v0.5.1 に在った 21 本**に固定され、
+ *   - v0.6.11 で新設した `source-verifier-cli-result.v1` は**一度も検査に入らず**、
+ *   - v0.6.16 が版を据え置いたまま enum を 3 か所広げても、**57/57 全緑**だった（2026-08-15 実測）。
+ *
+ * 「比較した本数 === 母集団の本数」という空振り検査は付いていたが、
+ * **数えていたのは古いほうの一覧**なので、新しい契約が抜けても鳴らない。
+ *
+ * 直す形: **準備中の版は `package.json` が知っている。**それより小さい最大の tag が直前の release。
+ * tag CI（`HEAD` に tag が付いた状態）でも、自分自身は選ばれない。
  */
-const LATEST_TAG = 'v0.5.1'
+function previousReleaseTag(): string {
+  const pkg = (JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as { version: string }).version
+  const num = (v: string) => v.replace(/^v/, '').split('.').map(Number)
+  const lt = (a: number[], b: number[]) => a[0] !== b[0] ? a[0] < b[0] : a[1] !== b[1] ? a[1] < b[1] : a[2] < b[2]
+  const here = num(pkg)
+  const tags = execFileSync('git', ['tag', '-l', 'v*.*.*'], { cwd: ROOT, encoding: 'utf8' })
+    .trim().split('\n').filter((t) => /^v\d+\.\d+\.\d+$/.test(t))
+  const older = tags.filter((t) => lt(num(t), here)).sort((a, b) => (lt(num(a), num(b)) ? -1 : 1))
+  if (older.length === 0) {
+    throw new Error(`package.json の ${pkg} より小さい release tag が無い。`
+      + '**この検査は tag の実物を読む。**浅い clone では tag が無いので `git fetch --tags` すること。')
+  }
+  return older[older.length - 1]
+}
 
 const tmpDirs: string[] = []
 afterAll(() => tmpDirs.forEach((d) => rmSync(d, { recursive: true, force: true })))
@@ -466,29 +493,124 @@ describe('条文 現行 schema', () => {
   })
 
   /**
-   * **v0.5.1 は版を 1 本も上げていない。**
-   * 条文どおりなら、v0.5.0 にあった schema はすべて言語が変わっていないはずである。
-   * ここが BUMP を返したら、**版を据え置いたまま契約を変えた**ことになる（＝過去 9 件と同じ違反）。
+   * **母集団は「いま配る schema の全部」。**（v0.6.17・外部監査 P0）
+   *
+   * 前の版は「直前 release に在った schema」を数えていた。そちらを母集団にすると、
+   * **後から新設した契約は永久に検査へ入らない**——実際 `source-verifier-cli-result` が
+   * 5 版のあいだ素通りし、版を据え置いたまま言語が 3 か所広がった。
+   *
+   * 判定は 4 つだけ:
+   *
+   * ```
+   * 直前に同じ path があり、名乗る版も同じ   → BUMP なら違反
+   * 直前に同じ path があり、名乗る版が違う   → migration の history が要る
+   * 直前に同じ path が無い（改名）           → migration の renamedAssets が要る
+   * 直前に同じ path が無い（新設）           → 直前に同じ $id/schemaId が無いこと
+   * ```
    */
-  it('直近 tag の全 schema が、現在も言語が変わっていない（版を据え置いてよい根拠）', () => {
-    const tagged = execFileSync('git', ['ls-tree', '-r', '--name-only', LATEST_TAG, '--', 'schemas/'], { cwd: ROOT, encoding: 'utf8' })
-      .trim().split('\n').filter(Boolean)
-    expect(tagged.length, `${LATEST_TAG} に schema が無い（走査が動いていない）`).toBeGreaterThan(15)
+  const PREV = previousReleaseTag()
 
-    const bumped: string[] = []
-    let compared = 0
-    for (const p of tagged) {
-      const now = resolve(ROOT, p)
-      if (!existsSync(now)) {
-        bumped.push(`${p}: 消えている`)
-        continue
+  /**
+   * 現行の配布 schema。**まだ `git add` していないものも数える。**
+   * `--cached` だけにすると、**新設した契約が add 忘れのあいだ検査から消える**
+   * ——それは前の版で起きたこと（母集団に入らない = 何をしても緑）と同じ形になる。
+   */
+  const CURRENT_SCHEMAS = execFileSync(
+    'git', ['ls-files', '--cached', '--others', '--exclude-standard', '--', 'schemas/*.schema.json'],
+    { cwd: ROOT, encoding: 'utf8' },
+  ).trim().split('\n').filter(Boolean).sort()
+
+  const prevSchemas = execFileSync('git', ['ls-tree', '-r', '--name-only', PREV, '--', 'schemas/'], { cwd: ROOT, encoding: 'utf8' })
+    .trim().split('\n').filter(Boolean)
+
+  const MIGRATIONS = JSON.parse(readFileSync(resolve(ROOT, 'contract-migration.v1.json'), 'utf8')).migrations as Record<string, any>
+  const renamedTo = new Set<string>(
+    Object.values(MIGRATIONS).flatMap((m: any) => (m.renamedAssets ?? []).map((r: any) => r.to as string)),
+  )
+  /** 改名**元**の名前。消えた schema を許すかどうかは、こちらで見る（`to` ではない） */
+  const renamedFrom = new Set<string>(
+    Object.values(MIGRATIONS).flatMap((m: any) => (m.renamedAssets ?? []).map((r: any) => r.from as string)),
+  )
+  const declared = (s: any): unknown => s?.properties?.schemaVersion?.const
+  const identityOf = (s: any): string => String(s?.$id ?? s?.properties?.schemaId?.const ?? '')
+
+  /**
+   * 1 本を判定して、違反の文言を返す（空なら合格）。
+   * **反例を作って当てられるよう、検査本体と切り離してある。**
+   */
+  function judge(path: string, prevTag: string, cur: any, prevList: readonly string[]): string[] {
+    const bad: string[] = []
+    const basename = path.split('/').pop() as string
+    if (prevList.includes(path)) {
+      const old = atTag(prevTag, path) as any
+      if (declared(old) === declared(cur)) {
+        const r = diffSchemaObjects(old, cur)
+        if (r.verdict === 'BUMP') {
+          bad.push(`${path}: 版 ${String(declared(cur))} を据え置いたまま言語が変わっている `
+            + `${JSON.stringify((r.facts as any[]).map((f) => `${f.kind} ${f.pointer}`))}`)
+        }
+      } else if (!Object.values(MIGRATIONS).some((m: any) => (m.history ?? [])
+        .some((h: any) => h.currentSchemaPath === path && h.schemaVersionAtTheTime === declared(cur)))) {
+        bad.push(`${path}: 版を ${String(declared(old))} → ${String(declared(cur))} へ上げたのに migration の history が無い`)
       }
-      compared++
-      const r = diffSchemaObjects(atTag(LATEST_TAG, p) as any, JSON.parse(readFileSync(now, 'utf8')))
-      if (r.verdict === 'BUMP') bumped.push(`${p}: ${JSON.stringify(r.facts.slice(0, 2))}`)
+      return bad
     }
-    expect(compared, '比較した本数').toBe(tagged.length)
-    expect(bumped, '版を据え置いたまま言語を変えている').toEqual([])
+    // 直前に同じ path が無い
+    if (renamedTo.has(basename)) return bad
+    const ids = new Set(prevList.map((p) => identityOf(atTag(prevTag, p))))
+    if (ids.has(identityOf(cur))) {
+      bad.push(`${path}: 新設のはずだが、直前 release に同じ $id/schemaId が在る（改名なら renamedAssets へ書くこと）`)
+    }
+    return bad
+  }
+
+  it(`直前 release（自動選択）と、現行の全 schema を突き合わせる`, () => {
+    expect(prevSchemas.length, `${PREV} に schema が無い（走査が動いていない）`).toBeGreaterThan(15)
+    mustBeNonEmpty(CURRENT_SCHEMAS, '現行の配布 schema')
+    /** **母集団が現行側であること**を名指しで確かめる（前の版はここが古い一覧だった） */
+    expect(CURRENT_SCHEMAS, '新しく作った契約が母集団に入っていない')
+      .toContain('schemas/source-verifier-cli-result.v2.schema.json')
+
+    const bad: string[] = []
+    for (const p of CURRENT_SCHEMAS) bad.push(...judge(p, PREV, JSON.parse(readFileSync(resolve(ROOT, p), 'utf8')), prevSchemas))
+    expect(bad, `条文違反（直前 release = ${PREV}）`).toEqual([])
+  })
+
+  it('直前 release に在った schema が、黙って消えていない', () => {
+    /**
+     * **対照。**`renamedFrom` が空だと、この検査は「消えていれば必ず落ちる」だけになり、
+     * 改名を許す経路が死ぬ。逆に `renamedTo` を見ていると（v0.6.17 で一度そう書いた）、
+     * **改名元は決して載らない**ので、こちらも死ぬ。
+     */
+    expect(renamedFrom.size, '改名の記録が 1 件も無い').toBeGreaterThan(0)
+    expect([...renamedFrom].some((n) => !renamedTo.has(n)), 'from と to が同じ集合になっている').toBe(true)
+    const gone = prevSchemas.filter((p) => !existsSync(resolve(ROOT, p))
+      && !renamedFrom.has(p.split('/').pop() as string))
+    expect(gone, '配っていた schema が消えている（改名なら renamedAssets へ書くこと）').toEqual([])
+  })
+
+  /**
+   * **この検査が、実際にあの反例を捕まえるか（v0.6.17）。**
+   *
+   * v0.6.16 は `source-verifier-cli-result.v1` を v1 のまま 3 か所広げて公開した。
+   * 前の版の検査は**その schema を母集団に含めていなかった**ので 57/57 全緑だった。
+   * ここでは当時の 2 版を実物で当てて、**いまの判定が違反として鳴る**ことを見る。
+   */
+  it('**反例: v0.6.15 → v0.6.16 の CLI result（版据え置きのまま WIDEN）を違反として捕まえる**', () => {
+    const REL = 'schemas/source-verifier-cli-result.v1.schema.json'
+    const prevList = execFileSync('git', ['ls-tree', '-r', '--name-only', 'v0.6.15', '--', 'schemas/'], { cwd: ROOT, encoding: 'utf8' })
+      .trim().split('\n').filter(Boolean)
+    expect(prevList, '当時の母集団にその schema が在る').toContain(REL)
+    const bad = judge(REL, 'v0.6.15', atTag('v0.6.16', REL), prevList)
+    expect(bad.length, '違反として鳴らなかった').toBe(1)
+    expect(bad[0]).toContain('版 1 を据え置いたまま言語が変わっている')
+    expect(bad[0]).toContain('/properties/stableReasonCode/enum')
+  })
+
+  /** 対照: 同じ判定器が、**変えていない組み合わせでは鳴らない** */
+  it('対照: v0.6.15 → v0.6.15 の同じ schema では鳴らない', () => {
+    const REL = 'schemas/source-verifier-cli-result.v1.schema.json'
+    expect(judge(REL, 'v0.6.15', atTag('v0.6.15', REL), [REL]), '何にでも鳴っている').toEqual([])
   })
 
   it('据え置いた schema は tag v0.4.1 から言語が変わっていない', () => {
@@ -522,7 +644,10 @@ describe('条文 現行 schema', () => {
  */
 describe('条文 ⑦ 互換性の 2 軸（historical-instance）', () => {
   const TAG = 'v0.6.14'
-  const SCHEMA_REL = 'schemas/source-verifier-cli-result.v1.schema.json'
+  /** 過去の版が配っていた schema。**作業ツリーにも残してある**（保存済みの結果の突合先） */
+  const HIST_REL = 'schemas/source-verifier-cli-result.v1.schema.json'
+  /** いま配る schema。道具から引く（手で書くと版を上げたときにここだけ古くなる） */
+  const SCHEMA_REL = CLI_RESULT_SCHEMA_PATH
 
   /** その tag の道具を走らせて、実際の出力を得る */
   function outputAt(tag: string): Record<string, unknown> {
@@ -542,20 +667,52 @@ describe('条文 ⑦ 互換性の 2 軸（historical-instance）', () => {
   }
 
   const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(s)
-  const schemaAt = (tag: string) => JSON.parse(
-    execFileSync('git', ['show', `${tag}:${SCHEMA_REL}`], { cwd: ROOT, encoding: 'utf8' }))
+  const schemaAt = (tag: string, rel = HIST_REL) => JSON.parse(
+    execFileSync('git', ['show', `${tag}:${rel}`], { cwd: ROOT, encoding: 'utf8' }))
+  /**
+   * いまの道具の出力。**status は問わない。**
+   * 契約は「どの status でも schema に収まる」なので、`MISMATCH` で終わる状態
+   * （再生成の途中など）でも同じ検査が成り立つ必要がある。
+   * `execFileSync` は非 0 で投げるため、stdout を拾い直す。
+   */
+  const currentOutput = () => {
+    try {
+      return JSON.parse(execFileSync('node',
+        ['scripts/verifyReleaseSourceInputs.mjs', '--manifest', 'artifacts/source-input-manifest.json', '--source', '.'],
+        { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'ignore'] }))
+    } catch (e) {
+      const out = String((e as { stdout?: string }).stdout ?? '')
+      if (!out.trim()) throw new Error('道具が JSON を出さずに落ちた（契約の外）')
+      return JSON.parse(out)
+    }
+  }
 
   it('**その版の出力は、その版の schema を通る**（配った組み合わせは成立している）', () => {
     expect(compile(schemaAt(TAG))(outputAt(TAG)), `${TAG} の出力が ${TAG} の schema を通らない`).toBe(true)
   })
 
-  it('**新しい出力は、古い schema も通る**（producer-forward は保たれている）', () => {
+  it('**いまの出力は、いまの schema を通る**', () => {
     const now = JSON.parse(readFileSync(resolve(ROOT, SCHEMA_REL), 'utf8'))
-    const out = JSON.parse(execFileSync('node',
-      ['scripts/verifyReleaseSourceInputs.mjs', '--manifest', 'artifacts/source-input-manifest.json', '--source', '.'],
-      { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 }))
-    expect(compile(now)(out), '現行の出力が現行の schema を通らない').toBe(true)
-    expect(compile(schemaAt(TAG))(out), '現行の出力が古い schema を通らない（producer-forward が壊れた）').toBe(true)
+    expect(compile(now)(currentOutput()), '現行の出力が現行の schema を通らない').toBe(true)
+  })
+
+  /**
+   * **producer-forward が壊れたなら、版が上がっていること（v0.6.17・外部監査 P0）。**
+   *
+   * v0.6.16 まで、ここは「新しい出力は古い schema も通る」と**断定**していた。
+   * だが v0.6.16 の出力は v0.6.15 の schema を通らなかった——`usage` 族は
+   * `archivePolicy` に載るので、**`OK` の正常な出力までも落ちる。**
+   * 検査は v1 を母集団に含めていなかったので、その事実に一度も触れなかった。
+   *
+   * 通らないこと自体は違反ではない。**通らないのに版を据え置くこと**が違反である。
+   * だから「通るか」ではなく、**通らないなら版が違うか**を見る。
+   */
+  it('**古い schema を通らないなら、版が上がっている**', () => {
+    const out = currentOutput()
+    const prevSchema = schemaAt(previousReleaseTag(), HIST_REL)
+    if (compile(prevSchema)(out)) return // 通るなら据え置いてよい
+    expect(out.schemaVersion, '直前 release の schema を通らないのに、版が同じ')
+      .not.toBe(prevSchema.properties.schemaVersion.const)
   })
 
   /**
@@ -563,10 +720,16 @@ describe('条文 ⑦ 互換性の 2 軸（historical-instance）', () => {
    * **実際に落ちること**で示す。落ちなくなったら、方針の前提が変わったということなので
    * 第7条を書き直すこと（黙って通さない）。
    */
-  it('**保存した古い出力は、最新の同じ v1 schema では通らない**（だから版ごとに固定する）', () => {
+  it('**保存した古い出力は、いまの schema では通らない**（だから版ごとに固定する）', () => {
     const now = JSON.parse(readFileSync(resolve(ROOT, SCHEMA_REL), 'utf8'))
     expect(compile(now)(outputAt(TAG)),
       `${TAG} の出力が最新 schema を通ってしまった。第7条の前提が変わっている`).toBe(false)
+  })
+
+  /** **過去の突合先が作業ツリーに残っていること。**消すと保存済みの結果を検証できなくなる */
+  it('過去の版が配った schema を、作業ツリーから消していない', () => {
+    expect(existsSync(resolve(ROOT, HIST_REL)), `${HIST_REL} が無い`).toBe(true)
+    expect(compile(schemaAt(TAG))(outputAt(TAG)), '過去の組み合わせが成立しない').toBe(true)
   })
 
   /**
@@ -585,7 +748,7 @@ describe('条文 ⑦ 互換性の 2 軸（historical-instance）', () => {
     const find = (n: string) => (idx.assets as { filename: string, sha256: string }[])
       .find((a) => a.filename === n)?.sha256
     const toolSha = find('verifyReleaseSourceInputs.mjs')
-    const schemaSha = find('source-verifier-cli-result.v1.schema.json')
+    const schemaSha = find(SCHEMA_REL.split('/').pop() as string)
     expect(toolSha, '道具が assets に無い').toMatch(/^[0-9a-f]{64}$/)
     expect(notes, `道具の sha256 が本文と食い違う`).toContain(String(toolSha))
     /** assets の値が、いまの実ファイルのものであること（**古い pin を名指ししていない**） */
