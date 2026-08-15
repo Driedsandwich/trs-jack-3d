@@ -279,9 +279,88 @@ toolVersion を上げない   20 のまま（分離で判定の意味は変わ�
 1 バイトでも変われば止める 段ごとに基準と突合し、一度も不一致にならなかった
 ```
 
-## 次にできるようになったこと
+## 第2段（2026-08-15）— `SOURCE_ARCHIVE_MISSING` を実経路として踏んだ
 
-`SOURCE_ARCHIVE_MISSING` を実経路として踏むには、`io` へ filesystem を足して
-「`existsSync` は通るが `readFileSync` が ENOENT」を注入します。
-**この版ではやりません**（`io` に filesystem を足すのは接点の追加であって、
-抽出ではないため）。次の作業として分けます。
+`io` へ filesystem（`existsSync` / `readFileSync` / `statSync` / `lstatSync` / `readdirSync`）を足し、
+11 か所の call site を `io` 経由にしました（入口の判定 `realpathSync` は CLI 側に残す）。
+
+**踏み方。**道具の並びはこうなっています。
+
+```
+loadFromDir      existsSync(abs)  … 通る
+                 lstatSync(abs)   … ディレクトリでない → loadFromArchive へ
+loadFromArchive  existsSync(abs)  … **ここで消えていれば SOURCE_ARCHIVE_MISSING**
+```
+
+**同じ path に対する 2 回目の `existsSync`** だけ false にすれば踏めます。
+`node:fs` を差し替えて注入します——**道具は 1 バイトも変えません**
+（`globalThis.fetch` の差し替えと同じ形）。
+
+```
+catalog  race-defensive → **cli-route**
+         82 種類 = corpus 45 / cli-route 34 / defensive-invariant 3
+両方向照合  この run で出た 79 種類・到達しないと宣言した 3 種類（実測と一致）
+```
+
+### ⚠️ **`io` へ fs を足したことは、この経路には効いていません**
+
+実測（2026-08-15）:
+
+```
+同じ注入（node:fs の差し替え）を当てる
+  io に fs が無い版（24b3916）  → SOURCE_ARCHIVE_MISSING
+  io に fs を足した版           → SOURCE_ARCHIVE_MISSING
+```
+
+`node:fs` の差し替えは **ESM の named import にも効く**ので、
+`io` を経由してもしなくても同じように踏めます。
+つまり**この経路を踏むために `io` へ fs を足す必要はありませんでした。**
+
+残す理由は先の話です——`main(args, io)` を抽出したあとは、
+**global を差し替えずに fs を注入できる**ようになります。
+いまは「そのための土台」であって、いま効いているわけではありません。
+**効いていないものを効いていると書かないでおきます。**
+
+### `toolVersion` は上げていません
+
+判断の根拠（実測）:
+
+```
+出力           既存 9 経路すべて byte 一致
+出しうる code   82 種類のまま（増減 0）
+schemaVersion  2 のまま・配布 schema も不変
+出力に出るか    reachability は出力に 0 件（対照: stableReasonCode は 1 件）
+```
+
+変わったのは **catalog の宣言だけ**で、受け手が読む値ではありません。
+**受け手の分岐が変わらないので上げません。**
+
+### `race-defensive` は語彙表に残しました
+
+唯一の持ち主が `cli-route` へ移ったので**未使用**になりました。
+消さずに残し、**未使用であることを試験で明示**しています
+——使わない値が黙って残ると、次に誰かが「踏めない」の逃げ道に使うためです。
+使いたくなったらその試験が落ちるので、そのとき「本当に踏めないのか」を先に測ります。
+
+### 途中で基準が 1 度動きました
+
+新しい経路の一時ディレクトリ名（`mkdtemp`）が `reason` に出るので、
+**実行ごとに出力が変わりました。**基準は動く状態に依存させない方針なので、
+置き場を `node_modules/.cache/trs-vanish/` の固定パスへ変えています。
+
+既存 9 経路は**一度も動いていません**（新経路を足す前に byte 一致を確かめてから追加）。
+
+### 固定パスにしたら、今度は並行実行で消し合いました
+
+置き場を固定した直後、テスト一式で 2 件落ちました。**単独では通り、
+`injectedRoutes` を使う 3 ファイルを同時に走らせると落ちる**という形です。
+
+```
+原因  固定パスを各試験ファイルの afterAll が消していた
+      → まだ使っている隣のファイルの足元から消える
+直し  この置き場は `keep`（呼び側が消す一覧）へ積まない
+      node_modules/.cache の下なので残っても追跡されず、中身は毎回同じ
+```
+
+**「決定的にするために固定する」と「共有物になる」は同時に来ます。**
+固定した瞬間、それは他の実行と共有されるものになります。

@@ -143,6 +143,28 @@
    "stdoutSha256": "07ec21aa901927010ae321f2411482e2072e458fc73c4cd8b651d5281245780a",
    "stderrBytes": 0,
    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "label": "確認したあとに source が消える",
+   "args": [
+    "--manifest",
+    "artifacts/source-input-manifest.json",
+    "--source",
+    "node_modules/.cache/trs-vanish/vanishing.tar.gz"
+   ],
+   "injected": "fetch",
+   "exitCode": 2,
+   "stdoutBytes": 2282,
+   "stdoutSha256": "0bd73b2e42ccf504bc7041a600018385a455a7c3fe0dfab86d3718eabe8eb3f2",
+   "stderrBytes": 0,
+   "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+ ],
+ "addedAfterBaseline": [
+  {
+   "label": "確認したあとに source が消える",
+   "takenAt": "2026-08-15",
+   "reason": "**この経路は分離のあとに作った**（v0.6.18 第2段）。SOURCE_ARCHIVE_MISSING を race-defensive から cli-route へ移すために踏んだもの。既存 9 件は分離前の値のままで、この 1 件だけが後から足された。"
   }
  ]
 }

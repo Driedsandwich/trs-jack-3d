@@ -19,9 +19,12 @@
  * （`git archive` だけは PATH の先頭へ偽 git を置く——外部プロセスなので注入点がそこしかない）。
  */
 
-import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 const FETCH_THROWS = "globalThis.fetch = async () => { throw new TypeError('fetch failed') }\n"
 const FETCH_TIMES_OUT = "globalThis.fetch = async () => { const e = new Error('timed out'); e.name = 'TimeoutError'; throw e }\n"
@@ -53,6 +56,59 @@ function fakeGitDir(keep) {
   return d
 }
 
+/**
+ * **確認と使用の間で消される（v0.6.18・外部監査 §8）。**
+ *
+ * `SOURCE_ARCHIVE_MISSING` は v0.6.17 まで `race-defensive` と宣言していた
+ * ——「到達しうるが決定的には踏めない」という分類で、**実際には踏んでいなかった。**
+ *
+ * 道具の並びはこうなっている。
+ *
+ * ```
+ * loadFromDir(path)      existsSync(abs)  … 通る
+ *                        lstatSync(abs)   … ディレクトリでない → loadFromArchive へ
+ * loadFromArchive(path)  existsSync(abs)  … **ここで消えていれば SOURCE_ARCHIVE_MISSING**
+ * ```
+ *
+ * つまり**同じ path に対する 2 回目の `existsSync`** で消えていればよい。
+ * `node:fs` を差し替えて 1 回目だけ通す。**道具は 1 バイトも変えない**
+ * ——`globalThis.fetch` の差し替えと同じ形である。
+ */
+function vanishingFile() {
+  /**
+   * **置き場は repo の中の固定した相対パスにする（v0.6.18）。**
+   *
+   * `mkdtempSync` だと名前が毎回変わり、その名前が `reason` に出るので
+   * **出力が実行ごとに変わる**——CLI 出力の基準（`scripts/cliOutputBaseline.mjs`）が
+   * 毎回不一致になる。基準は動く状態に依存させない。
+   *
+   * **`keep` へ積まない（＝呼び側に消させない）。**
+   * この表は複数の試験ファイルが**同時に**呼ぶ。固定パスを各ファイルの `afterAll` が
+   * 消すと、**まだ使っている隣のファイルの足元から消える**
+   * ——実測で 2 件落ちた（単独では通り、3 ファイル同時で落ちる）。
+   * 置き場は `node_modules/.cache` の下なので、残っても追跡されないし邪魔にならない。
+   * 中身は毎回同じなので、同時に書いても問題にならない。
+   */
+  const d = resolve(ROOT, 'node_modules/.cache/trs-vanish')
+  mkdirSync(d, { recursive: true })
+  const target = 'node_modules/.cache/trs-vanish/vanishing.tar.gz'
+  writeFileSync(resolve(ROOT, target), 'このファイルは 2 回目の existsSync で消えたことになる\n')
+  const p = join(d, 'inject.mjs')
+  writeFileSync(p, [
+    "import { createRequire } from 'node:module'",
+    "const fs = createRequire(import.meta.url)('fs')",
+    'const orig = fs.existsSync',
+    'let seen = 0',
+    '/** **同じ path の 2 回目だけ false。**1 回目は通さないと directory 判定で先に止まる */',
+    `fs.existsSync = (p) => {`,
+    `  if (String(p).endsWith('trs-vanish/vanishing.tar.gz')) { seen += 1; return seen === 1 }`,
+    '  return orig(p)',
+    '}',
+    '',
+  ].join('\n'))
+  return { preload: `file://${p}`, target }
+}
+
 const MANIFEST = 'artifacts/source-input-manifest.json'
 const GH = ['--tag', 'v0.6.15', '--fetch', 'github']
 
@@ -74,5 +130,14 @@ export function injectedRoutes(keep) {
       env: { PATH: `${fakeGitDir(keep)}:${process.env.PATH}` },
     },
     { label: 'manifest が無い', code: 'MANIFEST_MISSING', args: ['--manifest', '/nonexistent/m.json', '--source', '.'] },
+    (() => {
+      const { preload: pre, target } = vanishingFile()
+      return {
+        label: '確認したあとに source が消える',
+        code: 'SOURCE_ARCHIVE_MISSING',
+        args: ['--manifest', MANIFEST, '--source', target],
+        preload: pre,
+      }
+    })(),
   ]
 }

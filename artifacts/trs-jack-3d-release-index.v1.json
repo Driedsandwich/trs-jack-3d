@@ -4,25 +4,25 @@
  "generatedAt": "2026-08-15",
  "releaseTag": null,
  "releaseCommit": null,
- "evidenceBuiltAtCommit": "dab485c2260c9809ece93fe8f7c6902195241b76",
+ "evidenceBuiltAtCommit": "24b3916bfe10b3f8c277e0db361807e0acf4a1bb",
  "artifactGenerationCommit": "e493f0b8eb4cc46f0fcd8d698e19ff61fe14260b",
  "artifactGenerationCommits": [
   {
-   "commit": "7b30463575401f6389cdea2372e3cdc61503ca4f",
-   "assets": [
-    "sensitivity.trs_jack_trrs.json",
-    "sensitivity.trs_jack_trs.json",
-    "topology-robustness.trs_jack_trrs.json"
-   ]
-  },
-  {
-   "commit": "dab485c2260c9809ece93fe8f7c6902195241b76",
+   "commit": "24b3916bfe10b3f8c277e0db361807e0acf4a1bb",
    "assets": [
     "source-input-manifest.json",
     "source-snapshot.v1.json",
     "source-verification-result.json",
     "test_counts.json",
     "validation-results.json"
+   ]
+  },
+  {
+   "commit": "7b30463575401f6389cdea2372e3cdc61503ca4f",
+   "assets": [
+    "sensitivity.trs_jack_trrs.json",
+    "sensitivity.trs_jack_trs.json",
+    "topology-robustness.trs_jack_trrs.json"
    ]
   },
   {
@@ -121,9 +121,9 @@
   },
   {
    "filename": "source-input-manifest.json",
-   "sha256": "6f061fc44c726eea3bb664b7a1411f4dafcf21696d9a64b8e051743b41617037",
+   "sha256": "e5cc265775e30c66d53023b757d4e15d9edd7d13a462c6fc703e5a1984f7e328",
    "role": "evidence",
-   "generatedFromCommit": "dab485c2260c9809ece93fe8f7c6902195241b76"
+   "generatedFromCommit": "24b3916bfe10b3f8c277e0db361807e0acf4a1bb"
   },
   {
    "filename": "source-input-manifest.v2.schema.json",
@@ -142,9 +142,9 @@
   },
   {
    "filename": "source-snapshot.v1.json",
-   "sha256": "71e32f1b941597199917d2be967cf21e06ada1d7d09da85d542ab1ea98dd7954",
+   "sha256": "0226743bb1a6979ea15cbc338891170f0e958c1068fbc3274f258e970bdfe5b4",
    "role": "evidence",
-   "generatedFromCommit": "dab485c2260c9809ece93fe8f7c6902195241b76"
+   "generatedFromCommit": "24b3916bfe10b3f8c277e0db361807e0acf4a1bb"
   },
   {
    "filename": "source-snapshot.v1.schema.json",
@@ -153,9 +153,9 @@
   },
   {
    "filename": "source-verification-result.json",
-   "sha256": "a7702b0c118c7c845effed11aff38dfdbd2548a5b5f1abb15d9c2a0477204758",
+   "sha256": "32d5f3a9ec8b5ffedb691e29e4e845fc266a06e6775e6bcc4f8d18ebb982a829",
    "role": "evidence",
-   "generatedFromCommit": "dab485c2260c9809ece93fe8f7c6902195241b76"
+   "generatedFromCommit": "24b3916bfe10b3f8c277e0db361807e0acf4a1bb"
   },
   {
    "filename": "source-verification-result.v1.schema.json",
@@ -169,9 +169,9 @@
   },
   {
    "filename": "test_counts.json",
-   "sha256": "2f1423f3676dbc16cca7127dc9d77366306cc4a8824d119d1e3761f9d068d27c",
+   "sha256": "32b39488ada82671f26e3b002155922c37af0f52de85938e345bc8d97929ba80",
    "role": "evidence",
-   "generatedFromCommit": "dab485c2260c9809ece93fe8f7c6902195241b76"
+   "generatedFromCommit": "24b3916bfe10b3f8c277e0db361807e0acf4a1bb"
   },
   {
    "filename": "test-counts.v2.schema.json",
@@ -202,9 +202,9 @@
   },
   {
    "filename": "validation-results.json",
-   "sha256": "35c77dd71b61d0dfe003d54a5c69c8b1e4c9f35b90a425d504b0864d66d45b76",
+   "sha256": "f262da754b1c5c8d77c2644b5207e86cb8c58ee1442317031f0104c838aeb81f",
    "role": "evidence",
-   "generatedFromCommit": "dab485c2260c9809ece93fe8f7c6902195241b76"
+   "generatedFromCommit": "24b3916bfe10b3f8c277e0db361807e0acf4a1bb"
   },
   {
    "filename": "validation-results.v3.schema.json",
@@ -213,13 +213,13 @@
   },
   {
    "filename": "verifyReleaseSourceInputs.mjs",
-   "sha256": "b3f1ae1d74d658efaa827de8b38ae27cc3406259fc37e0a4cc560bdcb32a23fd",
+   "sha256": "4ab97290243003727bfc12456bb5bc7cfe94cc45a72a0dce4d476b7a9c957d43",
    "role": "tool"
   }
  ],
  "notes": [
   "**この索引は release 工程の記録であって、証明ではない。**bytes の検算は SHA256SUMS で行うこと。",
-  "**検算ツールの契約（v0.6.16）。**信頼の起点は assets の verifyReleaseSourceInputs.mjs の sha256（b3f1ae1d74d658efaa827de8b38ae27cc3406259fc37e0a4cc560bdcb32a23fd ／ toolVersion 20）。",
+  "**検算ツールの契約（v0.6.16）。**信頼の起点は assets の verifyReleaseSourceInputs.mjs の sha256（4ab97290243003727bfc12456bb5bc7cfe94cc45a72a0dce4d476b7a9c957d43 ／ toolVersion 20）。",
   "**保存した検算結果は、この版と一緒に配った source-verifier-cli-result.v2.schema.json （assets の sha256）で検証すること。**$id から最新版を引くと、後の版で狭めた分だけ過去の結果が落ちる（docs/SCHEMA_VERSIONING_POLICY.md 第7条）。",
   "**受け手が固定すべき 4 点**（`assets[]` の filename と sha256 を lock すること）: half_plug_topology_profile.v3.trs_jack_trs.json / half_plug_topology_profile.v3.trs_jack_trrs.json / source-verifier-cli-result.v2.schema.json / source-input-manifest.json / verifyReleaseSourceInputs.mjs。**この `notes` の文そのものは機械契約ではない**——分岐に使わないこと。",
   "**archivePolicy の識別子**: trs-jack-3d-source-verifier-archive-policy v1 / policySha256 41adcd453574c3b3d03af2dd98e289a3075af86ad6201b8c39281cb476f226d3。**自己整合の識別子であって、真正性の証明ではない**——同じ道具が policy と digest の両方を書くので、両方書き換えれば一致する。",

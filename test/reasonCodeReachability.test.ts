@@ -451,6 +451,21 @@ describe('catalog の到達性の宣言が、実測と合っているか', () =>
     expect(unexpected, '**到達しないと宣言したのに出た。**宣言のほうが誤り').toEqual([])
   })
 
+  /**
+   * **語彙は残すが、使っていないことを明示する（v0.6.18）。**
+   * `race-defensive` の唯一の持ち主だった `SOURCE_ARCHIVE_MISSING` は
+   * 実測で踏めたので `cli-route` へ移した。
+   * **使わない値が黙って残ると、次に誰かが「踏めない」の逃げ道に使う。**
+   * 使いたくなったら、この試験が落ちる——そのとき「本当に踏めないのか」を先に測ること。
+   */
+  it('`race-defensive` は、いま誰も使っていない（踏めたので cli-route へ移した）', () => {
+    const users = Object.entries(REASON_CODES)
+      .filter(([, m]) => m.reachability === 'race-defensive').map(([c]) => c)
+    expect(users, '**使うなら、先に「本当に踏めないのか」を測ること**').toEqual([])
+    /** 語彙表からは消していない（意味を残す） */
+    expect(REACHABILITY_KINDS['race-defensive'], '語彙を消している').toBeTruthy()
+  })
+
   it('**この照合が空振りしていない**（実際に集まっている）', () => {
     expect(mustBeNonEmpty([...observed.keys()], 'この run で出た code').length).toBeGreaterThanOrEqual(70)
     // 経路の内訳も空でないこと（corpus だけで水増ししていない）

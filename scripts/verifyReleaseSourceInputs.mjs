@@ -320,12 +320,23 @@ export const REASON_CODES = {
    */
   // ---- source を取れなかった ----
   /**
-   * **決定的には到達しない（v0.6.17・外部監査 §8）。**
-   * 存在しない path は先に directory 判定が `SOURCE_DIRECTORY_MISSING` で止める（実測 2026-08-14）。
-   * ただし**絶対に到達しないわけではない**——存在を確かめてから開くまでの間に消されれば通る。
-   * `defensive-invariant`（論理的に起こりえない）と混ぜず、`race-defensive` として分ける。
+   * **実測で踏んだ（v0.6.18・外部監査 §8）。**
+   *
+   * v0.6.17 は `race-defensive`（到達しうるが決定的には踏めない）と宣言していた。
+   * だが**踏めた**——道具の並びは
+   *
+   * ```
+   * loadFromDir      existsSync(abs)  … 通る
+   *                  lstatSync(abs)   … ディレクトリでない → loadFromArchive へ
+   * loadFromArchive  existsSync(abs)  … **ここで消えていればこの code**
+   * ```
+   *
+   * なので、**同じ path に対する 2 回目の `existsSync`** だけ false にすればよい。
+   * `node:fs` を差し替えて注入する（道具は 1 バイトも変えない）。
+   * 「決定的には踏めない」は**踏む試験を書いていなかっただけ**だった
+   * ——v0.6.15 で `SOURCE_HTTP_ERROR` などを取り違えたのと同じ形である。
    */
-  SOURCE_ARCHIVE_MISSING: { reachability: 'race-defensive', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '指定した archive ファイルが無い' },
+  SOURCE_ARCHIVE_MISSING: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '指定した archive ファイルが無い' },
   SOURCE_ARCHIVE_UNREADABLE: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'archive ファイルを読めない' },
   SOURCE_DIRECTORY_MISSING: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: '指定した directory が無い' },
   SOURCE_TAG_NOT_LOCAL: { reachability: 'cli-route', status: 'SOURCE_UNAVAILABLE', family: 'source', summary: 'tag が手元に無い' },
@@ -393,6 +404,13 @@ export const REACHABILITY_KINDS = {
   corpus: { reachedInRun: true, meaning: '壊した tar の材料から出る' },
   'cli-route': { reachedInRun: true, meaning: 'CLI の引数・環境・依存注入から出る' },
   'defensive-invariant': { reachedInRun: false, meaning: '先行する不変条件に遮られ、外部入力からは論理的に到達しない' },
+  /**
+   * **いまは誰も使っていない（v0.6.18）。**唯一の持ち主だった `SOURCE_ARCHIVE_MISSING` は、
+   * `node:fs` を差し替えて 2 回目の `existsSync` だけ false にすれば**決定的に踏めた**ので
+   * `cli-route` へ移した。語彙は残す——同じ分類が要る場面で、
+   * **意味の書いていない値を新しく足すより、書いてある値を使うほうが安全**だから。
+   * 使うときは「本当に踏めないのか」を先に測ること（今回は踏めた）。
+   */
   'race-defensive': { reachedInRun: false, meaning: '確認と使用の間で状態が変われば到達しうるが、決定的には踏めない' },
 }
 
@@ -557,6 +575,21 @@ export function defaultIo() {
     stdout: (s) => console.log(s),
     stderr: (s) => process.stderr.write(s),
     exit: (code) => process.exit(code),
+    /**
+     * **filesystem（v0.6.18・第2段）。**
+     *
+     * `SOURCE_ARCHIVE_MISSING` は**確認と使用の間で消される**ときにしか出ない。
+     * `loadFromDir` の `existsSync` は通り、そこから呼ばれる `loadFromArchive` の
+     * `existsSync` で落ちる、という並びである。差し替えられなければ決定的には踏めない。
+     *
+     * **入口の判定（`realpathSync`）はここに入れない。**あれは
+     * 「この道具が起動されたのか」を見るもので、検証の入力ではない。
+     */
+    existsSync: (p) => existsSync(p),
+    readFileSync: (p, enc) => (enc === undefined ? readFileSync(p) : readFileSync(p, enc)),
+    statSync: (p) => statSync(p),
+    lstatSync: (p) => lstatSync(p),
+    readdirSync: (p) => readdirSync(p),
   }
 }
 
@@ -2622,14 +2655,14 @@ export function readArchiveBuffer(buf, { gzip }) {
  */
 function loadFromArchive(path) {
   const abs = resolve(ROOT, path)
-  if (!existsSync(abs)) return { error: `source archive が無い: ${path}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_ARCHIVE_MISSING' }
+  if (!io.existsSync(abs)) return { error: `source archive が無い: ${path}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_ARCHIVE_MISSING' }
   let buf
   try {
     /**
      * **読む前に大きさを見る（v0.6.1・外部監査 P1-C）。**
      * `readFileSync` してから判定すると、判定するころには全部メモリに載っている。
      */
-    const size = statSync(abs).size
+    const size = io.statSync(abs).size
     if (size > TAR_LIMITS.maxCompressedBytes) {
       return {
         // 資源上限は方針であって、archive の欠陥ではない（v0.6.7）。kind は catalog から引く
@@ -2638,7 +2671,7 @@ function loadFromArchive(path) {
           { path, size, limit: TAR_LIMITS.maxCompressedBytes }),
       }
     }
-    buf = readFileSync(abs)
+    buf = io.readFileSync(abs)
   } catch (e) {
     return { error: `source archive を読めない (${path}): ${e.message}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_ARCHIVE_UNREADABLE' }
   }
@@ -2648,11 +2681,11 @@ function loadFromArchive(path) {
 
 function loadFromDir(dir) {
   const abs = resolve(ROOT, dir)
-  if (!existsSync(abs)) return { error: `source ディレクトリが無い: ${dir}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_DIRECTORY_MISSING' }
+  if (!io.existsSync(abs)) return { error: `source ディレクトリが無い: ${dir}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_DIRECTORY_MISSING' }
   // ファイルを渡されたら archive として読む（**ENOTDIR で落とさない**）
   let rootStat
   try {
-    rootStat = lstatSync(abs)
+    rootStat = io.lstatSync(abs)
   } catch (e) {
     return { error: `source を読めない (${dir}): ${String(e.message).split('\n')[0]}`, kind: 'SOURCE_UNAVAILABLE', stableReasonCode: 'SOURCE_DIRECTORY_UNREADABLE' }
   }
@@ -2685,10 +2718,10 @@ function loadFromDir(dir) {
   let count = 0
   let total = 0
   const walk = (rel) => {
-    for (const n of readdirSync(join(abs, rel) || abs).sort()) {
+    for (const n of io.readdirSync(join(abs, rel) || abs).sort()) {
       const r = rel ? `${rel}/${n}` : n
       if (n === 'node_modules' || n === '.git') continue
-      const st = lstatSync(join(abs, r))
+      const st = io.lstatSync(join(abs, r))
       if (st.isSymbolicLink()) { skippedLinks.push(r); continue }
       if (st.isDirectory()) { walk(r); continue }
       /**
@@ -2725,7 +2758,7 @@ function loadFromDir(dir) {
         throw new ArchiveUnsupported(`総量が大きすぎる (> ${TAR_LIMITS.maxTotalBytes})`, { total, stableReasonCode: 'LIMIT_TOTAL_BYTES_UNSUPPORTED' })
       }
       // **読むのは上限を全部通ったあと。**判定より先に載せない
-      files.set(r, readFileSync(join(abs, r)))
+      files.set(r, io.readFileSync(join(abs, r)))
     }
   }
   try {
@@ -2897,7 +2930,7 @@ const RUN_AS_CLI = (() => {
 
 if (RUN_AS_CLI) {
   const manifestAbs = resolve(ROOT, MANIFEST)
-  if (!existsSync(manifestAbs)) {
+  if (!io.existsSync(manifestAbs)) {
     done({ status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST, reason: 'manifest が無い', stableReasonCode: 'MANIFEST_MISSING' }, 2)
   }
   /**
@@ -2907,7 +2940,7 @@ if (RUN_AS_CLI) {
    */
   let manifestText
   try {
-    manifestText = readFileSync(manifestAbs, 'utf8')
+    manifestText = io.readFileSync(manifestAbs, 'utf8')
   } catch (e) {
     done({
       status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST,
@@ -3062,7 +3095,7 @@ if (RUN_AS_CLI) {
     }
     if (SCOPE_OVERRIDE) {
       let text
-      try { text = readFileSync(resolve(ROOT, SCOPE_OVERRIDE), 'utf8') } catch (e) {
+      try { text = io.readFileSync(resolve(ROOT, SCOPE_OVERRIDE), 'utf8') } catch (e) {
         return { error: `--scope ${SCOPE_OVERRIDE} を読めない: ${e.message}`, code: 'SCOPE_UNREADABLE' }
       }
       return bind(text, `override:${SCOPE_OVERRIDE}`)
