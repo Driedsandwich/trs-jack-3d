@@ -185,6 +185,13 @@ function declarations() {
     ['SECURITY.md', `**すべての細工に耐えることは示していません。**${corpusTotal} 個・${corpusGroups} 種類で試験した範囲までです`, true],
     ['SECURITY.md', `v16 では corpus の「通す」材料を ${corpusSafe} 個へ増やしました`, true],
     ['docs/TEST_RESULTS.md', `| 単体テスト | \`npm run test\` | **${tc.total} 件**`, true],
+    /**
+     * **検証対象の件数（v0.6.17）。**この行は宣言照合に入っておらず、
+     * **少なくとも v0.6.11 から `11 件` のまま**だった（実測は 14 件）。
+     * 外部監査の指摘ではなく、v0.6.17 の作業中に自分で見つけた。
+     * 「artifact から確かめられる数なのに誰も見ていない」——v0.6.12 で 4 件直したのと同じ形。
+     */
+    ['docs/TEST_RESULTS.md', `**${vr.targetsTotal} 件すべて適合**（schema = ajv draft-07`, true],
     ['docs/TEST_RESULTS.md', `**入力 ${man.inputFilesTotal} 件すべて一致**`, true],
     /**
      * 直近 release だけは artifact に無いので、**手元の SHA256SUMS の控えの最大版数**で縛る。

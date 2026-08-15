@@ -408,6 +408,149 @@ v0.6.16 で `git ls-files` からの探索へ変え、免除はパスで名指�
 
 ---
 
+## v0.6.16（2026-08-15 記載・**v0.6.17 で直しました**）
+
+### 17. **v0.6.16 は `NOT_READY` です。版を据え置いたまま公開契約を広げました**
+
+| | |
+|---|---|
+| 対象 | **公開済みの v0.6.16 release**（asset は上書きしません） |
+| 症状 | `source-verifier-cli-result.v1` を **v1 のまま**、言語を 3 か所広げた |
+| 影響 | **v0.6.16 の出力が、v0.6.15 の同じ v1 schema を通りません** |
+| 直した版 | v0.6.17（`v2` を新設・`toolVersion` 20。**v0.6.16 の asset は直しません**） |
+
+実測（2026-08-15・両 tag の実物と、repo 自身の判定器）:
+
+```
+diffSchemaObjects(v0.6.15 の v1, v0.6.16 の v1) = **BUMP**
+  WIDEN  /properties/stableReasonCode/enum
+           + CLI_ARGUMENTS_MISSING, SOURCE_FETCH_TIMEOUT
+  WIDEN  /properties/archivePolicy/properties/coverage/properties/reasonCodeFamilies/items/enum
+           + usage
+  WIDEN  /properties/archivePolicy/properties/reasonCodeFamilies/items/enum
+           + usage
+対照  同じ schema どうしを比べると HOLD（何にでも BUMP と言う判定器ではない）
+```
+
+**外部監査の記述より影響が広いことが分かりました。**
+監査は「新しい 2 つの code を返す結果が不適合」としていましたが、
+`usage` 族は `archivePolicy` に載るので**全出力に出ます**。実測:
+
+```
+ajv で v0.6.15 の v1 schema に当てる
+  引数不足の出力（CLI_ARGUMENTS_MISSING）  → 不適合（3 か所）
+  **`OK` の正常な出力**                     → **不適合（2 か所）**
+```
+
+つまり、**v0.6.16 の道具の出力は 1 つも v0.6.15 の schema を通りません。**
+
+**なぜ検査が通したか。**`test/schemaVersioningPolicy.test.ts` の母集団が
+`LATEST_TAG = 'v0.5.1'` に固定されており、**v0.5.1 に在った 21 本だけ**を見ていました。
+`source-verifier-cli-result.v1` は v0.6.11 の新設なので、**一度も母集団に入っていません。**
+「比較した本数 === 母集団の本数」という空振り検査は付いていましたが、
+**数えていたのは古いほうの一覧**です。
+
+```
+対照（2026-08-15）: BUMP が実在する状態で、v0.6.16 の検査を回すと **57/57 全緑**
+```
+
+コメントには「上げた回はここを新しい tag へ進める」と書いてありました。
+**11 版のあいだ進みませんでした。**v0.6.17 では `package.json` の版数から
+直前 release を毎回その場で決め、母集団を**現行の schema 全部**にしました。
+反例（v0.6.15 → v0.6.16）を**違反として捕まえる回帰試験**も入れています。
+
+**受け手への影響。**profile の数値・区間・event は変わりません。
+**v0.6.16 が出した保存済みの検算結果は、v0.6.16 と一緒に配った v1 schema で検証してください**
+（`$id` から最新版を引かないこと）。v1 のファイルは変更していません。
+
+### 18. **証拠の由来 3 欄を、契約が要求していませんでした**
+
+| | |
+|---|---|
+| 対象 | v0.6.16 の `validation-results.v2.schema.json` |
+| 症状 | `testCountsSha256` / `testCountsGeneratedFromCommit` / `testCountsGeneratedAt` が**未定義かつ任意**。`additionalProperties` も無し |
+| 直した版 | v0.6.17（`validation-results.v3`） |
+
+**値は正しく入っていました。要求していなかっただけです。**変異対照（2026-08-15）:
+
+```
+                                  v2（旧）   v3（新）
+基準（無変更）                       適合       適合
+testCountsSha256 を消す              適合     **不適合**
+testCountsGeneratedFromCommit を消す 適合     **不適合**
+testCountsGeneratedAt を消す         適合     **不適合**
+SHA を 63 桁にする                   適合     **不適合**
+commit を短縮する                    適合     **不適合**
+日付を壊す                           適合     **不適合**
+未知項目を足す                       適合     **不適合**
+```
+
+**外部監査は「狭める変更なので `HOLD_RECORD`」と想定していましたが、判定器の実測は `BUMP` でした。**
+`testEvidence` は `oneOf` の中にあり、判定器は枝の言語について単調でないことを理由に
+判定不能を返します（条文どおり `BUMP`）。**判定器を緩めず、版を上げました。**
+
+### 19. **2 つの証拠を結び直す工程がありませんでした**
+
+| | |
+|---|---|
+| 対象 | v0.6.16 の `release:stage` |
+| 症状 | `test_counts.json` の鮮度と `READY` を**別々に**見ていた |
+| 直した版 | v0.6.17（`crossBindTestEvidence`） |
+
+**片方だけ作り直した状態は、どちらの検査も単体では通ります。**変異対照（2026-08-15・関門へ直接）:
+
+```
+基準（無変更）              通す
+test_counts だけ更新        **止める**（testCountsSha256 が指す先と違う）
+validation だけ更新         **止める**（total が食い違う）
+SHA だけ偽装                **止める**
+commit だけ偽装             **止める**
+date だけ偽装               **止める**
+testEvidence ごと消す       **止める**
+```
+
+**関門を切り出してから測っています。**`release:stage` を丸ごと回すと
+**手前の鮮度検査が先に落ちて全件が同じ exit 1 になり**、
+「この関門が効いた」の証拠になりません（実際に一度そう測って読み違えました）。
+
+### 20. **「両方の門が同じことをする」と書いていました**
+
+| | |
+|---|---|
+| 対象 | v0.6.16 の `scripts/checkTestEvidenceCurrent.mjs` の説明 |
+| 症状 | 「`release:evidence` と `release:stage` の両方が必ず通す」——実装は違う |
+| 直した版 | v0.6.17（説明を実装どおりに） |
+
+実装は `release:evidence` が**由来だけ**、`release:stage` が**実測**です。
+`release:evidence` の中でテストを回すと、その結果を自分の中へ書くので
+**`READY` へ到達できなくなります。**分けているのには理由がありますが、書いていませんでした。
+
+### 21. **「唯一の測り方」と書いた隣に、2 つ目の実装がありました**
+
+| | |
+|---|---|
+| 対象 | v0.6.16 の `scripts/testCount.mjs` |
+| 症状 | `byFile` の作り方・skip の数え方・`allPassed` の決め方を `measureTests.mjs` と**別に**実装 |
+| 直した版 | v0.6.17（`summarizeVitestReport` を唯一の集計器に） |
+
+値がたまたま一致していたので、どの検査も鳴っていませんでした。
+**同じ境界を 2 つの一覧で持たない**——この repo で 12 回目の同じ形です。
+
+### 22. **`SOURCE_ARCHIVE_MISSING` を「到達しない」に入れていました**
+
+| | |
+|---|---|
+| 対象 | v0.6.16 の reason code catalog |
+| 症状 | `defensive-invariant`（論理的に起こりえない）と宣言。実際は**確認と使用の間で消されれば到達する** |
+| 直した版 | v0.6.17（`race-defensive` を新設） |
+
+外部監査の指摘どおりです。あわせて、両方向の照合が
+`reachability !== 'defensive-invariant'` という**文字列の否定**で群を分けていたのを、
+語彙表（`REACHABILITY_KINDS`）から引く形に変えました。
+否定で分けていると、**新しい種類を足した瞬間に黙ってどちらかへ入ります。**
+
+---
+
 ## この正誤表の運用
 
 - **公開済みの release 本文と asset は、いかなる理由でも書き換えない。**

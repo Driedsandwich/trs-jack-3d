@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:e460e8cc0c6b",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:f518f83075a5",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -327,31 +327,31 @@
    ]
   }
  },
- "sourceRevision": "94d50fd0f703d52fab352dc7cd5d7feed28bec2d",
- "generatedAt": "2026-08-14",
+ "sourceRevision": "e3e828e3c8dc276eaf102e9ac0c08906c8a21b92",
+ "generatedAt": "2026-08-15",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "94d50fd0f703d52fab352dc7cd5d7feed28bec2d",
-  "workingTreeDirty": false,
+  "generatedFromCommit": "e3e828e3c8dc276eaf102e9ac0c08906c8a21b92",
+  "workingTreeDirty": true,
   "revisionOverride": false,
-  "artifactKind": "release",
+  "artifactKind": "local",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "e460e8cc0c6bdb87bbee70241c1d823e55e0af8a0d37e01f2861168f52f49331",
+  "inputDigest": "f518f83075a501a1107dcf7beaaf7f72eeda55baa612295b8dd3edd3cc251ff6",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "84ec5b7984c357266d0cec76872e20909d8213f3a85c71b0b0380253fc836b9c",
+    "sha256": "532e0a25f71a4d44d2f89e3ed6b7948d45020382a520850afe66efcd6463d196",
     "role": "sensitivity-input"
    },
    {
     "path": "contract-migration.v1.json",
-    "sha256": "8b33e236c248543f70ce8d9de06004ef73f8b4e18f434a8c946e482a883665c5",
+    "sha256": "f27ce53531e00880146b917e9df9cb0042b0ea63b0a096afcf2108604686b520",
     "role": "contract-migration"
    },
    {
     "path": "package-lock.json",
-    "sha256": "e52984a63724d2a37392a143ff0adc86ffa90207eddf37f75c124285ac805e95",
+    "sha256": "a991e2824e78510e49d8db855b0b27d113fb3d1f2e4c275199b4ea3e065426dc",
     "role": "lockfile"
    },
    {
@@ -470,8 +470,8 @@
     "role": "model-code"
    }
   ],
-  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\" --release",
-  "artifactDate": "2026-08-14"
+  "command": "npm run export:half-plug -- --variant \"TRS|JACK-TRRS\"",
+  "artifactDate": "2026-08-15"
  },
  "fullInsertionDepthMm": 14,
  "stepMm": 0.02,
@@ -5687,8 +5687,8 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "64955551e1d098765e39b512559cbc06e6673cac",
-   "inputDigest": "e0ed4555aab0155b410726ee4fb42320c46062b287090fd36eed64f43e5ee475",
+   "generatedFromCommit": "e3e828e3c8dc276eaf102e9ac0c08906c8a21b92",
+   "inputDigest": "8717d5e4af45bcf70253d80528b3c6da496b2825474e9e33dd33896d45244f99",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
   },

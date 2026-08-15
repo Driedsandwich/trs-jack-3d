@@ -94,7 +94,8 @@
     <li><a href="#s2">v0.6.13 以前（2026-08-12 記載・v0.6.14 で直しました）</a></li>
     <li><a href="#s3">v0.6.14 以前（2026-08-14 記載・v0.6.15 で直しました）</a></li>
     <li><a href="#s4">v0.6.15（2026-08-14 記載・v0.6.16 で直しました）</a></li>
-    <li><a href="#s5">この正誤表の運用</a></li>
+    <li><a href="#s5">v0.6.16（2026-08-15 記載・v0.6.17 で直しました）</a></li>
+    <li><a href="#s6">この正誤表の運用</a></li>
   </ol>
 </nav>
 <h1>正誤表</h1>
@@ -251,7 +252,62 @@ release:stage              exit 0          **exit 1**</code></pre>
                  全試験を回すと **14 件すべて緑**</code></pre>
 <p>v0.6.16 で <code>git ls-files</code> からの探索へ変え、免除はパスで名指しし、 <strong>その免除がいまも要るか</strong>も確かめます。作り直した検査は、 <strong>旧版が見ていなかった実在しない参照を 1 件見つけました</strong> （<code>test/_corruptTar.d.mts</code> が <code>test/_tarExpectations.ts</code> を指していた。実体は <code>.mjs</code>）。</p>
 <hr>
-<h2 id="s5">この正誤表の運用</h2>
+<h2 id="s5">v0.6.16（2026-08-15 記載・<strong>v0.6.17 で直しました</strong>）</h2>
+<h3>17. <strong>v0.6.16 は <code>NOT_READY</code> です。版を据え置いたまま公開契約を広げました</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><strong>公開済みの v0.6.16 release</strong>（asset は上書きしません）</td></tr><tr><td>症状</td><td><code>source-verifier-cli-result.v1</code> を <strong>v1 のまま</strong>、言語を 3 か所広げた</td></tr><tr><td>影響</td><td><strong>v0.6.16 の出力が、v0.6.15 の同じ v1 schema を通りません</strong></td></tr><tr><td>直した版</td><td>v0.6.17（<code>v2</code> を新設・<code>toolVersion</code> 20。<strong>v0.6.16 の asset は直しません</strong>）</td></tr></tbody></table></div>
+<p>実測（2026-08-15・両 tag の実物と、repo 自身の判定器）:</p>
+<pre><code>diffSchemaObjects(v0.6.15 の v1, v0.6.16 の v1) = **BUMP**
+  WIDEN  /properties/stableReasonCode/enum
+           + CLI_ARGUMENTS_MISSING, SOURCE_FETCH_TIMEOUT
+  WIDEN  /properties/archivePolicy/properties/coverage/properties/reasonCodeFamilies/items/enum
+           + usage
+  WIDEN  /properties/archivePolicy/properties/reasonCodeFamilies/items/enum
+           + usage
+対照  同じ schema どうしを比べると HOLD（何にでも BUMP と言う判定器ではない）</code></pre>
+<p><strong>外部監査の記述より影響が広いことが分かりました。</strong> 監査は「新しい 2 つの code を返す結果が不適合」としていましたが、 <code>usage</code> 族は <code>archivePolicy</code> に載るので<strong>全出力に出ます</strong>。実測:</p>
+<pre><code>ajv で v0.6.15 の v1 schema に当てる
+  引数不足の出力（CLI_ARGUMENTS_MISSING）  → 不適合（3 か所）
+  **`OK` の正常な出力**                     → **不適合（2 か所）**</code></pre>
+<p>つまり、<strong>v0.6.16 の道具の出力は 1 つも v0.6.15 の schema を通りません。</strong></p>
+<p><strong>なぜ検査が通したか。</strong><code>test/schemaVersioningPolicy.test.ts</code> の母集団が <code>LATEST_TAG = 'v0.5.1'</code> に固定されており、<strong>v0.5.1 に在った 21 本だけ</strong>を見ていました。 <code>source-verifier-cli-result.v1</code> は v0.6.11 の新設なので、<strong>一度も母集団に入っていません。</strong> 「比較した本数 === 母集団の本数」という空振り検査は付いていましたが、 <strong>数えていたのは古いほうの一覧</strong>です。</p>
+<pre><code>対照（2026-08-15）: BUMP が実在する状態で、v0.6.16 の検査を回すと **57/57 全緑**</code></pre>
+<p>コメントには「上げた回はここを新しい tag へ進める」と書いてありました。 <strong>11 版のあいだ進みませんでした。</strong>v0.6.17 では <code>package.json</code> の版数から 直前 release を毎回その場で決め、母集団を<strong>現行の schema 全部</strong>にしました。 反例（v0.6.15 → v0.6.16）を<strong>違反として捕まえる回帰試験</strong>も入れています。</p>
+<p><strong>受け手への影響。</strong>profile の数値・区間・event は変わりません。 <strong>v0.6.16 が出した保存済みの検算結果は、v0.6.16 と一緒に配った v1 schema で検証してください</strong> （<code>$id</code> から最新版を引かないこと）。v1 のファイルは変更していません。</p>
+<h3>18. <strong>証拠の由来 3 欄を、契約が要求していませんでした</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.16 の <code>validation-results.v2.schema.json</code></td></tr><tr><td>症状</td><td><code>testCountsSha256</code> / <code>testCountsGeneratedFromCommit</code> / <code>testCountsGeneratedAt</code> が<strong>未定義かつ任意</strong>。<code>additionalProperties</code> も無し</td></tr><tr><td>直した版</td><td>v0.6.17（<code>validation-results.v3</code>）</td></tr></tbody></table></div>
+<p><strong>値は正しく入っていました。要求していなかっただけです。</strong>変異対照（2026-08-15）:</p>
+<pre><code>                                  v2（旧）   v3（新）
+基準（無変更）                       適合       適合
+testCountsSha256 を消す              適合     **不適合**
+testCountsGeneratedFromCommit を消す 適合     **不適合**
+testCountsGeneratedAt を消す         適合     **不適合**
+SHA を 63 桁にする                   適合     **不適合**
+commit を短縮する                    適合     **不適合**
+日付を壊す                           適合     **不適合**
+未知項目を足す                       適合     **不適合**</code></pre>
+<p><strong>外部監査は「狭める変更なので <code>HOLD_RECORD</code>」と想定していましたが、判定器の実測は <code>BUMP</code> でした。</strong> <code>testEvidence</code> は <code>oneOf</code> の中にあり、判定器は枝の言語について単調でないことを理由に 判定不能を返します（条文どおり <code>BUMP</code>）。<strong>判定器を緩めず、版を上げました。</strong></p>
+<h3>19. <strong>2 つの証拠を結び直す工程がありませんでした</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.16 の <code>release:stage</code></td></tr><tr><td>症状</td><td><code>test_counts.json</code> の鮮度と <code>READY</code> を<strong>別々に</strong>見ていた</td></tr><tr><td>直した版</td><td>v0.6.17（<code>crossBindTestEvidence</code>）</td></tr></tbody></table></div>
+<p><strong>片方だけ作り直した状態は、どちらの検査も単体では通ります。</strong>変異対照（2026-08-15・関門へ直接）:</p>
+<pre><code>基準（無変更）              通す
+test_counts だけ更新        **止める**（testCountsSha256 が指す先と違う）
+validation だけ更新         **止める**（total が食い違う）
+SHA だけ偽装                **止める**
+commit だけ偽装             **止める**
+date だけ偽装               **止める**
+testEvidence ごと消す       **止める**</code></pre>
+<p><strong>関門を切り出してから測っています。</strong><code>release:stage</code> を丸ごと回すと <strong>手前の鮮度検査が先に落ちて全件が同じ exit 1 になり</strong>、 「この関門が効いた」の証拠になりません（実際に一度そう測って読み違えました）。</p>
+<h3>20. <strong>「両方の門が同じことをする」と書いていました</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.16 の <code>scripts/checkTestEvidenceCurrent.mjs</code> の説明</td></tr><tr><td>症状</td><td>「<code>release:evidence</code> と <code>release:stage</code> の両方が必ず通す」——実装は違う</td></tr><tr><td>直した版</td><td>v0.6.17（説明を実装どおりに）</td></tr></tbody></table></div>
+<p>実装は <code>release:evidence</code> が<strong>由来だけ</strong>、<code>release:stage</code> が<strong>実測</strong>です。 <code>release:evidence</code> の中でテストを回すと、その結果を自分の中へ書くので <strong><code>READY</code> へ到達できなくなります。</strong>分けているのには理由がありますが、書いていませんでした。</p>
+<h3>21. <strong>「唯一の測り方」と書いた隣に、2 つ目の実装がありました</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.16 の <code>scripts/testCount.mjs</code></td></tr><tr><td>症状</td><td><code>byFile</code> の作り方・skip の数え方・<code>allPassed</code> の決め方を <code>measureTests.mjs</code> と<strong>別に</strong>実装</td></tr><tr><td>直した版</td><td>v0.6.17（<code>summarizeVitestReport</code> を唯一の集計器に）</td></tr></tbody></table></div>
+<p>値がたまたま一致していたので、どの検査も鳴っていませんでした。 <strong>同じ境界を 2 つの一覧で持たない</strong>——この repo で 12 回目の同じ形です。</p>
+<h3>22. <strong><code>SOURCE_ARCHIVE_MISSING</code> を「到達しない」に入れていました</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>v0.6.16 の reason code catalog</td></tr><tr><td>症状</td><td><code>defensive-invariant</code>（論理的に起こりえない）と宣言。実際は<strong>確認と使用の間で消されれば到達する</strong></td></tr><tr><td>直した版</td><td>v0.6.17（<code>race-defensive</code> を新設）</td></tr></tbody></table></div>
+<p>外部監査の指摘どおりです。あわせて、両方向の照合が <code>reachability !== 'defensive-invariant'</code> という<strong>文字列の否定</strong>で群を分けていたのを、 語彙表（<code>REACHABILITY_KINDS</code>）から引く形に変えました。 否定で分けていると、<strong>新しい種類を足した瞬間に黙ってどちらかへ入ります。</strong></p>
+<hr>
+<h2 id="s6">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
 </div>
 </body>

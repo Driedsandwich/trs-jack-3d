@@ -6,13 +6,13 @@
  "note": "**これは自己申告である。**こちらのリポジトリで verify:release-source-inputs を回した結果でしかなく、受け手の独立検証を置き換えない。**突き合わせ先は生成時の作業ツリーであって tag の source ではない。**tag は evidence をコミットした後に打つので、この時点では存在しない。受け手は同梱の verifyReleaseSourceInputs.mjs を tag に対して回すこと（howToVerifyYourself を参照）。",
  "tool": {
   "script": "scripts/verifyReleaseSourceInputs.mjs",
-  "toolVersion": 19,
-  "sha256": "f8596510e24537f046bd0ff985b1f9a8d6e72b17f902ec96bfd52992873cdaf9"
+  "toolVersion": 20,
+  "sha256": "b208399106bb1d97f00f79ef7cd90a867a4bc5bf400f6d2c5d36345d16314239"
  },
  "sourceOrigin": "directory:.",
- "generatedFromCommit": "35fe12f88ce8a5c340b46581c2064b6bf5c23de4",
+ "generatedFromCommit": "e3e828e3c8dc276eaf102e9ac0c08906c8a21b92",
  "releaseCommit": null,
- "generatedAt": "2026-08-14",
+ "generatedAt": "2026-08-15",
  "status": "OK",
  "exitCode": 0,
  "unrecordedInputDetection": {
