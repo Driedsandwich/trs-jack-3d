@@ -288,7 +288,7 @@
    }
   ]
  },
- "profileId": "trs-jack-3d:TRS|JACK-TRRS:02e13e5b5991",
+ "profileId": "trs-jack-3d:TRS|JACK-TRRS:3ced249e18e5",
  "variantId": "TRS|JACK-TRRS",
  "plug": {
   "id": "PLUG-TRS",
@@ -327,21 +327,21 @@
    ]
   }
  },
- "sourceRevision": "4a8267442f3bf57eb97c9fa42e8eeacd3e5c0786",
+ "sourceRevision": "6afc1d35b7aa8cbfa7691b619b782dfa56bc4c76",
  "generatedAt": "2026-08-15",
  "provenance": {
   "generatorVersion": 4,
-  "generatedFromCommit": "4a8267442f3bf57eb97c9fa42e8eeacd3e5c0786",
+  "generatedFromCommit": "6afc1d35b7aa8cbfa7691b619b782dfa56bc4c76",
   "workingTreeDirty": false,
   "revisionOverride": false,
   "artifactKind": "release",
   "inputDigestAlgorithm": "sha256",
-  "inputDigest": "02e13e5b5991e1faa2f182263c795e3ba68f809185ed03a45631311ac0e15b3f",
+  "inputDigest": "3ced249e18e539b015fd419c9068d5cade00b7df208e5eb792adb0fe3739ab0b",
   "inputDigestScope": "inputFiles を path の昇順に並べ、\"<sha256>  <path>\" を改行で連結した文字列の sha256。variant は含まない (profileId 側が持つ)。**生成される artifact 自身は含まない。**",
   "inputFiles": [
    {
     "path": "artifacts/sensitivity.trs_jack_trrs.json",
-    "sha256": "e29c1737a12e28bc234d571f8c2067f2038f8c2db78454cf6fe551af1624697e",
+    "sha256": "6915da03076021f3ee0c825531c052529486b6409a12c2725354cbd58d062986",
     "role": "sensitivity-input"
    },
    {
@@ -5687,7 +5687,7 @@
     "trrs.jack.contact.sleeve.axialCenter",
     "trrs.jack.contact.narrowPadWidth"
    ],
-   "generatedFromCommit": "ae8780e6f23cd45ede8fe41ad4458024fa015fa5",
+   "generatedFromCommit": "710f169213894fac03d295838bab78f42e8a70f2",
    "inputDigest": "4d06075b27b4ffa657d24f81c70fcf306d36137c6ac292e5b839a3197d764b28",
    "configurationsUsable": 341,
    "shippedInsideSweptRange": true
