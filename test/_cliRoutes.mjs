@@ -17,6 +17,21 @@
  * `node --import <preload>` で `globalThis.fetch` を差し替える。
  * **道具は 1 バイトも変えない。**network も PATH も要らない
  * （`git archive` だけは PATH の先頭へ偽 git を置く——外部プロセスなので注入点がそこしかない）。
+ *
+ * ## `test/mainInjection.test.ts` との使い分け（v0.6.19）
+ *
+ * `main(args, io)` を抽出したので、**同じプロセスの中で `io` だけを渡して踏む**道もできた。
+ * だが**この表は残す。**役割が違う。
+ *
+ * ```
+ * この表（子プロセス）  配った 1 ファイルを、受け手と同じ起動のされ方で踏む
+ *                       → 終了コード・stdout の byte・入口の判定まで含めて確かめられる
+ * io 注入（同一プロセス） 本体が io しか見ていないことを示す
+ *                       → global を 1 つも差し替えないので「差し替えが効いていただけ」を排除できる
+ * ```
+ *
+ * **`io` 注入は子プロセスへは効かない。**この表は `spawnSync` で起動するので、
+ * 呼び出し側のオブジェクトは相手に届かない。**片方へ寄せられない。**
  */
 
 import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'

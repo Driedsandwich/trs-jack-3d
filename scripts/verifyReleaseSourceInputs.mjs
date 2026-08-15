@@ -593,31 +593,55 @@ export function defaultIo() {
   }
 }
 
-const io = defaultIo()
-const ROOT = io.cwd()
-const argv = io.argv()
+/**
+ * **引数と `io` から決まるもの（v0.6.19・core / CLI 分離 段 3）。**
+ *
+ * v0.6.18 まで module 直下の `const` で、**読み込んだ瞬間に `process` から決まっていた。**
+ * `main(args, io)` が受け取った値から作る形にするため `let` にし、
+ * `main()` の冒頭で 1 度だけ設定する。
+ *
+ * **判定のロジックはこれらを読むだけで、書き換えない。**
+ * 既定値も解釈も 1 文字も変えていない——決まる**時点**だけが変わった。
+ */
+let io = defaultIo()
+let ROOT = io.cwd()
+let argv = io.argv()
 const argOf = (n, d = null) => {
   const i = argv.indexOf(`--${n}`)
   return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : d
 }
-const MANIFEST = argOf('manifest', 'artifacts/source-input-manifest.json')
-const SOURCE_DIR = argOf('source')
-const TAG = argOf('tag')
-const FETCH = argOf('fetch', 'none')
-const REPO = argOf('repo', 'Driedsandwich/trs-jack-3d')
+let MANIFEST = argOf('manifest', 'artifacts/source-input-manifest.json')
+let SOURCE_DIR = argOf('source')
+let TAG = argOf('tag')
+let FETCH = argOf('fetch', 'none')
+let REPO = argOf('repo', 'Driedsandwich/trs-jack-3d')
 /**
  * 入力の範囲定義。**既定では検証対象の source から読む**（その tag で有効だった範囲を使う）。
  * 範囲定義が入る前の tag (v0.3.0 以前) を検証するときだけ `--scope <file>` で外から渡す。
  */
 const SCOPE_FILE = 'source-input-scope.v1.json'
-const SCOPE_OVERRIDE = argOf('scope')
+let SCOPE_OVERRIDE = argOf('scope')
 /**
  * **manifest に縛られていない範囲定義を、明示的に許す（v0.6.11・外部監査 §1）。**
  * v0.4.0 より前の tag（v0.3.0 自身も対象）は manifest に `inputScope` を持たないので、
  * ここを通さないと検算できない。
  * **許しても `OK` にはならない**——縛られていない範囲では「範囲の中に漏れが無い」と言えないため。
  */
-const ALLOW_UNPINNED_SCOPE = argv.includes('--allow-unpinned-scope')
+let ALLOW_UNPINNED_SCOPE = argv.includes('--allow-unpinned-scope')
+
+/** `main()` の冒頭で、引数と `io` から設定し直す（既定は `defaultIo()` と `process.argv`） */
+function configure(args, injectedIo) {
+  io = injectedIo
+  ROOT = io.cwd()
+  argv = args
+  MANIFEST = argOf('manifest', 'artifacts/source-input-manifest.json')
+  SOURCE_DIR = argOf('source')
+  TAG = argOf('tag')
+  FETCH = argOf('fetch', 'none')
+  REPO = argOf('repo', 'Driedsandwich/trs-jack-3d')
+  SCOPE_OVERRIDE = argOf('scope')
+  ALLOW_UNPINNED_SCOPE = argv.includes('--allow-unpinned-scope')
+}
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
@@ -678,20 +702,44 @@ const done = (payload, code) => {
    * 文言も順序も変えていない——`io` の既定は `console.log` と `process.stderr.write`
    * と `process.exit` そのものである。差し替えられるようにしただけ。
    */
+  /**
+   * **結果を積んで脱出する（v0.6.19・core / CLI 分離 段 2）。**
+   *
+   * v0.6.18 まで、ここは `io.exit` を叩いて**戻らなかった。**
+   * 呼び出し側 6 か所のうち **5 か所は「その場で終わる」ことに依存**していて、
+   * 後続のコードがそのまま続いている。返す形にすると流れが壊れる。
+   *
+   * だから**投げる。**`main()` が受けて `{ code, stdout, stderr }` を返す。
+   * 判定のロジックは 1 行も変えていない——出口の形だけを変えた。
+   */
   try {
     assertCliResultSemantics(out)
   } catch (e) {
-    io.stderr(
+    throw new CliResult(INTERNAL_FAILURE_EXIT, '',
       `${INTERNAL_CONTRACT_FAILURE_MARKER}\n`
       + `**この道具の欠陥です。結果を出しません。**\n  ${e.message}\n`
       + `  toolVersion ${TOOL_VERSION} / status ${out.status} / stableReasonCode ${JSON.stringify(out.stableReasonCode)}\n`
       + `  終了コード ${INTERNAL_FAILURE_EXIT} は「道具が壊れている」だけに使います`
-      + `（検証の結果ではありません）。\n`,
-    )
-    io.exit(INTERNAL_FAILURE_EXIT)
+      + `（検証の結果ではありません）。\n`)
   }
-  io.stdout(JSON.stringify(out, null, 1))
-  io.exit(code)
+  throw new CliResult(code, JSON.stringify(out, null, 1), '')
+}
+
+/**
+ * **CLI の結果を運ぶ（v0.6.19）。**
+ *
+ * 例外だが**異常ではない。**`done()` が呼ばれた時点で結果は確定していて、
+ * あとは呼び出し元まで戻るだけである。`Error` を継いでいるのは
+ * 途中の `catch` に拾われないよう `instanceof` で見分けるため。
+ */
+export class CliResult extends Error {
+  constructor(code, stdout, stderr) {
+    super(`CLI result (exit ${code})`)
+    this.name = 'CliResult'
+    this.code = code
+    this.stdout = stdout
+    this.stderr = stderr
+  }
 }
 
 /**
@@ -2928,7 +2976,20 @@ const RUN_AS_CLI = (() => {
   }
 })()
 
-if (RUN_AS_CLI) {
+/**
+ * **副作用を持たない本体（v0.6.19・core / CLI 分離 段 3）。**
+ *
+ * 戻り値がすべてである——`stdout` も `stderr` も終了コードも返り値に入る。
+ * `process` にも `console` にも触らない。触るのは**この下の CLI 側だけ**である。
+ *
+ * `io` は差し替えられる。`done()` が投げる `CliResult` をここで受ける
+ * ——**投げるのは異常だからではなく、6 か所ある出口のうち 5 か所が
+ * 「その場で終わる」ことに依存しているから**である。返す形にすると流れが壊れる。
+ *
+ * @returns `{ code, stdout, stderr }`
+ */
+export async function main(args = defaultIo().argv(), injectedIo = defaultIo()) {
+  configure(args, injectedIo)
   const manifestAbs = resolve(ROOT, MANIFEST)
   if (!io.existsSync(manifestAbs)) {
     done({ status: 'MANIFEST_UNAVAILABLE', manifest: MANIFEST, reason: 'manifest が無い', stableReasonCode: 'MANIFEST_MISSING' }, 2)
@@ -3286,4 +3347,25 @@ if (RUN_AS_CLI) {
       'この検証はファイルを 1 つも書かない。tar は展開せずメモリ上で読んでいる。',
     ],
   }, status === 'OK' ? 0 : 1)
+}
+
+/**
+ * **プロセスとの接点（v0.6.19）。**
+ * ここだけが `process` と `console` に触る。**判定は一切しない。**
+ */
+if (RUN_AS_CLI) {
+  let r
+  try {
+    await main(process.argv.slice(2), defaultIo())
+    /** `done()` を通らずに戻ってきたら、それはこの道具の欠陥である */
+    r = new CliResult(INTERNAL_FAILURE_EXIT, '',
+      `${INTERNAL_CONTRACT_FAILURE_MARKER}\n`
+      + '**この道具の欠陥です。結果を出さずに本体が戻りました。**\n')
+  } catch (e) {
+    if (!(e instanceof CliResult)) throw e
+    r = e
+  }
+  if (r.stdout) io.stdout(r.stdout)
+  if (r.stderr) io.stderr(r.stderr)
+  io.exit(r.code)
 }

@@ -117,3 +117,12 @@ export declare const REACHABILITY_KINDS: Record<string, { reachedInRun: boolean,
 export declare function assertReachabilityVocabulary(codes?: unknown): boolean
 /** 道具自身の欠陥を stderr の先頭で名乗る目印（v0.6.17） */
 export declare const INTERNAL_CONTRACT_FAILURE_MARKER: string
+
+/** CLI の結果を運ぶ（例外だが異常ではない・v0.6.19） */
+export declare class CliResult extends Error {
+  code: number
+  stdout: string
+  stderr: string
+}
+/** 副作用を持たない本体。戻り値（投げる CliResult）がすべて（v0.6.19） */
+export declare function main(args?: readonly string[], io?: unknown): Promise<void>
