@@ -204,24 +204,29 @@ describe('contractMigration ①②③ 記録と schema 実物の突き合わせ'
      *   release 後: tag があるので tag から読む（こちらのほうが強い）
      * どちらでも空振りしないよう、**その時点で正しいほうを名指しで検査する。**
      *
-     * ## **契約を変えない版もある（v0.6.18 で気づいた）**
+     * ## **契約を変えない版もある（v0.6.18）**
      *
-     * v0.6.17 まで、この検査は「準備中の版には必ず記録がある」と決め打っていた。
+     * v0.6.17 まで、この検査は「その版には必ず記録がある」と決め打っていた。
      * だが**schema を 1 本も変えない版**は正常にありうる——v0.6.18 がそれで、
-     * core / CLI 分離は判定にも契約にも触っていない。
-     * そのとき記録は 0 件になり、作業ツリーからは 1 度も読まない。
+     * core / CLI 分離は判定にも契約にも触っていない。記録は 0 件になる。
      *
-     * **記録があるときだけ、読み元を検査する。**
+     * ⚠️ **一度、片方の枝だけ直した。**tag を打つ前は「作業ツリーから読むはず」の枝を
+     * 通るので手元では通り、**tag を打った直後の CI で「記録が 1 件も無い」で落ちた**
+     * ——同じ決め打ちが `tagExists` 側にも書いてあった。
+     * **同じ問いの答えを 2 か所に書いていた。**記録の有無で先に分け、
+     * そのあとで読み元を見る形にする。
      */
     const unreleasedEntries = ALL_ENTRIES.filter(({ entry }) => entry.shippedIn === UNRELEASED)
-    if (tagExists(UNRELEASED)) {
-      expect(readFromTree, `${UNRELEASED} の tag があるのに作業ツリーを読んでいる`).toBe(0)
-      expect(unreleasedEntries.length, `${UNRELEASED} の記録が 1 件も無い`).toBeGreaterThan(0)
-    } else if (unreleasedEntries.length > 0) {
-      expect(readFromTree, `${UNRELEASED} の tag が無いので作業ツリーから読むはず`).toBeGreaterThan(0)
-    } else {
-      /** **記録が 0 件であることを、黙って通さず名指しで確かめる。** */
+    if (unreleasedEntries.length === 0) {
+      /**
+       * **記録が 0 件であることを、黙って通さず名指しで確かめる。**
+       * 読む対象が無いのだから、作業ツリーからも読んでいないはず。
+       */
       expect(readFromTree, `${UNRELEASED} の記録が無いのに作業ツリーを読んでいる`).toBe(0)
+    } else if (tagExists(UNRELEASED)) {
+      expect(readFromTree, `${UNRELEASED} の tag があるのに作業ツリーを読んでいる`).toBe(0)
+    } else {
+      expect(readFromTree, `${UNRELEASED} の tag が無いので作業ツリーから読むはず`).toBeGreaterThan(0)
     }
   })
 })
