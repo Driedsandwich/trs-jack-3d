@@ -77,9 +77,19 @@ const GENERATED = /\.html$/
 
 const isFrozen = (p: string) => FROZEN_PREFIXES.some((f) => p === f || p.startsWith(f))
 
-/** **git が追跡しているファイルを列挙する。**手書きの一覧を持たない */
+/**
+ * **git が知っているファイルを列挙する。**手書きの一覧を持たない。
+ *
+ * **まだ `git add` していないものも数える（v0.6.18）。**
+ * `--cached` だけにすると、**新しく作ったファイルは add するまで検査から消える。**
+ * 実際、core / CLI 分離で追加した fixture が実在しないパスを指していたのに、
+ * 手元では緑で、**commit して push した CI で初めて落ちた**。
+ * 同じ穴は schema の母集団で先に見つけて塞いであった（`--others` を足した）が、
+ * こちらには残っていた——**同じ境界を 2 か所で持っていた**ということ。
+ */
 function trackedFiles(): string[] {
-  return execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 })
+  return execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'],
+    { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 })
     .split('\n').filter(Boolean)
 }
 

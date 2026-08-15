@@ -124,7 +124,7 @@
    "actualSha256AtBuild": "dea568425f0105085f68b34cc2e0b8e27eff5ac2c023e79e8b6389ef86d33900",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/fixture.json"
+    "test/fixtures/ok-source/source-input-manifest.json"
    ]
   },
   {
@@ -135,12 +135,12 @@
    "actualSha256AtBuild": "37d08299ed639b70dca0e1d01d42f37049f972da346d054f3abc81c7b3264829",
    "matchesWorkingTree": true,
    "consumedBy": [
-    "artifacts/fixture.json"
+    "test/fixtures/ok-source/source-input-manifest.json"
    ]
   }
  ],
  "verificationRecipe": [
   "この fixture は基準を取るためだけのもの。受け手向けではない"
  ],
- "note": "**この manifest は fixture である。**本番の artifacts/source-input-manifest.json とは別物。"
+ "note": "**この manifest は fixture である。**本番の source-input-manifest.json とは別物で、CLI 出力の基準（test/fixtures/cli-output-baseline.v1.json）の OK 経路が読む。consumedBy は実在するパスだけを指す——実在しないパスを書くと、文言・パスの検査が落ちる（v0.6.18 の CI で実際に落ちた）。"
 }
