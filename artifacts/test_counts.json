@@ -223,5 +223,5 @@
  "runner": "vitest",
  "runnerVersion": "4.1.10",
  "nodeVersion": "v22.22.3",
- "generatedFromCommit": "a120f88c6a129a3448c8cc4d5ac869b8e41a7fef"
+ "generatedFromCommit": "108166eecb03fc21ec5cced1066301b1013a1828"
 }
