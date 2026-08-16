@@ -1,0 +1,53 @@
+# trs-jack-3d v0.6.24 — release asset の sha256
+#
+# **固定には inputDigest を使ってください。**
+# ファイル単位の sha256 は「この配布物が改変されていないか」を見るためのものです。
+#
+# **この版の profile は schemaVersion 3 です。v2 とは非互換です。**
+# 対応表は profile の contractMigration.history と、同梱の contract-migration.v1.json にあります。
+# 旧版を期待する実装は schemaVersion を見て停止してください（沈黙より停止のほうが安全です）。
+#
+# TRS|JACK-TRS   inputDigest = 91cef0552b37a13f2f6d53cdaf0fe9450857cf17d75528b0a4c1201b89f1e9d2
+#                profileId   = trs-jack-3d:TRS|JACK-TRS:91cef0552b37
+# TRS|JACK-TRRS  inputDigest = 7e125f6b00066b5bdf5c590b826941b9381a17f2f34cb252d5129d49ff144d2c
+#                profileId   = trs-jack-3d:TRS|JACK-TRRS:7e125f6b0006
+#
+# generatedFromCommit = 067bc635bd93ed86a522a34711962bbfd24af91f
+# artifactKind        = release
+#
+# v0.1.1 から外したもの（消えた理由）:
+#   half-plug-topology-profile.v1.schema.json — v2 へ置き換えた。v1 schema は v0.1.1 の asset として immutable に残っている
+#   half_plug_topology_profile.v1.trs_jack_trs.json — ファイル名は契約の一部（下流の lock が filename で引く）なので、schemaVersion と一緒に v2 へ移した
+#   half_plug_topology_profile.v1.trs_jack_trrs.json — 同上
+#
+# 検算: shasum -a 256 -c SHA256SUMS
+046cc9177d15a2e4d7d1f604d4844784a245761b866e636ec22178548e9afd61  source-snapshot.v1.schema.json
+06a26fe4ed66d91e64a6a7ec39649028e5148701681c02842e8e641865ca8358  source-input-manifest.v2.schema.json
+0aea97c50b146bf730d82252a8f62ffe63c10d8cb6d93d5f337f9e127ffcca90  source-verifier-cli-result.v2.schema.json
+10ec667f043c2c65a017ae3ae2ed2765679a90026eb450d59fb02f4bc70bd1c3  topology-robustness.v3.schema.json
+1846c1fdf6c3ac24d15a87462d89aede3af2973230d4e0ddf8edf274232f6b00  sensitivity.trs_jack_trs.json
+23199aa88003c6e6fc36b7a52ef8aa9e48fcfe907eb5e473c7af7c03fa5ac37d  test-counts.v2.schema.json
+24d85873781f23c9f81da25676cbf98c2b9ea5a0de90a81275f936e5f4a93be4  real-jack-comparison.v1.schema.json
+4a322240f75c48857eeb10dd5f63ac0a5f3ab41f1796a40eb33f84351d3e85dc  source-snapshot.v1.json
+4d214e4e549ce94bcf46d60dd0e12717014bf57374c08ed3945c5f87e769d60a  release-stage-attestation.v1.json
+5928b45f52b5ed95b568d8538b7e4ea30eec9bbc50781356f9c4dfa83db1e424  contract-migration.v1.schema.json
+607b7f6ce9c39500e2f479941ae723d04ae761047ec1ba68ed4f0b84b0b2b2a6  source-input-scope.v1.schema.json
+6c3703a646648a339a3fee9e754f0e1c1f341061842ffe3030a0b7449bff0d86  half_plug_topology_profile.v3.trs_jack_trs.json
+7acad2fee2f78a2e58d2f70cdc7851ebe6c519a5212422459ef2b8a86339a0da  topology-robustness.trs_jack_trrs.json
+7f5924b2b66b46b042e974464eb196e197580bc52282d1764748a25af7a8c802  source-verification-result.json
+82145e96adfc3350925517192e69746885413b89b0887816069675baa3d384aa  validation-results.json
+95e344b76f6c823266cf597606dbf1d3e85dd78e489499ca4ad7e8c185b9ae0b  source-verification-result.v1.schema.json
+b599e383a170484790d8762fecb9bc9e26572a4ccd99c19e5f6492db188237f6  validation-results.v3.schema.json
+b72fafbbd726ea607fd9fb9504bbde13937419580167fb8aefe459d6a7f766f7  trs-jack-3d-release-index.v1.json
+b986b063677905b7d1edae3f18e7b8aace61c5ee833c53b059640a34d73e88f9  trs-jack-3d-release-index.v1.schema.json
+ba7a855da4a06cd05f99a5387ab6537d741339d2b6c3aa86b06bd4454161dd43  source-input-scope.v1.json
+d169d069296a0a870649d2e8f0c51531be25efa2df6792c7320bd000ee483d27  test_counts.json
+d6dc207471e2ddb7bc78d6d39dab43fff5063e067ff183b7b8dcecd8c7ef7433  half-plug-topology-profile.v3.schema.json
+d7904318a00cd842b9d780bd84fd0e40fd8634a4dc6844ed1c7ec6fa9eff9c4f  topology-search.v1.schema.json
+da1e5558d0a4cdf38c23274c4486bbbbf94cc79bf02a28a49cd01765af325401  verifyReleaseSourceInputs.mjs
+dc36b365c37c160d09f18436e23f91992ae4b52e351c87dd763065e6006596ef  half_plug_topology_profile.v3.trs_jack_trrs.json
+de4f46c2c1564d777bcb868b3f4c1dd6ba850960638f4b37f84efc243924f209  source-input-manifest.json
+dfe04e6adc9e49cf9371b277f6c9ed13073df1ae878bd18812568125b322ee09  sensitivity.trs_jack_trrs.json
+e9cd21c7cb09e496aa9e5609e126493e06871e0bac99cf9dcec79f8d8e7f80ce  event-sensitivity.v2.schema.json
+f27ce53531e00880146b917e9df9cb0042b0ea63b0a096afcf2108604686b520  contract-migration.v1.json
+fb8cb735769eb11aaaad26404c17f47807a6e2a9047889b2c9be9f2bc25b25f5  release-stage-attestation.v1.schema.json
