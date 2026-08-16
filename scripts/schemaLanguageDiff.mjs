@@ -85,6 +85,35 @@ export const HANDLED_KEYWORDS = new Set([
 const REF_LIMIT = 50
 
 /**
+ * ⚠️ **JSON の own property と JavaScript の prototype 継承を分ける（v0.6.24・外部監査 P0）。**
+ *
+ * `{}` は `toString` も `constructor` も**継承している**ので:
+ *
+ * ```text
+ * 'toString' in {}          → true   （own property は無いのに）
+ * ({})['toString']          → 関数    （undefined ではない）
+ * out['__proto__'] = x      → own property にならない（prototype を差し替える）
+ * ```
+ *
+ * schema の `properties` の key は**受け手が決める名前**なので、
+ * `toString` も `constructor` も来うる。判定器がこれを分けていなかったため、
+ * **`toString` という項目を足しても「前から在った」と見なして HOLD** を返していた。
+ *
+ * **`in` と `obj[key]` を素で使わない。**必ずここを通す。
+ */
+const hasOwn = (o, k) => o != null && Object.prototype.hasOwnProperty.call(o, k)
+
+/** own property だけを引く。無ければ undefined（継承を拾わない） */
+const own = (o, k) => (hasOwn(o, k) ? o[k] : undefined)
+
+/**
+ * **key が `__proto__` でも own property として持てる入れ物。**
+ * 素の `{}` へ `out['__proto__'] = v` と書くと prototype が差し替わるだけで、
+ * **その項目が写しから消える。**
+ */
+const bag = () => Object.create(null)
+
+/**
  * **`$ref` を展開した写しを返す（比較のためだけに使う）。**
  *
  * `oneOf` は枝を再帰比較できない（枝の言語について単調でない）ので、
@@ -132,7 +161,8 @@ function expandRefs(node, root, seen = new Set(), depth = 0, gaveUp = []) {
     if (Object.keys(rest).length === 0) return target
     return { ...expandRefs(rest, root, seen, depth + 1, gaveUp), __refTarget__: target }
   }
-  const out = {}
+  // ⚠️ `{}` だと `out['__proto__'] = …` が own property にならず、写しから消える
+  const out = bag()
   for (const [k, v] of Object.entries(node)) out[k] = expandRefs(v, root, seen, depth + 1, gaveUp)
   return out
 }
@@ -206,7 +236,8 @@ function deref(node, root) {
     if (typeof ref !== 'string' || !ref.startsWith('#/')) return { __unresolvable__: String(ref) }
     let cur = root
     for (const part of ref.slice(2).split('/')) {
-      cur = cur && typeof cur === 'object' ? cur[untok(part)] : undefined
+      // ⚠️ own だけを辿る。`cur['toString']` は継承した関数を返してしまう
+      cur = cur && typeof cur === 'object' ? own(cur, untok(part)) : undefined
       if (cur === undefined) return { __unresolvable__: ref }
     }
     node = cur
@@ -244,6 +275,24 @@ function cmpSets(d, path, ptr, kw, oldSet, newSet, widenIfSuperset = true) {
   }
 }
 
+/**
+ * ⚠️ **再帰の打ち切りは「いま辿っている経路上にあるか」で見る（v0.6.24・外部監査 P1）。**
+ *
+ * v0.6.23 までは `seen` の鍵が **pointer 文字列** `ptr` だった。
+ * `ptr` は `/properties/next/properties/next/…` と**伸び続ける**ので、
+ * 同じ節へ戻っても**一度も重複しない**（実測: 8 段たどって重複 0 件）。
+ * 正当な再帰 schema（linked list）を比べると stack overflow で
+ * **判定を返せなくなっていた。**
+ *
+ * ⚠️ **これは fail-open ではない。**危険側の `HOLD` を返すのではなく、
+ * **答えを返せない**——門が使えなくなる形である。
+ *
+ * ⚠️ **「一度でも見た組」で覚えると、別の経路から来た同じ節の差分まで消える。**
+ * 最初そう書いて `contractMigration` の記録 1 件が実物と合わなくなった
+ * （`/properties/nominalConfiguration/properties/windows/items` の差分が出なくなる）。
+ * **循環かどうかは「いま辿っている経路上にあるか」で決まる**ので、
+ * `seen` は**スタックとして使う**——降りるときに入れ、戻るときに外す。
+ */
 function compare(o, n, oroot, nroot, path, ptr, d, seen) {
   o = deref(o, oroot)
   n = deref(n, nroot)
@@ -254,13 +303,23 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
     }
     return
   }
-  if ('__unresolvable__' in o || '__unresolvable__' in n) {
+  if (hasOwn(o, '__unresolvable__') || hasOwn(n, '__unresolvable__')) {
     d.add(UNDEC, path, ptr, `$ref を解決できない (${o.__unresolvable__ ?? n.__unresolvable__})`)
     return
   }
-  if (seen.has(ptr)) return
-  seen.add(ptr)
+  let news = seen.get(o)
+  if (news === undefined) { news = new Set(); seen.set(o, news) }
+  if (news.has(n)) return            // いま辿っている経路上に同じ組がある＝循環
+  news.add(n)
+  try {
+    compareBody(o, n, oroot, nroot, path, ptr, d, seen)
+  } finally {
+    news.delete(n)                   // 戻るときに外す。別の経路からは比べ直せる
+    if (news.size === 0) seen.delete(o)
+  }
+}
 
+function compareBody(o, n, oroot, nroot, path, ptr, d, seen) {
   // --- type ---
   const ot = typesOf(o)
   const nt = typesOf(n)
@@ -303,7 +362,8 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
   // --- properties ---
   const op = o.properties ?? {}
   const np = n.properties ?? {}
-  for (const k of Object.keys(np).filter((x) => !(x in op)).sort()) {
+  // ⚠️ `x in op` は継承も真になる。`toString` を足しても「前から在った」に見えた
+  for (const k of Object.keys(np).filter((x) => !hasOwn(op, x)).sort()) {
     const p = `${ptr}/properties/${tok(k)}`
     if (oap === false) d.add(WIDEN, `${path}.${k}`, p, '項目の追加: 旧は additionalProperties:false なのでこの key は禁止だった')
     else if (oap === true) d.add(NARROW, `${path}.${k}`, p, '項目の追加: 旧は無制約だったが新は型が付いた')
@@ -315,14 +375,14 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
      */
     else d.add(UNDEC, `${path}.${k}`, p, '項目の追加: 旧は additionalProperties の schema の制約下にあった (広狭を機械判定しない)')
   }
-  for (const k of Object.keys(op).filter((x) => !(x in np)).sort()) {
+  for (const k of Object.keys(op).filter((x) => !hasOwn(np, x)).sort()) {
     const p = `${ptr}/properties/${tok(k)}`
     if (nap === false) d.add(NARROW, `${path}.${k}`, p, '項目の削除: 新は additionalProperties:false なのでこの key は禁止になる')
     else if (nap === true) d.add(WIDEN, `${path}.${k}`, p, '項目の削除: 新では無制約になる')
     else d.add(UNDEC, `${path}.${k}`, p, '項目の削除: 新では additionalProperties の schema の制約下に入る (広狭を機械判定しない)')
   }
-  for (const k of Object.keys(op).filter((x) => x in np).sort()) {
-    compare(op[k], np[k], oroot, nroot, `${path}.${k}`, `${ptr}/properties/${tok(k)}`, d, seen)
+  for (const k of Object.keys(op).filter((x) => hasOwn(np, x)).sort()) {
+    compare(own(op, k), own(np, k), oroot, nroot, `${path}.${k}`, `${ptr}/properties/${tok(k)}`, d, seen)
   }
 
   /**
@@ -505,7 +565,8 @@ function compare(o, n, oroot, nroot, path, ptr, d, seen) {
 /** 2 つの schema オブジェクトを比べる */
 export function diffSchemaObjects(oldSchema, newSchema) {
   const d = new Diff()
-  compare(oldSchema, newSchema, oldSchema, newSchema, '$', '', d, new Set())
+  /** `seen` は「旧の節 → 既に比べた新の節の集合」（pointer 文字列ではない。上の compare を参照） */
+  compare(oldSchema, newSchema, oldSchema, newSchema, '$', '', d, new Map())
   return { verdict: d.verdict, facts: d.facts }
 }
 
@@ -529,7 +590,7 @@ export function resolvePointer(root, pointer) {
     const part = raw.replace(/~1/g, '/').replace(/~0/g, '~')
     cur = deref(cur, root)
     if (cur === null || typeof cur !== 'object' || '__unresolvable__' in cur) return undefined
-    cur = Array.isArray(cur) ? cur[Number(part)] : cur[part]
+    cur = Array.isArray(cur) ? cur[Number(part)] : own(cur, part)
     if (cur === undefined) return undefined
   }
   return deref(cur, root)

@@ -887,6 +887,96 @@ E1・E2・E5 は、消しても 93 件すべて通りました。理由も測っ
 `$ref` 連鎖の最長 1 段）。実 schema **197 対**（現行 26 schema × 直近 8 tag）で
 **判定は 1 件も変わっていません。**
 
+## v0.6.23（2026-08-16 記載・**同日直しました**・外部監査）
+
+### 31. **JSON の項目名と JavaScript の継承を分けていませんでした**
+
+| | |
+|---|---|
+| 対象 | `scripts/schemaLanguageDiff.mjs`（**配布物ではありません**。版を上げるかを決める判定器） |
+| 症状 | `toString` のような項目を足しても「前から在った」と見なし、`HOLD` を返す |
+| 影響 | **言語が広がっているのに「据え置き可」と答える。**§25・§26・§30 と同じ危険側 |
+| 見つけた人 | **外部監査** |
+| 直した版 | 2026-08-16（`v0.6.23` 公開後・次の版に入ります） |
+
+`{}` は `toString` も `constructor` も**継承しています**。だから:
+
+```
+'toString' in {}          → true    （own property は無いのに）
+({})['toString']          → 関数     （undefined ではない）
+out['__proto__'] = x      → own property にならない（prototype が差し替わる）
+```
+
+`properties` の key は**受け手が決める名前**なので `toString` も来ます。
+判定器はそこを分けずに集合差を取っていたので、**項目の追加が見えませんでした。**
+
+```
+旧  { type:'object', additionalProperties:false, properties:{} }
+新  { …, properties:{ toString:{ type:'string' } } }
+
+ajv  {"toString":"x"} が旧 invalid → 新 valid  ＝ **広がっている**
+判定 HOLD / exit 0                            ← 危険側
+```
+
+**直す前に「own と継承を分けていない箇所」を数えました。5 か所ありました。**
+
+```
+A1 properties の集合差 3 か所   Object.keys(np).filter((x) => !(x in op)) …
+A2 expandRefs の accumulator が {}（__proto__ が own にならない）
+A3 op[k] / np[k] で引く
+A4 deref の traversal
+A5 resolvePointer の traversal
+```
+
+`hasOwn` / `own` / `bag`（＝`Object.create(null)`）を 1 か所に置き、全部そこへ通しました。
+
+⚠️ **`__proto__` だけは ajv でも真値を出せません。**ajv 自身が
+`{"__proto__":"x"}` を own property として扱えず、**新旧どちらも拒否**します。
+対照として `toString` / `constructor` / `hasOwnProperty` / `valueOf` は正しく通すので、
+**正解器が同じ盲点を持っている**と分かります。判定器の側だけを固定しました（条文 ①-c13 ⑦）。
+
+**変異対照で 5 か所のうち 3 か所が「外しても落ちない行」でした**（A1c・A3・A5）。
+実害を先に測ってから試験を足しています。
+
+- **A1c**（共通集合）は**精度**でした。戻すと同じ項目が 2 回数えられ、
+  正しくは `HOLD_RECORD` の削除が **誤って `BUMP`** になります。
+- **A5**（`resolvePointer`）は判定を変えません。ただし `contractMigration` の
+  「その pointer は旧に在ったか」が**継承した関数を拾って `true`** になります。
+- **A3** は**どの形でも判定が変わりません。**`k` は `Object.keys(op)` から来るので
+  定義上いつも own で、`op[k]` と一致します。**falsify できない防御の行**として残しました
+  ——A1c が将来戻ったときに効きます。消しても落ちないことを承知のうえです。
+
+### 32. **正当な再帰 schema を比べると、判定を返せませんでした**
+
+| | |
+|---|---|
+| 対象 | 同上 |
+| 症状 | `node.next` が `node` を指す形（linked list）で `RangeError: Maximum call stack size exceeded` |
+| 影響 | **危険側の `HOLD` ではなく、答えを返せない**——版を決める門が使えなくなる |
+| 見つけた人 | 外部監査 |
+| 直した版 | 2026-08-16 |
+
+再帰の打ち切りが **pointer 文字列**でした。`ptr` は
+`/properties/next/properties/next/…` と**伸び続ける**ので、
+同じ節へ戻っても**一度も重複しません**（実測: 8 段たどって重複 0 件）。
+
+**⚠️ 最初の直し方が間違っていました。**「一度でも見た節の組」を覚える形にしたところ、
+`contractMigration` の記録 1 件が実物と合わなくなりました
+（`/properties/nominalConfiguration/properties/windows/items` の差分が出なくなる）。
+**別の経路から来た同じ節の差分まで消していた**からです。
+
+循環かどうかは「**いま辿っている経路上にあるか**」で決まります。
+`seen` を**スタックとして使う**形へ直しました——降りるときに入れ、戻るときに外す。
+変異対照は 2 通り取っています（鍵を pointer へ戻す／戻るときに外さない）。どちらも落ちます。
+
+**試験の側も直しました。**v0.6.23 の生成器は
+`properties` の key に prototype 名を **0 件**、再帰する `$ref` を **0 件**しか作っていません。
+補強後は 9 件 / 42 件です。
+
+**現行 schema への影響はありません。**prototype 名の property も循環参照も
+現行 26 schema に 1 件もなく、実 schema **200 対**（現行 26 schema × 直近 8 tag）で
+**判定は 1 件も変わっていません。**
+
 ## この正誤表の運用
 
 - **公開済みの release 本文と asset は、いかなる理由でも書き換えない。**

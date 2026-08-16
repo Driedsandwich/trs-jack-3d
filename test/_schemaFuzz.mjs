@@ -46,6 +46,14 @@ const chance = (r, p) => r() < p
 const WORDS = ['a', 'b', 'c', 'input', 'scope', 'role', 'x1']
 
 /**
+ * **JavaScript の prototype に在る名前。**schema の `properties` の key に来うるが、
+ * `'toString' in {}` は `true`・`({})['toString']` は関数を返すので、
+ * own property と区別しない実装は**「前から在った」と誤読する**（v0.6.24・外部監査 P0）。
+ */
+const PROTO_WORDS = ['toString', 'constructor', 'hasOwnProperty', 'valueOf', '__proto__',
+  'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString']
+
+/**
  * 小さな schema を作る。
  *
  * **深いネストと `$ref` の連鎖も作る**——現行 schema に無い形を作れない生成器は、
@@ -125,8 +133,20 @@ export function genSchema(r, depth = 0, refs = { defs: {}, n: 0 }) {
       return { oneOf: [genSchema(r, depth + 2, refs), genSchema(r, depth + 2, refs)] }
     case 'object':
     default: {
-      const keys = [...new Set([pick(r, WORDS), pick(r, WORDS)])]
-      const props = {}
+      /**
+       * ⚠️ **prototype に在る名前も property 名として作る（v0.6.24・外部監査 P0）。**
+       *
+       * `properties` の key は**受け手が決める名前**なので `toString` も来うる。
+       * v0.6.23 の生成器は普通の語しか使わなかったので、
+       * **`'toString' in {}` が true になる形を一度も作っていなかった**（実測 300 種で 0 件）。
+       */
+      const keys = [...new Set([pick(r, WORDS), chance(r, 0.18) ? pick(r, PROTO_WORDS) : pick(r, WORDS)])]
+      /**
+       * ⚠️ **`{}` ではなく `Object.create(null)`。**
+       * `props['__proto__'] = …` は素の `{}` だと own property にならず、
+       * **生成器自身がその項目を落としてしまう。**
+       */
+      const props = Object.create(null)
       for (const k of keys) props[k] = depth < 3 ? genSchema(r, depth + 1, refs) : { type: 'string' }
       const s = { type: 'object', properties: props }
       if (chance(r, 0.5)) s.required = keys.slice(0, 1)
@@ -142,6 +162,25 @@ export function genRoot(r) {
   const body = genSchema(r, 1, refs)
   const out = { $schema: 'http://json-schema.org/draft-07/schema#', ...body }
   if (Object.keys(refs.defs).length) out.definitions = refs.defs
+  /**
+   * ⚠️ **再帰する `$ref` も作る（v0.6.24・外部監査 P1）。**
+   *
+   * linked list のような**正当な再帰 schema**（`node.next` が `node` を指す）を
+   * v0.6.23 の生成器は一度も作らなかった（実測 300 種で 0 件）。
+   * 判定器はそれを比べると **stack overflow で判定を返せなかった**——
+   * 危険側の `HOLD` ではなく、**門が使えなくなる**形の欠陥である。
+   */
+  if (chance(r, 0.15)) {
+    const t = pick(r, ['string', 'number', 'boolean'])
+    out.definitions = {
+      ...(out.definitions ?? {}),
+      recNode: {
+        type: 'object',
+        properties: { value: { type: t }, next: { $ref: '#/definitions/recNode' } },
+      },
+    }
+    if (!('$ref' in out)) out.properties = { ...(out.properties ?? {}), rec: { $ref: '#/definitions/recNode' } }
+  }
   return out
 }
 

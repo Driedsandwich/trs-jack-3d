@@ -100,7 +100,8 @@
     <li><a href="#s8">判定器（2026-08-15 記載・同日直しました）</a></li>
     <li><a href="#s9">v0.6.21（2026-08-15 記載・同日直しました・外部監査）</a></li>
     <li><a href="#s10">v0.6.22（2026-08-16 記載・同日直しました・外部監査）</a></li>
-    <li><a href="#s11">この正誤表の運用</a></li>
+    <li><a href="#s11">v0.6.23（2026-08-16 記載・同日直しました・外部監査）</a></li>
+    <li><a href="#s12">この正誤表の運用</a></li>
   </ol>
 </nav>
 <h1>正誤表</h1>
@@ -423,7 +424,37 @@ boolean_ref      旧invalid→新valid: [null,"x","a",true,false,[],[null],["a"]
 <p>足したあと、<strong>7 か所すべてが変異で落ちます</strong>（99 件）。</p>
 <p><strong>試験の側も直しました。</strong>v0.6.22 の生成器はこの 4 形を一度も作っていません （実測 300 種で tuple 0 件・<code>$ref</code>→boolean 0 件・<code>~0~1</code> 0 件・要素が null の配列 0 件）。 補強後は 12 / 9 / 20 / 43 件になり、<strong>v0.6.22 の判定器へ当てると自力で反例を出します</strong> （seed 299・tuple 形式の 2 番目の枝が <code>$ref</code>・証人 <code>[0,null]</code>・手書き fixture 抜き）。</p>
 <p><strong>現行 schema への影響はありません。</strong>この 4 形は現行 26 schema に 1 件もありません （tuple items 0 / <code>$ref</code>→boolean 0 / <code>~0~1</code> を含む <code>$ref</code> 0 / 循環 0 / <code>$ref</code> 連鎖の最長 1 段）。実 schema <strong>197 対</strong>（現行 26 schema × 直近 8 tag）で <strong>判定は 1 件も変わっていません。</strong></p>
-<h2 id="s11">この正誤表の運用</h2>
+<h2 id="s11">v0.6.23（2026-08-16 記載・<strong>同日直しました</strong>・外部監査）</h2>
+<h3>31. <strong>JSON の項目名と JavaScript の継承を分けていませんでした</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><code>scripts/schemaLanguageDiff.mjs</code>（<strong>配布物ではありません</strong>。版を上げるかを決める判定器）</td></tr><tr><td>症状</td><td><code>toString</code> のような項目を足しても「前から在った」と見なし、<code>HOLD</code> を返す</td></tr><tr><td>影響</td><td><strong>言語が広がっているのに「据え置き可」と答える。</strong>§25・§26・§30 と同じ危険側</td></tr><tr><td>見つけた人</td><td><strong>外部監査</strong></td></tr><tr><td>直した版</td><td>2026-08-16（<code>v0.6.23</code> 公開後・次の版に入ります）</td></tr></tbody></table></div>
+<p><code>{}</code> は <code>toString</code> も <code>constructor</code> も<strong>継承しています</strong>。だから:</p>
+<pre><code>'toString' in {}          → true    （own property は無いのに）
+({})['toString']          → 関数     （undefined ではない）
+out['__proto__'] = x      → own property にならない（prototype が差し替わる）</code></pre>
+<p><code>properties</code> の key は<strong>受け手が決める名前</strong>なので <code>toString</code> も来ます。 判定器はそこを分けずに集合差を取っていたので、<strong>項目の追加が見えませんでした。</strong></p>
+<pre><code>旧  { type:'object', additionalProperties:false, properties:{} }
+新  { …, properties:{ toString:{ type:'string' } } }
+
+ajv  {"toString":"x"} が旧 invalid → 新 valid  ＝ **広がっている**
+判定 HOLD / exit 0                            ← 危険側</code></pre>
+<p><strong>直す前に「own と継承を分けていない箇所」を数えました。5 か所ありました。</strong></p>
+<pre><code>A1 properties の集合差 3 か所   Object.keys(np).filter((x) =&gt; !(x in op)) …
+A2 expandRefs の accumulator が {}（__proto__ が own にならない）
+A3 op[k] / np[k] で引く
+A4 deref の traversal
+A5 resolvePointer の traversal</code></pre>
+<p><code>hasOwn</code> / <code>own</code> / <code>bag</code>（＝<code>Object.create(null)</code>）を 1 か所に置き、全部そこへ通しました。</p>
+<p>⚠️ <strong><code>__proto__</code> だけは ajv でも真値を出せません。</strong>ajv 自身が <code>{"__proto__":"x"}</code> を own property として扱えず、<strong>新旧どちらも拒否</strong>します。 対照として <code>toString</code> / <code>constructor</code> / <code>hasOwnProperty</code> / <code>valueOf</code> は正しく通すので、 <strong>正解器が同じ盲点を持っている</strong>と分かります。判定器の側だけを固定しました（条文 ①-c13 ⑦）。</p>
+<p><strong>変異対照で 5 か所のうち 3 か所が「外しても落ちない行」でした</strong>（A1c・A3・A5）。 実害を先に測ってから試験を足しています。</p>
+<ul><li><strong>A1c</strong>（共通集合）は<strong>精度</strong>でした。戻すと同じ項目が 2 回数えられ、 正しくは <code>HOLD_RECORD</code> の削除が <strong>誤って <code>BUMP</code></strong> になります。</li><li><strong>A5</strong>（<code>resolvePointer</code>）は判定を変えません。ただし <code>contractMigration</code> の 「その pointer は旧に在ったか」が<strong>継承した関数を拾って <code>true</code></strong> になります。</li><li><strong>A3</strong> は<strong>どの形でも判定が変わりません。</strong><code>k</code> は <code>Object.keys(op)</code> から来るので 定義上いつも own で、<code>op[k]</code> と一致します。<strong>falsify できない防御の行</strong>として残しました ——A1c が将来戻ったときに効きます。消しても落ちないことを承知のうえです。</li></ul>
+<h3>32. <strong>正当な再帰 schema を比べると、判定を返せませんでした</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td>同上</td></tr><tr><td>症状</td><td><code>node.next</code> が <code>node</code> を指す形（linked list）で <code>RangeError: Maximum call stack size exceeded</code></td></tr><tr><td>影響</td><td><strong>危険側の <code>HOLD</code> ではなく、答えを返せない</strong>——版を決める門が使えなくなる</td></tr><tr><td>見つけた人</td><td>外部監査</td></tr><tr><td>直した版</td><td>2026-08-16</td></tr></tbody></table></div>
+<p>再帰の打ち切りが <strong>pointer 文字列</strong>でした。<code>ptr</code> は <code>/properties/next/properties/next/…</code> と<strong>伸び続ける</strong>ので、 同じ節へ戻っても<strong>一度も重複しません</strong>（実測: 8 段たどって重複 0 件）。</p>
+<p><strong>⚠️ 最初の直し方が間違っていました。</strong>「一度でも見た節の組」を覚える形にしたところ、 <code>contractMigration</code> の記録 1 件が実物と合わなくなりました （<code>/properties/nominalConfiguration/properties/windows/items</code> の差分が出なくなる）。 <strong>別の経路から来た同じ節の差分まで消していた</strong>からです。</p>
+<p>循環かどうかは「<strong>いま辿っている経路上にあるか</strong>」で決まります。 <code>seen</code> を<strong>スタックとして使う</strong>形へ直しました——降りるときに入れ、戻るときに外す。 変異対照は 2 通り取っています（鍵を pointer へ戻す／戻るときに外さない）。どちらも落ちます。</p>
+<p><strong>試験の側も直しました。</strong>v0.6.23 の生成器は <code>properties</code> の key に prototype 名を <strong>0 件</strong>、再帰する <code>$ref</code> を <strong>0 件</strong>しか作っていません。 補強後は 9 件 / 42 件です。</p>
+<p><strong>現行 schema への影響はありません。</strong>prototype 名の property も循環参照も 現行 26 schema に 1 件もなく、実 schema <strong>200 対</strong>（現行 26 schema × 直近 8 tag）で <strong>判定は 1 件も変わっていません。</strong></p>
+<h2 id="s12">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
 </div>
 </body>

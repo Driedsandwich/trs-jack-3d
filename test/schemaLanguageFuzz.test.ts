@@ -247,6 +247,51 @@ describe('property-based: 監査が見つけた形を、この試験が自力で
     expect(n, '[null] の形の候補を作れていない').toBeGreaterThanOrEqual(10)
   })
 
+  /**
+   * ⚠️ **v0.6.24（外部監査）。今回見逃した 2 形も、数で固定する。**
+   *
+   * ```text
+   *                                v0.6.23   v0.6.24
+   * properties の key が prototype 名   0 件       9 件
+   * 再帰する $ref                      0 件      42 件
+   * ```
+   *
+   * **再帰のほうは危険側の HOLD ではなく、判定を返せない（stack overflow）形だった。**
+   * v0.6.23 の判定器へ当てると、母集団を作る段階で落ちて**試験が 1 件も走らない**。
+   */
+  it('⑬ 生成器が **prototype 名の property** と **再帰する $ref** を作る（v0.6.23 は両方 0 件）', () => {
+    const PROTO = new Set(['toString', 'constructor', 'hasOwnProperty', 'valueOf', '__proto__',
+      'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString'])
+    const hasOwn = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, k)
+    let protoKey = 0; let recursive = 0
+    for (const p of PAIRS) {
+      const walk = (n: unknown) => {
+        if (!n || typeof n !== 'object') return
+        if (Array.isArray(n)) return n.forEach(walk)
+        const o = n as Record<string, unknown>
+        if (o.properties && typeof o.properties === 'object') {
+          for (const k of Object.keys(o.properties)) if (PROTO.has(k)) protoKey++
+        }
+        Object.values(o).forEach(walk)
+      }
+      walk(p.old)
+      const defs = (p.old as { definitions?: object }).definitions
+      if (defs && hasOwn(defs, 'recNode')) recursive++
+    }
+    expect(protoKey, 'prototype 名の property を作れていない').toBeGreaterThanOrEqual(3)
+    expect(recursive, '再帰する $ref を作れていない').toBeGreaterThanOrEqual(10)
+  })
+
+  it('⑭ **再帰 schema で判定器が落ちない**（母集団を作る段階で止まらない）', () => {
+    const S = 'http://json-schema.org/draft-07/schema#'
+    const mk = (t: unknown) => ({
+      $schema: S,
+      definitions: { n: { type: 'object', properties: { v: { type: t }, next: { $ref: '#/definitions/n' } } } },
+      $ref: '#/definitions/n',
+    })
+    expect(() => diffSchemaObjects(mk('string'), mk(['string', 'null'])), '再帰で落ちている').not.toThrow()
+  })
+
   it('⑫ **監査の反例 4 件で、証人探しが証人を出す**（判定器でなく探索側の対照）', () => {
     const S = 'http://json-schema.org/draft-07/schema#'
     const cases: [string, object, object, unknown][] = [

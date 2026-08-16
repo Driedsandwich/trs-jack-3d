@@ -24,7 +24,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import Ajv from 'ajv'
 import { afterAll, describe, expect, it } from 'vitest'
-import { HANDLED_KEYWORDS, diffSchemaFiles, diffSchemaObjects } from '../scripts/schemaLanguageDiff.mjs'
+import { HANDLED_KEYWORDS, diffSchemaFiles, diffSchemaObjects, resolvePointer } from '../scripts/schemaLanguageDiff.mjs'
 import { CLI_RESULT_SCHEMA_PATH } from '../scripts/verifyReleaseSourceInputs.mjs'
 import { mustBeNonEmpty } from './_must'
 
@@ -845,6 +845,193 @@ describe('条文 ①-c10 参照先が boolean schema（外部監査 P0）', () =
 
   it('③ 対照: 参照先が変わらなければ HOLD のまま', () => {
     expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+})
+
+/**
+ * ⚠️ **条文 ①-c13・①-c14（v0.6.24・外部監査）。根が 2 つ。**
+ *
+ * **根A: JSON の own property と JavaScript の prototype 継承を分けていない。**
+ * `{}` は `toString` も `constructor` も**継承している**ので、
+ * `'toString' in {}` は `true`、`({})['toString']` は関数を返す。
+ * 判定器はその区別をせずに `properties` の集合差を取っていた。
+ *
+ * ```text
+ * A1 properties の集合差 3 か所   Object.keys(np).filter((x) => !(x in op)) …
+ * A2 {} を accumulator にして代入  out[k] = …（k が __proto__ だと own にならない）
+ * A3 op[k] / np[k] で引く
+ * A4 deref の cur[untok(part)]
+ * A5 resolvePointer の cur[part]
+ * ```
+ *
+ * **根B: 再帰の打ち切りが pointer 文字列で、伸び続ける。**
+ * `seen.has(ptr)` の `ptr` は `/properties/next/properties/next/…` と伸びるので
+ * **同じ節へ戻っても一度も重複しない**（実測: 8 段たどって重複 0 件）。
+ * 正当な再帰 schema を比べると stack overflow で**判定を返せません**。
+ *
+ * > **根B は fail-open ではありません。**危険側の `HOLD` を返すのではなく、
+ * > **答えを返せない**（門が使えなくなる）形です。
+ */
+describe('条文 ①-c13 prototype に在る名前の property（外部監査 P0）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const OLD = { $schema: S, type: 'object', additionalProperties: false, properties: {} }
+  const NEW = { $schema: S, type: 'object', additionalProperties: false, properties: { toString: { type: 'string' } } }
+
+  it('① ajv: {"toString":"x"} が旧 invalid → 新 valid', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(structuredClone(s))
+    const w = JSON.parse('{"toString":"x"}')
+    expect(compile(OLD)(structuredClone(w)), '旧で通ってしまう').toBe(false)
+    expect(compile(NEW)(structuredClone(w)), '新で通らない').toBe(true)
+  })
+
+  it('② 判定器は BUMP を返す', () => {
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ 対照: 普通の名前なら前から正しかった', () => {
+    const o = { $schema: S, type: 'object', additionalProperties: false, properties: {} }
+    const n = { $schema: S, type: 'object', additionalProperties: false, properties: { zz: { type: 'string' } } }
+    expect(diffSchemaObjects(o, n).verdict).toBe('BUMP')
+  })
+
+  it('④ **prototype に在る名前を一通り**（1 つでも漏れたら落ちる）', () => {
+    const NAMES = ['toString', 'constructor', 'hasOwnProperty', 'valueOf', 'isPrototypeOf',
+      'propertyIsEnumerable', 'toLocaleString', '__defineGetter__', '__lookupSetter__', '__proto__']
+    const bad: string[] = []
+    for (const k of NAMES) {
+      const o = { $schema: S, type: 'object', additionalProperties: false, properties: {} }
+      const n = JSON.parse(`{"$schema":"${S}","type":"object","additionalProperties":false,"properties":{"${k}":{"type":"string"}}}`)
+      if (diffSchemaObjects(o, n).verdict !== 'BUMP') bad.push(k)
+    }
+    expect(bad, '**項目の追加が見えていない**（旧は additionalProperties:false なので禁止だった）').toEqual([])
+  })
+
+  it('⑤ 削除の向きも見る（項目を消すと新では無制約になる）', () => {
+    const o = JSON.parse(`{"$schema":"${S}","type":"object","properties":{"toString":{"type":"string"}}}`)
+    const n = { $schema: S, type: 'object', properties: {} }
+    expect(diffSchemaObjects(o, n).verdict).toBe('BUMP')
+  })
+
+  it('⑥ 対照: 同じ schema 同士なら HOLD（何にでも鳴らない）', () => {
+    expect(diffSchemaObjects(NEW, structuredClone(NEW)).verdict).toBe('HOLD')
+  })
+
+  /**
+   * ⚠️ **`__proto__` だけは ajv でも真値を出せません。**
+   * ajv 自身が `{"__proto__":"x"}` を own property として扱えず、
+   * **新旧どちらも拒否**します（実測。対照として `toString` / `constructor` /
+   * `hasOwnProperty` / `valueOf` は正しく通します）。
+   * だからここでは**判定器の側だけ**を固定します。
+   */
+  it('⑦ `__proto__` は判定器の側だけ固定する（ajv が正解器にならない）', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(structuredClone(s))
+    const shape = (t: string) => JSON.parse(
+      `{"$schema":"${S}","type":"object","additionalProperties":false,"properties":{"__proto__":{"type":${t}}}}`)
+    const o = shape('"string"'); const n = shape('["string","null"]')
+    const w = JSON.parse('{"__proto__":"x"}')
+    expect(compile(o)(structuredClone(w)), 'ajv が __proto__ を通すようになった（前提が変わった）').toBe(false)
+    expect(compile(n)(structuredClone(w)), '同上').toBe(false)
+    expect(diffSchemaObjects(o, n).verdict, '参照先の型が広がっているのに見えていない').toBe('BUMP')
+  })
+})
+
+/**
+ * ⚠️ **条文 ①-c13b。根A の残り 4 か所（v0.6.24）。**
+ *
+ * ①-c13 は `properties` の集合差（A1）を固定する。根A はそこだけではない。
+ * **直した箇所を 1 つずつ戻して、どれがどの形を崩すかを実測してから**書いた。
+ *
+ * ```text
+ * A2 expandRefs の accumulator が {}     戻すと「oneOf の枝の __proto__」が HOLD  ← 安全
+ * A4 deref の traversal が cur[part]     戻すと「$ref → 実在しない toString」が HOLD  ← 安全
+ * A1c properties の共通集合が x in np    戻すと同じ項目を 2 回数え、HOLD_RECORD が BUMP に  ← 精度
+ * A5 resolvePointer の cur[part]         判定は変わらない。contractMigration の
+ *                                        「旧に在ったか」が関数を拾って true になる  ← 正しさ
+ * ```
+ *
+ * ⚠️ **A3（`compare(own(op, k), own(np, k), …)`）だけは、どの形でも判定が変わりません。**
+ * `k` は `Object.keys(op)` から来るので**定義上いつも own** で、`op[k]` と一致します。
+ * **いまは falsify できない防御の行**として残しています——A1c が将来戻ったときに効きます。
+ * 消しても落ちないことを承知のうえで置いており、この一文がその申告です。
+ */
+describe('条文 ①-c13b prototype 名を分ける（残り 4 か所を 1 つずつ）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+
+  it('A2 **oneOf の枝の `__proto__` property**（accumulator が {} だと写しから消える）', () => {
+    const mk = (t: string) => JSON.parse(
+      `{"$schema":"${S}","oneOf":[{"type":"object","additionalProperties":false,`
+      + `"properties":{"__proto__":{"$ref":"#/definitions/d0"}}},{"type":"number"}],`
+      + `"definitions":{"d0":{"type":${t}}}}`)
+    expect(diffSchemaObjects(mk('"string"'), mk('["string","null"]')).verdict).toBe('BUMP')
+  })
+
+  it('A4 **`$ref` が実在しない `#/definitions/toString` を指す**（継承した関数へ解決しない）', () => {
+    const mk = (t: string) => JSON.parse(
+      `{"$schema":"${S}","oneOf":[{"$ref":"#/definitions/toString"},{"type":"number"}],`
+      + `"definitions":{"other":{"type":${t}}}}`)
+    expect(diffSchemaObjects(mk('"string"'), mk('["string","null"]')).verdict).toBe('BUMP')
+  })
+
+  it('A1c **同じ項目を 2 回数えない**（精度。誤って BUMP にしない）', () => {
+    const o = JSON.parse(`{"$schema":"${S}","type":"object","additionalProperties":false,"properties":{"toString":{"type":"string"}}}`)
+    const n = JSON.parse(`{"$schema":"${S}","type":"object","additionalProperties":false,"properties":{}}`)
+    const r = diffSchemaObjects(o, n)
+    expect(r.facts.length, '同じ項目が 2 回数えられている').toBe(1)
+    expect(r.verdict, '削除は狭まる方向なので HOLD_RECORD が正しい').toBe('HOLD_RECORD')
+  })
+
+  it('A5 **`resolvePointer` は継承を拾わない**（`contractMigration` の「旧に在ったか」が狂う）', () => {
+    const root = JSON.parse(`{"$schema":"${S}","type":"object","properties":{"zz":{"type":"string"}}}`)
+    expect(resolvePointer(root, '/properties/toString'), '継承した関数を「在る」と答えている').toBeUndefined()
+    expect(resolvePointer(root, '/properties/constructor')).toBeUndefined()
+    /** 陽性対照: 実在する pointer は引ける（何にでも undefined を返していない） */
+    expect(resolvePointer(root, '/properties/zz')).toEqual({ type: 'string' })
+  })
+})
+
+describe('条文 ①-c14 再帰する $ref を比べると判定を返せない（外部監査 P1）', () => {
+  const S = 'http://json-schema.org/draft-07/schema#'
+  const mk = (valueType: unknown) => ({
+    $schema: S,
+    definitions: {
+      node: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['value'],
+        properties: { value: { type: valueType }, next: { $ref: '#/definitions/node' } },
+      },
+    },
+    $ref: '#/definitions/node',
+  })
+  const OLD = mk('string'); const NEW = mk(['string', 'null'])
+
+  it('① ajv: {"value":null} が旧 invalid → 新 valid', () => {
+    const compile = (s: object) => new Ajv({ allErrors: true, strict: false }).compile(structuredClone(s))
+    expect(compile(OLD)({ value: null }), '旧で通ってしまう').toBe(false)
+    expect(compile(NEW)({ value: null }), '新で通らない').toBe(true)
+  })
+
+  it('② **判定を返す**（stack overflow で落ちない）', () => {
+    expect(() => diffSchemaObjects(OLD, NEW), '再帰で落ちている').not.toThrow()
+    expect(diffSchemaObjects(OLD, NEW).verdict).toBe('BUMP')
+  })
+
+  it('③ **対照: 同じ再帰 schema 同士は HOLD**（落ちも誤検出もしない）', () => {
+    expect(() => diffSchemaObjects(OLD, structuredClone(OLD))).not.toThrow()
+    expect(diffSchemaObjects(OLD, structuredClone(OLD)).verdict).toBe('HOLD')
+  })
+
+  it('④ 相互再帰（a → b → a）でも落ちない', () => {
+    const m = (t: unknown) => ({
+      $schema: S,
+      definitions: {
+        a: { type: 'object', properties: { x: { type: t }, toB: { $ref: '#/definitions/b' } } },
+        b: { type: 'object', properties: { toA: { $ref: '#/definitions/a' } } },
+      },
+      $ref: '#/definitions/a',
+    })
+    expect(() => diffSchemaObjects(m('string'), m(['string', 'null']))).not.toThrow()
+    expect(diffSchemaObjects(m('string'), m(['string', 'null'])).verdict).toBe('BUMP')
   })
 })
 
