@@ -3,7 +3,7 @@
  "schemaId": "trs-jack-3d-source-snapshot.v1",
  "generatedBy": "npm run release:snapshot",
  "generatedAt": "2026-08-16",
- "generatedFromCommit": "04010032d0764f3ce10bd5b480b02a81259f02f8",
+ "generatedFromCommit": "d37daf10169bf1f3180d58c831e7d7a7f2c618ac",
  "isSelfConsistencyOnly": true,
  "producerClaimOnly": "**これは producer の申告である。**こちらが渡したファイルを、こちらが記録した hash と照合するだけなので、producer が写しと manifest を同時に偽れば一致する。受け手の独立検証を置き換えない。",
  "replacesRecipientVerification": false,
