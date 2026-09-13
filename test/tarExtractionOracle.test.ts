@@ -283,7 +283,44 @@ function oracleDisagreement(buf: Buffer, bsd: { entries: Extracted[] }): string[
     const diff = a.split('\n').filter((l) => !b.split('\n').includes(l)).slice(0, 2).join(' / ')
     return [`必須 oracle が違う木を作る（型・指す先・中身まで比較）: bsdtar だけにある ${diff.slice(0, 90)}`]
   }
-  return []
+  return busyboxDisagreement(buf, a)
+}
+
+/**
+ * **3 つ目の oracle（BusyBox）。必須ではないが、黙って飛ばさない（2026-09-14）。**
+ *
+ * 外部監査は GNU tar 1.35 と **BusyBox 1.37** の実測で反例を返してきたが、
+ * こちらは BusyBox を一度も走らせたことがない（`EVIDENCE_ELSEWHERE` の注記がそれである）。
+ * **手元で走らない実装を根拠に引くのは、実測ではなく引用**なので、走る場所を作る。
+ *
+ * python3 と扱いを分ける。
+ *
+ * ```
+ * tar / python3   **必須**。無ければ「確かめていない」＝不合格に倒す
+ * busybox         **任意**。無ければスキップし、**スキップしたことを数えて出す**
+ * ```
+ *
+ * 必須にしないのは、受け手の環境に BusyBox を要求する筋合いが無いからである。
+ * ただし**在るなら、割れたら止める**——「表示するだけ」にすると門にならない。
+ */
+function busyboxDisagreement(buf: Buffer, tarDigest: string): string[] {
+  if (!BUSYBOX.available) {
+    busyboxSkipped++
+    return []
+  }
+  const bb = extractWithBusyBoxTree(buf)
+  if (bb.failed) return [`tar と python は展開できたのに BusyBox は展開できない（${bb.stderr.slice(0, 70)}）`]
+  const c = treeDigest(bb.entries)
+  if (c === tarDigest) return []
+  /**
+   * **両方向の差を出す。**片側だけ（「tar にあって BusyBox に無い」）にすると、
+   * **BusyBox が余分に作った物が空文字で報告される**（2026-09-14・偽の shim で実測）。
+   */
+  const ls = (s: string) => s.split('\n').filter(Boolean)
+  const onlyTar = ls(tarDigest).filter((l) => !ls(c).includes(l)).map((l) => `tar のみ ${l}`)
+  const onlyBb = ls(c).filter((l) => !ls(tarDigest).includes(l)).map((l) => `BusyBox のみ ${l}`)
+  const diff = [...onlyTar, ...onlyBb].slice(0, 2).join(' / ')
+  return [`3 つ目の oracle（BusyBox）が違う木を作る: ${diff.slice(0, 120)}`]
 }
 
 /** python で展開して、**bsdtar と同じ物差し**（walkTree）で木にする */
@@ -323,6 +360,35 @@ for root, dirs, files in os.walk(dst):
         got.append(os.path.relpath(os.path.join(root, n), dst))
 print("OK " + json.dumps(sorted(set(got))))
 `
+
+/**
+ * **BusyBox が在るか。無ければ理由を持つ（2026-09-14）。**
+ *
+ * `busybox` は引数なしで版と一覧を出して **exit 1** で終わるので、
+ * 終了コードでは「無い」と「在る」を分けられない。**起動できたかどうかで見る。**
+ * 実測（2026-09-14・この開発機）: `busybox` は PATH に無く、`spawnSync` が ENOENT を返す。
+ */
+const BUSYBOX = (() => {
+  const r = spawnSync('busybox', [], { encoding: 'utf8' })
+  if (r.error) return { available: false, version: '', reason: (r.error as { code?: string }).code ?? 'ERR' }
+  const line = `${r.stdout ?? ''}\n${r.stderr ?? ''}`.split('\n').find((l) => /BusyBox/i.test(l)) ?? ''
+  return { available: true, version: line.trim().slice(0, 60), reason: '' }
+})()
+
+/** **スキップした回数。**0 件のまま「スキップした」と言えないようにする */
+let busyboxSkipped = 0
+
+/** BusyBox で展開して、**bsdtar と同じ物差し**（walkTree）で木にする */
+function extractWithBusyBoxTree(buf: Buffer): { entries: Extracted[], failed: boolean, stderr: string } {
+  const dir = mkdtempSync(join(tmpdir(), 'trs-oracle-bb-'))
+  tmps.push(dir)
+  const out = join(dir, 'out')
+  mkdirSync(out)
+  writeFileSync(join(dir, 'a.tar'), buf)
+  const r = spawnSync('busybox', ['tar', '-xf', join(dir, 'a.tar'), '-C', out], { encoding: 'utf8' })
+  const stderr = String(r.stderr ?? '').split('\n').filter(Boolean)[0] ?? ''
+  return { entries: walkTree(out), failed: r.status !== 0, stderr }
+}
 
 /**
  * **逆向きも見る（v0.6.4・外部監査 P0-B）。**
@@ -367,6 +433,19 @@ describe('tar 展開 oracle ① 検算した view と展開した view が食い
     const o = extractWithTar(tarOf(entry({ name: 'root/a.txt', data: 'A' })))
     expect(o.failed, 'tar コマンドが使えない').toBe(false)
     expect(o.entries.some((e) => e.path === 'root/a.txt' && e.bytes?.toString() === 'A'), '展開できていない').toBe(true)
+  })
+
+  /**
+   * **3 つ目の oracle の可用性を、毎 run 出す（2026-09-14）。**
+   * 無いまま静かに通ると、**「BusyBox でも確かめた」と誤読される。**
+   */
+  it('**BusyBox（3 つ目の oracle）が在るか無いかを出す**', () => {
+    console.log(`\nBusyBox oracle: ${BUSYBOX.available
+      ? `在る（${BUSYBOX.version}）→ 照合に混ぜる`
+      : `**無い（${BUSYBOX.reason}）→ この run では照合をスキップする**`}`)
+    // 「在るのに版が読めない」「無いのに理由が無い」のどちらも、この記録を無意味にする
+    expect(BUSYBOX.available ? BUSYBOX.version : BUSYBOX.reason, 'BusyBox の状態を言えていない').not.toBe('')
+    if (BUSYBOX.available) expect(BUSYBOX.version, '版が読めない').toMatch(/BusyBox/i)
   })
 
   /**
@@ -856,5 +935,25 @@ describe('tar 展開 oracle ④ 名前をバイト列で扱っている', () => 
     expect(decodePathBytes(a)).not.toBe(decodePathBytes(b))
     // 対照: 正しい UTF-8 はそのままの文字列になる
     expect(decodePathBytes(Buffer.from('日本語', 'utf8'))).toBe('日本語')
+  })
+})
+
+/**
+ * **BusyBox の照合経路を、実際に通していること（2026-09-14）。**
+ *
+ * 「任意の oracle」は、**足したつもりで一度も呼ばれない**形になりやすい。
+ * ここは `mismatchesOf` をこの試験の中から 1 回呼び、
+ * **在るなら混ざる／無いならスキップとして数える**ことを毎 run 確かめる。
+ */
+describe('tar 展開 oracle ⑤ BusyBox を照合に通している（無いならスキップと数える）', () => {
+  it('**在れば混ざり、無ければスキップが 1 件増える**', () => {
+    const before = busyboxSkipped
+    expect(mismatchesOf(tarOf(entry({ name: 'root/a.txt', data: 'A' }))), '正常な tar で食い違いが出ている').toEqual([])
+    if (BUSYBOX.available) {
+      expect(busyboxSkipped, 'BusyBox が在るのにスキップへ数えた').toBe(before)
+    } else {
+      expect(busyboxSkipped, '**スキップなのに数が増えない＝照合経路を通っていない**').toBe(before + 1)
+    }
+    console.log(`\nBusyBox 照合: ${BUSYBOX.available ? '実走' : 'スキップ'} / この run でスキップした材料 ${busyboxSkipped} 件`)
   })
 })

@@ -69,6 +69,24 @@ jobs:
 
       - run: npm ci
 
+      # **3 つ目の oracle（BusyBox）を入れる（2026-09-14）。**
+      #
+      # 外部監査は GNU tar 1.35 と **BusyBox 1.37** の実測で反例を返してきたが、
+      # 開発機には BusyBox が無く、**こちらは一度も走らせていない**
+      # （test/tarExtractionOracle.test.ts の EVIDENCE_ELSEWHERE の注記がそれである）。
+      # 走る場所は、いまのところ CI しか作れない。
+      #
+      # **必須にはしない。**入らなかったら試験側が照合をスキップし、
+      # 「スキップした」と出す（黙って緑にはならない）。だから導入の失敗で CI を止めない。
+      - name: BusyBox を入れる（3 つ目の oracle）
+        continue-on-error: true
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y busybox
+          else
+            brew install busybox
+          fi
+
       # **どの実装で測ったかを残す。**「oracle が動いた」と言うには版が要る。
       # 落ちてもここでは止めない——版が読めないこと自体は判定材料
       - name: oracle の実装と版を記録する
@@ -76,6 +94,7 @@ jobs:
           echo "runner: ${{ matrix.os }}"
           tar --version | head -2
           python3 --version
+          busybox | head -1 || echo "busybox: 無い（この run は BusyBox の照合をスキップする）"
 
       - name: 型検査
         run: npm run typecheck
