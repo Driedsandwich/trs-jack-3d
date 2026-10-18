@@ -208,7 +208,7 @@ const treeDigest = (es: Extracted[]) => es
  * 検算器の view と展開の view を比べ、食い違いの一覧を返す。
  * **止まったときは空**（食い違いは起こりえない）。
  */
-function mismatchesOf(buf: Buffer): string[] {
+function mismatchesOf(buf: Buffer, id?: string): string[] {
   const r = readArchiveBuffer(buf, { gzip: false })
   if (r.error) return []
   const o = extractWithTar(buf)
@@ -239,7 +239,7 @@ function mismatchesOf(buf: Buffer): string[] {
     else if (!file.bytes.equals(v)) bad.push(`${k}: 中身が違う（生バイトで比較）`)
   }
   bad.push(...omissionsOf(r, o, full))
-  bad.push(...oracleDisagreement(buf, o))
+  bad.push(...oracleDisagreement(buf, o, id))
   return bad
 }
 
@@ -259,7 +259,7 @@ function mismatchesOf(buf: Buffer): string[] {
  * **必須 oracle どうしが割れる archive は、受理してはいけない。**
  * どちらが正しいかを決める立場にないので、狭い部分集合だけを受ける。
  */
-function oracleDisagreement(buf: Buffer, bsd: { entries: Extracted[] }): string[] {
+function oracleDisagreement(buf: Buffer, bsd: { entries: Extracted[] }, id?: string): string[] {
   /**
    * **比べるのはパスの一覧ではなく、型つきの木（v0.6.8・外部監査 §6）。**
    *
@@ -283,7 +283,7 @@ function oracleDisagreement(buf: Buffer, bsd: { entries: Extracted[] }): string[
     const diff = a.split('\n').filter((l) => !b.split('\n').includes(l)).slice(0, 2).join(' / ')
     return [`必須 oracle が違う木を作る（型・指す先・中身まで比較）: bsdtar だけにある ${diff.slice(0, 90)}`]
   }
-  return busyboxDisagreement(buf, a)
+  return busyboxDisagreement(buf, a, id)
 }
 
 /**
@@ -303,13 +303,23 @@ function oracleDisagreement(buf: Buffer, bsd: { entries: Extracted[] }): string[
  * 必須にしないのは、受け手の環境に BusyBox を要求する筋合いが無いからである。
  * ただし**在るなら、割れたら止める**——「表示するだけ」にすると門にならない。
  */
-function busyboxDisagreement(buf: Buffer, tarDigest: string): string[] {
+function busyboxDisagreement(buf: Buffer, tarDigest: string, id?: string): string[] {
   if (!BUSYBOX.available) {
     busyboxSkipped++
     return []
   }
   const bb = extractWithBusyBoxTree(buf)
-  if (bb.failed) return [`tar と python は展開できたのに BusyBox は展開できない（${bb.stderr.slice(0, 70)}）`]
+  const listed = id === undefined ? undefined : BUSYBOX_REFUSES[id]
+  if (bb.failed) {
+    // **表に載っていて、表のとおりの理由で拒んだときだけ**通す。理由が違えば止める
+    if (listed && listed.stderr.test(bb.stderr)) {
+      busyboxRefusedAsListed.add(id!)
+      return []
+    }
+    return [`tar と python は展開できたのに BusyBox は展開できない（${bb.stderr.slice(0, 70)}）`]
+  }
+  // **表が古い。**拒むと書いた材料を BusyBox が展開した
+  if (listed) return [`${id}: BUSYBOX_REFUSES に載っているのに BusyBox が展開した（表が古い）`]
   const c = treeDigest(bb.entries)
   if (c === tarDigest) return []
   /**
@@ -377,6 +387,52 @@ const BUSYBOX = (() => {
 
 /** **スキップした回数。**0 件のまま「スキップした」と言えないようにする */
 let busyboxSkipped = 0
+
+/**
+ * **BusyBox だけが展開を拒む材料。理由つきでここに書く（2026-10-18）。**
+ *
+ * BusyBox が初めて走った CI の ubuntu run（BusyBox v1.36.1・Ubuntu の apt）で、
+ * **検算器が受理し、tar と python が同じ木を作る**材料のうち 3 個を BusyBox が拒んだ。
+ *
+ * ```
+ * raw-cksum-signed                 tar: invalid tar header checksum
+ * format-v7-no-prefix              tar: invalid tar magic
+ * format-unknown-magic-no-prefix   tar: invalid tar magic
+ * ```
+ *
+ * 3 個とも、過去の外部監査で**受理すると決めた形**である。
+ * signed checksum は v0.6.8 で「bsdtar も python も展開する＝過剰拒否」として受理へ直し（外部監査 P1-C）、
+ * V7 と未知 magic は v0.6.9 で「形式そのものは拒まない」と決めて通す側の対照に置いた。
+ *
+ * **「拒む」は「違う木を作る」と分けて扱う。**
+ *
+ * ```
+ * 違う木を作る   検算器が見たものと、受け手の手元にできるものが違う → **止める**（変えない）
+ * 展開を拒む     受け手の BusyBox が exit 1 とエラーを出して止まる → この表に載せた物だけ通す
+ * ```
+ *
+ * 受け手に BusyBox を要求する筋合いが無いのと同じ理由で、
+ * **任意の oracle が拒む形を、必須の 2 実装が同じ木を作るのに拒みはしない。**
+ * ただし黙って増やせない——**表に無い拒否は今までどおり止め、
+ * 表に有るのに展開できたら（表が古い）それも止める。**理由の文も照らす。
+ */
+const BUSYBOX_REFUSES: Record<string, { stderr: RegExp, note: string }> = {
+  'raw-cksum-signed': {
+    stderr: /invalid tar header checksum/,
+    note: '非 ASCII の名前で、signed の和で書いた checksum。tar と python は展開する',
+  },
+  'format-v7-no-prefix': {
+    stderr: /invalid tar magic/,
+    note: 'V7（magic が全部 NUL）の entry。345..499 は空。tar と python は同じ木を作る',
+  },
+  'format-unknown-magic-no-prefix': {
+    stderr: /invalid tar magic/,
+    note: '未知の magic の entry。345..499 は空。tar と python は同じ木を作る',
+  },
+}
+
+/** **表のとおりに拒まれた材料。**表を書きっぱなしにしないため、⑤ で数える */
+const busyboxRefusedAsListed = new Set<string>()
 
 /** BusyBox で展開して、**bsdtar と同じ物差し**（walkTree）で木にする */
 function extractWithBusyBoxTree(buf: Buffer): { entries: Extracted[], failed: boolean, stderr: string } {
@@ -520,7 +576,7 @@ describe('tar 展開 oracle ② 既存の 26 個も、この基準で見る', ()
      * **`pax-x-path` と `pax-x-size-override` は、この基準で初めて落ちた。**
      * 手で書いた期待値では「PAX を拾っていないので合格」だった。
      */
-    expect(mismatchesOf(found[2] as Buffer)).toEqual([])
+    expect(mismatchesOf(found[2] as Buffer, found[1])).toEqual([])
   })
 })
 
@@ -955,5 +1011,46 @@ describe('tar 展開 oracle ⑤ BusyBox を照合に通している（無いな�
       expect(busyboxSkipped, '**スキップなのに数が増えない＝照合経路を通っていない**').toBe(before + 1)
     }
     console.log(`\nBusyBox 照合: ${BUSYBOX.available ? '実走' : 'スキップ'} / この run でスキップした材料 ${busyboxSkipped} 件`)
+  })
+
+  /**
+   * **`BUSYBOX_REFUSES` を書きっぱなしにしない（2026-10-18）。**
+   * 表の材料は corpus に実在し、検算器が受理し、tar と python が同じ木を作ること。
+   * BusyBox が在る run では、**全件が表の理由で拒まれた**ことまで見る。
+   */
+  it('**BusyBox だけが拒む材料は 3 件で、在る run では表のとおりに拒まれる**', () => {
+    const all = Object.values(allCases()).flat()
+    const ids = Object.keys(BUSYBOX_REFUSES)
+    expect(ids, 'BusyBox だけが拒む材料の件数が変わった。notes も直すこと').toHaveLength(3)
+    const before = busyboxSkipped
+    for (const id of ids) {
+      const found = all.find((c) => c.id === id)
+      expect(found, `表に、存在しない材料 ${id} が書いてある`).toBeTruthy()
+      const buf = found!.tar as Buffer
+      // 検算器が止める材料なら、BusyBox まで届かない＝この表は何も免除していない
+      expect(readArchiveBuffer(buf, { gzip: false }).error, `${id}: 検算器が受理していない＝表に載せる意味が無い`).toBeFalsy()
+      expect(mismatchesOf(buf, id), `${id}: 表に載せても食い違いが残る`).toEqual([])
+      if (BUSYBOX.available) expect(busyboxRefusedAsListed.has(id), `${id}: BusyBox が表の理由で拒んでいない`).toBe(true)
+    }
+    if (!BUSYBOX.available) {
+      expect(busyboxSkipped, '**スキップなのに数が増えない＝照合経路を通っていない**').toBe(before + ids.length)
+    }
+    console.log(`\nBusyBox だけが拒む材料: ${ids.length} 件（${BUSYBOX.available
+      ? `この run で表のとおりに拒まれた ${busyboxRefusedAsListed.size} 件`
+      : 'この run は BusyBox が無いので照合していない'}）`)
+  })
+
+  it('**この表が空振りしていない**（表に載せずに呼べば、BusyBox の拒否で止まる）', () => {
+    const found = Object.values(allCases()).flat().find((c) => c.id === 'format-v7-no-prefix')
+    expect(found, '材料が無い').toBeTruthy()
+    const before = busyboxSkipped
+    const bad = mismatchesOf(found!.tar as Buffer)
+    if (BUSYBOX.available) {
+      expect(bad.join(' / '), '表に載せずに呼んだのに BusyBox の拒否で止まらない（表の外の拒否を通しているか、BusyBox が拒まなくなった）')
+        .toMatch(/BusyBox は展開できない/)
+    } else {
+      expect(bad, 'BusyBox が無いのに食い違いが出ている').toEqual([])
+      expect(busyboxSkipped, '**スキップなのに数が増えない＝照合経路を通っていない**').toBe(before + 1)
+    }
   })
 })

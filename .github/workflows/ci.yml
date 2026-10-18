@@ -78,23 +78,29 @@ jobs:
       #
       # **必須にはしない。**入らなかったら試験側が照合をスキップし、
       # 「スキップした」と出す（黙って緑にはならない）。だから導入の失敗で CI を止めない。
-      - name: BusyBox を入れる（3 つ目の oracle）
+      #
+      # **入れるのは ubuntu だけ（2026-10-18・CI の最初の run で判明）。**
+      # 2026-09-14 は macOS で brew から入れるつもりだったが、
+      # Homebrew に busybox の formula が無い（`No available formula with the name "busybox"`）。
+      # 毎回必ず失敗する step を残すと、失敗の注記が「本当の失敗」を埋もれさせる。
+      # macOS の run は試験側が「スキップ」と出す。
+      - name: BusyBox を入れる（3 つ目の oracle・ubuntu だけ）
+        if: runner.os == 'Linux'
         continue-on-error: true
-        run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            sudo apt-get update && sudo apt-get install -y busybox
-          else
-            brew install busybox
-          fi
+        run: sudo apt-get update && sudo apt-get install -y busybox
 
       # **どの実装で測ったかを残す。**「oracle が動いた」と言うには版が要る。
       # 落ちてもここでは止めない——版が読めないこと自体は判定材料
+      #
+      # busybox の行は `command -v` で分ける（2026-10-18）。`busybox | head -1 || echo …` は
+      # pipefail の無い bash ではパイプの終了コードが head の 0 になり、
+      # 無いときに代わりの文が出ず `command not found` だけが残っていた（macOS の run で実測）。
       - name: oracle の実装と版を記録する
         run: |
           echo "runner: ${{ matrix.os }}"
           tar --version | head -2
           python3 --version
-          busybox | head -1 || echo "busybox: 無い（この run は BusyBox の照合をスキップする）"
+          if command -v busybox >/dev/null; then busybox | head -1; else echo "busybox: 無い（この run は BusyBox の照合をスキップする）"; fi
 
       - name: 型検査
         run: npm run typecheck

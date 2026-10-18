@@ -181,8 +181,14 @@ describe('CI ④ 必須 oracle の matrix', () => {
    */
   it('**BusyBox を入れて、版を記録している**', () => {
     expect(SRC, 'Linux 側で入れていない＝3 つ目の oracle がどこでも走らない').toContain('apt-get install -y busybox')
-    expect(SRC, 'macOS 側で入れていない').toContain('brew install busybox')
+    /**
+     * **macOS では入れない（2026-10-18）。**Homebrew に busybox の formula が無く、
+     * CI の最初の run で `No available formula with the name "busybox"` と失敗した。
+     * 毎回必ず失敗する step を戻さない。
+     */
+    expect(SRC, 'Homebrew に無い formula を入れようとしている（毎回失敗する）').not.toContain('brew install busybox')
     expect(SRC, '版を記録していない（走ったかどうかが run のログから読めない）').toContain('busybox | head -1')
+    expect(SRC, '無いときに代わりの文が出ない（pipefail の無い bash では `|| echo` が効かない）').toContain('command -v busybox')
   })
 
   it('**この検査が空振りしていない**（導入を消せば落ちる）', () => {
