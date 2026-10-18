@@ -47,9 +47,10 @@
 上げても**受け手が受け取る成果物は byte 単位で同じ**です（更新前後の build 成果物 4 件が一致）。
 
 `package-lock.json` は**記録された入力**なので、上げると
-`artifacts/source-input-manifest.json` の記録と食い違います
+`artifacts/source-input-manifest.json` の記録と食い違いました
 （実測: 記録 `08ab4242…` → 実物 `d8e8b78a…`）。
-**この食い違いを閉じるのは次の版の staging です**——更新だけを切り出して配ることはしません。
+**この食い違いは、次の版の staging で記録を取り直して閉じました**（2026-10-18。
+記録を使う artifact 5 件を作り直し、モデル数値の変化は 0 件）——更新だけを切り出して配ってはいません。
 経緯と測り方は `docs/V0625_PENDING_20260914.md` にあります。
 
 **残っている advisory は 3 件です**（2026-09-14 実測・`@vitest/mocker` / `fast-uri` / `vitest`）。
