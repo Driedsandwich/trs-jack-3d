@@ -38,6 +38,13 @@ import { afterAll, describe, expect, it } from 'vitest'
 import { readArchiveBuffer } from '../scripts/verifyReleaseSourceInputs.mjs'
 import { allCases } from './_corruptTar.mjs'
 
+// ⑤ の最終集計が JSON の報告（assertionResults[].meta）へ残す値
+declare module 'vitest' {
+  interface TaskMeta {
+    busyboxOracle?: { available: boolean, version: string, reason: string, skipped: number }
+  }
+}
+
 const BLOCK = 512
 const tmps: string[] = []
 afterAll(() => tmps.forEach((d) => rmSync(d, { recursive: true, force: true })))
@@ -1010,7 +1017,6 @@ describe('tar 展開 oracle ⑤ BusyBox を照合に通している（無いな�
     } else {
       expect(busyboxSkipped, '**スキップなのに数が増えない＝照合経路を通っていない**').toBe(before + 1)
     }
-    console.log(`\nBusyBox 照合: ${BUSYBOX.available ? '実走' : 'スキップ'} / この run でスキップした材料 ${busyboxSkipped} 件`)
   })
 
   /**
@@ -1051,6 +1057,34 @@ describe('tar 展開 oracle ⑤ BusyBox を照合に通している（無いな�
     } else {
       expect(bad, 'BusyBox が無いのに食い違いが出ている').toEqual([])
       expect(busyboxSkipped, '**スキップなのに数が増えない＝照合経路を通っていない**').toBe(before + 1)
+    }
+  })
+
+  /**
+   * **最終集計は、全部の照合が済んだ後に 1 回だけ出す（2026-10-28・外部監査 2026-10-25 の B）。**
+   *
+   * v0.6.25 の staging までは ⑤ の 1 本目で `console.log` していた。
+   * その後の 2 本も照合を呼ぶので、出した数（macOS の CI で 76）は途中の値で、
+   * 最後の値は 80 だった。しかも `--silent` では消え、JSON の報告には残らなかった。
+   *
+   * だから**このファイルの最後のテスト**で数え終わった値を出す。
+   * stderr へ直に書く（`--silent` は console だけを消す）。JSON には `meta.busyboxOracle` で同じ値を残す。
+   *
+   * **BusyBox が無くても、このテストはスキップにしない。**
+   * テストの skip 数は証拠（test_counts）と完全一致で比べ、`check:vacuity` は skip を 1 件でも止める。
+   * 無い run だけ skip にすると、ubuntu と macOS で件数が割れて片方の門が必ず落ちる。
+   * **照合を飛ばした回数（ここの値）と、テストの skip 数は別の物**として数える。
+   */
+  it('**最終集計**: この run で BusyBox の照合を飛ばした回数を、どの出力の形でも同じ数で残す', ({ task }) => {
+    const summary = { available: BUSYBOX.available, version: BUSYBOX.version, reason: BUSYBOX.reason, skipped: busyboxSkipped }
+    task.meta.busyboxOracle = summary
+    process.stderr.write(`\nBusyBox 照合（この run の最終）: ${summary.available
+      ? `実走（${summary.version}）・飛ばした回数 0`
+      : `無い（${summary.reason}）・飛ばした回数 ${summary.skipped}`}\n`)
+    if (summary.available) {
+      expect(summary.skipped, 'BusyBox が在るのに照合を飛ばした').toBe(0)
+    } else {
+      expect(summary.skipped, '**BusyBox が無いのに飛ばした回数が 0＝照合経路を通っていない**').toBeGreaterThan(0)
     }
   })
 })
