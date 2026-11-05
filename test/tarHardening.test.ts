@@ -14,8 +14,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
-import { TAR_LIMITS, readArchiveBuffer } from '../scripts/verifyReleaseSourceInputs.mjs'
-import { allCases, buildTar, normalTar } from './_corruptTar.mjs'
+import { TAR_LIMITS, TOOL_VERSION, readArchiveBuffer } from '../scripts/verifyReleaseSourceInputs.mjs'
+import { allCases, buildTar, normalTar, paxRec } from './_corruptTar.mjs'
 import { expectedOutcome } from './_tarExpectations.mjs'
 
 const ROOT = resolve(__dirname, '..')
@@ -491,5 +491,94 @@ describe('tar 強化 ⑥ v0.6.2 — 同じ場所を指す別の綴り', () => {
     const r = read(readFileSync(cached), true)
     expect(r.error, `実物が止まった: ${r.error}`).toBeFalsy()
     expect(r.files!.size).toBe(246)
+  })
+})
+
+/**
+ * **hardlink の指す先の絶対パス（v0.6.26・tool v21）。**
+ *
+ * v12（v0.6.7）から v20 まで、`canonicalLinkTarget` が先頭の空要素を捨てていたので
+ * `/pkg/a.txt` が `pkg/a.txt` と同じ物と見なされ、`OK` で通っていた。
+ * python（filter='tar'）は KeyError で拒み、bsdtar は `/` を外して中へ張る——
+ * **受け入れた tar は 2 つの展開器が同じ中身を作る**という約束から外れる。
+ * 名前の絶対パスと同じ `PATH_ABSOLUTE` で止める。
+ */
+describe('tar 強化 ⑦ v0.6.26 — hardlink の指す先の絶対パス', () => {
+  const TOP = 'pkg-0000000'
+  const base = { name: `${TOP}/a.txt`, data: 'A' }
+  const hard = (linkname: string) => buildTar([base, { name: `${TOP}/hard.txt`, type: '1', linkname }])
+
+  const expectAbsolute = (r: ReturnType<typeof read>, label: string) => {
+    expect(r.kind, `${label}: 受理している`).toBe('ARCHIVE_INVALID')
+    expect(r.stableReasonCode, label).toBe('PATH_ABSOLUTE')
+    expect(r.files, `${label}: 中身を返してしまっている`).toBeUndefined()
+  }
+
+  it('**`/<top>/a.txt` を指す hardlink は PATH_ABSOLUTE で止まる**（v20 までは OK だった）', () => {
+    expectAbsolute(read(hard(`/${TOP}/a.txt`)), `/${TOP}/a.txt`)
+  })
+
+  it('先頭の `/` を重ねても、`/./` で始めても止まる（畳む前の生の値で見る）', () => {
+    for (const l of [`//${TOP}/a.txt`, `/./${TOP}/a.txt`, '/a.txt', '/etc/passwd']) {
+      expectAbsolute(read(hard(l)), l)
+    }
+  })
+
+  it('PAX `linkpath` で絶対パスへ上書きした hardlink も止まる', () => {
+    const r = read(buildTar([
+      base,
+      { name: `${TOP}/PaxHeaders/0/hard.txt`, type: 'x', data: paxRec('linkpath', `/${TOP}/a.txt`) },
+      { name: `${TOP}/hard.txt`, type: '1', linkname: `${TOP}/a.txt` },
+    ]))
+    expectAbsolute(r, 'PAX linkpath')
+  })
+
+  it('GNU long linkname（`K`）で絶対パスを渡した hardlink も止まる', () => {
+    const r = read(buildTar([
+      base,
+      { name: '././@LongLink', type: 'K', data: `/${TOP}/a.txt\0` },
+      { name: `${TOP}/hard.txt`, type: '1', linkname: `${TOP}/a.txt` },
+    ]))
+    expectAbsolute(r, 'GNU K')
+  })
+
+  it('対照 — 名前（name）の絶対パスは、これまでどおり PATH_ABSOLUTE', () => {
+    const r = read(buildTar([{ name: `/${TOP}/a.txt`, data: 'A' }]))
+    expectAbsolute(r, 'name')
+  })
+
+  it('対照 — `..` を含む linkname は、これまでどおり LINK_TARGET_NOT_CANONICAL', () => {
+    const r = read(buildTar([
+      { name: `${TOP}/sub/`, type: '5' },
+      base,
+      { name: `${TOP}/hard.txt`, type: '1', linkname: `${TOP}/sub/../a.txt` },
+    ]))
+    expect(r.kind).toBe('ARCHIVE_INVALID')
+    expect(r.stableReasonCode).toBe('LINK_TARGET_NOT_CANONICAL')
+  })
+
+  it('対照 — 先に無いファイルを指す linkname は、これまでどおり HARDLINK_TARGET_MISSING', () => {
+    const r = read(hard(`${TOP}/nope.txt`))
+    expect(r.kind).toBe('ARCHIVE_INVALID')
+    expect(r.stableReasonCode).toBe('HARDLINK_TARGET_MISSING')
+  })
+
+  it('**対照 — 今まで通っていた相対の hardlink は通り続ける**（`./` 始まり・`//`・連鎖を含む）', () => {
+    for (const l of [`${TOP}/a.txt`, `./${TOP}/a.txt`, `${TOP}//a.txt`, `${TOP}/./a.txt`]) {
+      const r = read(hard(l))
+      expect(r.error, `塞ぎすぎている（${l}）: ${r.error}`).toBeFalsy()
+      // リンクはファイルとして数えない
+      expect([...r.files!.keys()], l).toEqual(['a.txt'])
+    }
+    const chain = read(buildTar([
+      base,
+      { name: `${TOP}/b.txt`, type: '1', linkname: `${TOP}/a.txt` },
+      { name: `${TOP}/c.txt`, type: '1', linkname: `${TOP}/b.txt` },
+    ]))
+    expect(chain.error, `連鎖を塞いでいる: ${chain.error}`).toBeFalsy()
+  })
+
+  it('判定が変わったので toolVersion は 21 以上', () => {
+    expect(TOOL_VERSION).toBeGreaterThanOrEqual(21)
   })
 })

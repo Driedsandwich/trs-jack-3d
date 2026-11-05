@@ -177,6 +177,11 @@ import { fileURLToPath } from 'node:url'
  *       （`path` を持つときだけ競合とする）。ディレクトリ側の上限を
  *       `ARCHIVE_UNSUPPORTED` へそろえ、gzip 失敗を `GZIP_DECODE_FAILED` にした。
  *       **判定が変わる**ので版を上げる
+ *  21 … **hardlink の指す先の絶対パスを受理していた (v0.6.26)。**v12（v0.6.7）から、
+ *       `canonicalLinkTarget` が先頭の空要素を捨てるので `/root/a.txt` が `root/a.txt` と
+ *       同じ物と見なされ `OK` になっていた。python（filter='tar'）は拒み、bsdtar は `/` を
+ *       外して張る＝2 実装の結末が割れる。正規化の前の生の値で拒む（`PATH_ABSOLUTE`）。
+ *       **判定が変わる**ので版を上げる
  *
  *   （版を上げない変更）
  *   v0.6.13  入口の判定をファイル名から「起動された本体か」（`realpathSync`）へ変えた。
@@ -441,7 +446,7 @@ export function statusOf(code) {
   return assertCatalogued(code) && REASON_CODES[code].status
 }
 
-export const TOOL_VERSION = 20
+export const TOOL_VERSION = 21
 
 /**
  * **出力契約の版（v0.6.17・外部監査 P0）。**
@@ -1312,6 +1317,20 @@ const PAX_KEYS_KNOWN_DANGEROUS = ['size', 'linkpath', 'hdrcharset', 'charset', '
 function canonicalLinkTarget(raw, name, entryIndex) {
   if (raw === '') {
     throw new ArchiveInvalid(`リンクの指す先が空である: ${name}`, { name, entryIndex, stableReasonCode: 'LINK_TARGET_EMPTY' })
+  }
+  /**
+   * **絶対パスは、畳む前の生の値で拒む（v0.6.26・tool v21）。**
+   * 下の `filter` は先頭の空要素も捨てるので、ここで見ないと `/root/a.txt` が
+   * `root/a.txt` になり、`assertSafePath` の絶対パス検査に届かない。
+   * 実測（2026-11-05・python 3.13）: python（filter='tar'）は KeyError で exit 1。
+   * bsdtar は `/` を外して中へ張る（報告による。こちらの手元に bsdtar は無い）。
+   * 理由の札は名前の絶対パスと同じ `PATH_ABSOLUTE` にする。
+   */
+  if (raw.startsWith('/')) {
+    throw new ArchiveInvalid(
+      `リンクの指す先が絶対パスである: ${name} -> ${raw.slice(0, 80)}`,
+      { name, linkname: raw.slice(0, 200), entryIndex, stableReasonCode: 'PATH_ABSOLUTE' },
+    )
   }
   if (raw.endsWith('/')) {
     throw new ArchiveInvalid(
