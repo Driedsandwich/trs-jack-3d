@@ -1,20 +1,25 @@
 {
  "schemaVersion": 1,
  "generatedBy": "npm run release:evidence",
- "generatedAt": "2026-10-28",
+ "generatedAt": "2026-11-05",
  "releaseTag": null,
  "releaseCommit": null,
- "evidenceBuiltAtCommit": "91a2f4aa0a7aee3680b6a42ff6788865ae0ce074",
+ "evidenceBuiltAtCommit": "62570ae82d811bd057769ab6e6480e677aa81865",
  "artifactGenerationCommit": "a040b3738d359994fbcdd7495a727c95f3ec1ea4",
  "artifactGenerationCommits": [
   {
-   "commit": "91a2f4aa0a7aee3680b6a42ff6788865ae0ce074",
+   "commit": "62570ae82d811bd057769ab6e6480e677aa81865",
    "assets": [
     "source-input-manifest.json",
     "source-snapshot.v1.json",
     "source-verification-result.json",
-    "test_counts.json",
     "validation-results.json"
+   ]
+  },
+  {
+   "commit": "91a2f4aa0a7aee3680b6a42ff6788865ae0ce074",
+   "assets": [
+    "test_counts.json"
    ]
   },
   {
@@ -126,9 +131,9 @@
   },
   {
    "filename": "source-input-manifest.json",
-   "sha256": "4916e3c27c07fee11fb03e8d937ae07417ccb815f1b1d73e1b8920c85a50ccfc",
+   "sha256": "92d3aa8dedffd0d62def77accf0c374b85afc6fe4a1b155991bd537ee38520af",
    "role": "evidence",
-   "generatedFromCommit": "91a2f4aa0a7aee3680b6a42ff6788865ae0ce074"
+   "generatedFromCommit": "62570ae82d811bd057769ab6e6480e677aa81865"
   },
   {
    "filename": "source-input-manifest.v2.schema.json",
@@ -147,9 +152,9 @@
   },
   {
    "filename": "source-snapshot.v1.json",
-   "sha256": "3521844659db2848e3d86cf9ec8d6080108ef3864df7bd59ff9d9c71ac597089",
+   "sha256": "bbe60d7972f79bd553ec033f752c23ecb4b5d384d932948a6d5502cc5aa4597d",
    "role": "evidence",
-   "generatedFromCommit": "91a2f4aa0a7aee3680b6a42ff6788865ae0ce074"
+   "generatedFromCommit": "62570ae82d811bd057769ab6e6480e677aa81865"
   },
   {
    "filename": "source-snapshot.v1.schema.json",
@@ -158,9 +163,9 @@
   },
   {
    "filename": "source-verification-result.json",
-   "sha256": "1ba97bd19737b47aad29db2f185a2a3b3eea10094cb7dbbe594ee725d3852565",
+   "sha256": "a032981a18818210cfa1431a3e1c501fcc83656659909b8b66e6d43ff6c27a93",
    "role": "evidence",
-   "generatedFromCommit": "91a2f4aa0a7aee3680b6a42ff6788865ae0ce074"
+   "generatedFromCommit": "62570ae82d811bd057769ab6e6480e677aa81865"
   },
   {
    "filename": "source-verification-result.v1.schema.json",
@@ -207,9 +212,9 @@
   },
   {
    "filename": "validation-results.json",
-   "sha256": "9d1ab8205c4a02da1e765b89abd57b4647ba4d8759081deaca104c62a933941f",
+   "sha256": "3e433765441d0937793fbe794e86a2eab35b0f1ac1582898a5228090567ba852",
    "role": "evidence",
-   "generatedFromCommit": "91a2f4aa0a7aee3680b6a42ff6788865ae0ce074"
+   "generatedFromCommit": "62570ae82d811bd057769ab6e6480e677aa81865"
   },
   {
    "filename": "validation-results.v3.schema.json",
@@ -218,13 +223,13 @@
   },
   {
    "filename": "verifyReleaseSourceInputs.mjs",
-   "sha256": "da1e5558d0a4cdf38c23274c4486bbbbf94cc79bf02a28a49cd01765af325401",
+   "sha256": "df1a66e9bfb5e40d4cca2767f1bd73db885360cb0e6c44c456afea2e619a6707",
    "role": "tool"
   }
  ],
  "notes": [
   "**この索引は release 工程の記録であって、証明ではない。**bytes の検算は SHA256SUMS で行うこと。",
-  "**検算ツールの契約**（この形にしたのは v0.6.16）。**信頼の起点は assets の verifyReleaseSourceInputs.mjs の sha256（da1e5558d0a4cdf38c23274c4486bbbbf94cc79bf02a28a49cd01765af325401 ／ toolVersion 20）。",
+  "**検算ツールの契約**（この形にしたのは v0.6.16）。**信頼の起点は assets の verifyReleaseSourceInputs.mjs の sha256（df1a66e9bfb5e40d4cca2767f1bd73db885360cb0e6c44c456afea2e619a6707 ／ toolVersion 21）。",
   "**保存した検算結果は、この版と一緒に配った source-verifier-cli-result.v2.schema.json （assets の sha256）で検証すること。**$id から最新版を引くと、後の版で狭めた分だけ過去の結果が落ちる（docs/SCHEMA_VERSIONING_POLICY.md 第7条）。",
   "**受け手が固定すべき配布物**（`assets[]` の filename と sha256 を lock すること）: half_plug_topology_profile.v3.trs_jack_trs.json / half_plug_topology_profile.v3.trs_jack_trrs.json / source-verifier-cli-result.v2.schema.json / source-input-manifest.json / verifyReleaseSourceInputs.mjs。**この `notes` の文そのものは機械契約ではない**——分岐に使わないこと。",
   "**archivePolicy の識別子**: trs-jack-3d-source-verifier-archive-policy v1 / policySha256 41adcd453574c3b3d03af2dd98e289a3075af86ad6201b8c39281cb476f226d3。**自己整合の識別子であって、真正性の証明ではない**——同じ道具が policy と digest の両方を書くので、両方書き換えれば一致する。",
