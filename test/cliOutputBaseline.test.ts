@@ -91,10 +91,16 @@ describe('CLI 出力の基準', () => {
    * 基準の `toolSha256` は**分離前**の値なので、いまの道具とは違って当然である。
    * ここが一致してしまったら、それは分離が入っていないということ。
    */
-  it('道具は分離で変わっている（基準は分離前のものである）', () => {
+  /**
+   * **v0.6.26 で基準を取り直した（tool v21）。**判定が変わり `toolVersion` が出力に入るので、
+   * 分離前の基準とは byte 一致しようがない。そのため比べる相手を、基準の `toolSha256`
+   * ではなく**分離前（2026-08-15 / dab485c2260c）の道具の digest**へ固定した。
+   */
+  it('道具は分離で変わっている（分離前の道具の digest と違う）', () => {
     const now = createHash('sha256')
       .update(readFileSync(resolve(ROOT, 'scripts/verifyReleaseSourceInputs.mjs'))).digest('hex')
-    expect(now, '道具が分離前と同じ（分離が入っていない）').not.toBe(recorded.toolSha256)
+    expect(now, '道具が分離前と同じ（分離が入っていない）')
+      .not.toBe('b208399106bb1d97f00f79ef7cd90a867a4bc5bf400f6d2c5d36345d16314239')
   })
 
   it('経路の表は 1 か所から来ている（2 つ目の一覧を作っていない）', () => {
