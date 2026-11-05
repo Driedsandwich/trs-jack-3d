@@ -88,25 +88,23 @@
  },
  "generatedBy": "npm run release:evidence",
  "generatedAt": "2026-11-05",
- "generatedFromCommit": "62570ae82d811bd057769ab6e6480e677aa81865",
+ "generatedFromCommit": "0bee229c19f8c9481926730ab60b5aa64bea8a68",
  "command": "npm run validate:profiles",
  "targetsTotal": 14,
  "targetsPassed": 14,
  "allPassed": true,
  "artifactValidationStatus": "PASS",
- "releaseReadinessStatus": "NOT_READY",
- "releaseReadinessReasons": [
-  "artifacts/test_counts.json を取ってから、テストに効くファイルが 3 件動いている（91a2f4aa0a7a..62570ae82d81: scripts/verifyReleaseSourceInputs.mjs, test/_corruptTar.d.mts, test/tarHardening.test.ts）。npm run test:count を取り直すこと"
- ],
+ "releaseReadinessStatus": "READY",
+ "releaseReadinessReasons": [],
  "testEvidence": {
-  "total": 1481,
+  "total": 1490,
   "failed": 0,
   "skipped": 0,
   "exitCode": 0,
   "allPassed": true,
-  "testCountsSha256": "97691b71e26753986ea7caae519bb8a6d97b7de177f87d94df948f5826df3241",
-  "testCountsGeneratedFromCommit": "91a2f4aa0a7aee3680b6a42ff6788865ae0ce074",
-  "testCountsGeneratedAt": "2026-10-28"
+  "testCountsSha256": "292f71a2298b011ce80045c78301e73820916521da271a70d490308ef49bcd78",
+  "testCountsGeneratedFromCommit": "0bee229c19f8c9481926730ab60b5aa64bea8a68",
+  "testCountsGeneratedAt": "2026-11-05"
  },
  "distributedTargets": 10,
  "sourceOnlyTargets": 4,
