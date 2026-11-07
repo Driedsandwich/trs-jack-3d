@@ -1,10 +1,10 @@
 {
  "schemaVersion": 1,
  "schemaId": "trs-jack-3d-cli-output-baseline.v1",
- "purpose": "**core / CLI 分離が「何も変えていない」ことを確かめるための基準。**分離の前に取り、分離のあとで byte 一致を見る。JSON として比べず byte で比べる——キーの順序が変われば受け手の差分も変わるため。",
- "takenAt": "2026-08-15",
- "takenFromCommit": "dab485c2260c9809ece93fe8f7c6902195241b76",
- "toolSha256": "b208399106bb1d97f00f79ef7cd90a867a4bc5bf400f6d2c5d36345d16314239",
+ "purpose": "**CLI の出力を、経路ごとに byte で固定する基準。**最初は core / CLI 分離（v0.6.18）の前に取り、分離のあとで byte 一致を見た（その時の要約が `preSeparation`）。検算器の判定が変わる版では `toolVersion` が出力に入るので取り直す（v0.6.26・tool v21）。JSON として比べず byte で比べる——キーの順序が変われば受け手の差分も変わるため。",
+ "takenAt": "2026-11-07",
+ "takenFromCommit": "a23256b6a402ca876813c1af98db9d70652bb43a",
+ "toolSha256": "77891a6c76d1dc48252ac58183906e9544015782745415e815fd0a2787486d5c",
  "routes": [
   {
    "label": "引数なし",
@@ -12,7 +12,7 @@
    "injected": null,
    "exitCode": 2,
    "stdoutBytes": 2251,
-   "stdoutSha256": "286dee04ede24fad31bf87b5d5bffee8d8a41626be85b534824d023c8620036b",
+   "stdoutSha256": "01d1b3015fc7021f844964c0e0a42e394712c182a4816d26a55c6aea6d6746ee",
    "stderrBytes": 0,
    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
@@ -27,7 +27,7 @@
    "injected": null,
    "exitCode": 0,
    "stdoutBytes": 3834,
-   "stdoutSha256": "a77210be5ef4db4b8139810a9920284ed3582739823f1d9b85a1a7b29d93bf07",
+   "stdoutSha256": "fabfa0262d0b49cfd1056a71a3869f5a76542ed4d9c75914bd4d6d01ffd4c255",
    "stderrBytes": 0,
    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
@@ -40,7 +40,7 @@
    "injected": null,
    "exitCode": 2,
    "stdoutBytes": 2251,
-   "stdoutSha256": "286dee04ede24fad31bf87b5d5bffee8d8a41626be85b534824d023c8620036b",
+   "stdoutSha256": "01d1b3015fc7021f844964c0e0a42e394712c182a4816d26a55c6aea6d6746ee",
    "stderrBytes": 0,
    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
@@ -57,7 +57,7 @@
    "injected": "fetch",
    "exitCode": 2,
    "stdoutBytes": 2334,
-   "stdoutSha256": "bbe4faf9622f6f00ad2a208a7b3a313435f5a4e504c57cbd9cf20100c3689c06",
+   "stdoutSha256": "3ac57ed18ec484f0dfe7c3671dac2a60570d5001e2f2cb16ff8483186222a1ee",
    "stderrBytes": 0,
    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
@@ -74,7 +74,7 @@
    "injected": "fetch",
    "exitCode": 2,
    "stdoutBytes": 2346,
-   "stdoutSha256": "46d5ddced3c3d49552950dbad8a43f3a64add8bad38406793e378978e06fcd2d",
+   "stdoutSha256": "8b04c8103e9ce1ce4b4aea495e990badb25473b1855e24fb63c5cd85180578ab",
    "stderrBytes": 0,
    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
@@ -91,7 +91,7 @@
    "injected": "fetch",
    "exitCode": 2,
    "stdoutBytes": 2331,
-   "stdoutSha256": "66217563712b216cdb2160723af9bb2dd502519ed1e2edf091921469dbb1d638",
+   "stdoutSha256": "caf7bd2c73d2c36d967b2748a9dc961c9525c75fcf771faecd64df90051c606a",
    "stderrBytes": 0,
    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
@@ -108,7 +108,7 @@
    "injected": "fetch",
    "exitCode": 2,
    "stdoutBytes": 2261,
-   "stdoutSha256": "9df2fccd489d83c3ec9e7a3f8a21ce5b815932c32ede0c2a485dc5ebf7a8a214",
+   "stdoutSha256": "ed473927c58349df6d4f799de568335282b1725af0b8b05346bbee4959a1293e",
    "stderrBytes": 0,
    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
@@ -125,7 +125,7 @@
    "injected": "PATH",
    "exitCode": 2,
    "stdoutBytes": 2326,
-   "stdoutSha256": "d142d0e2f6a4a45123f5558394ffdc9a791dda64d5b3912d68b185fcfda63d2b",
+   "stdoutSha256": "bb0eefe2d5634bb066e7be867bf97b00184aa997cd494fa565590fc8690a2fb2",
    "stderrBytes": 36,
    "stderrSha256": "c86f2851ecf72b635a804763278e26f89e34e546559e14a1f4d3ea83c34f4fde"
   },
@@ -140,7 +140,7 @@
    "injected": null,
    "exitCode": 2,
    "stdoutBytes": 1944,
-   "stdoutSha256": "07ec21aa901927010ae321f2411482e2072e458fc73c4cd8b651d5281245780a",
+   "stdoutSha256": "b19db6a429802043719866e0a076ae0c45143f63819b4f5104769a937b2527cb",
    "stderrBytes": 0,
    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
@@ -155,16 +155,21 @@
    "injected": "fetch",
    "exitCode": 2,
    "stdoutBytes": 2282,
-   "stdoutSha256": "0bd73b2e42ccf504bc7041a600018385a455a7c3fe0dfab86d3718eabe8eb3f2",
+   "stdoutSha256": "ec96e86dea6713dab2e2988d4391abcb8b6c4630f1fa5e6930ece64d64164401",
    "stderrBytes": 0,
    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   }
  ],
- "addedAfterBaseline": [
-  {
-   "label": "確認したあとに source が消える",
-   "takenAt": "2026-08-15",
-   "reason": "**この経路は分離のあとに作った**（v0.6.18 第2段）。SOURCE_ARCHIVE_MISSING を race-defensive から cli-route へ移すために踏んだもの。既存 9 件は分離前の値のままで、この 1 件だけが後から足された。"
-  }
- ]
+ "preSeparation": {
+  "takenAt": "2026-08-15",
+  "takenFromCommit": "dab485c2260c9809ece93fe8f7c6902195241b76",
+  "toolSha256": "b208399106bb1d97f00f79ef7cd90a867a4bc5bf400f6d2c5d36345d16314239",
+  "addedAfterBaseline": [
+   {
+    "label": "確認したあとに source が消える",
+    "takenAt": "2026-08-15",
+    "reason": "**この経路は分離のあとに作った**（v0.6.18 第2段）。SOURCE_ARCHIVE_MISSING を race-defensive から cli-route へ移すために踏んだもの。既存 9 件は分離前の値のままで、この 1 件だけが後から足された。"
+   }
+  ]
+ }
 }

@@ -22,6 +22,7 @@ export interface Case { id: string, tar: Buffer }
 
 export declare function header(o: TarEntry): Buffer
 export declare function buildTar(entries: TarEntry[], opts?: { endBlocks?: number }): Buffer
+export declare function paxRec(key: string, value: string | Buffer): Buffer
 export declare function normalTar(top?: string, files?: Record<string, string>): Buffer
 export declare function paxCases(): Case[]
 export declare function longNameCases(): Case[]
