@@ -101,7 +101,8 @@
     <li><a href="#s9">v0.6.21（2026-08-15 記載・同日直しました・外部監査）</a></li>
     <li><a href="#s10">v0.6.22（2026-08-16 記載・同日直しました・外部監査）</a></li>
     <li><a href="#s11">v0.6.23（2026-08-16 記載・同日直しました・外部監査）</a></li>
-    <li><a href="#s12">この正誤表の運用</a></li>
+    <li><a href="#s12">v0.6.25（2026-10-28 に notes へ既知として記載・v0.6.26 で直しました・外部監査）</a></li>
+    <li><a href="#s13">この正誤表の運用</a></li>
   </ol>
 </nav>
 <h1>正誤表</h1>
@@ -454,7 +455,21 @@ A5 resolvePointer の traversal</code></pre>
 <p>循環かどうかは「<strong>いま辿っている経路上にあるか</strong>」で決まります。 <code>seen</code> を<strong>スタックとして使う</strong>形へ直しました——降りるときに入れ、戻るときに外す。 変異対照は 2 通り取っています（鍵を pointer へ戻す／戻るときに外さない）。どちらも落ちます。</p>
 <p><strong>試験の側も直しました。</strong>v0.6.23 の生成器は <code>properties</code> の key に prototype 名を <strong>0 件</strong>、再帰する <code>$ref</code> を <strong>0 件</strong>しか作っていません。 補強後は 9 件 / 42 件です。</p>
 <p><strong>現行 schema への影響はありません。</strong>prototype 名の property も循環参照も 現行 26 schema に 1 件もなく、実 schema <strong>200 対</strong>（現行 26 schema × 直近 8 tag）で <strong>判定は 1 件も変わっていません。</strong></p>
-<h2 id="s12">この正誤表の運用</h2>
+<h2 id="s12">v0.6.25（2026-10-28 に notes へ既知として記載・<strong>v0.6.26 で直しました</strong>・外部監査）</h2>
+<h3>33. <strong>hardlink の指す先が絶対パスでも受理していました（検算器 v12〜v20）</strong></h3>
+<div class="tw"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>対象</td><td><code>scripts/verifyReleaseSourceInputs.mjs</code>（<strong>配布物です</strong>。受け手が source archive を確かめる検算器）</td></tr><tr><td>症状</td><td>hardlink の指す先が <code>/root/a.txt</code> でも、先頭の <code>/</code> を空の要素として畳み、先行する <code>root/a.txt</code> と同じ物と見なして <code>OK</code> を返す</td></tr><tr><td>影響</td><td><strong>受理した archive を、2 つの展開器が同じ木にしない。</strong>python（<code>filter='tar'</code>）は拒み、bsdtar は <code>/</code> を外して中へ張る</td></tr><tr><td>入った版</td><td>v0.6.7（検算器 v12・2026-08-10）。v0.6.25（v20）まで同じ</td></tr><tr><td>見つけた人</td><td><strong>外部監査</strong>（取り込み前・2026-10-25）。こちらで再現（2026-10-28・2026-11-08）</td></tr><tr><td>直した版</td><td><strong>v0.6.26（検算器 v21）</strong>。v0.6.25 の公開本文の 4 では既知として書き、直していなかった</td></tr></tbody></table></div>
+<p><strong>名前（entry の name）の絶対パスは拒んでいたのに、指す先だけこの扱いでした。</strong> <code>canonicalLinkTarget</code> は指す先を <code>split('/')</code> して空と <code>.</code> の要素を捨ててから、 名前と同じ規則（<code>assertSafePath</code>）を当てていました。先頭の <code>/</code> は空の要素なので、 <strong>絶対パスの検査に届く前に消えていました。</strong></p>
+<pre><code>root/a.txt（通常ファイル）の後に、指す先が /root/a.txt の hardlink（2026-11-08・macOS）
+
+v20 の検算器   OK（root/a.txt と同じ物と見なす）
+v21 の検算器   ARCHIVE_INVALID / LINK_TARGET_NOT_CANONICAL
+python 3.15.2  exit 1（KeyError: linkname '/root/a.txt' not found）
+bsdtar 3.5.3   exit 0（"Removing leading '/'"・中の a.txt と同じ inode に張る）
+
+対照: 指す先が root/a.txt（相対）なら、v20・v21・python・bsdtar の 4 つとも通る</code></pre>
+<p><strong>GitHub が作る source archive は当たりません。</strong>git の archive はハードリンクを作らないので （v0.6.24 の tag の source archive は通常ファイル 403・フォルダ 27・リンク 0。2026-10-28 実測）、 当たるのは、手を加えた archive を検算器に通した場合です。</p>
+<p><strong>直し方。</strong>畳む前の生の値で <code>/</code> 始まりを拒みます。理由の札は、指す先の綴りの問題に使っている <code>LINK_TARGET_NOT_CANONICAL</code> にしました（v0.6.25 の notes で予告したとおり）。 判定が変わるので <code>toolVersion</code> を 21 へ上げています。試験は直接・先頭の <code>/</code> の重ね・ PAX <code>linkpath</code>・GNU long link（<code>K</code>）の 4 経路と、対照 5 本です（<code>test/tarHardening.test.ts</code> の ⑦）。</p>
+<h2 id="s13">この正誤表の運用</h2>
 <ul><li><strong>公開済みの release 本文と asset は、いかなる理由でも書き換えない。</strong> asset を足すこともしない（受け手が照合する集合が変わるため）。</li><li>誤りは<strong>次の版の notes 冒頭</strong>でも名指しし、この文書を指す。</li><li>直った版が出たら「どの版で直したか」を各項目に追記する。<strong>項目は消さない。</strong></li></ul>
 </div>
 </body>

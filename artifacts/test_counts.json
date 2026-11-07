@@ -172,12 +172,12 @@
    }
   ]
  },
- "generatedAt": "2026-10-28",
+ "generatedAt": "2026-11-07",
  "note": "npm run test:count で生成。README と UNKNOWNS には件数を書かない (読者に意味が無く、手作業が増えるだけだった)。docs/TEST_RESULTS.md の件数だけをこの artifact と突き合わせる。byFile は npm run check:vacuity の下限としても使う。件数が減る変更は理由を書く。",
- "total": 1481,
+ "total": 1491,
  "byFile": {
   "ciWorkflow.test.ts": 38,
-  "cliOutputBaseline.test.ts": 7,
+  "cliOutputBaseline.test.ts": 8,
   "cliResultContract.test.ts": 12,
   "contact.test.ts": 41,
   "contractMigration.test.ts": 38,
@@ -206,7 +206,7 @@
   "stageAttestation.test.ts": 15,
   "staleWordingAndPaths.test.ts": 11,
   "tarExtractionOracle.test.ts": 312,
-  "tarHardening.test.ts": 225,
+  "tarHardening.test.ts": 234,
   "testEvidenceBinding.test.ts": 14,
   "topology.test.ts": 15,
   "topologyRobustness.test.ts": 44,
@@ -225,5 +225,5 @@
  "runner": "vitest",
  "runnerVersion": "4.1.10",
  "nodeVersion": "v22.22.3",
- "generatedFromCommit": "91a2f4aa0a7aee3680b6a42ff6788865ae0ce074"
+ "generatedFromCommit": "2980f924c235f9ed342f8ade80dcc1c23a49fd71"
 }
