@@ -26,7 +26,7 @@
 依存の脆弱性は、**踏む経路を添えてください。**`npm audit` の出力だけだと、
 この使い方では到達しないものが大半で、切り分けから始めることになります。
 
-### こちらが把握している advisory（2026-09-14 実測・残りの数は 2026-10-28 に測り直し）
+### こちらが把握している advisory（2026-09-14 実測・残りの 6 件は 2026-11-08 に測り直し）
 
 同じことを求めるので、**こちらの切り分けも出します。**
 
@@ -54,14 +54,26 @@
 記録を使う artifact 5 件を作り直し、モデル数値の変化は 0 件）——更新だけを切り出して配ってはいません。
 経緯と測り方は `docs/V0625_PENDING_20260914.md` にあります。
 
-**残っている指摘は 6 package です**（2026-10-28 の `npm audit`・high 4・moderate 2）。
+**残っている指摘は 6 package です**（2026-11-08 の `npm audit`・high 4・moderate 2）。
 `@vitest/mocker` / `fast-uri` / `source-map-js` / `undici` / `vite` / `vitest` で、
-`npm audit --omit=dev` は 0 件＝6 件とも **dev の依存**です。6 は package の数で、advisory の数ではありません。
+`npm audit --omit=dev` は 0 件＝6 件とも **dev の依存**です。6 は package の数で、advisory の数ではありません
+（advisory は package ごとに足すと 37、重なりを除くと 36）。
 2026-09-14 には 3 件（`@vitest/mocker` / `fast-uri` / `vitest`）でした。
 lockfile の依存はその日の `nanoid` の更新の後、変えていないので、増えた 3 件は後から出た advisory です。
-**踏む経路の切り分けは、まだ手を付けていません**（次の版で扱います。dev だから安全、とは言いません）。
 
-**この判定は 2026-10-28 時点の実測です**（nanoid の経路と出荷物の判定は 2026-09-14 の実測）。そちらで測り直せます。
+**踏む経路を 1 件ずつ切り分けました（v0.6.26）。**表と根拠は
+[docs/maintenance/DEP_TRIAGE_v0626.md](docs/maintenance/DEP_TRIAGE_v0626.md) にあります。
+
+- **配る物には 6 件とも入りません。**配るのは JSON・schema と検算器 1 本で、検算器は `node:` の組み込みだけを読みます。
+- **条件付きで踏むのは `vite` だけです。**開発機で `npm run dev` を開いている間に限られます
+  （待ち受けは localhost。5 件のうち 2 件は Windows でだけ起きる形）。CI は dev server を立てません。
+- **ほかの 5 件は踏む経路がありません**（読み込まれない・browser mode を使っていない・
+  schema に `format` が無く、データの文字列が URI の処理へ渡らない）。
+- **まだ上げていません。**5 つとも `package.json` の範囲の中で lock だけを上げれば直りますが、
+  lock は記録された入力なので、上げると記録の作り直しが要ります。判定を変えた v0.6.26 と同じ版に重ねず、
+  **次の版の頭で上げます。**
+
+**この判定は 2026-11-08 時点の実測です**（nanoid の経路と出荷物の判定は 2026-09-14 の実測）。そちらで測り直せます。
 
 ```
 npm audit --json
@@ -271,14 +283,13 @@ modelLimitations.verifiedPhysical   false
   （archive の扱いではなく、試験の書き方の欠陥でした）。
   差分試験は v13 で**パスの一覧ではなく型つきの木**（型・指す先・中身のバイト）を比べ、
   **必須 oracle が動いていなければ「合格」ではなく失敗**にします。
-- **まだ塞いでいない穴が 1 つあります（`toolVersion` 20・2026-10-28 時点）。**
-  **hardlink の指す先が絶対パス（`/root/a.txt`）でも、先頭の `/` を畳んで
-  先行する `root/a.txt` と同じ物と見なし、受理します。**python は拒み、bsdtar は `/` を外して中へ張るので、
+- **hardlink の指す先の絶対パスを受理していた穴を、v21（v0.6.26）で塞ぎました。**
+  v12〜v20（v0.6.7〜v0.6.25）は、指す先が `/root/a.txt` でも先頭の `/` を畳んで
+  先行する `root/a.txt` と同じ物と見なし、受理していました。python は拒み、bsdtar は `/` を外して中へ張るので、
   必須 oracle の 2 実装が割れる形です（取り込み前の外部監査 2026-10-25 が見つけ、こちらで再現）。
-  畳む規則は v12 で入りました。entry の名前の絶対パスは拒んでいます。
-  git の archive はハードリンクを作らないので、GitHub の source archive は当たりません。
-  直すと判定が変わるので、**次の版で `toolVersion` を上げて拒みます**
-  （[docs/release/v0.6.25-notes.md](docs/release/v0.6.25-notes.md) の 4）。
+  v21 は畳む前の生の値で `/` 始まりを拒みます（`LINK_TARGET_NOT_CANONICAL`。entry の名前の絶対パスは今までどおり `PATH_ABSOLUTE`）。
+  git の archive はハードリンクを作らないので、GitHub の source archive は前の版でも当たりません。
+  経緯は [docs/ERRATA.md](docs/ERRATA.md) の 33 にあります。
 
 ### そのほか
 

@@ -977,6 +977,44 @@ A5 resolvePointer の traversal
 現行 26 schema に 1 件もなく、実 schema **200 対**（現行 26 schema × 直近 8 tag）で
 **判定は 1 件も変わっていません。**
 
+## v0.6.25（2026-10-28 に notes へ既知として記載・**v0.6.26 で直しました**・外部監査）
+
+### 33. **hardlink の指す先が絶対パスでも受理していました（検算器 v12〜v20）**
+
+| | |
+|---|---|
+| 対象 | `scripts/verifyReleaseSourceInputs.mjs`（**配布物です**。受け手が source archive を確かめる検算器） |
+| 症状 | hardlink の指す先が `/root/a.txt` でも、先頭の `/` を空の要素として畳み、先行する `root/a.txt` と同じ物と見なして `OK` を返す |
+| 影響 | **受理した archive を、2 つの展開器が同じ木にしない。**python（`filter='tar'`）は拒み、bsdtar は `/` を外して中へ張る |
+| 入った版 | v0.6.7（検算器 v12・2026-08-10）。v0.6.25（v20）まで同じ |
+| 見つけた人 | **外部監査**（取り込み前・2026-10-25）。こちらで再現（2026-10-28・2026-11-08） |
+| 直した版 | **v0.6.26（検算器 v21）**。v0.6.25 の公開本文の 4 では既知として書き、直していなかった |
+
+**名前（entry の name）の絶対パスは拒んでいたのに、指す先だけこの扱いでした。**
+`canonicalLinkTarget` は指す先を `split('/')` して空と `.` の要素を捨ててから、
+名前と同じ規則（`assertSafePath`）を当てていました。先頭の `/` は空の要素なので、
+**絶対パスの検査に届く前に消えていました。**
+
+```
+root/a.txt（通常ファイル）の後に、指す先が /root/a.txt の hardlink（2026-11-08・macOS）
+
+v20 の検算器   OK（root/a.txt と同じ物と見なす）
+v21 の検算器   ARCHIVE_INVALID / LINK_TARGET_NOT_CANONICAL
+python 3.15.2  exit 1（KeyError: linkname '/root/a.txt' not found）
+bsdtar 3.5.3   exit 0（"Removing leading '/'"・中の a.txt と同じ inode に張る）
+
+対照: 指す先が root/a.txt（相対）なら、v20・v21・python・bsdtar の 4 つとも通る
+```
+
+**GitHub が作る source archive は当たりません。**git の archive はハードリンクを作らないので
+（v0.6.24 の tag の source archive は通常ファイル 403・フォルダ 27・リンク 0。2026-10-28 実測）、
+当たるのは、手を加えた archive を検算器に通した場合です。
+
+**直し方。**畳む前の生の値で `/` 始まりを拒みます。理由の札は、指す先の綴りの問題に使っている
+`LINK_TARGET_NOT_CANONICAL` にしました（v0.6.25 の notes で予告したとおり）。
+判定が変わるので `toolVersion` を 21 へ上げています。試験は直接・先頭の `/` の重ね・
+PAX `linkpath`・GNU long link（`K`）の 4 経路と、対照 5 本です（`test/tarHardening.test.ts` の ⑦）。
+
 ## この正誤表の運用
 
 - **公開済みの release 本文と asset は、いかなる理由でも書き換えない。**
