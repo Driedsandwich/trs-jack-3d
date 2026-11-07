@@ -143,12 +143,37 @@ if (resolve(process.argv[1] ?? '') === resolve(import.meta.filename)) {
     process.exit(1)
   }
 
+  /**
+   * **取り直すときは、分離前の基準の要約を `preSeparation` に残す（v0.6.26）。**
+   * 最初の基準（2026-08-15）は core / CLI 分離の前に取った物で、試験はその時の道具の digest を
+   * 「分離で道具が変わっている」の比べる相手にしている。判定を変える版（tool v21）では
+   * `toolVersion` が出力に入るので取り直すしかないが、上書きすると比べる相手と、
+   * 分離の後に足した経路の来歴（`addedAfterBaseline`）が消える。
+   * 引き継ぐのは**最初の 1 回だけ**（2 回目からは前の `preSeparation` をそのまま写す）。
+   */
+  const previous = (() => {
+    try {
+      return JSON.parse(readFileSync(p, 'utf8'))
+    } catch {
+      return null
+    }
+  })()
+  const preSeparation = previous?.preSeparation ?? (previous
+    ? {
+        takenAt: previous.takenAt,
+        takenFromCommit: previous.takenFromCommit,
+        toolSha256: previous.toolSha256,
+        ...(previous.addedAfterBaseline ? { addedAfterBaseline: previous.addedAfterBaseline } : {}),
+      }
+    : undefined)
+
   const out = {
     schemaVersion: 1,
     schemaId: 'trs-jack-3d-cli-output-baseline.v1',
     purpose:
-      '**core / CLI 分離が「何も変えていない」ことを確かめるための基準。**'
-      + '分離の前に取り、分離のあとで byte 一致を見る。'
+      '**CLI の出力を、経路ごとに byte で固定する基準。**'
+      + '最初は core / CLI 分離（v0.6.18）の前に取り、分離のあとで byte 一致を見た（その時の要約が `preSeparation`）。'
+      + '検算器の判定が変わる版では `toolVersion` が出力に入るので取り直す（v0.6.26・tool v21）。'
       + 'JSON として比べず byte で比べる——キーの順序が変われば受け手の差分も変わるため。',
     takenAt: process.env.ARTIFACT_DATE ?? new Date().toISOString().slice(0, 10),
     takenFromCommit: (() => {
@@ -160,6 +185,7 @@ if (resolve(process.argv[1] ?? '') === resolve(import.meta.filename)) {
     })(),
     toolSha256: sha256(readFileSync(resolve(ROOT, TOOL))),
     routes: live,
+    ...(preSeparation ? { preSeparation } : {}),
   }
   writeFileSync(p, JSON.stringify(out, null, 1) + '\n')
   console.log(`  ${BASELINE_PATH} に ${live.length} 経路を記録しました。`)

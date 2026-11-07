@@ -30,7 +30,7 @@ const ROOT = resolve(__dirname, '..')
 const recorded = JSON.parse(readFileSync(resolve(ROOT, BASELINE_PATH), 'utf8'))
 
 describe('CLI 出力の基準', () => {
-  it('**全 9 経路が、分離前の基準と byte 一致する**', () => {
+  it('**全経路が、基準と byte 一致する**', () => {
     const live = measureAll(ROOT)
     const problems = diffBaseline(live, recorded)
     expect(problems, problems.join('\n')).toEqual([])
@@ -88,19 +88,29 @@ describe('CLI 出力の基準', () => {
 
   /**
    * **分離で digest が変わるのは道具のほうだけ。**
-   * 基準の `toolSha256` は**分離前**の値なので、いまの道具とは違って当然である。
+   * 分離前の道具の digest と、いまの道具は違って当然である。
    * ここが一致してしまったら、それは分離が入っていないということ。
-   */
-  /**
+   *
    * **v0.6.26 で基準を取り直した（tool v21）。**判定が変わり `toolVersion` が出力に入るので、
-   * 分離前の基準とは byte 一致しようがない。そのため比べる相手を、基準の `toolSha256`
-   * ではなく**分離前（2026-08-15 / dab485c2260c）の道具の digest**へ固定した。
+   * 分離前の出力とは byte 一致しようがない。分離前の基準の要約は `preSeparation` に残してあり、
+   * 比べる相手はそこから読む（取り直しのたびに比べる相手が「いまの道具」へずれないように）。
    */
+  it('分離前の基準の要約が残っている（2026-08-15 / dab485c2260c）', () => {
+    const pre = recorded.preSeparation
+    expect(pre, '分離前の基準の要約が無い（取り直しで消えた）').toBeTruthy()
+    expect(pre.takenAt).toBe('2026-08-15')
+    expect(pre.takenFromCommit).toBe('dab485c2260c9809ece93fe8f7c6902195241b76')
+    expect(pre.toolSha256).toBe('b208399106bb1d97f00f79ef7cd90a867a4bc5bf400f6d2c5d36345d16314239')
+    expect(() => execFileSync('git', ['cat-file', '-e', `${pre.takenFromCommit}^{commit}`],
+      { cwd: ROOT, stdio: 'ignore' })).not.toThrow()
+    /** 分離の後に足した経路の来歴も、取り直しで落としていない */
+    expect(pre.addedAfterBaseline?.map((x: { label: string }) => x.label)).toEqual(['確認したあとに source が消える'])
+  })
+
   it('道具は分離で変わっている（分離前の道具の digest と違う）', () => {
     const now = createHash('sha256')
       .update(readFileSync(resolve(ROOT, 'scripts/verifyReleaseSourceInputs.mjs'))).digest('hex')
-    expect(now, '道具が分離前と同じ（分離が入っていない）')
-      .not.toBe('b208399106bb1d97f00f79ef7cd90a867a4bc5bf400f6d2c5d36345d16314239')
+    expect(now, '道具が分離前と同じ（分離が入っていない）').not.toBe(recorded.preSeparation.toolSha256)
   })
 
   it('経路の表は 1 か所から来ている（2 つ目の一覧を作っていない）', () => {
